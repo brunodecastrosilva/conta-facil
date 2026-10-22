@@ -239,18 +239,9 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .mini-toggle{border:0;background:none;color:var(--muted);font-size:12.5px;font-weight:600;padding:4px 6px;border-radius:6px;min-height:30px}
 .mini-toggle[aria-pressed="true"]{color:var(--green);background:var(--green-soft)}
 .mini-toggle:hover{color:var(--ink)}
-.linkbox{display:flex;gap:8px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 12px;min-width:0}
-.live-code{display:flex;align-items:baseline;justify-content:space-between;gap:10px;background:var(--mustard-soft);color:var(--mustard-ink);border-radius:10px;padding:10px 12px}
-.live-code b{font-size:20px;letter-spacing:.12em}
 .join{display:flex;flex-direction:column;gap:8px}
 .join form{display:flex;gap:8px}
 .join input{flex:1 1 auto;font-family:var(--f-mono);text-transform:lowercase}
-.linkbox code{font-family:var(--f-mono);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--muted)}
-.steps b{color:var(--ink)}
-.live-dot{width:9px;height:9px;border-radius:50%;background:#2FB36A;display:inline-block;box-shadow:0 0 0 0 rgba(47,179,106,.6);animation:pulse 1.8s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,179,106,.55)}70%{box-shadow:0 0 0 8px rgba(47,179,106,0)}100%{box-shadow:0 0 0 0 rgba(47,179,106,0)}}
-@media (prefers-reduced-motion: reduce){.live-dot{animation:none}}
 .chip.me{box-shadow:inset 0 0 0 2px var(--mustard)}
 .chip[aria-pressed="true"].me{box-shadow:inset 0 0 0 2px var(--mustard)}
 .item.open{border:1.5px solid var(--mustard);background:var(--surface);box-shadow:0 0 0 4px var(--mustard-soft)}
@@ -297,11 +288,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .example-link > span:first-child{display:flex;flex-direction:column;gap:2px}
 .mini-stats{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .mini-stats b{color:var(--ink)}
-.live-offer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
-.live-offer > span{display:flex;gap:10px;align-items:flex-start;min-width:0;flex:1 1 220px}
-.live-offer > span > span{display:flex;flex-direction:column;gap:1px}
-.live-offer b{color:var(--ink);font-size:14px}
-.live-strip{border:0;background:var(--green-soft);color:var(--green);border-radius:99px;padding:6px 12px;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:8px;align-self:flex-start}
 .reset-btn{align-self:center;color:var(--muted)}
 .reset-opts{display:flex;flex-direction:column;gap:8px}
 .reset-opt{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
@@ -492,12 +478,6 @@ body.is-dragging .drop-out{display:flex}
 .btn-row .btn{padding-inline:6px;gap:6px}
 .receipt-wrap > .btn{white-space:normal;text-align:center}
 
-.online-list{display:flex;flex-wrap:wrap;gap:6px}
-.on-chip{display:inline-flex;align-items:center;gap:6px;background:var(--green-soft);color:var(--green);border-radius:99px;padding:3px 10px 3px 3px;font-weight:600;font-size:13.5px}
-.on-chip .avatar{width:22px;height:22px;font-size:10.5px}
-.on-chip.anon{padding:4px 10px;background:var(--surface-2);color:var(--muted)}
-#live-online:empty{display:none}
-.live-code.big b{font-size:26px}
 .oa-install summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;padding:6px 0}
 .join form{flex-wrap:nowrap}
 .join input{min-width:0}
@@ -522,6 +502,53 @@ body.is-dragging .drop-out{display:flex}
 .ex-head > span:last-child{display:flex;flex-direction:column;gap:1px}
 .ex-icon{width:38px;height:38px;border-radius:10px;background:var(--mustard-soft);color:var(--mustard-ink);display:grid;place-items:center;flex:none}
 .ex-banner .grp{display:flex;gap:6px}
+
+/* entrar na comanda de um amigo */
+.join-icon,.lo-icon{background:var(--green-soft);color:var(--green)}
+.join-field{position:relative;flex:1 1 auto;min-width:0;display:flex}
+.join-field input{padding-right:78px}
+.join input:placeholder-shown{font-family:var(--f-body);text-transform:none}
+.join-paste{position:absolute;right:5px;top:5px;bottom:5px;border:0;border-radius:8px;padding:0 12px;background:var(--surface);color:var(--green);font-weight:700;font-size:13.5px;box-shadow:inset 0 0 0 1px var(--line)}
+.join .btn{flex:none}
+
+/* comanda ao vivo: painel no topo da aba Comanda */
+.live-panel{--lp-soft:color-mix(in srgb,var(--green-ink) 14%,transparent);--lp-line:color-mix(in srgb,var(--green-ink) 22%,transparent);
+  background:var(--green);color:var(--green-ink);border-radius:18px;padding:14px 16px 16px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.lp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:34px}
+.lp-status{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;background:var(--lp-soft);border-radius:99px;padding:6px 12px 6px 10px;white-space:nowrap}
+.lp-status.warn{background:var(--mustard);color:#2a1d02}
+.lp-dot{position:relative;width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.lp-status.on .lp-dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid currentColor;opacity:0;animation:lp-ring 1.8s ease-out infinite}
+@keyframes lp-ring{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+@media (prefers-reduced-motion: reduce){.lp-status.on .lp-dot::after{animation:none}}
+.lp-code{border:0;background:none;color:inherit;display:inline-flex;align-items:center;gap:7px;padding:6px 2px;min-height:34px;font-family:var(--f-mono);font-weight:600;font-size:15px;letter-spacing:.1em;min-width:0}
+.lp-code svg{width:17px;height:17px;opacity:.85}
+.lp-online{display:flex;align-items:center;gap:12px;min-width:0}
+.lp-online:empty{display:none}
+.lp-avs{display:flex;flex:none;padding-left:4px}
+.lp-avs .avatar{width:32px;height:32px;font-size:12.5px;margin-left:-8px;box-shadow:0 0 0 2.5px var(--green)}
+.lp-more{background:var(--surface)!important;color:var(--green)!important;font-family:var(--f-mono)}
+.lp-on-txt{display:flex;flex-direction:column;min-width:0}
+.lp-on-txt b{font-size:15.5px;line-height:1.25}
+.lp-on-txt small{font-size:13px;opacity:.82;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-msg{margin:0;font-size:14px;line-height:1.4;opacity:.92}
+.lp-who{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--lp-line);padding-top:12px}
+.lp-label{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.live-panel .chip{background:var(--lp-soft);color:var(--green-ink);box-shadow:inset 0 0 0 1px var(--lp-line)}
+.live-panel .chip[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
+.lp-me{display:flex;align-items:center;gap:10px;border-top:1px solid var(--lp-line);padding-top:12px;font-size:14.5px;min-width:0}
+.lp-me .avatar{box-shadow:0 0 0 2px var(--lp-line)}
+.lp-me > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-link{margin-left:auto;border:0;background:var(--lp-soft);color:inherit;font-weight:600;font-size:13px;border-radius:99px;padding:0 12px;min-height:32px;flex:none}
+.lp-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.lp-actions.one{grid-template-columns:1fr}
+.lp-ghost{background:transparent;color:var(--green-ink);box-shadow:inset 0 0 0 1.5px var(--lp-line)}
+
+/* código do convite */
+.code-box{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface);border-radius:12px;padding:12px 12px 14px;box-shadow:inset 0 0 0 1px var(--line)}
+.code-val{display:flex;gap:.5em;font-family:var(--f-mono);font-weight:600;font-size:28px;letter-spacing:.12em;color:var(--ink);user-select:all;-webkit-user-select:all}
+.qr-wrap.sm canvas{width:min(190px,52vw)}
+.ds-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
 </style>
 
 <div class="wrap">
@@ -597,6 +624,7 @@ const I = {
   refresh: '<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
   lock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   live: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19 5a10 10 0 0 1 0 14M5 19A10 10 0 0 1 5 5"/></svg>',
+  qr: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M17 20h4v-3"/></svg>',
 };
 
 /* ---------- divisão em centavos (sem erro de arredondamento) ---------- */
@@ -891,8 +919,8 @@ const live = {
     try {
       await this.ref(code).set(body);
       this.last = toShared(draft);
-      saveDraft(); render(); this.subscribe();
-      toast('Comanda ao vivo criada. Copie o link e mande para a turma.');
+      saveDraft(); render(); this.subscribe(); window.scrollTo({ top: 0 });
+      inviteSheet();
     } catch (e) { console.warn(e); draft.live = null; render(); toast('Não foi possível criar a comanda ao vivo agora. Tente de novo em instantes.'); }
   },
   async subscribe() {
@@ -965,17 +993,20 @@ const live = {
     const code = draft.live?.code; const host = draft.live?.host;
     this.stop();
     if (code && host && store.db && !this.closed) store.queue(() => this.ref(code).update({ closed: true }));
-    draft.live = null; this.last = null; this.closed = false; this.readOnly = false;
+    draft.live = null; this.last = null; this.closed = false; this.readOnly = false; liveWho = false;
     try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch {}
     commit();
   },
 };
 
+// código em dois blocos de cinco, mais fácil de ler em voz alta na mesa
+const codeHTML = code => `<b class="code-val" aria-label="${esc(code.split('').join(' '))}">${code.length === 10 ? `<span>${esc(code.slice(0, 5))}</span><span>${esc(code.slice(5))}</span>` : `<span>${esc(code)}</span>`}</b>`;
+const codeShort = code => code.length === 10 ? code.slice(0, 5) + ' ' + code.slice(5) : code;
 // no iPhone, um link sempre abre no Safari, nunca no app da tela de início: a ponte é o código
 function openInAppSheet(code) {
   openSheet(`<div class="card-head"><h3>Comanda ao vivo</h3><button class="icon-btn close-x" id="oa-x" aria-label="Fechar">${I.x}</button></div>
-    <p class="hint" style="font-size:14.5px">Tem o Conta Fácil na tela de início? Abra o app, toque em <b>Entrar com código</b> e em <b>Colar</b>.</p>
-    <div class="live-code big"><span class="eyebrow">Código</span><b class="num">${esc(code)}</b></div>
+    <p class="hint" style="font-size:14.5px">Tem o Conta Fácil na tela de início? Copie o código, abra o app e toque em <b>Colar</b> em <b>Comanda de um amigo</b>.</p>
+    <div class="code-box"><span class="eyebrow">Código</span>${codeHTML(code)}</div>
     <button class="btn" id="oa-copy">${I.copy}Copiar código</button>
     <button class="btn ghost" id="oa-here">Continuar no navegador</button>
     <details class="oa-install"><summary>Ainda não tenho o app</summary><p class="hint">Toque em <b>Compartilhar</b> no Safari e em <b>Adicionar à Tela de Início</b>. Depois, abra o app pelo ícone e entre com o código.</p></details>`, s => {
@@ -984,22 +1015,50 @@ function openInAppSheet(code) {
     $('#oa-here', s).onclick = () => { closeSheet(); live.browserOk = true; live.boot(); };
   });
 }
-// contador de quem está online, atualizado sem redesenhar a tela
-function presenceHTML(compact) {
+// convite: QR code para quem está na mesa, link e código para mandar no grupo
+function inviteText() {
+  return `Comanda ao vivo${draft.place ? ' em ' + draft.place : ''} no Conta Fácil.\nCódigo: ${codeShort(draft.live.code)}\nNo app, toque em Colar em Comanda de um amigo, na tela inicial. Sem o app, abra o link:`;
+}
+function inviteSheet() {
+  if (!draft.live || draft.isExample) return;
+  const code = draft.live.code, link = live.link();
+  openSheet(`<div class="card-head"><div><h3>Convidar a turma</h3>${draft.place ? `<span class="hint">${esc(draft.place)}</span>` : ''}</div><button class="icon-btn close-x" id="iv-x" aria-label="Fechar">${I.x}</button></div>
+    <div class="qr-wrap sm"><canvas id="iv-qr" width="400" height="400" aria-label="QR code do convite"></canvas><span class="hint" id="iv-qr-msg">Gerando QR code…</span></div>
+    <div class="code-box"><span class="eyebrow">Código</span>${codeHTML(code)}</div>
+    ${navigator.share ? `<button class="btn mustard" id="iv-share">${I.share}Enviar convite</button>` : ''}
+    <div class="btn-row"><button class="btn ghost" id="iv-link">${I.copy}Copiar link</button><button class="btn ghost" id="iv-code">${I.copy}Copiar código</button></div>`, async s => {
+    $('#iv-x', s).onclick = closeSheet;
+    $('#iv-link', s).onclick = () => copyText(link, 'Link copiado.');
+    $('#iv-code', s).onclick = () => copyText(code, 'Código copiado.');
+    $('#iv-share', s)?.addEventListener('click', async () => {
+      const text = inviteText();
+      try { await navigator.share({ title: 'Conta Fácil', text, url: link }); } catch (e) { if (e && e.name !== 'AbortError') copyText(text + '\n' + link, 'Convite copiado.'); }
+    });
+    try { const m = await qrMatrix(link); const cv = $('#iv-qr'); if (cv) { drawQR(cv.getContext('2d'), m, 0, 0, 400); $('#iv-qr-msg').hidden = true; } }
+    catch { const msg = $('#iv-qr-msg'); if (msg) msg.textContent = 'Não deu para gerar o QR code agora.'; const cv = $('#iv-qr'); if (cv) cv.hidden = true; }
+  });
+}
+// quem está online, atualizado sem redesenhar a tela
+const joinNames = a => a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1];
+function presenceHTML() {
   if (!draft.live || !live.unsub || live.closed) return '';
-  const { count, named, anon } = live.people();
-  if (!count) return '';
-  const first = n => esc(n.name.split(' ')[0]) + (n.you ? ' (você)' : '');
-  if (compact) {
-    const names = named.map(first);
-    if (anon) names.push(anon === 1 ? '1 sem nome' : anon + ' sem nome');
-    return `${count} online · ${names.join(', ')}`;
-  }
-  return `<span class="eyebrow">${count} online agora</span><div class="online-list">${named.map(n => `<span class="on-chip">${avatar(n.name)}${first(n)}</span>`).join('')}${anon ? `<span class="on-chip anon">${anon === 1 ? '1 pessoa sem nome' : anon + ' pessoas sem nome'}</span>` : ''}</div>`;
+  const { named, anon, youAnon } = live.people();
+  const total = named.length + anon;
+  if (!total) return '';
+  const first = n => esc(n.name.split(' ')[0]);
+  const you = named.find(n => n.you), others = named.filter(n => !n.you), meIn = !!(you || youAnon);
+  const otherAnon = anon - (youAnon ? 1 : 0);
+  const shown = [...(you ? [you] : []), ...others].slice(0, 4);
+  const extra = total - shown.length;
+  const avs = shown.map(n => avatar(n.name)).join('') + (extra > 0 ? `<span class="avatar lp-more">${!shown.length && extra === 1 ? '?' : '+' + extra}</span>` : '');
+  const names = [...(meIn ? ['você'] : []), ...others.map(first)];
+  if (otherAnon > 0) names.push(otherAnon === 1 ? '1 sem nome' : otherAnon + ' sem nome');
+  const title = total === 1 && meIn ? 'Só você por enquanto' : plural(total, 'pessoa conectada', 'pessoas conectadas');
+  const sub = total === 1 && meIn ? '' : cap(joinNames(names));
+  return `<span class="lp-avs">${avs}</span><span class="lp-on-txt"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>`;
 }
 function paintPresence() {
-  const a = $('#live-online'); if (a) a.innerHTML = presenceHTML(false);
-  const b = $('#live-online-strip'); if (b) b.textContent = presenceHTML(true) ? ' · ' + presenceHTML(true) : '';
+  const a = $('#live-online'); if (a) a.innerHTML = presenceHTML();
 }
 document.addEventListener('visibilitychange', () => { if (!draft.live || !live.unsub) return; if (document.visibilityState === 'hidden') live.offline(); else live.beat(); });
 window.addEventListener('pagehide', () => live.offline());
@@ -1349,7 +1408,7 @@ function receiptHTML(r, b, calc) {
     : `<div class="rc-item"><div class="rc-line"><span>${esc(l.name)}</span><span>${BRL(l.value)}</span></div>
     <div class="rc-detail">${esc(lineDetail(l))}</div></div>`).join('') || '<div class="rc-muted">Nenhum item consumido</div>';
   let mid = '';
-  const dsLine = r.discount > 0 ? `<div class="rc-line"><span>${esc(b.discount.label || 'Desconto')}${b.discount.at === 'after' ? ' (sobre o total)' : ''}</span><span>−${BRL(r.discount)}</span></div>` : '';
+  const dsLine = r.discount > 0 ? `<div class="rc-line"><span>Desconto${b.discount.at === 'after' ? ' (sobre o total)' : ''}</span><span>−${BRL(r.discount)}</span></div>` : '';
   if (b.discount.at !== 'after') mid += dsLine;
   if (b.service.enabled) {
     if (!p.payService) mid += `<div class="rc-line rc-muted"><span>${serviceLabel(b)} · não paga</span><span>${BRL(0)}</span></div>`;
@@ -1377,7 +1436,7 @@ function receiptText(r, b, calc) {
   r.lines.forEach(l => { if (l.header) { L.push('', '== ' + l.header + ' (' + BRL(l.value) + ')'); return; } L.push(pad(l.name.slice(0, W - 12), BRL(l.value))); L.push('  ' + lineDetail(l)); });
   if (!r.lines.length) L.push('Nenhum item consumido');
   L.push('-'.repeat(W), pad('Consumo', BRL(r.gross)));
-  const dsT = r.discount > 0 ? pad((b.discount.label || 'Desconto') + (b.discount.at === 'after' ? ' (total)' : ''), '−' + BRL(r.discount)) : null;
+  const dsT = r.discount > 0 ? pad('Desconto' + (b.discount.at === 'after' ? ' (total)' : ''), '−' + BRL(r.discount)) : null;
   if (dsT && b.discount.at !== 'after') L.push(dsT);
   if (b.service.enabled) L.push(pad(serviceLabel(b) + (r.person.payService ? '' : ' · não paga'), BRL(r.service)));
   if (b.couvert.enabled) L.push(pad('Couvert' + (r.cvPayers > 1 ? ` (${r.cvPayers}x)` : '') + (r.person.payCouvert ? '' : ' · não paga'), BRL(r.couvert)));
@@ -1433,31 +1492,35 @@ function render(opts = {}) {
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; pickSel = null; selItem = null; render(); window.scrollTo({ top: 0 }); } });
 
 /* ---------- aba Comanda ---------- */
+let liveWho = false; // lista "Quem é você?" aberta depois de já ter escolhido
 function liveCardHTML() {
   if (!draft.live) {
     if (!store.db && !draft.isExample) return '';
-    return `<div class="live-offer" id="live-offer"><span>${I.live}<span><b>Comanda ao vivo</b></span></span>
-      <button class="btn small ghost" id="live-start">Compartilhar</button></div>`;
+    return `<div class="card ex-card" id="live-offer">
+      <div class="ex-head"><span class="ex-icon lo-icon">${I.live}</span><span><b>Comanda ao vivo</b><span class="hint">Cada um marca o que consumiu pelo próprio celular</span></span></div>
+      <button class="btn small" id="live-start">${I.share}Compartilhar com a turma</button></div>`;
   }
-  const me = LS.get('me.' + draft.live.code, '');
-  const connected = !!live.unsub;
-  const status = live.closed ? '<span class="tag">encerrada</span>' : (connected ? '<span class="live-dot" aria-hidden="true"></span>' : '<span class="tag">desconectada</span>');
-  return `<div class="card" id="live-card">
-    <div class="card-head"><h2 style="display:flex;align-items:center;gap:8px">Comanda ao vivo ${status}</h2>
-      <span class="hint">${draft.live.host ? 'Você criou esta comanda' : 'Você entrou numa comanda compartilhada'}</span></div>
-    ${live.closed ? `<div class="status warn">${I.warn}<span>A comanda ao vivo foi encerrada por quem a criou. Os dados continuam aqui para você fechar a comanda.</span></div>` : ''}
-        ${draft.live.host && !live.closed ? `
-      <div class="linkbox"><code>${esc(live.link())}</code><button class="btn small" id="live-copy">${I.copy}Copiar link</button></div>
-      <div class="live-code"><span class="eyebrow">Código da comanda</span><b class="num">${esc(draft.live.code)}</b></div>
-      ${navigator.share ? `<button class="btn small mustard" id="live-invite">${I.share}Convidar a turma</button>` : ''}` : ''}
-    <div class="field" id="live-online">${presenceHTML(false)}</div>
-    ${!live.closed && draft.people.length ? `<div class="field"><span class="eyebrow">Quem é você nesta comanda?</span>
-      <div class="chips">${draft.people.map(p => `<button class="chip" data-me="${p.id}" aria-pressed="${me === p.id}">${esc(p.name)}</button>`).join('')}</div></div>` : ''}
-    <div class="actions-bar">
-      ${!connected && !live.closed ? '<button class="btn small" id="live-reconnect">Reconectar</button>' : ''}
-      <button class="btn small ghost" id="live-end">${draft.live.host && !live.closed ? 'Encerrar comanda ao vivo' : 'Sair da comanda ao vivo'}</button>
+  const me = live.me(), mePerson = draft.people.find(p => p.id === me);
+  const connected = !!live.unsub, closed = live.closed, host = draft.live.host && !closed;
+  const st = closed ? ['warn', 'Encerrada'] : connected ? ['on', 'Ao vivo'] : !store.ready ? ['', 'Conectando…'] : ['warn', 'Sem conexão'];
+  let who = '';
+  if (!closed && draft.people.length) {
+    who = mePerson && !liveWho
+      ? `<div class="lp-me">${avatar(mePerson.name)}<span>Você é <b>${esc(mePerson.name)}</b></span><button class="lp-link" id="live-who">Trocar</button></div>`
+      : `<div class="lp-who"><span class="lp-label">Quem é você?</span>
+        <div class="chips">${draft.people.map(p => `<button class="chip" data-me="${p.id}" aria-pressed="${me === p.id}">${esc(p.name)}</button>`).join('')}</div></div>`;
+  }
+  const main = closed ? '' : connected ? `<button class="btn mustard" id="live-invite">${I.share}Convidar</button>`
+    : store.ready ? `<button class="btn mustard" id="live-reconnect">${I.refresh}Reconectar</button>` : '';
+  return `<section class="live-panel" id="live-card" aria-label="Comanda ao vivo">
+    <div class="lp-head">
+      <span class="lp-status ${st[0]}"><span class="lp-dot" aria-hidden="true"></span>${st[1]}</span>
+      ${closed ? '' : `<button class="lp-code" id="live-code" aria-label="Código ${esc(draft.live.code.split('').join(' '))}. Mostrar convite">${esc(codeShort(draft.live.code))}${I.qr}</button>`}
     </div>
-  </div>`;
+    ${closed ? '<p class="lp-msg">Quem criou encerrou a comanda ao vivo. Os dados continuam aqui para vocês fecharem a conta.</p>' : `<div class="lp-online" id="live-online">${presenceHTML()}</div>`}
+    ${who}
+    <div class="lp-actions ${main ? '' : 'one'}">${main}<button class="btn lp-ghost" id="live-end">${host ? 'Encerrar' : 'Sair'}</button></div>
+  </section>`;
 }
 
 /* ---------- uso derivado do histórico (contagens sempre batem com as contas salvas) ---------- */
@@ -1588,7 +1651,7 @@ async function receiptCanvas(r, b, calc) {
   r.lines.forEach(l => { if (l.header) { R('gap', { h: 4 }); R('pair', { left: l.header, right: BRL(l.value), font: mono(600, 13), lh: 20, color: C.green }); return; } R('pair', { left: l.name, right: BRL(l.value), font: mono(400, 12.5), lh: 18 }); R('left', { text: lineDetail(l), font: mono(400, 11), lh: 15, color: C.muted, indent: 8 }); R('gap', { h: 5 }); });
   R('dash');
   R('pair', { left: 'Consumo', right: BRL(r.gross), font: mono(400, 12.5), lh: 19 });
-  const dsl = r.discount > 0 ? () => R('pair', { left: (b.discount.label || 'Desconto') + (b.discount.at === 'after' ? ' (sobre o total)' : ''), right: '−' + BRL(r.discount), font: mono(400, 12.5), lh: 19 }) : null;
+  const dsl = r.discount > 0 ? () => R('pair', { left: 'Desconto' + (b.discount.at === 'after' ? ' (sobre o total)' : ''), right: '−' + BRL(r.discount), font: mono(400, 12.5), lh: 19 }) : null;
   if (dsl && b.discount.at !== 'after') dsl();
   if (b.service.enabled) R('pair', { left: serviceLabel(b) + (r.person.payService ? '' : ' · não paga'), right: BRL(r.service), font: mono(400, 12.5), lh: 19, color: r.person.payService ? C.ink : C.muted });
   if (b.couvert.enabled) R('pair', { left: couvertLabel(r) + (r.person.payCouvert ? '' : ' · não paga'), right: BRL(r.couvert), font: mono(400, 12.5), lh: 19, color: r.person.payCouvert ? C.ink : C.muted });
@@ -1852,9 +1915,11 @@ const viewInicio = {
         : `<button class="btn small mustard" id="go-example">Ver exemplo</button>`}
     </div>
 
-    ${store.db && !(d.live && inProgress) ? `<div class="card join">
-      <div class="card-head"><h2>Entrar com código</h2></div>
-      <form id="join-form" autocomplete="off"><input id="join-code" type="text" placeholder="Código" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código da comanda" data-keep>${navigator.clipboard?.readText ? '<button class="btn ghost" type="button" id="join-paste">Colar</button>' : ''}<button class="btn" type="submit">Entrar</button></form>
+    ${store.db && !(d.live && inProgress) ? `<div class="card ex-card join" id="join-card">
+      <div class="ex-head"><span class="ex-icon join-icon">${I.users}</span><span><b>Comanda de um amigo</b><span class="hint">Entre com o código que te mandaram e marque o que você consumiu</span></span></div>
+      <form id="join-form" autocomplete="off">
+        <span class="join-field"><input id="join-code" type="text" placeholder="Código ou link" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link da comanda" data-keep>${navigator.clipboard?.readText ? '<button class="join-paste" type="button" id="join-paste">Colar</button>' : ''}</span>
+        <button class="btn" type="submit">Entrar</button></form>
     </div>` : ''}
 
     ${bills.length ? `<div class="card">
@@ -1886,7 +1951,7 @@ const viewInicio = {
     });
     $('#join-form', v)?.addEventListener('submit', e => {
       e.preventDefault(); document.activeElement?.blur?.();
-      const raw = $('#join-code', v).value.trim().toLowerCase();
+      const raw = $('#join-code', v).value.trim().toLowerCase().replace(/\s+/g, '');
       const m = /#m([a-z0-9]{6,16})/.exec(raw) || /^([a-z0-9]{6,16})$/.exec(raw);
       if (!m) { toast('Código inválido. Ele tem 10 letras e números.'); return; }
       live.browserOk = true; // quem digita o código já está onde quer usar
@@ -2038,7 +2103,7 @@ const viewComanda = {
 
     return `
     ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small mustard" id="clear-example">Sair</button></span></div>` : ''}
-    ${d.live ? `<button class="live-strip" id="live-jump">${live.unsub && !live.closed ? '<span class="live-dot" aria-hidden="true"></span>' : ''}Comanda ao vivo ${live.closed ? 'encerrada' : live.unsub ? '' : 'desconectada'}<span id="live-online-strip">${presenceHTML(true) ? ' · ' + presenceHTML(true) : ''}</span></button>` : ''}
+    ${d.live ? liveCardHTML() : ''}
     ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. Alterações aqui podem ser salvas de novo em <b>Fechar</b>.</span><button class="btn small mustard" id="new-bill-top">Encerrar edição</button></div>` : ''}
     <div class="card">
       <div class="place-row">
@@ -2077,7 +2142,7 @@ const viewComanda = {
       ${d.items.length && d.people.length ? `<button class="btn mustard" id="go-close">Fechar a comanda</button>` : ''}
     </div>
 
-    ${liveCardHTML()}
+    ${d.live ? '' : liveCardHTML()}
 
     ${!d.isExample && (d.items.length || d.people.length || d.place) ? `<button class="btn ghost reset-btn" id="reset">${I.refresh}Limpar ou excluir comanda</button>` : ''}`;
   },
@@ -2086,7 +2151,6 @@ const viewComanda = {
     $('#clear-example', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); });
     $('#ex-guide', v)?.addEventListener('click', () => tour.start());
     $('#reset', v)?.addEventListener('click', resetSheet);
-    $('#live-jump', v)?.addEventListener('click', () => $('#live-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     $('#new-bill-top', v)?.addEventListener('click', () => { pending = {}; draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 }); });
     const addPerson = name => {
       name = name.trim().replace(/\s+/g, ' ');
@@ -2109,11 +2173,9 @@ const viewComanda = {
 
     // mesa ao vivo
     $('#live-start', v)?.addEventListener('click', () => live.start());
-    $('#live-copy', v)?.addEventListener('click', () => copyText(live.link(), 'Link da comanda copiado.'));
-    $('#live-invite', v)?.addEventListener('click', async () => {
-      const text = `Comanda ao vivo${d.place ? ' em ' + d.place : ''} no Conta Fácil.\nCódigo: ${d.live.code}\nNo app, toque em Entrar com código. Sem o app, abra o link:`;
-      try { await navigator.share({ title: 'Conta Fácil', text, url: live.link() }); } catch (e) { if (e && e.name !== 'AbortError') copyText(text + '\n' + live.link(), 'Convite copiado.'); }
-    });
+    $('#live-invite', v)?.addEventListener('click', inviteSheet);
+    $('#live-code', v)?.addEventListener('click', inviteSheet);
+    $('#live-who', v)?.addEventListener('click', () => { liveWho = true; render({ preserve: true }); });
     $('#live-reconnect', v)?.addEventListener('click', () => { live.stop(); live.subscribe(); });
     $('#live-end', v)?.addEventListener('click', () => {
       const host = d.live.host && !live.closed;
@@ -2121,7 +2183,7 @@ const viewComanda = {
         host ? 'Os amigos param de conseguir marcar itens. A comanda continua aqui para você fechar.' : 'Você deixa de receber as atualizações. Uma cópia da comanda fica aqui com você.',
         host ? 'Encerrar' : 'Sair', () => live.end());
     });
-    $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { const code = d.live.code; LS.set('me.' + code, LS.get('me.' + code, '') === b.dataset.me ? '' : b.dataset.me); live.beat(); render(); }));
+    $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { LS.set('me.' + d.live.code, b.dataset.me); liveWho = false; live.beat(); render({ preserve: true }); }));
 
     $('#person-form', v).addEventListener('submit', e => { e.preventDefault(); if (isTouch) document.activeElement?.blur?.(); addPerson($('#person-name', v).value); });
     $$('[data-rm-person]', v).forEach(b => b.addEventListener('click', () => {
@@ -2458,7 +2520,7 @@ const viewFechar = {
           <button data-mode="fixed" aria-pressed="${s.mode === 'fixed'}">Valor fixo</button>
         </div>
         ${s.mode === 'pct' && s.pct !== 10 ? `<div class="field" style="width:110px"><input id="svc-pct" type="text" inputmode="decimal" value="${pctStr(s.pct)}" aria-label="Percentual" data-keep></div><span class="hint">%</span>` : ''}
-        ${s.mode === 'fixed' ? `<div class="field" style="width:140px"><input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep></div><span class="hint">dividido proporcionalmente ao consumo</span>` : ''}
+        ${s.mode === 'fixed' ? `<div class="field" style="width:140px"><input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep></div>` : ''}
       </div>
       <div class="field"><span class="eyebrow">Se alguém não pagar o serviço</span>
         <div class="seg" role="group" aria-label="O que fazer com o serviço de quem não paga">
@@ -2474,13 +2536,12 @@ const viewFechar = {
       <div class="row" style="align-items:center"><div class="field" style="width:140px"><input id="cv-val" type="text" inputmode="numeric" data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa" data-keep></div><span class="hint">por pessoa</span></div>
     </div>` : ''}
 
-    ${ds.enabled ? `<div class="card">
+    ${ds.enabled ? `<div class="card" id="ds-card">
       <div class="card-head"><h2>Desconto</h2>
         <label class="switch"><input type="checkbox" id="ds-on" ${ds.enabled ? 'checked' : ''}><span class="track"></span>Aplicar</label></div>
-      <div class="row" style="align-items:flex-end">
-        <div class="field grow"><label for="ds-label">Motivo</label><input id="ds-label" type="text" value="${esc(ds.label)}" placeholder="Ex.: Happy hour" data-keep></div>
+      <div class="ds-row">
         <div class="seg" role="group" aria-label="Tipo de desconto"><button data-dsmode="value" aria-pressed="${ds.mode === 'value'}">R$</button><button data-dsmode="pct" aria-pressed="${ds.mode === 'pct'}">%</button></div>
-        <div class="field" style="width:120px"><label for="ds-val">${ds.mode === 'pct' ? 'Percentual' : 'Valor'}</label><input id="ds-val" type="text" ${ds.mode === 'pct' ? 'inputmode="decimal"' : 'inputmode="numeric" data-money'} value="${ds.mode === 'pct' ? pctStr(ds.pct) : moneyInput(ds.value)}" data-keep></div>
+        <input id="ds-val" type="text" ${ds.mode === 'pct' ? 'inputmode="decimal"' : 'inputmode="numeric" data-money'} value="${ds.mode === 'pct' ? pctStr(ds.pct) + '%' : moneyInput(ds.value)}" aria-label="${ds.mode === 'pct' ? 'Percentual de desconto' : 'Valor do desconto'}" data-keep>
       </div>
       <div class="field"><span class="eyebrow">Onde o desconto incide</span>
         <div class="seg" role="group" aria-label="Onde o desconto incide">
@@ -2539,7 +2600,6 @@ const viewFechar = {
     $$('[data-policy]', v).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.policy; commit(); }));
     // desconto
     $('#ds-on', v)?.addEventListener('change', e => { ds.enabled = e.target.checked; commit(); });
-    $('#ds-label', v)?.addEventListener('change', e => { ds.label = e.target.value.trim() || 'Desconto'; commit(); });
     $$('[data-dsat]', v).forEach(b => b.addEventListener('click', () => { ds.at = b.dataset.dsat; commit(); }));
     $$('[data-dsmode]', v).forEach(b => b.addEventListener('click', () => { ds.mode = b.dataset.dsmode; commit(); }));
     $('#ds-val', v)?.addEventListener('change', e => {
@@ -2793,12 +2853,12 @@ const viewCadastros = {
 /* ---------- guia interativo (só na comanda de exemplo) ---------- */
 const TOUR = [
   { tab: 'inicio', sel: '#start-form', t: 'Abrir uma comanda', d: 'Digite o nome do bar ou restaurante e toque em Abrir comanda. Os lugares onde você já foi aparecem como atalhos.' },
-  { tab: 'inicio', sel: '.join', skip: true, t: 'Entrar numa comanda ao vivo', d: 'Quando alguém da turma compartilhar uma comanda, digite aqui o código que receber.' },
+  { tab: 'inicio', sel: '.join', skip: true, t: 'Comanda de um amigo', d: 'Quando alguém da turma compartilhar a comanda ao vivo, cole aqui o código ou o link que recebeu. Assim você marca o que consumiu pelo seu celular.' },
   { tab: 'comanda', sel: '#people-card', t: 'Pessoas na mesa', d: 'Adicione quem está dividindo a conta. Nomes que você já usou aparecem como sugestão, e o valor ao lado de cada um é o consumo até agora.' },
   { tab: 'comanda', sel: '#item-card', t: 'Lançar um pedido', d: 'Informe produto, quantidade e preço da unidade. O app lembra o preço de cada produto em cada lugar e preenche sozinho na próxima vez.' },
   { tab: 'comanda', sel: '.item.open', alt: '.items > .item:last-child', t: 'Dividir um item', d: 'Todo item novo chega marcado para todos. Em Como dividir, escolha Igual ou Por unidade, quando cada um pediu uma quantidade diferente. Toque nos nomes para tirar ou incluir alguém e depois em Confirmar divisão. Experimente!' },
   { tab: 'comanda', sel: '.item.locked', t: 'Pedir mais', d: 'Num item confirmado, use +1 e −1 para mudar a quantidade ou quem consumiu e toque em Salvar. Toque no item para ver Alterar, que corrige nome e preço, e Remover.' },
-  { tab: 'comanda', sel: '#live-offer', alt: '#live-card', skip: true, t: 'Comanda ao vivo', d: 'Compartilhe a comanda com a turma: cada um marca o que consumiu pelo próprio celular e todos veem as mudanças na hora. Você recebe um link e um código para mandar no grupo.' },
+  { tab: 'comanda', sel: '#live-offer', alt: '#live-card', skip: true, t: 'Comanda ao vivo', d: 'Compartilhe a comanda com a turma: cada um marca o que consumiu pelo próprio celular e todos veem as mudanças na hora. Quem está na mesa lê o QR code; para os outros, mande o convite no grupo.' },
   { tab: 'comanda', sel: '#go-close', t: 'Hora de pagar', d: 'Toque em Fechar a comanda para ver quanto cada um deve.' },
   { tab: 'fechar', sel: '.sum-grid', t: 'Resumo da conta', d: 'Consumo, serviço, ajustes e o total. Confira se o total bate com a conta do lugar.' },
   { tab: 'fechar', sel: '#svc-card', t: 'Taxa de serviço', d: 'Escolha 10%, outro percentual ou um valor fixo. Se alguém não paga o serviço, decida se a taxa diminui ou é redistribuída entre os demais.' },
