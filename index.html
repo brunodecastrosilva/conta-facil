@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <title>Conta Fácil</title>
 <meta name="description" content="Divida a comanda sem calculadora">
 <meta name="theme-color" content="#EAF0EA" media="(prefers-color-scheme: light)">
@@ -40,6 +40,8 @@
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.25); color-scheme:dark}
 
 *{box-sizing:border-box}
+html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,a,label,input,select,textarea,[role=button]{touch-action:manipulation}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{overflow-x:clip;max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 64px}
 button,input,select{font:inherit;color:inherit}
@@ -489,6 +491,25 @@ body.is-dragging .drop-out{display:flex}
 .actions-bar{display:grid;grid-template-columns:1fr;gap:8px}
 .btn-row .btn{padding-inline:6px;gap:6px}
 .receipt-wrap > .btn{white-space:normal;text-align:center}
+
+/* guia interativo */
+.tour{position:fixed;inset:0;z-index:45;pointer-events:none}
+.tour.dim{background:rgba(8,16,12,.45)}
+.tour-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 2px var(--mustard),0 0 0 9999px rgba(8,16,12,.55);transition:left .2s,top .2s,width .2s,height .2s;pointer-events:none}
+.tour-card{position:fixed;left:16px;right:16px;max-width:440px;margin-inline:auto;background:var(--surface);color:var(--ink);border-radius:16px;padding:12px 14px 14px;box-shadow:0 12px 34px rgba(0,0,0,.3);pointer-events:auto;display:flex;flex-direction:column;gap:6px;transition:top .2s}
+.tour-card.dock{top:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.tour-card h3{font-family:var(--f-display);font-weight:800;font-size:18px;margin:0}
+.tour-card p{margin:0;font-size:14px;color:var(--muted);line-height:1.4}
+.tour-top{display:flex;align-items:center;justify-content:space-between}
+.tour-x{border:0;background:none;color:var(--muted);width:32px;height:32px;display:grid;place-items:center;border-radius:8px;margin-right:-6px}
+.tour-bar{height:3px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.tour-bar i{display:block;height:100%;background:var(--mustard)}
+.tour-act{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.ex-card{gap:10px}
+.ex-head{display:flex;align-items:center;gap:12px}
+.ex-head > span:last-child{display:flex;flex-direction:column;gap:1px}
+.ex-icon{width:38px;height:38px;border-radius:10px;background:var(--mustard-soft);color:var(--mustard-ink);display:grid;place-items:center;flex:none}
+.ex-banner .grp{display:flex;gap:6px}
 </style>
 
 <div class="wrap">
@@ -839,7 +860,7 @@ const live = {
         if (!snap.exists) { toast('Essa comanda ao vivo não foi encontrada.'); return draft.live && this.subscribe(); }
         const data = snap.data();
         if (data.closed) { toast('Essa comanda ao vivo já foi encerrada.'); return draft.live && this.subscribe(); }
-        const join = () => { this.stop(); draft = fromShared(data, { ...blankDraft(), active: true, live: { code, host: false } }); this.last = toShared(draft); tab = 'comanda'; LS.set('draft', draft); render(); this.subscribe(); toast('Você entrou na comanda ao vivo.'); };
+        const join = () => { this.stop(); draft = fromShared(data, { ...blankDraft(), active: true, live: { code, host: false } }); this.last = toShared(draft); tab = 'comanda'; saveDraft(); render(); this.subscribe(); toast('Você entrou na comanda ao vivo.'); };
         draft.live ? join() : confirmReplace(join);
       } catch (e) { console.warn(e); toast('Não foi possível abrir a comanda ao vivo.'); }
     } else if (draft.live && store.db) this.subscribe();
@@ -847,13 +868,13 @@ const live = {
   async start() {
     if (!store.db) { toast('A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.'); return; }
     const code = Array.from({ length: 10 }, () => 'abcdefghjkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 31)]).join('');
-    draft.isExample = false;
+    if (draft.isExample) { toast('No exemplo, a comanda ao vivo fica desligada.'); return; }
     draft.live = { code, host: true };
     const body = { ...toShared(draft), closed: false, v: 1 };
     try {
       await this.ref(code).set(body);
       this.last = toShared(draft);
-      LS.set('draft', draft); render(); this.subscribe();
+      saveDraft(); render(); this.subscribe();
       toast('Comanda ao vivo criada. Copie o link e mande para a turma.');
     } catch (e) { console.warn(e); draft.live = null; render(); toast('Não foi possível criar a comanda ao vivo agora. Tente de novo em instantes.'); }
   },
@@ -869,7 +890,7 @@ const live = {
       const next = fromShared(data, draft);
       const nextShared = toShared(next);
       if (JSON.stringify(nextShared) === JSON.stringify(toShared(draft)) && this.last) { this.last = nextShared; render({ preserve: true }); return; }
-      draft = next; this.last = nextShared; LS.set('draft', draft); render({ preserve: true });
+      draft = next; this.last = nextShared; saveDraft(); render({ preserve: true });
     }, err => { console.warn('live', err); this.unsub = null; toast('A conexão com a comanda ao vivo caiu. Toque em Reconectar.'); render({ preserve: true }); });
     render({ preserve: true });
   },
@@ -894,7 +915,7 @@ const live = {
     if (code && host && store.db && !this.closed) store.queue(() => this.ref(code).update({ closed: true }));
     draft.live = null; this.last = null; this.closed = false; this.readOnly = false;
     try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch {}
-    commit({ keepExample: true });
+    commit();
   },
 };
 
@@ -910,25 +931,42 @@ function exampleDraft() {
     { id: newId(), o: 2, name: 'Porção de batata com cheddar', qty: 1, price: 3800, fq: 0, mode: 'equal', lk: true, a: { [a.id]: 1, [b.id]: 1, [c.id]: 1 } },
     { id: newId(), o: 3, name: 'Caipirinha de limão', qty: 2, price: 2200, fq: 0, mode: 'equal', lk: true, a: { [c.id]: 1 } },
     { id: newId(), o: 4, name: 'Água com gás', qty: 1, price: 600, fq: 0, mode: 'equal', lk: true, a: { [e.id]: 1 } },
+    { id: newId(), o: 5, name: 'Porção de calabresa', qty: 1, price: 4200, fq: 0, mode: 'equal', lk: false, a: { ...all } },
   ];
   d.payMode = 'single'; d.payer = a.id;
+  d.demoPix = { Ana: 'ana@exemplo.com.br' };
+  d.active = true;
   return d;
 }
-let draft = migrate(LS.get('draft', null) || blankDraft());
-if (draft.isExample) draft.active = false;
+// a comanda de exemplo nunca é gravada: a comanda real continua guardada e volta ao sair do exemplo
+const loadRealDraft = () => { const d = migrate(LS.get('draft', null) || blankDraft()); return d.isExample ? blankDraft() : d; };
+let draft = loadRealDraft();
+const saveDraft = () => { if (!draft.isExample) LS.set('draft', draft); };
+function enterExample() {
+  if (draft.live) { toast('Saia da comanda ao vivo antes de abrir o exemplo.'); return; }
+  pending = {}; draft = exampleDraft(); tab = 'comanda'; render(); window.scrollTo({ top: 0 });
+  tour.start();
+}
+function exitExample() {
+  if (!draft.isExample) return;
+  tour.stop(); pending = {}; draft = loadRealDraft();
+}
 const fixCatalog = c => ({ me: '', people: [], products: [], ...c, products: (c?.products || []).map(p => ({ prices: {}, ...p })) });
 let catalog = fixCatalog(LS.get('catalog', {}));
 let bills = LS.get('bills', []).map(migrate);
 let tab = /^#m[a-z0-9]{6,16}$/.test(location.hash || '') ? 'comanda' : 'inicio';
-let editingItemId = null;
 
 function commit(opts = {}) {
   if (draft.live && live.readOnly) { toast('Você só pode acompanhar esta comanda.'); if (live.last) draft = fromShared(live.last, draft); render(); return; }
-  if (!opts.keepExample) draft.isExample = false;
-  LS.set('draft', draft);
+  saveDraft();
   if (draft.live) live.push();
   render();
 }
+
+/* ---------- sem zoom (pinça e duplo toque) ---------- */
+['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+// duplo toque: resolvido no CSS (touch-action), sem atrasar toques rápidos em +1
 
 /* ---------- teclado no celular ---------- */
 const isTouch = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch { return false; } })();
@@ -1120,7 +1158,7 @@ function payNote(r, c) {
   return L;
 }
 // chave Pix guardada no cadastro da pessoa
-const pixOf = name => (catalog.people.find(p => norm(p.name) === norm(name))?.pix || '').trim();
+const pixOf = name => (draft.isExample && draft.demoPix && draft.demoPix[name]) || (catalog.people.find(p => norm(p.name) === norm(name))?.pix || '').trim();
 // 11 dígitos que valem como CPF e também parecem celular (DDD + 9): só a pessoa sabe
 function pixAmbiguous(k) {
   k = String(k || '').trim(); const dig = k.replace(/\D/g, '');
@@ -1129,6 +1167,7 @@ function pixAmbiguous(k) {
 }
 // guarda a chave já no formato do Pix (CPF só dígitos, celular com +55); se não der para saber, pergunta
 function savePixKey(name, key, done) {
+  if (draft.isExample) { toast('No exemplo, nada é salvo.'); return; }
   key = String(key || '').trim();
   const finish = k => { setPix(name, k); done && done(k); };
   if (!pixAmbiguous(key)) return finish(key ? normPixKey(key) : '');
@@ -1210,8 +1249,7 @@ function pixSheet(debt, back) {
   openSheet(`<div class="card-head"><div><h3>Pix para ${esc(debt.toName)}</h3><span class="hint num">${BRL(debt.value)}</span></div><button class="icon-btn close-x" id="px-x" aria-label="Fechar">${I.x}</button></div>
     <div class="qr-wrap"><canvas id="px-qr" width="480" height="480" aria-label="QR code do Pix"></canvas><span class="hint" id="px-qr-msg">Gerando QR code…</span></div>
     <div class="field"><span class="eyebrow">Pix copia e cola</span><textarea class="pix-code" readonly rows="4">${esc(code)}</textarea></div>
-    <button class="btn" id="px-copy">${I.copy}Copiar Pix copia e cola</button>
-    <p class="hint">No app do banco, escolha <b>Pix copia e cola</b> ou leia o QR code. O valor já vem preenchido. Confira o nome de quem recebe antes de pagar.</p>`, async s => {
+    <button class="btn" id="px-copy">${I.copy}Copiar Pix copia e cola</button>`, async s => {
     $('#px-x', s).onclick = back || closeSheet;
     $('#px-copy', s).onclick = () => copyText(code, 'Pix copia e cola copiado.');
     try { const m = await qrMatrix(code); const cv = $('#px-qr'); if (cv) { drawQR(cv.getContext('2d'), m, 0, 0, 480); $('#px-qr-msg').hidden = true; } }
@@ -1266,7 +1304,7 @@ function receiptText(r, b, calc) {
 }
 async function copyText(text, okMsg) {
   try { await navigator.clipboard.writeText(text); toast(okMsg); return; } catch {}
-  openSheet(`<h3>Copiar</h3><p class="hint">Selecione o texto abaixo e copie.</p>
+  openSheet(`<h3>Copiar</h3>
     <textarea id="cp" readonly style="width:100%;min-height:220px;font-family:var(--f-mono);font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px">${esc(text)}</textarea>
     <div class="sheet-actions"><button class="btn" id="cp-x">Fechar</button></div>`, s => { const t = $('#cp', s); t.focus(); t.select(); $('#cp-x', s).onclick = closeSheet; });
 }
@@ -1305,14 +1343,15 @@ function render(opts = {}) {
     Object.entries(keep).forEach(([id, val]) => { const i = document.getElementById(id); if (i) i.value = val; });
     if (focusId) { const f = document.getElementById(focusId); if (f) { f.focus({ preventScroll: true }); try { sel && f.setSelectionRange(sel[0], sel[1]); } catch {} } }
   }
+  if (typeof tour !== 'undefined' && tour.active()) { if (!draft.isExample) tour.stop(); else requestAnimationFrame(() => tour.place()); }
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; editingItemId = null; pickSel = null; render(); window.scrollTo({ top: 0 }); } });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; pickSel = null; render(); window.scrollTo({ top: 0 }); } });
 
 /* ---------- aba Comanda ---------- */
 function liveCardHTML() {
   if (!draft.live) {
-    if (!store.db) return '';
-    return `<div class="live-offer"><span>${I.live}<span><b>Comanda ao vivo</b><span class="hint">Cada amigo marca o que consumiu pelo próprio celular.</span></span></span>
+    if (!store.db && !draft.isExample) return '';
+    return `<div class="live-offer" id="live-offer"><span>${I.live}<span><b>Comanda ao vivo</b></span></span>
       <button class="btn small ghost" id="live-start">Compartilhar</button></div>`;
   }
   const me = LS.get('me.' + draft.live.code, '');
@@ -1325,15 +1364,9 @@ function liveCardHTML() {
         ${draft.live.host && !live.closed ? `
       <div class="linkbox"><code>${esc(live.link())}</code><button class="btn small" id="live-copy">${I.copy}Copiar link</button></div>
       <div class="live-code"><span class="eyebrow">Código da comanda</span><b class="num">${esc(draft.live.code)}</b></div>
-      ${navigator.share ? `<button class="btn small mustard" id="live-invite">${I.share}Convidar a turma</button>` : ''}
-      <ol class="steps">
-        <li>Mande o link ou o código no grupo.</li>
-        <li>Quem tem o app na tela de início abre o app, toca em <b>Entrar com código</b> e digita o código. Quem não tem pode abrir o link no navegador.</li>
-        <li>Cada um toca no próprio nome nos itens que consumiu.</li>
-      </ol>` : ''}
+      ${navigator.share ? `<button class="btn small mustard" id="live-invite">${I.share}Convidar a turma</button>` : ''}` : ''}
     ${!live.closed && draft.people.length ? `<div class="field"><span class="eyebrow">Quem é você nesta comanda?</span>
-      <div class="chips">${draft.people.map(p => `<button class="chip" data-me="${p.id}" aria-pressed="${me === p.id}">${esc(p.name)}</button>`).join('')}</div>
-      ${me ? '<p class="hint">Seu nome aparece com contorno amarelo nos itens. Toque nele para marcar o que você consumiu.</p>' : '<p class="hint">Não está na lista? Adicione seu nome em Pessoas na comanda.</p>'}</div>` : ''}
+      <div class="chips">${draft.people.map(p => `<button class="chip" data-me="${p.id}" aria-pressed="${me === p.id}">${esc(p.name)}</button>`).join('')}</div></div>` : ''}
     <div class="actions-bar">
       ${!connected && !live.closed ? '<button class="btn small" id="live-reconnect">Reconectar</button>' : ''}
       <button class="btn small ghost" id="live-end">${draft.live.host && !live.closed ? 'Encerrar comanda ao vivo' : 'Sair da comanda ao vivo'}</button>
@@ -1411,7 +1444,6 @@ function recoverSheet() {
   const { missingProducts: mp, missingPeople: mu } = historyCatalog();
   const priceList = p => Object.values(p.prices).sort((a, b) => b.last - a.last).map(e => `${e.place} ${BRL(e.price)}`).join(' · ') || BRL(p.price);
   openSheet(`<div class="card-head"><h3>Recuperar do histórico</h3><button class="icon-btn close-x" id="rc-x" aria-label="Fechar">${I.x}</button></div>
-    <p class="hint">Produtos e pessoas das comandas salvas que não estão nos cadastros. Os preços vêm da comanda mais recente de cada local.</p>
     ${mp.length ? `<div class="card-head"><span class="eyebrow">Produtos (${mp.length})</span><button class="btn small ghost" data-all="rp">Marcar todos</button></div>
       <div class="rec-list">${mp.map((p, i) => `<label class="rec-row"><input type="checkbox" data-rp="${i}" checked><span><b>${esc(p.name)}</b><small>${esc(priceList(p))}</small></span></label>`).join('')}</div>` : ''}
     ${mu.length ? `<div class="card-head"><span class="eyebrow">Pessoas (${mu.length})</span><button class="btn small ghost" data-all="ru">Marcar todos</button></div>
@@ -1611,8 +1643,7 @@ async function shareReceipt(r, b, calc, back) {
       <button class="share-btn" id="sr-pdf">${I.file}<span>PDF</span></button>
       <button class="share-btn" id="sr-png">${I.image}<span>Imagem</span></button>
     </div>
-    ${(() => { const ds = pixDebts(calc).filter(x => x.unit === r.id); return ds.map(x => `<button class="btn ghost" data-pixpay="${x.pid}">Pix copia e cola de ${esc(calc.per[x.pid].person.name.split(' ')[0])} · ${BRL(x.value)}</button>`).join(''); })()}
-    <p class="hint">${dl ? 'No iPhone, PDF e Imagem abrem o menu de compartilhar, com WhatsApp e outros apps. ' : ''}Você também pode tocar e segurar a imagem para salvar ou compartilhar.</p>`);
+    ${(() => { const ds = pixDebts(calc).filter(x => x.unit === r.id); return ds.map(x => `<button class="btn ghost" data-pixpay="${x.pid}">Pix copia e cola de ${esc(calc.per[x.pid].person.name.split(' ')[0])} · ${BRL(x.value)}</button>`).join(''); })()}`);
   $$('[data-pixpay]', s).forEach(x => x.onclick = () => { const dbt = pixDebts(calc).find(z => z.pid === x.dataset.pixpay); if (dbt) pixSheet(dbt, () => shareReceipt(r, b, calc, back)); });
   $('#sr-txt', s).onclick = () => copyText(receiptText(r, b, calc), 'Cupom copiado.');
   $('#sr-png', s)?.addEventListener('click', async () => saveFile(name + '.png', await canvasBlob(cv)));
@@ -1646,13 +1677,13 @@ function resetSheet() {
     <div class="sheet-actions"><button class="btn ghost" id="rs-no">Cancelar</button></div>`, s => {
     $('#rs-no', s).onclick = closeSheet;
     $('#rs-items', s).onclick = () => {
-      closeSheet(); pending = {}; editingItemId = null;
+      closeSheet(); pending = {};
       const keep = { place: d.place, people: d.people.map(p => ({ ...p, payService: true, payCouvert: true })), live: d.live };
       draft = { ...blankDraft(), ...keep, active: true, id: d.live ? d.id : newId() };
       commit(); toast('Itens apagados. As pessoas continuam na comanda.');
     };
     $('#rs-all', s).onclick = () => {
-      closeSheet(); pending = {}; editingItemId = null;
+      closeSheet(); pending = {};
       if (draft.live) live.end();
       draft = blankDraft(); draft.active = true; commit(); toast('Comanda zerada.');
     };
@@ -1661,7 +1692,8 @@ function resetSheet() {
 }
 // toda vez que uma comanda aberta vai ser substituída, o app pergunta antes
 function confirmReplace(go) {
-  if (!draft.active || draft.isExample) return go();
+  if (draft.isExample) exitExample();
+  if (!draft.active) return go();
   const where = draft.place ? ` em ${draft.place}` : '';
   const text = draft.savedAt
     ? `Você está editando a comanda${where}, que já está no histórico. Alterações ainda não salvas serão perdidas; a versão do histórico continua.`
@@ -1670,18 +1702,19 @@ function confirmReplace(go) {
 }
 // excluir a comanda aberta (com Desfazer); se ela já estiver no histórico, sai de lá também
 function deleteCurrent(ask) {
+  if (draft.isExample) { exitExample(); tab = 'inicio'; render(); return; }
   const d = draft;
   const inHistory = bills.some(b => b.id === d.id);
   const go = () => {
-    closeSheet(); pending = {}; editingItemId = null;
+    closeSheet(); pending = {};
     if (draft.live) live.end();
     const backup = { draft: clone(draft), bill: bills.find(b => b.id === d.id) || null };
     if (backup.bill) { bills = bills.filter(b => b.id !== d.id); store.deleteBill(d.id); }
-    draft = blankDraft(); tab = 'inicio'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 });
+    draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 });
     toast('Comanda excluída.', { label: 'Desfazer', run: () => {
       draft = migrate(backup.draft); draft.active = true; draft.live = null;
       if (backup.bill) { bills = [backup.bill, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(backup.bill); }
-      tab = 'comanda'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 });
+      tab = 'comanda'; saveDraft(); render(); window.scrollTo({ top: 0 });
     } });
   };
   if (inHistory) confirmSheet('Excluir também do histórico?', `A comanda de ${d.place || 'local sem nome'} sai do histórico e das estatísticas.`, 'Excluir', go, true);
@@ -1691,7 +1724,7 @@ function deleteCurrent(ask) {
 function newBillAt(place, people) {
   const go = () => {
     if (draft.live) live.end();
-    pending = {}; editingItemId = null;
+    pending = {};
     draft = blankDraft(); draft.place = place || ''; draft.active = true;
     if (people) draft.people = people.map(n => newPerson(n));
     tab = 'comanda'; commit(); window.scrollTo({ top: 0 });
@@ -1702,7 +1735,7 @@ function newBillAt(place, people) {
 /* ---------- aba Início ---------- */
 const viewInicio = {
   html() {
-    const d = draft, U = usage();
+    const ex = draft.isExample, d = ex ? loadRealDraft() : draft, U = usage();
     const inProgress = d.active;
     const c = inProgress ? compute(d) : null;
     const places = recentPlaces(U).slice(0, 6);
@@ -1721,15 +1754,20 @@ const viewInicio = {
     </div>
 
     ${inProgress ? `<div class="card current">
-      <div class="card-head"><div><span class="eyebrow">${d.isExample ? 'Comanda de exemplo' : d.savedAt ? 'Editando comanda salva' : 'Comanda em andamento'}</span><h2>${esc(d.place || 'Sem local')}</h2></div>
+      <div class="card-head"><div><span class="eyebrow">${d.savedAt ? 'Editando comanda salva' : 'Comanda em andamento'}</span><h2>${esc(d.place || 'Sem local')}</h2></div>
         <span class="cur-total num">${BRL(c.total)}</span></div>
       <p class="hint">${plural(d.people.length, 'pessoa', 'pessoas')} · ${plural(d.items.length, 'item', 'itens')} · aberta em ${fmtDateTime(d.createdAt)}${d.live ? ' · comanda ao vivo' : ''}</p>
-      <div class="actions-bar"><button class="btn" id="go-comanda">Continuar</button>${d.isExample ? '<button class="btn ghost" id="end-example">Sair do exemplo</button>' : `<button class="btn ghost danger-text" id="del-current">${I.trash}Excluir comanda</button>`}</div>
-    </div>` : !bills.length ? `<button class="card example-link" id="go-example"><span><b>Ver uma comanda de exemplo</b><span class="hint">Boteco da Esquina, 4 pessoas, chopp dividido por unidade</span></span><span aria-hidden="true">→</span></button>` : ''}
+      <div class="actions-bar"><button class="btn" id="go-comanda">Continuar</button>${ex ? '' : `<button class="btn ghost danger-text" id="del-current">${I.trash}Excluir comanda</button>`}</div>
+    </div>` : ''}
+
+    <div class="card ex-card" id="ex-card">
+      <div class="ex-head"><span class="ex-icon">${I.receipt}</span><span><b>Comanda de exemplo</b><span class="hint">Guia com cada função do app</span></span></div>
+      ${ex ? `<div class="btn-row"><button class="btn small" id="ex-continue">Continuar</button><button class="btn small ghost" id="end-example">Sair do exemplo</button></div>`
+        : `<button class="btn small mustard" id="go-example">Ver exemplo</button>`}
+    </div>
 
     ${store.db && !(d.live && inProgress) ? `<div class="card join">
       <div class="card-head"><h2>Entrar com código</h2></div>
-      <p class="hint">Alguém da turma abriu uma comanda ao vivo? Digite o código ou cole o link.</p>
       <form id="join-form" autocomplete="off"><input id="join-code" type="text" placeholder="Ex.: k7mq2xh9pa" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código da comanda" data-keep><button class="btn" type="submit">Entrar</button></form>
     </div>` : ''}
 
@@ -1737,7 +1775,7 @@ const viewInicio = {
       <div class="card-head"><h2>Últimas comandas</h2><button class="btn small ghost" id="go-hist">Ver histórico</button></div>
       <div class="mini-stats"><span><b class="num">${BRL(monthTotal)}</b> gastos neste mês</span><span><b class="num">${bills.length}</b> ${bills.length === 1 ? 'comanda salva' : 'comandas salvas'}</span></div>
       <div class="hist">${bills.slice(0, 3).map(histRowHTML).join('')}</div>
-    </div>` : `<div class="empty">As comandas que você salvar aparecem aqui, com o gasto do mês.</div>`}`;
+    </div>` : ''}`;
   },
   bind(v) {
     const startEl = $('#start-place', v);
@@ -1763,10 +1801,11 @@ const viewInicio = {
       if (!m) { toast('Código inválido. Ele tem 10 letras e números.'); return; }
       if (location.hash === '#m' + m[1]) live.boot(); else location.hash = 'm' + m[1];
     });
-    $('#go-comanda', v)?.addEventListener('click', () => { tab = 'comanda'; render(); window.scrollTo({ top: 0 }); });
+    $('#go-comanda', v)?.addEventListener('click', () => { exitExample(); tab = 'comanda'; render(); window.scrollTo({ top: 0 }); });
     $('#del-current', v)?.addEventListener('click', () => deleteCurrent(true));
-    $('#go-example', v)?.addEventListener('click', () => { pending = {}; draft = exampleDraft(); draft.active = true; tab = 'comanda'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 }); });
-    $('#end-example', v)?.addEventListener('click', () => { draft = blankDraft(); LS.set('draft', draft); render(); });
+    $('#go-example', v)?.addEventListener('click', enterExample);
+    $('#ex-continue', v)?.addEventListener('click', () => { tab = 'comanda'; render(); window.scrollTo({ top: 0 }); });
+    $('#end-example', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); });
     $('#go-hist', v)?.addEventListener('click', () => { tab = 'historico'; render(); window.scrollTo({ top: 0 }); });
     $$('[data-bill]', v).forEach(b => b.addEventListener('click', () => openBill(b.dataset.bill)));
   },
@@ -1873,7 +1912,6 @@ function itemCardHTML(it, d, me) {
 
 function renameSheet(it) {
   openSheet(`<h3>Alterar ${esc(it.name)}</h3>
-    <p class="hint">Aqui você corrige o cadastro do item. Para mudar quantidades, use +1 e −1 no próprio item.</p>
     <form id="rn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
       <div class="field"><label for="rn-name">Nome do produto</label><input id="rn-name" type="text" value="${esc(it.name)}"></div>
       <div class="field"><label for="rn-price">Valor unitário (R$)</label><input id="rn-price" type="text" inputmode="numeric" data-money value="${moneyInput(it.price)}"></div>
@@ -1898,13 +1936,12 @@ function renameSheet(it) {
 const viewComanda = {
   html() {
     const d = draft, calc = compute(d);
-    const editing = d.items.find(i => i.id === editingItemId);
     const allIds = d.people.map(p => p.id);
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
-    const itemsHTML = d.items.length ? d.items.map(it => itemCardHTML(it, d, me)).join('') : `<div class="empty">Nenhum item ainda. Lance o primeiro pedido acima.</div>`;
+    const itemsHTML = d.items.length ? d.items.map(it => itemCardHTML(it, d, me)).join('') : `<div class="empty">Nenhum item ainda.</div>`;
 
     return `
-    ${d.isExample ? `<div class="banner"><span>Esta comanda é um <b>exemplo</b> para você ver como funciona.</span><button class="btn small mustard" id="clear-example">Começar a minha</button></div>` : ''}
+    ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small mustard" id="clear-example">Sair</button></span></div>` : ''}
     ${d.live ? `<button class="live-strip" id="live-jump">${live.unsub && !live.closed ? '<span class="live-dot" aria-hidden="true"></span>' : ''}Comanda ao vivo ${live.closed ? 'encerrada' : live.unsub ? 'conectada' : 'desconectada'} · ver detalhes</button>` : ''}
     ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. Alterações aqui podem ser salvas de novo em <b>Fechar</b>.</span><button class="btn small mustard" id="new-bill-top">Encerrar edição</button></div>` : ''}
     <div class="card">
@@ -1914,29 +1951,27 @@ const viewComanda = {
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="people-card">
       <div class="card-head"><h2>Pessoas na comanda</h2><span class="hint">${plural(d.people.length, 'pessoa', 'pessoas')}</span></div>
       <form class="row" id="person-form" autocomplete="off">
-        <div class="field grow"><label for="person-name">Nome</label><input id="person-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Digite e toque em Adicionar" data-keep></div>
+        <div class="field grow"><label for="person-name">Nome</label><input id="person-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Nome" data-keep></div>
         <button class="btn" type="submit">${I.plus}Adicionar</button>
       </form>
       <div class="people">${d.people.map(p => `<span class="person">${avatar(p.name)}<span class="n">${esc(p.name)}</span><span class="num hint">${BRL(calc.per[p.id].gross)}</span><button data-rm-person="${p.id}" aria-label="Remover ${esc(p.name)}">${I.x}</button></span>`).join('') || '<span class="hint">Adicione quem está dividindo a comanda.</span>'}</div>
     </div>
 
-    <div class="card">
-      <div class="card-head"><h2>${editing ? 'Editar item' : 'Lançar item'}</h2>${editing ? '<button class="btn small ghost" id="cancel-edit">Cancelar edição</button>' : ''}</div>
+    <div class="card" id="item-card">
+      <div class="card-head"><h2>Lançar item</h2></div>
       <form id="item-form" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
-        <div class="field"><label for="item-name">Produto</label><input id="item-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Ex.: Chopp 500 ml" value="${editing ? esc(editing.name) : ''}" data-keep></div>
+        <div class="field"><label for="item-name">Produto</label><input id="item-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Ex.: Chopp 500 ml" value="" data-keep></div>
         <div class="row">
           <div class="field"><label for="item-qty">Quantidade</label>
-            <div class="stepper"><button type="button" data-step="-1" aria-label="Menos">−</button><input id="item-qty" type="number" min="1" step="1" inputmode="numeric" value="${editing ? editing.qty : 1}" data-keep><button type="button" data-step="1" aria-label="Mais">+</button></div></div>
-          <div class="field grow"><label for="item-price">Valor unitário (R$)</label><input id="item-price" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${editing ? moneyInput(editing.price) : ''}" data-keep></div>
-          <button class="btn" type="submit">${editing ? 'Salvar item' : I.plus + 'Lançar'}</button>
+            <div class="stepper"><button type="button" data-step="-1" aria-label="Menos">−</button><input id="item-qty" type="number" min="1" step="1" inputmode="numeric" value="1" data-keep><button type="button" data-step="1" aria-label="Mais">+</button></div></div>
+          <div class="field grow"><label for="item-price">Valor unitário (R$)</label><input id="item-price" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="" data-keep></div>
+          <button class="btn" type="submit">${I.plus}Lançar</button>
         </div>
         <p class="price-hint" id="price-hint" hidden></p>
-        <p class="price-hint other" id="dup-hint" hidden>Este produto já está na comanda. Para pedir mais, use <b>+1</b> no próprio item; lance de novo só se for outro pedido.</p>
-        ${!editing && d.people.length ? `<p class="hint">Todo item novo entra dividido entre todos. Marque quem consumiu (ou use <b>Por unidade</b> para indicar quantos cada um pediu) e toque em <b>Confirmar divisão</b>. Para pedir mais depois, toque em <b>+1</b> no item e em <b>Salvar</b>.</p>` : ''}
-        ${!d.people.length ? `<p class="hint">Adicione pessoas primeiro para poder dividir os itens.</p>` : ''}
+        <p class="price-hint other" id="dup-hint" hidden>Este produto já está na comanda.</p>
       </form>
     </div>
 
@@ -1952,10 +1987,11 @@ const viewComanda = {
   },
   bind(v) {
     const d = draft;
-    $('#clear-example', v)?.addEventListener('click', () => { draft = blankDraft(); LS.set('draft', draft); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); setTimeout(() => { if (!isTouch) $('#start-place')?.focus(); }, 0); });
+    $('#clear-example', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); });
+    $('#ex-guide', v)?.addEventListener('click', () => tour.start());
     $('#reset', v)?.addEventListener('click', resetSheet);
     $('#live-jump', v)?.addEventListener('click', () => $('#live-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    $('#new-bill-top', v)?.addEventListener('click', () => { pending = {}; draft = blankDraft(); tab = 'inicio'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 }); });
+    $('#new-bill-top', v)?.addEventListener('click', () => { pending = {}; draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 }); });
     const addPerson = name => {
       name = name.trim().replace(/\s+/g, ' ');
       if (!name) return;
@@ -2041,7 +2077,6 @@ const viewComanda = {
     clr.addEventListener('pointerdown', e => e.preventDefault());
     clr.addEventListener('click', () => { nameEl.value = ''; syncClr(); $('#dup-hint', v).hidden = true; if (autoFilled) { priceEl.value = ''; hintEl.hidden = true; autoFilled = false; } nameEl.focus(); setTimeout(() => { const el = document.getElementById('item-name'); if (el) { el.focus(); el.dispatchEvent(new Event('input', { bubbles: true })); } }, 0); });
     $$('[data-step]', v).forEach(b => b.addEventListener('click', () => { qtyEl.value = Math.max(1, (parseInt(qtyEl.value) || 1) + +b.dataset.step); }));
-    $('#cancel-edit', v)?.addEventListener('click', () => { editingItemId = null; render(); });
     $('#item-form', v).addEventListener('submit', e => {
       e.preventDefault();
       if (isTouch) document.activeElement?.blur?.();
@@ -2050,11 +2085,7 @@ const viewComanda = {
       const price = parseMoney(priceEl.value);
       if (!name) { toast('Informe o nome do produto.'); nameEl.focus(); return; }
       if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); priceEl.focus(); return; }
-      if (editingItemId) {
-        const it = d.items.find(i => i.id === editingItemId); if (it) Object.assign(it, { name, qty, price }); editingItemId = null; toast('Item atualizado.');
-      } else {
-        d.items.push({ id: newId(), o: nextOrder(), name, qty, price, fq: 0, mode: 'equal', lk: false, a: Object.fromEntries(d.people.map(p => [p.id, 1])) });
-      }
+      d.items.push({ id: newId(), o: nextOrder(), name, qty, price, fq: 0, mode: 'equal', lk: false, a: Object.fromEntries(d.people.map(p => [p.id, 1])) });
       nameEl.value = ''; priceEl.value = ''; qtyEl.value = 1; hintEl.hidden = true; dupEl.hidden = true;
       commit(); afterSubmit('#item-name');
     });
@@ -2219,13 +2250,11 @@ function paymentHTML(d, c) {
   const nm = pid => c.per[pid].person.name;
   const first = pid => esc(nm(pid).split(' ')[0]);
   const debts = pixDebts(c);
-  const multiPeople = d.people.length > 1;
 
   // quem vai pagar a conta
   let who = '';
   if (d.payMode === 'single') {
     who = `<div class="chips">${d.people.map(p => `<button class="chip" data-payer="${p.id}" aria-pressed="${d.payer === p.id}">${esc(p.name)}</button>`).join('')}</div>`;
-    if (c.missingPayer) who += '<p class="hint">Toque em quem vai pagar a conta.</p>';
   }
   let warn = '';
   if (!c.missingPayer && c.payDiff < 0) warn = `<div class="status warn">${I.warn}<span>Faltam <b>${BRL(-c.payDiff)}</b> para cobrir o total de ${BRL(c.total)}. Ajuste os valores personalizados.</span></div>`;
@@ -2277,9 +2306,7 @@ function paymentHTML(d, c) {
         <button data-paymode="none" aria-pressed="${d.payMode === 'none'}">Cada um paga o seu</button>
         <button data-paymode="single" aria-pressed="${d.payMode === 'single'}">Uma pessoa paga tudo</button>
       </div>${who}</div>
-    <div class="field"><span class="eyebrow">Quem paga o quê</span>
-      <p class="hint">Toque em <b>R$</b> ao lado do nome para alguém pagar um valor diferente.${multiPeople ? ` Para juntar pessoas num cupom só, arraste uma sobre a outra ou toque numa e depois na outra. No grupo, toque em <b>paga</b> para definir quem acerta a conta.` : ''}</p>
-    </div>
+    <span class="eyebrow">Quem paga o quê</span>
     ${warn}
     ${pickSel ? `<div class="pick-hint">${I.users}<span>Agora toque em quem vai ficar no mesmo cupom de <b>${esc(c.per[pickSel]?.person.name || '')}</b>.</span><button class="btn small ghost" id="pick-cancel">Cancelar</button></div>` : ''}
     <div class="ubox-list">${c.units.map(unitBox).join('')}</div>
@@ -2290,7 +2317,7 @@ function paymentHTML(d, c) {
 const viewFechar = {
   html() {
     const d = draft, c = compute(d), s = d.service, ds = d.discount;
-    if (!d.people.length || !d.items.length) return `<div class="empty">Adicione pessoas e itens na aba Comanda para fechar a comanda.</div>`;
+    if (!d.people.length || !d.items.length) return `<div class="empty">Comanda sem pessoas ou itens.</div>`;
     const names = ids => ids.map(id => c.per[id].person.name).join(', ');
     let note = '';
     if (s.enabled && c.skipped.length) {
@@ -2320,7 +2347,7 @@ const viewFechar = {
 
 
 
-    <div class="card">
+    <div class="card" id="svc-card">
       <div class="card-head"><h2>Taxa de serviço</h2>
         <label class="switch"><input type="checkbox" id="svc-on" ${s.enabled ? 'checked' : ''}><span class="track"></span>Cobrar</label></div>
       ${s.enabled ? `
@@ -2338,7 +2365,7 @@ const viewFechar = {
           <button data-policy="discount" aria-pressed="${s.policy === 'discount'}">Descontar da comanda</button>
           <button data-policy="redistribute" aria-pressed="${s.policy === 'redistribute'}">Redistribuir entre os demais</button>
         </div></div>
-      ${note ? `<div class="policy-note">${note}</div>` : `<p class="hint">Para tirar o serviço de alguém, desligue a chave <b>Serviço</b> da pessoa em <b>Pagamento</b>.</p>`}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
+      ${note ? `<div class="policy-note">${note}</div>` : ''}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
     </div>
 
     ${d.couvert.enabled ? `<div class="card">
@@ -2360,14 +2387,11 @@ const viewFechar = {
           <button data-dsat="after" aria-pressed="${ds.at === 'after'}">No total, depois do serviço</button>
           <button data-dsat="before" aria-pressed="${ds.at !== 'after'}">No consumo, antes do serviço</button>
         </div></div>
-      <div class="policy-note">${ds.at === 'after'
-        ? `O desconto é aplicado depois de somar consumo, serviço${d.couvert.enabled ? ' e couvert' : ''}, e é dividido proporcionalmente ao total de cada pessoa.${c.discount ? ` <b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(c.total + c.discount)}</b>.` : ''}`
-        : `O desconto sai do consumo, e o serviço é calculado sobre o valor já descontado. A divisão é proporcional ao consumo de cada pessoa.${c.discount ? ` <b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(c.consumoBruto)}</b>.` : ''}`}</div>
+      ${c.discount ? `<div class="policy-note"><b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(ds.at === 'after' ? c.total + c.discount : c.consumoBruto)}</b></div>` : ''}
     </div>` : ''}
 
-    ${c.freeValue || openAdj.has('fq') ? `<div class="card">
+    ${c.freeValue || openAdj.has('fq') ? `<div class="card" id="fq-card">
       <div class="card-head"><h2>Cortesia</h2>${c.freeValue ? `<span class="hint num">−${BRL(c.freeValue)}</span>` : '<button class="btn small ghost" id="fq-close">Remover</button>'}</div>
-      <p class="hint">Informe quantas unidades de cada produto o local não cobrou. O desconto sai da parte de quem consumiu o produto, proporcionalmente ao que cada um pediu.</p>
       <div class="who">${d.items.map(it => `<div class="who-row free-row">
         <div style="min-width:0"><div style="font-weight:600;overflow-wrap:anywhere">${esc(it.name)}</div>
           <div class="hint num">${it.qty} × ${BRL(it.price)}${it.fq ? ` · <b style="color:var(--green)">−${BRL(it.fq * it.price)}</b>` : ''}</div></div>
@@ -2394,7 +2418,7 @@ const viewFechar = {
 
     <div class="actions-bar">
       <button class="btn" id="save-bill">${I.save}${d.savedAt ? 'Atualizar e encerrar' : 'Salvar e encerrar'}</button>
-      ${d.savedAt ? '<button class="btn ghost" id="end-edit">Encerrar sem salvar</button>' : `<button class="btn ghost danger-text" id="del-bill">${I.trash}Excluir comanda</button>`}
+      ${d.isExample ? '<button class="btn ghost" id="ex-exit">Sair do exemplo</button>' : d.savedAt ? '<button class="btn ghost" id="end-edit">Encerrar sem salvar</button>' : `<button class="btn ghost danger-text" id="del-bill">${I.trash}Excluir comanda</button>`}
     </div>`;
   },
   bind(v) {
@@ -2460,13 +2484,15 @@ const viewFechar = {
     $('#pdf-all', v)?.addEventListener('click', e => shareAllPDF(d, c, e.currentTarget));
     $('#copy-all', v)?.addEventListener('click', () => copyText(c.units.map(u => receiptText(u, d, c)).join('\n\n'), 'Todos os cupons copiados.'));
     $('#save-bill', v)?.addEventListener('click', saveBill);
+    $('#ex-exit', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); });
     $('#del-bill', v)?.addEventListener('click', () => deleteCurrent(true));
-    $('#end-edit', v)?.addEventListener('click', () => confirmSheet('Encerrar sem salvar?', 'As alterações desta edição serão perdidas. A versão do histórico continua como estava.', 'Encerrar', () => { if (draft.live) live.end(); pending = {}; draft = blankDraft(); tab = 'inicio'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 }); }, true));
+    $('#end-edit', v)?.addEventListener('click', () => confirmSheet('Encerrar sem salvar?', 'As alterações desta edição serão perdidas. A versão do histórico continua como estava.', 'Encerrar', () => { if (draft.live) live.end(); pending = {}; draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 }); }, true));
   },
 };
 
 function saveBill() {
   const d = draft, c = compute(d);
+  if (d.isExample) { toast('No exemplo, nada é salvo no histórico.'); return; }
   if (c.unassigned.length || c.incomplete.length) { toast('Acerte a divisão de todos os itens antes de salvar.'); return; }
   if (d.items.some(pendingDirty)) { toast('Há itens com alterações não salvas. Salve ou descarte antes de continuar.'); return; }
   if (c.openItems.length) { toast(`Confirme a divisão de ${plural(c.openItems.length, 'item', 'itens')} antes de salvar.`); return; }
@@ -2485,9 +2511,9 @@ function saveBill() {
   d.items.forEach(it => rememberPrice(it.name, it.price, d.place, now));
   store.saveCatalog(); store.saveBill(bill);
   if (draft.live) live.end();
-  pending = {}; editingItemId = null;
+  pending = {};
   draft = blankDraft(); tab = 'inicio';
-  LS.set('draft', draft); render(); window.scrollTo({ top: 0 });
+  saveDraft(); render(); window.scrollTo({ top: 0 });
   toast(firstSave ? 'Comanda salva no histórico e encerrada.' : 'Comanda atualizada no histórico.');
 }
 
@@ -2533,7 +2559,6 @@ function statsHTML() {
         </div>`).join('')}</div>
       <div class="chart-x">${months.map(m => `<span>${m.label}</span>`).join('')}</div>
     </div>
-    ${!meName ? '<p class="hint">Escolha uma pessoa em <b>Mostrar gastos de</b> para ver só o gasto dela e com quem ela mais sai.</p>' : ''}
   </div>
   <div class="two-col">
     <div class="card"><h2>Locais mais frequentes</h2>${rank(topPlaces, x => x.n, x => `${plural(x.n, 'vez', 'vezes')} · ${BRL(x.v)}`)}</div>
@@ -2543,7 +2568,7 @@ function statsHTML() {
 }
 const viewHistorico = {
   html() {
-    if (!bills.length) return `<div class="empty">Nenhuma comanda salva ainda. Ao fechar uma comanda, toque em <b>Salvar e encerrar</b> e ela aparece aqui, junto com suas estatísticas.</div>`;
+    if (!bills.length) return `<div class="empty">Nenhuma comanda salva ainda.</div>`;
     return `${statsHTML()}
       <div class="card-head" style="padding-inline:4px"><h2 style="font-family:var(--f-display);font-size:19px;margin:0">Comandas salvas</h2><span class="hint">${plural(bills.length, 'comanda', 'comandas')}</span></div>
       <div class="hist">${bills.map(histRowHTML).join('')}</div>`;
@@ -2573,7 +2598,7 @@ function openBill(id) {
     $('#sh-pdf', s).onclick = e => shareAllPDF(b, c, e.currentTarget);
     $('#sh-del', s).onclick = () => confirmSheet('Excluir esta comanda?', 'Ela sai do histórico e das estatísticas. Pessoas e produtos cadastrados continuam, e dá para desfazer logo em seguida.', 'Excluir', () => {
       const gone = bills.find(x => x.id === id);
-      bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(); if (draft.id === id) draft.savedAt = null; LS.set('draft', draft); render();
+      bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(); if (draft.id === id) draft.savedAt = null; saveDraft(); render();
       toast('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
     }, true);
     const replace = fn => {
@@ -2602,8 +2627,7 @@ const viewCadastros = {
     // preços por local que faltam em produtos já cadastrados são completados direto do histórico
     if (backfillPrices()) store.saveCatalog();
     const H = historyCatalog(), nMiss = H.missingProducts.length + H.missingPeople.length;
-    return `<p class="hint" style="padding-inline:4px">Pessoas e produtos entram aqui quando você salva uma comanda. O preço de cada produto fica guardado por local, e o número de comandas vem do histórico.</p>
-
+    return `
     <div class="card">
       <div class="card-head"><h2>Pessoas</h2><span class="hint">${ppl.length}</span></div>
       ${ppl.length ? `<div class="cat-list">${ppl.map(p => `<div class="cat-row"><span class="nm" style="display:flex;gap:8px;align-items:center">${avatar(p.name)}<span style="min-width:0">${esc(p.name)}<small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(p.pix) : ''}</small></span></span><button class="btn small ghost" data-pix-edit="${esc(p.name)}">Pix</button>
@@ -2632,7 +2656,7 @@ const viewCadastros = {
     $('#recover', v)?.addEventListener('click', recoverSheet);
     $$('[data-pix-edit]', v).forEach(b => b.addEventListener('click', () => {
       const name = b.dataset.pixEdit;
-      openSheet(`<h3>Chave Pix de ${esc(name)}</h3><p class="hint">A chave aparece no cupom de quem deve pagar a ${esc(name)}.</p>
+      openSheet(`<h3>Chave Pix de ${esc(name)}</h3>
         <form id="px-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off"><div class="field"><label for="px-in">Chave Pix</label><input id="px-in" type="text" value="${esc(pixOf(name))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocapitalize="off" spellcheck="false"></div>
         <div class="sheet-actions"><button type="button" class="btn ghost" id="px-no">Cancelar</button><button type="submit" class="btn">${I.save}Salvar</button></div></form>`, s => {
         $('#px-no', s).onclick = closeSheet;
@@ -2662,6 +2686,100 @@ const viewCadastros = {
       if (i.dataset.pk && p.prices[i.dataset.pk]) Object.assign(p.prices[i.dataset.pk], { price: c, edited: true }); else p.price = c;
       store.saveCatalog(); i.value = moneyInput(c); toast('Preço atualizado.');
     }));
+  },
+};
+
+
+/* ---------- guia interativo (só na comanda de exemplo) ---------- */
+const TOUR = [
+  { tab: 'inicio', sel: '#start-form', t: 'Abrir uma comanda', d: 'Digite o nome do bar ou restaurante e toque em Abrir comanda. Os lugares onde você já foi aparecem como atalhos.' },
+  { tab: 'inicio', sel: '.join', skip: true, t: 'Entrar numa comanda ao vivo', d: 'Quando alguém da turma compartilhar uma comanda, digite aqui o código que receber.' },
+  { tab: 'comanda', sel: '#people-card', t: 'Pessoas na mesa', d: 'Adicione quem está dividindo a conta. Nomes que você já usou aparecem como sugestão, e o valor ao lado de cada um é o consumo até agora.' },
+  { tab: 'comanda', sel: '#item-card', t: 'Lançar um pedido', d: 'Informe produto, quantidade e preço da unidade. O app lembra o preço de cada produto em cada lugar e preenche sozinho na próxima vez.' },
+  { tab: 'comanda', sel: '.item.open', alt: '.items > .item:last-child', t: 'Dividir um item', d: 'Todo item novo chega marcado para todos. Toque nos nomes para tirar ou incluir alguém. Use Por unidade quando cada um pediu uma quantidade diferente. Depois, toque em Confirmar divisão. Experimente!' },
+  { tab: 'comanda', sel: '.item.locked', t: 'Pedir mais', d: 'Num item confirmado, use +1 e −1 para mudar a quantidade ou quem consumiu e toque em Salvar. Alterar corrige nome e preço; Remover tira o item da comanda.' },
+  { tab: 'comanda', sel: '#live-offer', alt: '#live-card', skip: true, t: 'Comanda ao vivo', d: 'Compartilhe a comanda com a turma: cada um marca o que consumiu pelo próprio celular e todos veem as mudanças na hora. Você recebe um link e um código para mandar no grupo.' },
+  { tab: 'comanda', sel: '#go-close', t: 'Hora de pagar', d: 'Toque em Fechar a comanda para ver quanto cada um deve.' },
+  { tab: 'fechar', sel: '.sum-grid', t: 'Resumo da conta', d: 'Consumo, serviço, ajustes e o total. Confira se o total bate com a conta do lugar.' },
+  { tab: 'fechar', sel: '#svc-card', t: 'Taxa de serviço', d: 'Escolha 10%, outro percentual ou um valor fixo. Se alguém não paga o serviço, decida se a taxa diminui ou é redistribuída entre os demais.' },
+  { tab: 'fechar', sel: '#fq-card', skip: true, t: 'Cortesia', d: 'Informe quantas unidades o lugar não cobrou. O desconto sai da parte de quem consumiu aquele produto.' },
+  { tab: 'fechar', sel: '.adj', skip: true, t: 'Couvert e desconto', d: 'Inclua couvert artístico por pessoa e descontos em reais ou em porcentagem, antes ou depois do serviço.' },
+  { tab: 'fechar', sel: '#groups-card .seg', t: 'Quem paga a conta', d: 'Cada um paga a sua parte, ou uma pessoa paga tudo e os outros acertam com ela depois.' },
+  { tab: 'fechar', sel: '.ubox', t: 'Quanto cada um paga', d: 'Toque em R$ para alguém pagar um valor diferente; a diferença é acertada entre vocês. Desligue Serviço de quem não deve pagar. Arraste um nome sobre outro para juntar duas pessoas num cupom só.' },
+  { tab: 'fechar', sel: '.pix-btn', skip: true, t: 'Pagar com Pix', d: 'O app gera o Pix copia e cola e o QR code já com o valor certo. A chave de quem recebe fica salva no cadastro da pessoa.' },
+  { tab: 'fechar', sel: '.receipt-wrap', t: 'Cupons', d: 'Cada pessoa recebe um cupom com o que consumiu. Compartilhe como imagem, PDF ou texto.' },
+  { tab: 'fechar', sel: '#save-bill', t: 'Salvar e encerrar', d: 'Guarda a comanda no histórico e deixa o app pronto para a próxima. No exemplo, nada é salvo.' },
+  { tab: 'historico', sel: '#tab-historico', t: 'Histórico', d: 'Suas comandas salvas, o gasto por mês, os lugares mais frequentes e com quem você mais sai. Dá para reabrir, editar ou repetir uma comanda antiga.' },
+  { tab: 'cadastros', sel: '#tab-cadastros', t: 'Cadastros', d: 'Pessoas, chaves Pix e o preço de cada produto em cada lugar, usados para preencher tudo mais rápido.' },
+  { tab: 'inicio', sel: '#ex-card', t: 'Pronto!', d: 'Você pode rever este guia quando quiser pela comanda de exemplo. Toque em Sair do exemplo para começar a sua.' },
+];
+const tour = {
+  i: -1, el: null, bound: false, raf: 0,
+  active() { return this.i >= 0 && !!this.el; },
+  start(at = 0) { if (!draft.isExample) return; this.mount(); this.show(at, 1); },
+  stop() { this.i = -1; if (this.el) { this.el.remove(); this.el = null; } },
+  mount() {
+    if (this.el) return;
+    const el = document.createElement('div'); el.className = 'tour';
+    el.innerHTML = '<div class="tour-hole" hidden></div><div class="tour-card" role="dialog" aria-modal="false" aria-label="Guia"></div>';
+    document.body.appendChild(el); this.el = el;
+    if (!this.bound) {
+      this.bound = true;
+      const again = () => { if (this.active()) { cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(() => this.place()); } };
+      window.addEventListener('scroll', again, { passive: true });
+      window.addEventListener('resize', again);
+    }
+  },
+  target(st) { return (st && ($(st.sel) || (st.alt && $(st.alt)))) || null; },
+  show(n, dir) {
+    if (!draft.isExample) return this.stop();
+    // passos que não existem nesta tela (sem internet, sem cortesia…) são pulados
+    while (n >= 0 && n < TOUR.length) {
+      const st = TOUR[n];
+      if (st.tab && tab !== st.tab) { tab = st.tab; closeSheet(); render(); }
+      if (this.target(st) || !st.skip) break;
+      n += dir;
+    }
+    if (n < 0) n = 0;
+    if (n >= TOUR.length) return this.stop();
+    this.i = n;
+    const st = TOUR[n], last = n === TOUR.length - 1;
+    $('.tour-card', this.el).innerHTML = `<div class="tour-top"><span class="eyebrow">Guia · ${n + 1} de ${TOUR.length}</span><button class="tour-x" aria-label="Fechar guia">${I.x}</button></div>
+      <div class="tour-bar"><i style="width:${Math.round((n + 1) / TOUR.length * 100)}%"></i></div>
+      <h3>${esc(st.t)}</h3><p>${esc(st.d)}</p>
+      <div class="tour-act">${n ? '<button class="btn small ghost" data-tour="-1">Voltar</button>' : '<span></span>'}<button class="btn small" data-tour="1">${last ? 'Concluir' : 'Próximo'}</button></div>`;
+    $('.tour-x', this.el).onclick = () => this.stop();
+    $$('[data-tour]', this.el).forEach(b => b.onclick = () => { const d = +b.dataset.tour; if (d > 0 && last) return this.stop(); this.show(this.i + d, d); });
+    const t = this.target(st);
+    if (t) {
+      const r = t.getBoundingClientRect(), vh = window.innerHeight;
+      // rola só o necessário: o destaque fica na parte de cima e o cartão do guia embaixo
+      const want = Math.max(80, Math.min(vh * .18, vh - r.height - 230));
+      window.scrollTo({ top: Math.max(0, window.scrollY + r.top - want) });
+    }
+    this.place();
+    setTimeout(() => this.place(), 400);
+  },
+  place() {
+    if (!this.active()) return;
+    const st = TOUR[this.i], hole = $('.tour-hole', this.el), card = $('.tour-card', this.el);
+    const t = st && tab === st.tab ? this.target(st) : null;
+    const vh = window.innerHeight, ch = card.offsetHeight, gap = 12, pad = 6;
+    let top;
+    if (t) {
+      const r = t.getBoundingClientRect();
+      // o destaque não passa por baixo da barra de abas fixa no topo
+      const nav = $('#tabs'), navB = nav && !nav.contains(t) ? nav.getBoundingClientRect().bottom + 2 : 4;
+      const y1 = Math.max(r.top - pad, navB), y2 = Math.min(r.bottom + pad, vh - 4);
+      hole.hidden = y2 - y1 < 8;
+      Object.assign(hole.style, { left: (r.left - pad) + 'px', top: y1 + 'px', width: (r.width + pad * 2) + 'px', height: Math.max(0, y2 - y1) + 'px' });
+      // fora da tela (a pessoa rolou): o cartão fica embaixo
+      if (!hole.hidden && y2 + gap + ch <= vh - gap) top = y2 + gap;
+      else if (!hole.hidden && y1 - gap - ch >= navB) top = y1 - gap - ch;
+    } else hole.hidden = true;
+    if (top === undefined) { card.style.top = ''; card.classList.add('dock'); }
+    else { card.classList.remove('dock'); card.style.top = top + 'px'; }
+    this.el.classList.toggle('dim', !t || hole.hidden);
   },
 };
 
