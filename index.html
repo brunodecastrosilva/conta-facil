@@ -1,0 +1,2677 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<title>Conta Fácil</title>
+<meta name="description" content="Divida a comanda sem calculadora">
+<meta name="theme-color" content="#EAF0EA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1712" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Conta Fácil">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+</head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: coluna única estilo app de bolso; comanda de boteco (verde azulejo + chopp) e cupons em papel térmico */
+:root{
+  --bg:#EAF0EA; --surface:#FFFFFF; --surface-2:#F3F7F2; --line:#D2DCD3;
+  --ink:#14241B; --muted:#56695D; --green:#1D5A3B; --green-ink:#FFFFFF; --green-soft:#DCEBE1;
+  --mustard:#D3931A; --mustard-soft:#FBEFD2; --mustard-ink:#5A3D05; --danger:#B0382A; --danger-soft:#F8E1DD;
+  --paper:#FFFDF5; --paper-ink:#24221C; --paper-muted:#6E6858; --paper-line:#CFC7B2;
+  --shadow:0 1px 2px rgba(20,36,27,.06),0 6px 18px rgba(20,36,27,.06);
+  --f-display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1712; --surface:#15221B; --surface-2:#1B2B22; --line:#2A3E32;
+  --ink:#E4EEE7; --muted:#92A799; --green:#46A272; --green-ink:#06120B; --green-soft:#1C3A2A;
+  --mustard:#E9B24C; --mustard-soft:#3A2E15; --mustard-ink:#F6DDA6; --danger:#E77B69; --danger-soft:#3D1E19;
+  --paper:#ECE6D6; --paper-ink:#1E1C17; --paper-muted:#5F5A4C; --paper-line:#B9B09A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1712; --surface:#15221B; --surface-2:#1B2B22; --line:#2A3E32;
+  --ink:#E4EEE7; --muted:#92A799; --green:#46A272; --green-ink:#06120B; --green-soft:#1C3A2A;
+  --mustard:#E9B24C; --mustard-soft:#3A2E15; --mustard-ink:#F6DDA6; --danger:#E77B69; --danger-soft:#3D1E19;
+  --paper:#ECE6D6; --paper-ink:#1E1C17; --paper-muted:#5F5A4C; --paper-line:#B9B09A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{overflow-x:clip;max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 64px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--mustard);outline-offset:2px;border-radius:6px}
+.num{font-variant-numeric:tabular-nums;font-family:var(--f-mono)}
+
+/* header */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:20px 12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:var(--green);display:grid;place-items:center;flex:none}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.02em;margin:0;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
+.sync{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--mustard);display:inline-block}
+.sync.cloud i{background:var(--green)}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);padding-block:8px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+nav.tabs button{border:0;background:var(--surface);border-radius:10px;padding:7px 2px 6px;font-weight:600;font-size:11.5px;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;min-width:0}
+nav.tabs button span.lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+nav.tabs button svg{width:19px;height:19px}
+nav.tabs .badge{position:absolute;top:3px;right:4px}
+nav.tabs button[aria-selected="true"]{background:var(--green);color:var(--green-ink);box-shadow:none}
+nav.tabs .badge{font-family:var(--f-mono);font-size:11px;background:var(--mustard);color:#2a1d02;border-radius:99px;padding:0 6px;line-height:17px}
+
+section.view{display:flex;flex-direction:column;gap:16px;padding-top:8px}
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h2{font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:13px;margin:0}
+.eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+
+.banner{background:var(--mustard-soft);color:var(--mustard-ink);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px}
+.banner.warn{background:var(--danger-soft);color:var(--danger)}
+
+/* fields */
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+input[type=text],input[type=number],input:not([type]){width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
+input,select,textarea{font-size:16px}
+input:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 3px var(--green-soft)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.row > .grow{flex:1 1 180px}
+.place-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+
+.btn{border:0;border-radius:10px;padding:10px 16px;min-height:44px;font-weight:700;background:var(--green);color:var(--green-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.mustard{background:var(--mustard);color:#2a1d02}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.small{min-height:34px;padding:6px 12px;font-size:13.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.icon-btn{border:0;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--muted);flex:none}
+.icon-btn:hover{color:var(--ink)}
+.icon-btn.del:hover{color:var(--danger)}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-height:44px}
+.stepper button{border:0;background:none;width:38px;height:42px;font-size:18px;color:var(--muted)}
+.stepper input{border:0!important;background:none!important;box-shadow:none!important;width:46px;text-align:center;padding:0;min-height:0}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:0;border-radius:99px;padding:6px 12px;font-size:13.5px;font-weight:600;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);color:var(--muted);display:inline-flex;align-items:center;gap:6px;min-height:32px}
+.chip[aria-pressed="true"]{background:var(--green);color:var(--green-ink);box-shadow:none}
+.chip.suggest{border:1px dashed var(--line);box-shadow:none;background:transparent}
+.chip.suggest:hover{color:var(--ink);border-color:var(--green)}
+.chip.all{background:transparent;box-shadow:inset 0 0 0 1px var(--green);color:var(--green)}
+
+/* people */
+.people{display:flex;flex-wrap:wrap;gap:8px}
+.person{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;padding:4px 4px 4px 6px}
+.avatar{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
+.person span.n{font-weight:600}
+.person button{border:0;background:none;width:26px;height:26px;border-radius:50%;color:var(--muted);display:grid;place-items:center}
+.person button:hover{color:var(--danger);background:var(--danger-soft)}
+
+/* items */
+.items{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.item.unassigned{border-color:var(--danger);border-style:dashed}
+.item-top{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+.item-name{font-weight:700;font-size:15.5px;min-width:0;overflow-wrap:anywhere}
+.item-meta{color:var(--muted);font-size:13px}
+.item-total{font-family:var(--f-mono);font-weight:600;font-size:15px;text-align:right;white-space:nowrap}
+.item-actions{display:flex;gap:6px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.item-actions .grp{display:flex;gap:6px;align-items:center}
+.share{font-size:12.5px;color:var(--muted)}
+.empty{border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
+
+/* summary */
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+@media (max-width:560px){.sum-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sum{background:var(--surface-2);border-radius:12px;padding:10px 12px;min-width:0}
+.sum b{display:block;font-family:var(--f-mono);font-size:17px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sum.total{background:var(--green);color:var(--green-ink)}
+.sum.total .eyebrow{color:inherit;opacity:.8}
+
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;box-shadow:inset 0 0 0 1px var(--line);flex-wrap:wrap;gap:2px}
+.seg button{border:0;background:none;border-radius:8px;padding:7px 12px;font-weight:600;font-size:13.5px;color:var(--muted);min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+.switch{position:relative;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;font-weight:600;user-select:none}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch .track{width:40px;height:24px;border-radius:99px;background:var(--line);position:relative;transition:background .15s;flex:none}
+.switch .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.switch input:checked + .track{background:var(--green)}
+.switch input:checked + .track::after{transform:translateX(16px)}
+.switch input:focus-visible + .track{outline:2px solid var(--mustard);outline-offset:2px}
+
+.who{display:flex;flex-direction:column}
+.who-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.who-row:first-child{border-top:0}
+.who-name{display:flex;align-items:center;gap:8px;font-weight:600;min-width:0}
+.who-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who-total{font-family:var(--f-mono);font-weight:600;text-align:right}
+.who-sub{grid-column:1 / -1;display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
+.policy-note{font-size:13px;background:var(--surface-2);border-radius:10px;padding:10px 12px;color:var(--muted)}
+.policy-note b{color:var(--ink)}
+
+/* receipts */
+.receipts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;align-items:start}
+.receipt-wrap{display:flex;flex-direction:column;gap:8px;min-width:0}
+.receipt{background:var(--paper);color:var(--paper-ink);font-family:var(--f-mono);font-size:12.5px;line-height:1.5;padding:18px 16px 22px;position:relative;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.12));
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100%, conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100%;
+  -webkit-mask-composite:source-in; mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100% intersect, conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100%}
+.receipt .rc-head{text-align:center;padding-block:4px 8px}
+.receipt .rc-head b{font-size:14px;letter-spacing:.06em;display:block}
+.receipt .rc-who{text-align:center;font-weight:600;font-size:15px;margin:6px 0 2px;font-family:var(--f-display);letter-spacing:0}
+.receipt hr{border:0;border-top:1px dashed var(--paper-line);margin:8px 0}
+.rc-line{display:flex;justify-content:space-between;gap:10px}
+.rc-line span:first-child{min-width:0;overflow-wrap:anywhere}
+.rc-line span:last-child{white-space:nowrap}
+.rc-detail{color:var(--paper-muted);font-size:11.5px;padding-left:8px}
+.rc-item{margin-bottom:6px}
+.rc-total{font-weight:600;font-size:15px;border-top:2px solid var(--paper-ink);padding-top:6px;margin-top:6px}
+.rc-foot{text-align:center;color:var(--paper-muted);font-size:11px;margin-top:10px}
+.rc-muted{color:var(--paper-muted)}
+
+/* history */
+.hist{display:flex;flex-direction:column;gap:8px}
+.hist-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow);border:0;text-align:left;width:100%}
+.hist-row:hover{box-shadow:inset 0 0 0 1px var(--green),var(--shadow)}
+.hist-date{width:46px;text-align:center;background:var(--green-soft);color:var(--green);border-radius:10px;padding:6px 0;line-height:1.1}
+.hist-date b{display:block;font-family:var(--f-display);font-size:19px;font-weight:800}
+.hist-date small{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.hist-title{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-sub{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-total{font-family:var(--f-mono);font-weight:600}
+
+/* catalog */
+.cat-list{display:flex;flex-direction:column}
+.cat-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.cat-row:first-child{border-top:0}
+.cat-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-row .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.cat-row input{width:110px;min-height:40px;padding:6px 10px;text-align:right;font-family:var(--f-mono)}
+
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(8,16,12,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+@media (min-width:640px){.overlay{align-items:center}}
+.sheet{background:var(--bg);border-radius:18px;width:100%;max-width:760px;max-height:88vh;max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.sheet > .card-head:first-child{position:sticky;top:-18px;z-index:3;margin:-18px -16px 0;padding:14px 16px 12px;background:var(--bg);border-bottom:1px solid var(--line);flex-wrap:nowrap;align-items:center}
+.sheet > .card-head:first-child > :first-child{min-width:0}
+.sheet .close-x{width:44px;height:44px;border-radius:12px;flex:none;background:var(--surface);color:var(--ink)}
+.sheet .close-x svg{width:22px;height:22px}
+.overlay{overscroll-behavior:contain;touch-action:none}
+.overlay .sheet{touch-action:pan-y}
+.sheet h3{font-family:var(--f-display);font-weight:800;font-size:21px;margin:0}
+.sheet-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;z-index:60;max-width:calc(100% - 32px);box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.actions-bar{display:flex;gap:8px;flex-wrap:wrap}
+.actions-bar .btn{flex:1 1 160px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* novas peças */
+.status{display:flex;gap:10px;align-items:flex-start;border-radius:10px;padding:10px 12px;font-size:13.5px}
+.status svg{flex:none;margin-top:1px}
+.status.ok{background:var(--green-soft);color:var(--green)}
+.status.warn{background:var(--mustard-soft);color:var(--mustard-ink)}
+.status.bad{background:var(--danger-soft);color:var(--danger)}
+.status b{font-weight:700}
+.transfers{display:flex;flex-direction:column;gap:6px}
+.transfer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--surface-2);border-radius:10px;padding:8px 12px}
+.transfer .who{display:flex;flex-direction:row;align-items:center;gap:6px;min-width:0;flex-wrap:wrap;font-weight:600}
+.transfer .arrow{color:var(--muted);font-weight:400}
+.transfer .v{font-family:var(--f-mono);font-weight:600}
+.parts{display:flex;flex-wrap:wrap;gap:8px}
+.part{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;padding:2px 4px 2px 10px;font-size:13px;font-weight:600}
+.part button{border:0;background:var(--surface);width:26px;height:26px;border-radius:50%;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.part .pv{font-family:var(--f-mono);color:var(--muted);font-weight:400;font-size:12px}
+.item.free .item-total{text-decoration:line-through;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;padding:1px 6px;background:var(--mustard-soft);color:var(--mustard-ink);margin-left:6px;vertical-align:2px}
+.mini-toggle{border:0;background:none;color:var(--muted);font-size:12.5px;font-weight:600;padding:4px 6px;border-radius:6px;min-height:30px}
+.mini-toggle[aria-pressed="true"]{color:var(--green);background:var(--green-soft)}
+.mini-toggle:hover{color:var(--ink)}
+.linkbox{display:flex;gap:8px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 12px;min-width:0}
+.live-code{display:flex;align-items:baseline;justify-content:space-between;gap:10px;background:var(--mustard-soft);color:var(--mustard-ink);border-radius:10px;padding:10px 12px}
+.live-code b{font-size:20px;letter-spacing:.12em}
+.join{display:flex;flex-direction:column;gap:8px}
+.join form{display:flex;gap:8px}
+.join input{flex:1 1 auto;font-family:var(--f-mono);text-transform:lowercase}
+.linkbox code{font-family:var(--f-mono);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--muted)}
+.steps b{color:var(--ink)}
+.live-dot{width:9px;height:9px;border-radius:50%;background:#2FB36A;display:inline-block;box-shadow:0 0 0 0 rgba(47,179,106,.6);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,179,106,.55)}70%{box-shadow:0 0 0 8px rgba(47,179,106,0)}100%{box-shadow:0 0 0 0 rgba(47,179,106,0)}}
+@media (prefers-reduced-motion: reduce){.live-dot{animation:none}}
+.chip.me{box-shadow:inset 0 0 0 2px var(--mustard)}
+.chip[aria-pressed="true"].me{box-shadow:inset 0 0 0 2px var(--mustard)}
+.item.open{border:1.5px solid var(--mustard);background:var(--surface);box-shadow:0 0 0 4px var(--mustard-soft)}
+.item.locked{background:var(--surface-2)}
+.lock-sum{display:flex;gap:8px;align-items:flex-start;font-size:14px;overflow-wrap:anywhere}
+.lock-sum svg{flex:none;color:var(--green);margin-top:1px}
+.units{display:flex;flex-direction:column;gap:2px}
+.unit-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:5px 0;border-top:1px solid var(--line)}
+.unit-row:first-child{border-top:0}
+.unit-row .uv{text-align:right;color:var(--muted);font-size:13px}
+.unit-row.on .uv{color:var(--ink)}
+.unit-row:not(.on) .who-name{color:var(--muted);font-weight:500}
+.stepper.sm{min-height:36px}
+.stepper.sm button{height:34px;width:36px}
+.stepper.sm button:disabled{opacity:.3;cursor:not-allowed}
+.stepper.sm .num{min-width:28px;text-align:center;font-weight:600}
+.unit-count{display:flex;align-items:center;gap:6px;min-width:52px;justify-content:flex-end;font-weight:700;font-size:16px}
+.delta{font-family:var(--f-mono);font-size:12px;font-weight:600;border-radius:6px;padding:1px 5px}
+.delta.up{background:var(--green-soft);color:var(--green)}
+.delta.down{background:var(--danger-soft);color:var(--danger)}
+.unit-btns{display:flex;align-items:center;gap:6px}
+.unit-btns button{border:0;border-radius:9px;min-width:44px;height:36px;font-weight:700;font-family:var(--f-mono);font-size:13.5px}
+.unit-btns .plus{background:var(--green);color:var(--green-ink)}
+.unit-btns .minus{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.unit-btns button:disabled{opacity:.3;cursor:not-allowed}
+.pending-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--mustard-soft);color:var(--mustard-ink);border-radius:10px;padding:8px 8px 8px 12px;font-size:13.5px}
+.pending-bar .grp{display:flex;gap:6px}
+.item.dirty{border-color:var(--mustard)}
+.chip.changed{outline:2px dashed var(--mustard);outline-offset:1px}
+.free-row{grid-template-columns:minmax(0,1fr) auto}
+.fq-count{min-width:48px;text-align:center;font-weight:700;font-size:16px}
+.fq-count small{color:var(--muted);font-weight:400;font-size:12px}
+.hero{background:var(--green);color:var(--green-ink);border-radius:18px;padding:20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.hero-greet{margin:0;font-size:14px;opacity:.85}
+.hero-title{font-family:var(--f-display);font-weight:800;font-size:28px;line-height:1.05;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.start-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.start-row input{flex:1 1 200px;background:var(--surface);color:var(--ink);border:0;border-radius:10px;padding:10px 12px;min-height:46px}
+.start-row .btn{flex:none;min-height:46px}
+.hero-chips .chip{background:rgba(255,255,255,.14);color:var(--green-ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.hero-link{border:0;background:none;color:var(--green-ink);text-align:left;padding:0;font-weight:600;font-size:13.5px;text-decoration:underline;text-underline-offset:3px;opacity:.9}
+.card.current{box-shadow:inset 0 0 0 2px var(--mustard),var(--shadow)}
+.cur-total{font-family:var(--f-mono);font-weight:600;font-size:20px}
+.example-link{border:0;text-align:left;flex-direction:row;align-items:center;justify-content:space-between;cursor:pointer;color:var(--ink)}
+.example-link > span:first-child{display:flex;flex-direction:column;gap:2px}
+.mini-stats{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.mini-stats b{color:var(--ink)}
+.live-offer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+.live-offer > span{display:flex;gap:10px;align-items:flex-start;min-width:0;flex:1 1 220px}
+.live-offer > span > span{display:flex;flex-direction:column;gap:1px}
+.live-offer b{color:var(--ink);font-size:14px}
+.live-strip{border:0;background:var(--green-soft);color:var(--green);border-radius:99px;padding:6px 12px;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:8px;align-self:flex-start}
+.reset-btn{align-self:center;color:var(--muted)}
+.reset-opts{display:flex;flex-direction:column;gap:8px}
+.reset-opt{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
+.reset-opt span{color:var(--muted);font-size:13px}
+.reset-opt.danger b{color:var(--danger)}
+.reset-opt:hover{border-color:var(--green)}
+.reset-opt.danger{border-color:var(--danger-soft)}
+.reset-opt.danger:hover{border-color:var(--danger)}
+.price-hint{margin:0;font-size:12.5px;color:var(--green)}
+.price-hint.other{color:var(--mustard-ink);background:var(--mustard-soft);border-radius:8px;padding:6px 10px}
+.prod-list{display:flex;flex-direction:column}
+.prod{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.prod:first-child{border-top:0}
+.prod-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.prod-head .nm{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.prod-head .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.price-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 34px;gap:8px;align-items:center;padding-left:10px}
+.price-row .pl{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.price-row input{min-height:40px;padding:6px 10px;text-align:right;font-family:var(--f-mono)}
+.share-prev{display:flex;justify-content:center;background:var(--surface-2);border-radius:12px;padding:8px;min-height:120px;align-items:center}
+.share-prev img{max-width:min(100%,360px);height:auto;border-radius:6px;-webkit-touch-callout:default}
+.card-head .grp{display:flex;gap:6px;flex-wrap:wrap}
+.share-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.share-btn{border:0;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);border-radius:12px;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:600;font-size:13.5px;color:var(--ink);padding:8px 4px}
+.share-btn svg{width:22px;height:22px;color:var(--green)}
+.share-btn:hover{box-shadow:inset 0 0 0 1.5px var(--green)}
+.share-btn:disabled{opacity:.5}
+nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);background:transparent}
+[hidden]{display:none!important}
+.toast{display:flex;align-items:center;gap:12px;pointer-events:none}
+.toast-act{pointer-events:auto}
+.toast-act{border:0;background:none;color:var(--mustard);font-weight:700;font-size:14px;padding:4px 2px;min-height:32px}
+.recover{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.recover > span{flex:1 1 220px;min-width:0}
+.rec-list{display:flex;flex-direction:column}
+.rec-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.rec-row:first-child{border-top:0}
+.rec-row input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--green)}
+.rec-row b{display:block;overflow-wrap:anywhere}
+.rec-row small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+.btn.danger-text{color:var(--danger)}
+.hero-chips .chip[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
+.sum.total{grid-column:1 / -1;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.sum.total b{font-size:20px}
+.brand h1{white-space:nowrap}
+@media (max-width:400px){
+  .brand small{display:none}
+  .brand h1{font-size:23px}
+  .sync{font-size:11.5px}
+  nav.tabs{gap:3px}
+  nav.tabs button{font-size:10.5px;letter-spacing:-.01em;padding-inline:1px}
+}
+.rc-sub{display:flex;justify-content:space-between;gap:10px;font-weight:600;margin:8px 0 4px;padding-bottom:2px;border-bottom:1px dotted var(--paper-line)}
+.rc-shared{text-align:center;color:var(--paper-muted);font-size:11px;margin-bottom:2px}
+.who-by{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px;color:var(--muted)}
+.who-by label{font-weight:600}
+.who-by select{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:6px 8px;min-height:36px;max-width:100%;color:var(--ink)}
+.group-note{flex-basis:100%;color:var(--green);font-weight:600}
+.who-row.covered .who-total{color:var(--muted)}
+.paid-tag{color:var(--green);font-weight:700}
+.sheet .settle{box-shadow:none;border:1px solid var(--line)}
+.hist-total{display:flex;flex-direction:column;align-items:flex-end}
+.gboard{display:flex;flex-direction:column;gap:10px}
+.gbox{border:1.5px solid var(--green);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--green-soft);transition:box-shadow .12s}
+.gbox-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.gbox-head b{font-size:15px}
+.gmembers,.solo-chips{display:flex;flex-wrap:wrap;gap:6px}
+.gpay{font-size:13px;color:var(--muted)}
+.gpay b{color:var(--ink)}
+.solo-area{border:1.5px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .12s}
+.solo-area.empty{align-items:center;padding:14px}
+.pchip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 6px 4px 4px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;min-height:40px;max-width:100%}
+.pchip .pc-name{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pchip .pc-v{font-size:12px;color:var(--muted)}
+.pchip.picked{border-color:var(--mustard);box-shadow:0 0 0 3px var(--mustard-soft)}
+.pchip.dragging{opacity:.35}
+.pay-t{border:0;border-radius:99px;font-size:11.5px;font-weight:700;padding:4px 8px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.pay-t[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
+.pc-x{border:0;background:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--muted);padding:0}
+.pc-x svg{width:14px;height:14px}
+.pc-x:hover{color:var(--danger);background:var(--danger-soft)}
+.drop-on{box-shadow:0 0 0 3px var(--mustard)}
+.pchip.drop-on{border-color:var(--mustard)}
+.drag-ghost{position:fixed;left:0;top:0;z-index:80;pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.25);opacity:.95}
+body.is-dragging{user-select:none;-webkit-user-select:none}
+.pick-hint{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--mustard-soft);color:var(--mustard-ink);border-radius:10px;padding:8px 10px;font-size:13.5px}
+.pick-hint > span{flex:1 1 180px}
+.sg-wrap{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.start-row .sg-wrap{flex:1 1 200px}
+.sg-box{position:static;margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.18);overflow:hidden;display:flex;flex-direction:column}
+.sg-item{border:0;background:none;text-align:left;padding:11px 12px;display:flex;justify-content:space-between;gap:10px;align-items:center;font-weight:600;color:var(--ink);min-height:44px;border-top:1px solid var(--line)}
+.sg-item:first-child{border-top:0}
+.sg-item small{font-family:var(--f-mono);font-weight:500;color:var(--green);font-size:12.5px;white-space:nowrap}
+.sg-item small.dim{color:var(--muted)}
+.sg-item.on,.sg-item:hover{background:var(--surface-2)}
+.sg-wrap input{width:100%}
+.start-row .sg-wrap > input{flex:none}
+.pix-row{display:grid;grid-template-columns:minmax(70px,auto) minmax(0,1fr);gap:8px;align-items:center}
+.pix-row label{font-weight:600;font-size:13.5px}
+.pix-row input{min-height:40px;font-size:16px}
+.adj{display:flex;flex-direction:column;gap:8px;padding:2px 4px}
+.adj-btns{display:flex;flex-wrap:wrap;gap:8px}
+.adj-btn{border:1.5px dashed var(--line);background:transparent;border-radius:99px;padding:8px 14px;min-height:40px;font-weight:600;font-size:14px;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.adj-btn svg{width:16px;height:16px;color:var(--green)}
+.adj-btn:hover{border-color:var(--green)}
+.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;background:#FFFFFF;border-radius:12px;padding:12px}
+.qr-wrap canvas{width:min(240px,70vw);height:auto;image-rendering:pixelated}
+.pix-code{width:100%;font-family:var(--f-mono);font-size:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;resize:none;word-break:break-all}
+.pix-btn{min-height:32px;padding:4px 10px}
+.pay-card{gap:14px}
+.ubox.group .ubox-people{flex-direction:column;align-items:stretch;flex:1 1 auto}
+.ubox.group .pchip{width:100%}
+.ubox.group .pchip .pc-name{flex:1 1 auto}
+.pay-t{white-space:nowrap}
+.cv-t{border:0;border-radius:99px;font-size:12px;font-weight:700;font-family:var(--f-mono);padding:4px 9px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);flex:none}
+.cv-t[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
+.cv-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;font-size:13.5px;border-top:1px dashed var(--line);padding-top:8px}
+.cv-row label{font-weight:600}
+.cv-row .hint{grid-column:1/-1}
+.cv-row input{min-height:40px;font-size:16px;font-family:var(--f-mono)}
+.ubox-list{display:flex;flex-direction:column;gap:10px}
+.ubox{border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--surface);transition:box-shadow .12s}
+.ubox.group{border:1.5px solid var(--green);background:var(--green-soft)}
+.ubox-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ubox-people{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.ubox-total{font-size:15px;padding-top:9px;white-space:nowrap}
+.ubox-tagline{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ubox-tagline .ubox-total{padding-top:0}
+.ubox-tag{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green)}
+.urow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px;border-top:1px dashed var(--line);padding-top:8px}
+.urow-act{display:flex;align-items:center;gap:8px;margin-left:auto}
+.urow.recv{color:var(--green)}
+.ubox .pix-row{grid-template-columns:auto minmax(0,1fr)}
+.drop-out{display:none;border:1.5px dashed var(--danger);color:var(--danger);border-radius:12px;padding:14px;justify-content:center;font-weight:600;font-size:13.5px}
+body.is-dragging .drop-out{display:flex}
+.me-name{box-shadow:inset 0 -2px 0 var(--mustard)}
+.rc-pay{margin-top:8px;border:1px dashed var(--paper-ink);border-radius:6px;padding:6px 8px;text-align:center;font-weight:600}
+
+/* estatísticas */
+.stats-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.stats-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:end;height:170px;padding-top:22px;border-bottom:1px solid var(--line)}
+.bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative;outline:none}
+.bar{width:min(42px,70%);background:var(--green);border-radius:4px 4px 0 0;min-height:2px;transition:filter .15s}
+.bar.zero{background:var(--line)}
+.bar-col:hover .bar,.bar-col:focus-visible .bar{filter:brightness(1.12)}
+.bar-val{position:absolute;font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;transform:translateY(-4px)}
+.bar-tip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12px;padding:5px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:2;font-family:var(--f-mono)}
+.bar-col:first-child .bar-tip{left:0;transform:none}
+.bar-col:last-child .bar-tip,.bar-col:nth-last-child(2) .bar-tip{left:auto;right:0;transform:none}
+.bar-col:hover .bar-tip,.bar-col:focus-visible .bar-tip{opacity:1}
+.chart-x{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;font-size:12px;color:var(--muted);text-align:center;padding-top:6px;text-transform:capitalize}
+.rank{display:flex;flex-direction:column;gap:8px}
+.rank-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;font-size:14px}
+.rank-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px;min-width:0}
+.rank-row .nm span{overflow:hidden;text-overflow:ellipsis}
+.rank-row .vl{font-family:var(--f-mono);font-size:13px;color:var(--muted);text-align:right}
+.rank-row .track2{grid-column:1 / -1;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.rank-row .fill{height:100%;background:var(--mustard);border-radius:99px}
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.me-pick{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.me-pick select{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;max-width:100%}
+
+/* botões lado a lado sempre dividem a linha em partes iguais */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);width:100%}
+.seg button{white-space:normal;line-height:1.2;text-align:center}
+.chips{display:flex;flex-wrap:wrap}
+.chips .chip{flex:1 1 56px;justify-content:center;min-width:0;padding-inline:8px}
+.urow > span:first-child{flex:1 1 0;min-width:0}
+.btn-row,.item-actions .grp,.pending-bar .grp,.adj-btns,.sheet-actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;width:100%}
+.sheet-actions{grid-auto-flow:row;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.adj-btns{grid-auto-flow:row;grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+.adj-btn{justify-content:center}
+.item-actions{flex-direction:column;align-items:stretch}
+.pending-bar{flex-direction:column;align-items:stretch}
+.del-btn{color:var(--danger)}
+.cat-row > .btn,.cat-row > .icon-btn{width:52px;height:40px;min-height:40px;padding:0}
+.cover-row{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
+.sg-wrap > .sg-clear{position:absolute;right:6px;top:7px;width:34px;height:34px;border:0;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;padding:0}
+.sg-wrap > .sg-clear svg{width:16px;height:16px}
+.sg-wrap > .sg-clear[hidden]{display:none}
+#item-name{padding-right:46px}
+.pdetail{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.pd-name{flex:1 0 100%;color:var(--ink);font-size:13.5px;font-weight:600}
+.btn,.adj-btn{white-space:nowrap}
+.btn svg,.adj-btn svg,.chip svg{flex:none}
+.actions-bar{display:grid;grid-template-columns:1fr;gap:8px}
+.btn-row .btn{padding-inline:6px;gap:6px}
+.receipt-wrap > .btn{white-space:normal;text-align:center}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+      </div>
+      <div><h1>Conta Fácil</h1><small>Divida a comanda sem calculadora</small></div>
+    </div>
+    <div class="sync" id="sync"><i></i><span>Salvo neste aparelho</span></div>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="inicio" id="tab-inicio"></button>
+    <button role="tab" data-tab="comanda" id="tab-comanda"></button>
+    <button role="tab" data-tab="fechar" id="tab-fechar"></button>
+    <button role="tab" data-tab="historico" id="tab-historico"></button>
+    <button role="tab" data-tab="cadastros" id="tab-cadastros"></button>
+  </nav>
+
+  <main id="view"></main>
+</div>
+<div id="overlay-root"></div>
+
+<script>
+const APP_URL = location.origin + location.pathname;
+
+/* ---------- utilidades ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const newId = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-5);
+const BRL = c => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').trim().toLocaleLowerCase('pt-BR');
+const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+const clone = v => JSON.parse(JSON.stringify(v));
+let orderSeq = 0;
+const nextOrder = () => Date.now() * 100 + (orderSeq++ % 100);
+function parseMoney(s) {
+  s = String(s ?? '').replace(/[^\d,.]/g, '');
+  if (!s) return null;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const v = parseFloat(s);
+  return isFinite(v) && v >= 0 ? Math.round(v * 100) : null;
+}
+const moneyInput = c => BRL(c || 0);
+const pctStr = n => String(n).replace('.', ',');
+const PALETTE = ['#1D5A3B', '#B5651D', '#2F5D8A', '#8A3B5C', '#5B6B1E', '#6A4C93', '#A33A2A', '#1E7A7A'];
+function colorFor(name) { let h = 0; for (const ch of norm(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return PALETTE[h % PALETTE.length]; }
+function initials(name) { const p = String(name).trim().split(/\s+/); return ((p[0]?.[0] || '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
+const avatar = name => `<span class="avatar" style="background:${colorFor(name)}">${esc(initials(name))}</span>`;
+const fmtDate = ts => new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const fmtDateTime = ts => new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const plural = (n, s, p) => n + ' ' + (n === 1 ? s : p);
+const I = {
+  x: '<svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  edit: '<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  trash: '<svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+  copy: '<svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  plus: '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  save: '<svg class="i" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h8M8 14h8v7H8z"/></svg>',
+  ok: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
+  warn: '<svg class="i" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>',
+  home: '<svg class="i" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>',
+  receipt: '<svg class="i" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  calc: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>',
+  clock: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  users: '<svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .8 3 3 3 6"/></svg>',
+  image: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>',
+  share: '<svg class="i" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v7h14v-7"/></svg>',
+  file: '<svg class="i" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>',
+  refresh: '<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
+  lock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  live: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19 5a10 10 0 0 1 0 14M5 19A10 10 0 0 1 5 5"/></svg>',
+};
+
+/* ---------- divisão em centavos (sem erro de arredondamento) ---------- */
+function allocate(total, weights) {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (sum <= 0 || total <= 0) return weights.map(() => 0);
+  const raw = weights.map(w => total * w / sum);
+  const base = raw.map(Math.floor);
+  let rem = total - base.reduce((a, b) => a + b, 0);
+  const order = raw.map((r, i) => [r - base[i], i]).sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+  for (let k = 0; k < rem; k++) base[order[k % order.length][1]]++;
+  return base;
+}
+
+/* ---------- modelo ---------- */
+function blankDraft() {
+  return { id: newId(), place: '', createdAt: Date.now(), people: [], items: [],
+    service: { enabled: true, mode: 'pct', pct: 10, fixed: 0, policy: 'discount' },
+    couvert: { enabled: false, value: 1500 },
+    discount: { enabled: false, label: 'Desconto', mode: 'value', value: 0, pct: 10, at: 'after' },
+    payMode: 'none', payer: '', custom: {}, cover: {}, groups: [],
+    live: null, savedAt: null, isExample: false, active: false };
+}
+function migrate(d) {
+  const hadGroups = Array.isArray(d && d.groups);
+  const b = blankDraft();
+  d = { ...b, ...d };
+  d.service = { ...b.service, ...(d.service || {}) };
+  d.couvert = { ...b.couvert, ...(d.couvert || {}) };
+  // contas antigas aplicavam o desconto antes do serviço
+  d.discount = { ...b.discount, at: 'before', ...(d.discount || {}) };
+  delete d.check;
+  // "Várias pagaram" virou valor personalizado por pessoa
+  if (d.payMode === 'multi') { d.custom = Object.fromEntries(Object.entries(d.paid || {}).filter(([, v]) => v > 0)); d.payMode = 'none'; }
+  if (d.payMode !== 'single') d.payMode = 'none';
+  d.custom = isObj(d.custom) ? d.custom : {};
+  d.cover = isObj(d.cover) ? d.cover : {};
+  delete d.paid;
+  delete d.settled;
+  // versões anteriores guardavam "quem paga por quem" em cada pessoa; vira um grupo com responsável
+  if (!hadGroups) {
+    const ppl = d.people || [], byId = Object.fromEntries(ppl.map(p => [p.id, p]));
+    const rootOf = id => { let cur = id; const seen = new Set([id]); while (byId[cur]?.by && byId[byId[cur].by] && !seen.has(byId[cur].by)) { cur = byId[cur].by; seen.add(cur); } return cur; };
+    const map = {}; ppl.forEach(p => { const r = rootOf(p.id); (map[r] = map[r] || []).push(p.id); });
+    d.groups = Object.entries(map).filter(([, m]) => m.length > 1).map(([r, m]) => ({ id: newId(), members: [r, ...m.filter(x => x !== r)], payers: [r] }));
+  }
+  if (typeof d.active !== 'boolean') d.active = !d.savedAt && !d.isExample && !!((d.items || []).length || (d.people || []).length);
+  d.people = (d.people || []).map((p, i) => ({ payService: true, payCouvert: true, o: i, ...p }));
+  d.items = (d.items || []).map((it, i) => {
+    const a = it.a ? { ...it.a } : Object.fromEntries((it.assign || []).map(id => [id, 1]));
+    const { assign, uneq, free, ...rest } = it;
+    const fq = Math.min(it.qty || 1, it.fq ?? (free ? (it.qty || 1) : 0));
+    return { o: i, ...rest, fq, mode: it.mode || (uneq ? 'parts' : 'equal'), lk: it.lk ?? Object.keys(a).length > 0, a };
+  });
+  return d;
+}
+const newPerson = name => ({ id: newId(), name, payService: true, payCouvert: true, o: nextOrder() });
+
+// grupos válidos: só pessoas que existem, cada uma em um grupo, pelo menos 2 por grupo e 1 responsável
+function cleanGroups(d) {
+  const ids = new Set(d.people.map(p => p.id)), used = new Set();
+  return (d.groups || []).map(g => {
+    const members = (g.members || []).filter(m => ids.has(m) && !used.has(m));
+    members.forEach(m => used.add(m));
+    let payers = (g.payers || []).filter(p => members.includes(p));
+    if (!payers.length && members.length) payers = [members[0]];
+    return { id: g.id, members, payers };
+  }).filter(g => g.members.length > 1);
+}
+function compute(d) {
+  const per = {};
+  d.people.forEach(p => per[p.id] = { person: p, lines: [], gross: 0, discount: 0, subtotal: 0, serviceNominal: 0, service: 0, couvert: 0, total: 0, paid: 0, balance: 0 });
+  const ids = d.people.map(p => p.id);
+  let itemsGross = 0, freeValue = 0; const unassigned = [], incomplete = [];
+  d.items.forEach(it => {
+    const fq = Math.min(it.fq || 0, it.qty);
+    const charged = (it.qty - fq) * it.price, freeVal = fq * it.price;
+    itemsGross += charged; freeValue += freeVal;
+    const who = ids.filter(id => (it.a[id] || 0) > 0);
+    if (!who.length) { if (charged > 0) unassigned.push(it); return; }
+    const base = { name: it.name, qty: it.qty, price: it.price, n: who.length, mode: it.mode, fq };
+    if (it.mode === 'units') {
+      // cada pessoa leva unidades inteiras; a soma precisa ser exatamente a quantidade
+      const units = who.reduce((s, id) => s + it.a[id], 0);
+      if (units !== it.qty) { incomplete.push({ it, units }); return; }
+      const frees = allocate(freeVal, who.map(id => it.a[id]));
+      who.forEach((id, i) => {
+        const v = it.a[id] * it.price - frees[i];
+        per[id].lines.push({ ...base, units: it.a[id], value: v, freeShare: frees[i] });
+        per[id].gross += v;
+      });
+      return;
+    }
+    const isParts = it.mode === 'parts';
+    const w = who.map(id => isParts ? it.a[id] : 1);
+    const totalParts = w.reduce((a, b) => a + b, 0);
+    const parts = allocate(charged, w), frees = allocate(freeVal, w);
+    who.forEach((id, i) => {
+      per[id].lines.push({ ...base, uneq: isParts && new Set(w).size > 1, parts: w[i], totalParts, value: parts[i], freeShare: frees[i] });
+      per[id].gross += parts[i];
+    });
+  });
+  const openItems = d.items.filter(it => !it.lk);
+  const consumoBruto = ids.reduce((a, id) => a + per[id].gross, 0);
+  const ds = d.discount, after = ds.at === 'after';
+  const discountOf = base => !ds.enabled ? 0 : Math.min(base, ds.mode === 'pct' ? Math.round(base * ds.pct / 100) : ds.value);
+
+  // desconto sobre o consumo: entra antes do serviço
+  let discount = after ? 0 : discountOf(consumoBruto);
+  allocate(discount, ids.map(id => per[id].gross)).forEach((v, i) => per[ids[i]].discount = v);
+  ids.forEach(id => per[id].subtotal = per[id].gross - per[id].discount);
+  const consumo = consumoBruto - discount;
+  const s = d.service;
+  const nominalTotal = !s.enabled ? 0 : (s.mode === 'fixed' ? s.fixed : Math.round(consumo * s.pct / 100));
+  allocate(nominalTotal, ids.map(id => per[id].subtotal)).forEach((v, i) => per[ids[i]].serviceNominal = v);
+  const payers = ids.filter(id => per[id].person.payService);
+  if (s.policy === 'redistribute') allocate(nominalTotal, payers.map(id => per[id].subtotal)).forEach((v, i) => per[payers[i]].service = v);
+  else payers.forEach(id => per[id].service = per[id].serviceNominal);
+  if (d.couvert.enabled) ids.forEach(id => { if (per[id].person.payCouvert) per[id].couvert = d.couvert.value; });
+  ids.forEach(id => { const r = per[id]; r.total = r.subtotal + r.service + r.couvert; });
+
+  // desconto no final: sobre o total já com serviço e couvert, como muitos restaurantes fazem
+  if (after) {
+    const pre = ids.map(id => per[id].total);
+    discount = discountOf(pre.reduce((a, b) => a + b, 0));
+    allocate(discount, pre).forEach((v, i) => { per[ids[i]].discount = v; per[ids[i]].total -= v; });
+  }
+  let service = 0, couvert = 0, total = 0;
+  ids.forEach(id => { const r = per[id]; service += r.service; couvert += r.couvert; total += r.total; });
+  const skipped = ids.filter(id => !per[id].person.payService && per[id].serviceNominal > 0);
+  const skippedValue = skipped.reduce((a, id) => a + per[id].serviceNominal, 0);
+
+
+  // grupos: quem está no mesmo grupo divide um cupom só; os responsáveis pagam pelo grupo
+  const groups = cleanGroups(d);
+  const unitOf = {};
+  groups.forEach(g => g.members.forEach(m => unitOf[m] = g.id));
+  ids.forEach(id => { if (!unitOf[id]) unitOf[id] = id; });
+  const mk = (id, members, payers) => {
+    const sum = k => members.reduce((a, m) => a + per[m][k], 0);
+    const multi = members.length > 1;
+    const lines = multi ? members.flatMap(m => [{ header: per[m].person.name, value: per[m].total }, ...per[m].lines]) : per[members[0]].lines;
+    const svcPayers = members.filter(m => per[m].person.payService).length, cvPayers = members.filter(m => per[m].person.payCouvert).length;
+    const name = members.map(m => per[m].person.name).join(' + ');
+    return { id, members, payers, name, lines, gross: sum('gross'), discount: sum('discount'), service: sum('service'), serviceNominal: sum('serviceNominal'),
+      couvert: sum('couvert'), total: sum('total'), cvPayers, person: { id, name, payService: svcPayers > 0, payCouvert: cvPayers > 0 }, paid: 0, balance: 0 };
+  };
+  const units = [];
+  ids.forEach(id => {
+    const uid = unitOf[id];
+    if (units.some(u => u.id === uid)) return;
+    const g = groups.find(x => x.id === uid);
+    units.push(g ? mk(g.id, g.members, g.payers) : mk(id, [id], [id]));
+  });
+  const U = Object.fromEntries(units.map(u => [u.id, u]));
+
+  // cada responsável deve uma parte igual do total do seu cupom
+  const share = {}; ids.forEach(id => share[id] = 0);
+  units.forEach(u => { const sh = allocate(u.total, u.payers.map(() => 1)); u.shares = {}; u.payers.forEach((pid, i) => { share[pid] += sh[i]; u.shares[pid] = sh[i]; }); });
+  // quem vai pagar o local: valores personalizados primeiro; o restante fica com quem paga a conta
+  // ("Uma pessoa paga") ou é dividido entre os demais na proporção da parte de cada um ("Cada um paga o seu")
+  const single = d.payMode === 'single' && per[d.payer] ? d.payer : '';
+  const custom = {};
+  Object.entries(d.custom || {}).forEach(([k, v]) => { if (per[k] && k !== single) custom[k] = Math.max(0, Math.round(v) || 0); });
+  const paidBy = {}, coverOf = {}; ids.forEach(id => paidBy[id] = custom[id] || 0);
+  const rest = total - Object.values(custom).reduce((a, b) => a + b, 0);
+  if (rest > 0) {
+    if (single) paidBy[single] = rest;
+    else if (d.payMode !== 'single') {
+      const free = ids.filter(id => !(id in custom) && share[id] > 0);
+      // quem paga menos que a sua parte pode escolher quem cobre a diferença (e fica devendo a essa pessoa)
+      let left = rest;
+      Object.entries(d.cover || {}).forEach(([x, y]) => {
+        const gap = (x in custom) ? share[x] - custom[x] : 0;
+        if (gap > 0 && free.includes(y) && x !== y && gap <= left) { coverOf[x] = y; paidBy[y] += gap; left -= gap; }
+      });
+      const al = allocate(left, free.map(id => share[id]));
+      free.forEach((id, i) => paidBy[id] += al[i]);
+    }
+  }
+  const paidSum = ids.reduce((a, id) => a + paidBy[id], 0);
+  const bal = {}; ids.forEach(id => { bal[id] = paidBy[id] - share[id]; per[id].paid = paidBy[id]; per[id].share = share[id]; per[id].balance = bal[id]; per[id].custom = id in custom; });
+  // acertos entre pessoas: quem pagou menos que a sua parte passa a diferença a quem pagou mais
+  const transfers = [];
+  const left = { ...bal };
+  Object.entries(coverOf).forEach(([x, y]) => {
+    const v = Math.min(-left[x], left[y]);
+    if (v > 0) { transfers.push({ from: x, to: y, value: v }); left[x] += v; left[y] -= v; }
+  });
+  const cred = ids.filter(id => left[id] > 0).map(id => ({ id, v: left[id] })).sort((a, b) => b.v - a.v);
+  const debt = ids.filter(id => left[id] < 0).map(id => ({ id, v: -left[id] })).sort((a, b) => b.v - a.v);
+  for (let i = 0, j = 0; i < debt.length && j < cred.length;) {
+    const v = Math.min(debt[i].v, cred[j].v);
+    if (v > 0) transfers.push({ from: debt[i].id, to: cred[j].id, value: v });
+    debt[i].v -= v; cred[j].v -= v;
+    if (!debt[i].v) i++;
+    if (!cred[j].v) j++;
+  }
+  const payDiff = paidSum - total;
+  units.forEach(u => { u.paid = u.members.reduce((a, m) => a + paidBy[m], 0); });
+  return { per, ids, units, U, unitOf, groups, payMode: d.payMode, payer: single, itemsGross, consumoBruto, discount, consumo, nominalTotal, service, couvert, total, unassigned, incomplete, openItems, freeCount: d.items.filter(i => i.fq > 0).length, freeValue, discountAfter: after, skipped, skippedValue, payers, transfers, coverOf, paidSum, payDiff, missingPayer: d.payMode === 'single' && !single };
+}
+
+/* ---------- formato compartilhado da mesa ao vivo ---------- */
+function toShared(d) {
+  const people = {}; d.people.forEach((p, i) => people[p.id] = { name: p.name, payService: !!p.payService, payCouvert: !!p.payCouvert, o: p.o ?? i });
+  const items = {}; d.items.forEach((it, i) => items[it.id] = { name: it.name, qty: it.qty, price: it.price, fq: it.fq || 0, mode: it.mode || 'equal', lk: !!it.lk, a: { ...it.a }, o: it.o ?? i });
+  return { place: d.place || '', createdAt: d.createdAt, people, items, service: { ...d.service }, couvert: { ...d.couvert },
+    discount: { ...d.discount }, payMode: d.payMode, payer: d.payer || '', custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) }, groups: clone(d.groups || []) };
+}
+function fromShared(s, base) {
+  const b = blankDraft();
+  const people = Object.entries(s.people || {}).filter(([, p]) => isObj(p) && !p._del && p.name)
+    .map(([id, p]) => ({ id, name: p.name, payService: p.payService !== false, payCouvert: p.payCouvert !== false, o: p.o || 0 })).sort((x, y) => x.o - y.o);
+  const pids = new Set(people.map(p => p.id));
+  const items = Object.entries(s.items || {}).filter(([, it]) => isObj(it) && !it._del && it.name)
+    .map(([id, it]) => ({ id, name: it.name, qty: it.qty || 1, price: it.price || 0, fq: Math.min(it.qty || 1, it.fq ?? (it.free ? (it.qty || 1) : 0)), mode: it.mode || (it.uneq ? 'parts' : 'equal'), lk: !!it.lk, o: it.o || 0,
+      a: Object.fromEntries(Object.entries(it.a || {}).filter(([k, v]) => v > 0 && pids.has(k))) })).sort((x, y) => x.o - y.o);
+  return { ...base, place: s.place || '', createdAt: s.createdAt || base.createdAt, people, items,
+    service: { ...b.service, ...(s.service || {}) }, couvert: { ...b.couvert, ...(s.couvert || {}) },
+    discount: { ...b.discount, ...(s.discount || {}) },
+    payMode: s.payMode === 'single' ? 'single' : 'none', payer: s.payer || '', custom: Object.fromEntries(Object.entries(s.custom || {}).filter(([k, v]) => typeof v === 'number' && v >= 0 && pids.has(k))),
+    cover: Object.fromEntries(Object.entries(s.cover || {}).filter(([k, v]) => pids.has(k) && pids.has(v))),
+    groups: Array.isArray(s.groups) ? s.groups : Object.values(s.groups || {}) };
+}
+// patch mínimo: só as folhas que mudaram, para várias pessoas editarem ao mesmo tempo sem se sobrescrever
+function diff(a, b) {
+  if (isObj(a) && isObj(b)) {
+    const p = {}; let any = false;
+    for (const k of Object.keys(b)) { const x = diff(a[k], b[k]); if (x !== undefined) { p[k] = x; any = true; } }
+    for (const k of Object.keys(a)) if (!(k in b)) { p[k] = isObj(a[k]) ? { _del: true } : null; any = true; }
+    return any ? p : undefined;
+  }
+  return JSON.stringify(a) === JSON.stringify(b) ? undefined : (b === undefined ? null : b);
+}
+
+/* ---------- armazenamento ---------- */
+const LS = {
+  get(k, def) { try { const v = localStorage.getItem('contafacil.' + k); return v ? JSON.parse(v) : def; } catch { return def; } },
+  set(k, v) { try { localStorage.setItem('contafacil.' + k, JSON.stringify(v)); } catch {} },
+};
+// histórico, cadastros e comanda ficam neste aparelho; o Firebase só guarda as comandas ao vivo
+const store = {
+  mode: 'local', db: null, ready: false, chain: Promise.resolve(),
+  queue(fn, onErr) { this.chain = this.chain.then(fn).catch(e => (onErr || (x => console.warn('db', x)))(e)); return this.chain; },
+  async init() {
+    try {
+      const m = await import('./fb.js');
+      this.db = await m.connect();
+    } catch (e) { console.warn('firebase', e); this.db = null; }
+    this.ready = true;
+    renderSync(); render({ preserve: true });
+    live.boot();
+  },
+  saveCatalog() { LS.set('catalog', catalog); },
+  saveBill() { LS.set('bills', bills); },
+  deleteBill() { LS.set('bills', bills); },
+};
+
+/* ---------- mesa ao vivo ---------- */
+const live = {
+  unsub: null, last: null, readOnly: false, closed: false, connecting: false,
+  ref(code) { return store.db.doc('mesas/' + code); },
+  link() { return APP_URL + '#m' + draft.live.code; },
+  available() { return !!store.db; },
+  async boot() {
+    const m = /^#m([a-z0-9]{6,16})$/.exec(location.hash || '');
+    if (m && store.db) {
+      const code = m[1];
+      if (draft.live?.code === code) return this.subscribe();
+      try {
+        const snap = await this.ref(code).get();
+        if (!snap.exists) { toast('Essa comanda ao vivo não foi encontrada.'); return draft.live && this.subscribe(); }
+        const data = snap.data();
+        if (data.closed) { toast('Essa comanda ao vivo já foi encerrada.'); return draft.live && this.subscribe(); }
+        const join = () => { this.stop(); draft = fromShared(data, { ...blankDraft(), active: true, live: { code, host: false } }); this.last = toShared(draft); tab = 'comanda'; LS.set('draft', draft); render(); this.subscribe(); toast('Você entrou na comanda ao vivo.'); };
+        draft.live ? join() : confirmReplace(join);
+      } catch (e) { console.warn(e); toast('Não foi possível abrir a comanda ao vivo.'); }
+    } else if (draft.live && store.db) this.subscribe();
+  },
+  async start() {
+    if (!store.db) { toast('A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.'); return; }
+    const code = Array.from({ length: 10 }, () => 'abcdefghjkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 31)]).join('');
+    draft.isExample = false;
+    draft.live = { code, host: true };
+    const body = { ...toShared(draft), closed: false, v: 1 };
+    try {
+      await this.ref(code).set(body);
+      this.last = toShared(draft);
+      LS.set('draft', draft); render(); this.subscribe();
+      toast('Comanda ao vivo criada. Copie o link e mande para a turma.');
+    } catch (e) { console.warn(e); draft.live = null; render(); toast('Não foi possível criar a comanda ao vivo agora. Tente de novo em instantes.'); }
+  },
+  async subscribe() {
+    if (!draft.live || !store.db || this.unsub) return;
+    const code = draft.live.code;
+    this.closed = false;
+    this.unsub = this.ref(code).onSnapshot(snap => {
+      if (!draft.live || draft.live.code !== code) return;
+      if (!snap.exists) { this.closed = true; render({ preserve: true }); return; }
+      const data = snap.data();
+      this.closed = !!data.closed;
+      const next = fromShared(data, draft);
+      const nextShared = toShared(next);
+      if (JSON.stringify(nextShared) === JSON.stringify(toShared(draft)) && this.last) { this.last = nextShared; render({ preserve: true }); return; }
+      draft = next; this.last = nextShared; LS.set('draft', draft); render({ preserve: true });
+    }, err => { console.warn('live', err); this.unsub = null; toast('A conexão com a comanda ao vivo caiu. Toque em Reconectar.'); render({ preserve: true }); });
+    render({ preserve: true });
+  },
+  push() {
+    if (!draft.live || !store.db || this.closed) return;
+    const now = toShared(draft);
+    const patch = this.last ? diff(this.last, now) : now;
+    this.last = now;
+    if (!patch) return;
+    const code = draft.live.code;
+    store.queue(() => this.ref(code).update(patch), e => {
+      console.warn('live write', e);
+      if (e && e.code === 'permission-denied') toast('Esta comanda ao vivo não aceita mais alterações.');
+      else toast('Não deu para enviar a alteração. Ela será reenviada na próxima mudança.');
+      this.last = null;
+    });
+  },
+  stop() { if (this.unsub) { try { this.unsub(); } catch {} } this.unsub = null; },
+  async end() {
+    const code = draft.live?.code; const host = draft.live?.host;
+    this.stop();
+    if (code && host && store.db && !this.closed) store.queue(() => this.ref(code).update({ closed: true }));
+    draft.live = null; this.last = null; this.closed = false; this.readOnly = false;
+    try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch {}
+    commit({ keepExample: true });
+  },
+};
+
+/* ---------- estado ---------- */
+function exampleDraft() {
+  const d = blankDraft(); d.place = 'Boteco da Esquina'; d.isExample = true;
+  const [a, b, c, e] = ['Ana', 'Bruno', 'Carla', 'Diego'].map(newPerson);
+  e.payService = false;
+  d.people = [a, b, c, e];
+  const all = Object.fromEntries(d.people.map(p => [p.id, 1]));
+  d.items = [
+    { id: newId(), o: 1, name: 'Chopp 500 ml', qty: 11, price: 1290, fq: 1, mode: 'units', lk: true, a: { [a.id]: 4, [b.id]: 3, [c.id]: 2, [e.id]: 2 } },
+    { id: newId(), o: 2, name: 'Porção de batata com cheddar', qty: 1, price: 3800, fq: 0, mode: 'equal', lk: true, a: { [a.id]: 1, [b.id]: 1, [c.id]: 1 } },
+    { id: newId(), o: 3, name: 'Caipirinha de limão', qty: 2, price: 2200, fq: 0, mode: 'equal', lk: true, a: { [c.id]: 1 } },
+    { id: newId(), o: 4, name: 'Água com gás', qty: 1, price: 600, fq: 0, mode: 'equal', lk: true, a: { [e.id]: 1 } },
+  ];
+  d.payMode = 'single'; d.payer = a.id;
+  return d;
+}
+let draft = migrate(LS.get('draft', null) || blankDraft());
+if (draft.isExample) draft.active = false;
+const fixCatalog = c => ({ me: '', people: [], products: [], ...c, products: (c?.products || []).map(p => ({ prices: {}, ...p })) });
+let catalog = fixCatalog(LS.get('catalog', {}));
+let bills = LS.get('bills', []).map(migrate);
+let tab = /^#m[a-z0-9]{6,16}$/.test(location.hash || '') ? 'comanda' : 'inicio';
+let editingItemId = null;
+
+function commit(opts = {}) {
+  if (draft.live && live.readOnly) { toast('Você só pode acompanhar esta comanda.'); if (live.last) draft = fromShared(live.last, draft); render(); return; }
+  if (!opts.keepExample) draft.isExample = false;
+  LS.set('draft', draft);
+  if (draft.live) live.push();
+  render();
+}
+
+/* ---------- teclado no celular ---------- */
+const isTouch = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch { return false; } })();
+// no celular o teclado fecha depois de lançar; no computador o cursor volta para o campo
+function afterSubmit(sel) {
+  if (isTouch) { document.activeElement?.blur?.(); return; }
+  setTimeout(() => $(sel)?.focus(), 0);
+}
+const isField = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]), textarea, select');
+// tocar no fundo recolhe o teclado e não deixa o iPhone pular para outro campo
+const INTERACTIVE = 'input,textarea,select,label,button,a,summary,[role=button],[tabindex]:not([tabindex="-1"])';
+let tapStart = null;
+document.addEventListener('touchstart', e => { const t = e.touches[0]; tapStart = t ? { x: t.clientX, y: t.clientY, target: e.target } : null; }, { passive: true, capture: true });
+document.addEventListener('touchend', e => {
+  const st = tapStart; tapStart = null;
+  if (!st || !isField(document.activeElement)) return;
+  const t = e.changedTouches[0]; if (!t || Math.hypot(t.clientX - st.x, t.clientY - st.y) > 10) return;
+  if (st.target.closest && st.target.closest(INTERACTIVE)) return;
+  e.preventDefault();
+  document.activeElement.blur();
+  setTimeout(() => { if (isField(document.activeElement)) document.activeElement.blur(); }, 60);
+}, { passive: false, capture: true });
+document.addEventListener('mousedown', e => {
+  const a = document.activeElement;
+  if (isField(a) && !(e.target.closest && e.target.closest(INTERACTIVE))) a.blur();
+}, true);
+// garante que o valor digitado é salvo ao sair do campo, mesmo quando o iPhone não dispara o evento de mudança
+// (acontece quando o campo é formatado durante a digitação, como nos valores em R$)
+document.addEventListener('focusin', e => { const el = e.target; if (isField(el) && el.tagName === 'INPUT') { el._startValue = el.value; el._changed = false; } });
+document.addEventListener('change', e => { if (e.target && e.target.tagName === 'INPUT') e.target._changed = true; }, true);
+document.addEventListener('focusout', e => {
+  const el = e.target;
+  if (!isField(el) || el.tagName !== 'INPUT' || el._changed || el.form) return;
+  if (el._startValue !== undefined && el.value !== el._startValue) { el._changed = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+});
+// máscara de valor: só números, a vírgula dos centavos entra sozinha (R$ 1.234,56)
+function maskMoney(el) {
+  const digits = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 9);
+  el.value = digits ? BRL(parseInt(digits, 10)) : '';
+  try { const n = el.value.length; el.setSelectionRange(n, n); } catch {}
+}
+document.addEventListener('input', e => {
+  const el = e.target; if (!el.matches || !el.matches('[data-money]')) return;
+  // o primeiro número digitado depois de tocar no campo substitui o valor sugerido
+  if (el.dataset.fresh === '1' && e.inputType && e.inputType.startsWith('insert') && e.data && /\d/.test(e.data)) el.value = e.data;
+  el.dataset.fresh = '';
+  maskMoney(el);
+}, true);
+['focusin', 'click'].forEach(ev => document.addEventListener(ev, e => {
+  const el = e.target; if (!el.matches || !el.matches('[data-money]')) return;
+  if (ev === 'focusin') el.dataset.fresh = '1';
+  setTimeout(() => { try { const n = el.value.length; el.setSelectionRange(n, n); } catch {} }, 0);
+}));
+// "OK"/Enter em campo solto confirma e fecha o teclado
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !isField(e.target) || e.target.form) return;
+  e.preventDefault(); e.target.blur();
+});
+function prepFields(root) {
+  $$('input:not([type=checkbox])', root).forEach(i => {
+    if (!i.hasAttribute('enterkeyhint')) i.setAttribute('enterkeyhint', i.form && i.form.id !== 'rn-form' ? 'go' : 'done');
+  });
+}
+
+/* ---------- sugestões ao digitar (no lugar da lista do navegador, que no iPhone ficava presa na tela) ---------- */
+const fold = s => norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const lastPress = { target: null, at: 0 };
+document.addEventListener('pointerdown', e => { lastPress.target = e.target; lastPress.at = Date.now(); }, true);
+function attachSuggest(input, getItems, onPick) {
+  if (!input) return;
+  const wrap = document.createElement('div'); wrap.className = 'sg-wrap';
+  input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
+  const box = document.createElement('div'); box.className = 'sg-box'; box.hidden = true; box.setAttribute('role', 'listbox');
+  wrap.appendChild(box);
+  let items = [], active = -1;
+  const close = () => { box.hidden = true; box.innerHTML = ''; active = -1; };
+  const show = () => {
+    const q = fold(input.value);
+    items = getItems().filter(x => !q || fold(x.label).includes(q)).filter(x => fold(x.label) !== q).slice(0, 6);
+    if (!items.length) return close();
+    box.innerHTML = items.map((x, i) => `<button type="button" class="sg-item ${i === active ? 'on' : ''}" data-i="${i}" role="option"><span>${esc(x.label)}</span>${x.right ? `<small class="${x.dim ? 'dim' : ''}">${esc(x.right)}</small>` : ''}</button>`).join('');
+    box.hidden = false;
+  };
+  const pick = i => { const x = items[i]; if (!x) return; input.value = x.label; close(); onPick && onPick(x); };
+  input.addEventListener('input', () => { active = -1; show(); });
+  input.addEventListener('focus', show);
+  // ao sair do campo a lista fecha na hora; só espera o toque terminar quando ele foi num botão (para o botão não sair de baixo do dedo)
+  input.addEventListener('blur', () => {
+    const t = lastPress.target, onButton = t && Date.now() - lastPress.at < 600 && t.closest && t.closest('button, a, [role=button]') && !box.contains(t);
+    if (!onButton) return close();
+    let done = false; const fin = () => { if (done) return; done = true; document.removeEventListener('click', fin, true); setTimeout(close, 0); };
+    document.addEventListener('click', fin, true);
+    setTimeout(fin, 450);
+  });
+  input.addEventListener('keydown', e => {
+    if (box.hidden) return;
+    if (e.key === 'ArrowDown') { active = Math.min(items.length - 1, active + 1); show(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { active = Math.max(0, active - 1); show(); e.preventDefault(); }
+    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); e.stopPropagation(); pick(active); }
+    else if (e.key === 'Escape') close();
+  });
+  // pointerdown evita que o campo perca o foco antes da escolha
+  let press = null;
+  box.addEventListener('pointerdown', e => { e.preventDefault(); const b = e.target.closest('[data-i]'); press = b ? { i: +b.dataset.i, x: e.clientX, y: e.clientY, id: e.pointerId } : null; });
+  box.addEventListener('pointerup', e => {
+    const p = press; press = null; if (!p || p.id !== e.pointerId) return;
+    const b = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-i]');
+    if (b && +b.dataset.i === p.i && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12) pick(p.i);
+  });
+  box.addEventListener('pointercancel', () => { press = null; });
+  box.addEventListener('click', e => e.preventDefault());
+}
+
+/* ---------- toast & overlay ---------- */
+let toastTimer;
+function toast(msg, action) {
+  let el = $('.toast'); if (!el) { el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false; clearTimeout(toastTimer);
+  if (action) {
+    const b = document.createElement('button'); b.className = 'toast-act'; b.textContent = action.label;
+    b.onclick = () => { el.hidden = true; clearTimeout(toastTimer); action.run(); };
+    el.appendChild(b);
+  }
+  toastTimer = setTimeout(() => el.hidden = true, action ? 6000 : 3000);
+}
+// com uma janela aberta, a página de fundo fica parada; só a janela rola
+let lockedY = null;
+function lockScroll() {
+  if (lockedY !== null) return;
+  lockedY = window.scrollY;
+  Object.assign(document.body.style, { position: 'fixed', top: -lockedY + 'px', left: '0', right: '0', width: '100%' });
+}
+function unlockScroll() {
+  if (lockedY === null) return;
+  const y = lockedY; lockedY = null;
+  Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
+  window.scrollTo(0, y);
+}
+function openSheet(html, onMount) {
+  const root = $('#overlay-root');
+  lockScroll();
+  root.innerHTML = `<div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const ov = $('#ov');
+  ov.addEventListener('click', e => { if (e.target.id === 'ov') closeSheet(); });
+  // arrastar no fundo escuro não rola nada
+  ov.addEventListener('touchmove', e => { if (!e.target.closest('.sheet')) e.preventDefault(); }, { passive: false });
+  prepFields(root);
+  onMount && onMount($('.sheet', root));
+}
+function closeSheet() { $('#overlay-root').innerHTML = ''; unlockScroll(); }
+function confirmSheet(title, text, okLabel, onOk, danger) {
+  openSheet(`<h3>${esc(title)}</h3><p class="hint" style="font-size:14.5px">${esc(text)}</p>
+    <div class="sheet-actions"><button class="btn ghost" id="cf-no">Cancelar</button><button class="btn ${danger ? 'danger' : ''}" id="cf-ok">${esc(okLabel)}</button></div>`,
+    s => { $('#cf-no', s).onclick = closeSheet; $('#cf-ok', s).onclick = () => { closeSheet(); onOk(); }; $('#cf-ok', s).focus(); });
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+/* ---------- cupom ---------- */
+function serviceLabel(b) { return b.service.mode === 'fixed' ? 'Serviço' : `Serviço (${pctStr(b.service.pct)}%)`; }
+function lineDetail(l) {
+  if (l.fq >= l.qty) return `${l.mode === 'units' ? l.units + ' de ' + l.qty + ' un.' : l.qty + ' un.'} · cortesia`;
+  let s;
+  if (l.mode === 'units') s = `${l.units} de ${l.qty} un. × ${BRL(l.price)}`;
+  else {
+    s = `${l.qty} × ${BRL(l.price)}`;
+    if (l.uneq) s += ` · ${l.parts} de ${l.totalParts} partes`;
+    else if (l.n > 1) s += ` ÷ ${l.n} pessoas`;
+  }
+  if (l.fq > 0 && l.freeShare > 0) s += ` · sua parte da cortesia (${l.fq} un.) −${BRL(l.freeShare)}`;
+  return s;
+}
+// o que cada pessoa vai fazer: pagar ao local, passar a diferença para alguém ou receber
+function planOf(c, pid) {
+  const p = c.per[pid], name = id => c.per[id].person.name, L = [];
+  if (p.paid > 0) L.push({ k: 'place', v: p.paid, t: c.payer === pid ? `paga a conta: ${BRL(p.paid)}` : `paga ${BRL(p.paid)} ao local` });
+  c.transfers.filter(t => t.from === pid).forEach(t => L.push({ k: 'out', v: t.value, to: t.to, t: `paga ${BRL(t.value)} para ${name(t.to)}` }));
+  c.transfers.filter(t => t.to === pid).forEach(t => L.push({ k: 'in', v: t.value, from: t.from, t: `recebe ${BRL(t.value)} de ${name(t.from)}` }));
+  return L;
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function payNote(r, c) {
+  const u = c.U && c.U[r.id]; if (!u) return [];
+  const first = pid => c.per[pid].person.name.split(' ')[0];
+  const multi = u.members.length > 1, L = [];
+  u.members.forEach(pid => planOf(c, pid).forEach(x => {
+    L.push(multi ? `${first(pid)} ${x.t}` : cap(x.t));
+    const k = x.k === 'out' && pixOf(c.per[x.to].person.name); if (k) L.push('Pix: ' + k);
+  }));
+  return L;
+}
+// chave Pix guardada no cadastro da pessoa
+const pixOf = name => (catalog.people.find(p => norm(p.name) === norm(name))?.pix || '').trim();
+// 11 dígitos que valem como CPF e também parecem celular (DDD + 9): só a pessoa sabe
+function pixAmbiguous(k) {
+  k = String(k || '').trim(); const dig = k.replace(/\D/g, '');
+  if (!k || k.includes('@') || k.startsWith('+') || /[().]/.test(k) || dig.length !== 11) return false;
+  return cpfValid(dig) && dig[2] === '9' && +dig.slice(0, 2) >= 11;
+}
+// guarda a chave já no formato do Pix (CPF só dígitos, celular com +55); se não der para saber, pergunta
+function savePixKey(name, key, done) {
+  key = String(key || '').trim();
+  const finish = k => { setPix(name, k); done && done(k); };
+  if (!pixAmbiguous(key)) return finish(key ? normPixKey(key) : '');
+  const dig = key.replace(/\D/g, '');
+  openSheet(`<h3>Essa chave é CPF ou celular?</h3><p class="hint" style="font-size:14.5px">O número ${esc(dig)} pode ser as duas coisas. Escolha o tipo da chave Pix de ${esc(name)}.</p>
+    <div class="sheet-actions"><button class="btn ghost" id="pk-cpf">CPF</button><button class="btn" id="pk-tel">Celular</button></div>`, s => {
+    $('#pk-cpf', s).onclick = () => { closeSheet(); finish(dig); };
+    $('#pk-tel', s).onclick = () => { closeSheet(); finish('+55' + dig); };
+  });
+}
+function setPix(name, key) {
+  let p = catalog.people.find(x => norm(x.name) === norm(name));
+  if (!p) { p = { name, last: Date.now() }; catalog.people.push(p); }
+  p.pix = key.trim(); store.saveCatalog();
+}
+// Pix copia e cola (BR Code estático do Banco Central) com o valor já preenchido
+const pixField = (id, v) => id + String(v.length).padStart(2, '0') + v;
+function crc16(str) {
+  let crc = 0xFFFF;
+  for (let i = 0; i < str.length; i++) { crc ^= str.charCodeAt(i) << 8; for (let j = 0; j < 8; j++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF; }
+  return crc.toString(16).toUpperCase().padStart(4, '0');
+}
+const asciiUp = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9 ]/g, '').replace(/\s+/g, ' ').toUpperCase().trim();
+function cpfValid(d) {
+  if (!/^\d{11}$/.test(d) || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10];
+}
+function normPixKey(k) {
+  k = String(k || '').trim();
+  if (k.includes('@')) return k.toLowerCase();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(k)) return k.toLowerCase();
+  const dig = k.replace(/\D/g, '');
+  if (k.startsWith('+')) return '+' + dig;
+  if (dig.length === 14) return dig;
+  const phoneish = /[()]/.test(k) || /^\d{2}\s*9\d{4}-\d{4}$/.test(k);
+  if (dig.length === 11 && !phoneish && cpfValid(dig)) return dig;
+  if (dig.length === 10 || dig.length === 11) return '+55' + dig;
+  if (dig.length === 13 && dig.startsWith('55')) return '+' + dig;
+  return k;
+}
+function pixPayload(key, name, amount) {
+  const mai = pixField('00', 'br.gov.bcb.pix') + pixField('01', normPixKey(key));
+  let p = pixField('00', '01') + pixField('26', mai) + pixField('52', '0000') + pixField('53', '986')
+    + (amount > 0 ? pixField('54', (amount / 100).toFixed(2)) : '') + pixField('58', 'BR')
+    + pixField('59', (asciiUp(name) || 'RECEBEDOR').slice(0, 25)) + pixField('60', 'BRASIL') + pixField('62', pixField('05', '***')) + '6304';
+  return p + crc16(p);
+}
+// o que cada pessoa deve, para quem e com qual chave
+function pixDebts(c) {
+  return c.transfers.map(t => {
+    const toName = c.per[t.to].person.name, key = pixOf(toName);
+    return key ? { unit: c.unitOf[t.from], pid: t.from, value: t.value, toName, key } : null;
+  }).filter(Boolean);
+}
+let qrReady;
+function loadQR() {
+  if (window.qrcode) return Promise.resolve(window.qrcode);
+  if (!qrReady) qrReady = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+    sc.onload = () => window.qrcode ? res(window.qrcode) : rej(new Error('qr'));
+    sc.onerror = () => { qrReady = null; rej(new Error('qr')); };
+    document.head.appendChild(sc);
+  });
+  return qrReady;
+}
+async function qrMatrix(text) {
+  const q = await loadQR(); const qr = q(0, 'M'); qr.addData(text); qr.make();
+  const n = qr.getModuleCount(); return { n, dark: (r, c) => qr.isDark(r, c) };
+}
+function drawQR(ctx, m, x, y, size) {
+  const quiet = 2, cell = size / (m.n + quiet * 2);
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x, y, size, size); ctx.fillStyle = '#000000';
+  for (let r = 0; r < m.n; r++) for (let c = 0; c < m.n; c++) if (m.dark(r, c)) ctx.fillRect(Math.floor(x + (c + quiet) * cell), Math.floor(y + (r + quiet) * cell), Math.ceil(cell), Math.ceil(cell));
+}
+function pixSheet(debt, back) {
+  const code = pixPayload(debt.key, debt.toName, debt.value);
+  openSheet(`<div class="card-head"><div><h3>Pix para ${esc(debt.toName)}</h3><span class="hint num">${BRL(debt.value)}</span></div><button class="icon-btn close-x" id="px-x" aria-label="Fechar">${I.x}</button></div>
+    <div class="qr-wrap"><canvas id="px-qr" width="480" height="480" aria-label="QR code do Pix"></canvas><span class="hint" id="px-qr-msg">Gerando QR code…</span></div>
+    <div class="field"><span class="eyebrow">Pix copia e cola</span><textarea class="pix-code" readonly rows="4">${esc(code)}</textarea></div>
+    <button class="btn" id="px-copy">${I.copy}Copiar Pix copia e cola</button>
+    <p class="hint">No app do banco, escolha <b>Pix copia e cola</b> ou leia o QR code. O valor já vem preenchido. Confira o nome de quem recebe antes de pagar.</p>`, async s => {
+    $('#px-x', s).onclick = back || closeSheet;
+    $('#px-copy', s).onclick = () => copyText(code, 'Pix copia e cola copiado.');
+    try { const m = await qrMatrix(code); const cv = $('#px-qr'); if (cv) { drawQR(cv.getContext('2d'), m, 0, 0, 480); $('#px-qr-msg').hidden = true; } }
+    catch { const msg = $('#px-qr-msg'); if (msg) msg.textContent = 'Não deu para gerar o QR code agora. Use o Pix copia e cola.'; const cv = $('#px-qr'); if (cv) cv.hidden = true; }
+  });
+}
+const couvertLabel = r => 'Couvert artístico' + (r.cvPayers > 1 ? ` (${r.cvPayers}×)` : '');
+function receiptHTML(r, b, calc) {
+  const p = r.person;
+  const lines = r.lines.map(l => l.header
+    ? `<div class="rc-sub"><span>${esc(l.header)}</span><span>${BRL(l.value)}</span></div>`
+    : `<div class="rc-item"><div class="rc-line"><span>${esc(l.name)}</span><span>${BRL(l.value)}</span></div>
+    <div class="rc-detail">${esc(lineDetail(l))}</div></div>`).join('') || '<div class="rc-muted">Nenhum item consumido</div>';
+  let mid = '';
+  const dsLine = r.discount > 0 ? `<div class="rc-line"><span>${esc(b.discount.label || 'Desconto')}${b.discount.at === 'after' ? ' (sobre o total)' : ''}</span><span>−${BRL(r.discount)}</span></div>` : '';
+  if (b.discount.at !== 'after') mid += dsLine;
+  if (b.service.enabled) {
+    if (!p.payService) mid += `<div class="rc-line rc-muted"><span>${serviceLabel(b)} · não paga</span><span>${BRL(0)}</span></div>`;
+    else {
+      const extra = r.service - r.serviceNominal;
+      mid += `<div class="rc-line"><span>${serviceLabel(b)}</span><span>${BRL(r.service)}</span></div>` + (extra > 0 ? `<div class="rc-detail">inclui ${BRL(extra)} redistribuídos</div>` : '');
+    }
+  }
+  if (b.couvert.enabled) mid += p.payCouvert ? `<div class="rc-line"><span>${couvertLabel(r)}</span><span>${BRL(r.couvert)}</span></div>` : `<div class="rc-line rc-muted"><span>Couvert · não paga</span><span>${BRL(0)}</span></div>`;
+  if (b.discount.at === 'after') mid += dsLine;
+  const pay = payNote(r, calc);
+  return `<div class="receipt">
+    <div class="rc-head"><b>CONTA FÁCIL</b>${esc(b.place || 'Comanda')}<br>${fmtDateTime(b.closedAt || b.createdAt)}</div>
+    <hr><div class="rc-who">${esc(p.name)}</div>${r.members && r.members.length > 1 ? `<div class="rc-shared">Cupom compartilhado · ${r.members.length} pessoas</div>` : ''}<hr>
+    ${lines}<hr>
+    <div class="rc-line"><span>Consumo</span><span>${BRL(r.gross)}</span></div>${mid}
+    <div class="rc-line rc-total"><span>TOTAL</span><span>${BRL(r.total)}</span></div>
+    ${pay.length ? `<div class="rc-pay">${pay.map(esc).join('<br>')}</div>` : ''}
+    <div class="rc-foot">Total da comanda: ${BRL(calc.total)} · ${plural(b.people.length, 'pessoa', 'pessoas')}</div>
+  </div>`;
+}
+function receiptText(r, b, calc) {
+  const W = 34, pad = (a, z) => { a = String(a); z = String(z); return a + ' '.repeat(Math.max(1, W - a.length - z.length)) + z; };
+  const L = ['CONTA FÁCIL — ' + (b.place || 'Comanda'), fmtDateTime(b.closedAt || b.createdAt), 'Cupom de: ' + r.person.name, '-'.repeat(W)];
+  r.lines.forEach(l => { if (l.header) { L.push('', '== ' + l.header + ' (' + BRL(l.value) + ')'); return; } L.push(pad(l.name.slice(0, W - 12), BRL(l.value))); L.push('  ' + lineDetail(l)); });
+  if (!r.lines.length) L.push('Nenhum item consumido');
+  L.push('-'.repeat(W), pad('Consumo', BRL(r.gross)));
+  const dsT = r.discount > 0 ? pad((b.discount.label || 'Desconto') + (b.discount.at === 'after' ? ' (total)' : ''), '−' + BRL(r.discount)) : null;
+  if (dsT && b.discount.at !== 'after') L.push(dsT);
+  if (b.service.enabled) L.push(pad(serviceLabel(b) + (r.person.payService ? '' : ' · não paga'), BRL(r.service)));
+  if (b.couvert.enabled) L.push(pad('Couvert' + (r.cvPayers > 1 ? ` (${r.cvPayers}x)` : '') + (r.person.payCouvert ? '' : ' · não paga'), BRL(r.couvert)));
+  if (dsT && b.discount.at === 'after') L.push(dsT);
+  L.push(pad('TOTAL', BRL(r.total)));
+  payNote(r, calc).forEach(x => L.push('>> ' + x));
+  pixDebts(calc).filter(x => x.unit === r.id).forEach(x => L.push('', `Pix copia e cola (${calc.per[x.pid].person.name}, ${BRL(x.value)}):`, pixPayload(x.key, x.toName, x.value)));
+  return L.join('\n');
+}
+async function copyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); return; } catch {}
+  openSheet(`<h3>Copiar</h3><p class="hint">Selecione o texto abaixo e copie.</p>
+    <textarea id="cp" readonly style="width:100%;min-height:220px;font-family:var(--f-mono);font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px">${esc(text)}</textarea>
+    <div class="sheet-actions"><button class="btn" id="cp-x">Fechar</button></div>`, s => { const t = $('#cp', s); t.focus(); t.select(); $('#cp-x', s).onclick = closeSheet; });
+}
+
+/* ---------- render ---------- */
+function renderSync() {
+  const el = $('#sync');
+  const isLive = draft.live && live.unsub && !live.closed;
+  el.className = 'sync' + (store.mode === 'cloud' || isLive ? ' cloud' : '');
+  $('span', el).textContent = isLive ? 'Comanda ao vivo' : (store.mode === 'cloud' ? 'Salvo na nuvem' : 'Salvo neste aparelho');
+}
+function render(opts = {}) {
+  // ao receber mudanças de outras pessoas, mantém o que você está digitando
+  let keep = null, focusId = null, sel = null;
+  if (opts.preserve) {
+    keep = {}; $$('#view input[data-keep]').forEach(i => keep[i.id] = i.value);
+    const a = document.activeElement; if (a && a.id && a.closest('#view')) { focusId = a.id; try { sel = [a.selectionStart, a.selectionEnd]; } catch {} }
+  }
+  const TABS = { inicio: [I.home, 'Início'], comanda: [I.receipt, 'Comanda'], fechar: [I.calc, 'Fechar'], historico: [I.clock, 'Histórico'], cadastros: [I.users, 'Cadastros'] };
+  if (!draft.active && (tab === 'comanda' || tab === 'fechar')) tab = 'inicio';
+  $$('#tabs button').forEach(b => {
+    b.setAttribute('aria-selected', b.dataset.tab === tab);
+    const off = !draft.active && (b.dataset.tab === 'comanda' || b.dataset.tab === 'fechar');
+    b.classList.toggle('off', off); b.setAttribute('aria-disabled', off);
+    const [ic, lbl] = TABS[b.dataset.tab];
+    const badge = b.dataset.tab === 'comanda' && !draft.isExample && draft.items.length ? `<span class="badge">${draft.items.length}</span>` : '';
+    b.innerHTML = ic + `<span class="lbl">${lbl}</span>` + badge;
+  });
+  const v = $('#view');
+  const fn = { inicio: viewInicio, comanda: viewComanda, fechar: viewFechar, historico: viewHistorico, cadastros: viewCadastros }[tab];
+  v.innerHTML = `<section class="view">${fn.html()}</section>`;
+  fn.bind(v);
+  prepFields(v);
+  renderSync();
+  if (keep) {
+    Object.entries(keep).forEach(([id, val]) => { const i = document.getElementById(id); if (i) i.value = val; });
+    if (focusId) { const f = document.getElementById(focusId); if (f) { f.focus({ preventScroll: true }); try { sel && f.setSelectionRange(sel[0], sel[1]); } catch {} } }
+  }
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; editingItemId = null; pickSel = null; render(); window.scrollTo({ top: 0 }); } });
+
+/* ---------- aba Comanda ---------- */
+function liveCardHTML() {
+  if (!draft.live) {
+    if (!store.db) return '';
+    return `<div class="live-offer"><span>${I.live}<span><b>Comanda ao vivo</b><span class="hint">Cada amigo marca o que consumiu pelo próprio celular.</span></span></span>
+      <button class="btn small ghost" id="live-start">Compartilhar</button></div>`;
+  }
+  const me = LS.get('me.' + draft.live.code, '');
+  const connected = !!live.unsub;
+  const status = live.closed ? '<span class="tag">encerrada</span>' : (connected ? '<span class="live-dot" aria-hidden="true"></span>' : '<span class="tag">desconectada</span>');
+  return `<div class="card" id="live-card">
+    <div class="card-head"><h2 style="display:flex;align-items:center;gap:8px">Comanda ao vivo ${status}</h2>
+      <span class="hint">${draft.live.host ? 'Você criou esta comanda' : 'Você entrou numa comanda compartilhada'}</span></div>
+    ${live.closed ? `<div class="status warn">${I.warn}<span>A comanda ao vivo foi encerrada por quem a criou. Os dados continuam aqui para você fechar a comanda.</span></div>` : ''}
+        ${draft.live.host && !live.closed ? `
+      <div class="linkbox"><code>${esc(live.link())}</code><button class="btn small" id="live-copy">${I.copy}Copiar link</button></div>
+      <div class="live-code"><span class="eyebrow">Código da comanda</span><b class="num">${esc(draft.live.code)}</b></div>
+      ${navigator.share ? `<button class="btn small mustard" id="live-invite">${I.share}Convidar a turma</button>` : ''}
+      <ol class="steps">
+        <li>Mande o link ou o código no grupo.</li>
+        <li>Quem tem o app na tela de início abre o app, toca em <b>Entrar com código</b> e digita o código. Quem não tem pode abrir o link no navegador.</li>
+        <li>Cada um toca no próprio nome nos itens que consumiu.</li>
+      </ol>` : ''}
+    ${!live.closed && draft.people.length ? `<div class="field"><span class="eyebrow">Quem é você nesta comanda?</span>
+      <div class="chips">${draft.people.map(p => `<button class="chip" data-me="${p.id}" aria-pressed="${me === p.id}">${esc(p.name)}</button>`).join('')}</div>
+      ${me ? '<p class="hint">Seu nome aparece com contorno amarelo nos itens. Toque nele para marcar o que você consumiu.</p>' : '<p class="hint">Não está na lista? Adicione seu nome em Pessoas na comanda.</p>'}</div>` : ''}
+    <div class="actions-bar">
+      ${!connected && !live.closed ? '<button class="btn small" id="live-reconnect">Reconectar</button>' : ''}
+      <button class="btn small ghost" id="live-end">${draft.live.host && !live.closed ? 'Encerrar comanda ao vivo' : 'Sair da comanda ao vivo'}</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- uso derivado do histórico (contagens sempre batem com as contas salvas) ---------- */
+const placeKey = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
+function usage() {
+  const people = {}, products = {}, places = {};
+  bills.forEach(b => {
+    const pk = placeKey(b.place);
+    if (pk) { const pl = places[pk] = places[pk] || { name: (b.place || '').trim(), n: 0, last: 0 }; pl.n++; if (b.closedAt > pl.last) { pl.last = b.closedAt; pl.name = b.place.trim(); } }
+    new Set(b.people.map(p => norm(p.name))).forEach(k => people[k] = (people[k] || 0) + 1);
+    new Set(b.items.map(i => norm(i.name))).forEach(k => products[k] = (products[k] || 0) + 1);
+  });
+  return { people, products, places };
+}
+const recentPlaces = (U = usage()) => Object.values(U.places).sort((a, b) => b.last - a.last);
+
+/* ---------- preço por local ---------- */
+function findProduct(name) { return catalog.products.find(p => norm(p.name) === norm(name)); }
+function priceInfo(prod, place) {
+  if (!prod) return null;
+  const pk = placeKey(place), prices = prod.prices || {};
+  if (pk && prices[pk]) return { price: prices[pk].price, here: true, where: prices[pk].place };
+  const others = Object.values(prices).sort((a, b) => (b.last || 0) - (a.last || 0));
+  if (others.length) return { price: others[0].price, here: false, where: others[0].place };
+  return prod.price ? { price: prod.price, here: false, where: '' } : null;
+}
+function rememberPrice(name, price, place, when) {
+  let k = findProduct(name);
+  if (!k) { k = { name, price, prices: {}, last: when }; catalog.products.push(k); }
+  k.prices = k.prices || {};
+  k.price = price; k.last = when;
+  const pk = placeKey(place);
+  if (pk) k.prices[pk] = { place: place.trim(), price, last: when };
+}
+
+// preenche preços por local que faltam, usando as comandas já salvas (comandas antigas não guardavam o local do preço)
+function backfillPrices() {
+  let changed = false;
+  [...bills].sort((a, b) => (a.closedAt || 0) - (b.closedAt || 0)).forEach(b => {
+    const pk = placeKey(b.place); if (!pk) return;
+    (b.items || []).forEach(it => {
+      const k = findProduct(it.name); if (!k) return;
+      k.prices = k.prices || {};
+      const e = k.prices[pk];
+      if (!e) { k.prices[pk] = { place: b.place.trim(), price: it.price, last: b.closedAt }; changed = true; }
+      else if (!e.edited && (e.last || 0) < b.closedAt && e.price !== it.price) { e.price = it.price; e.last = b.closedAt; changed = true; }
+    });
+  });
+  return changed;
+}
+
+// o que existe nas comandas salvas e não está nos cadastros
+function historyCatalog() {
+  const prods = {}, ppl = {};
+  [...bills].sort((a, b) => (a.closedAt || 0) - (b.closedAt || 0)).forEach(b => {
+    const pk = placeKey(b.place);
+    (b.items || []).forEach(it => {
+      const k = norm(it.name);
+      const p = prods[k] = prods[k] || { name: it.name.trim(), price: it.price, last: 0, prices: {} };
+      p.price = it.price; p.last = b.closedAt || 0; p.name = it.name.trim();
+      if (pk) p.prices[pk] = { place: b.place.trim(), price: it.price, last: b.closedAt || 0 };
+    });
+    (b.people || []).forEach(x => { const k = norm(x.name); ppl[k] = { name: x.name.trim(), last: b.closedAt || 0 }; });
+  });
+  const missingProducts = Object.values(prods).filter(p => !findProduct(p.name)).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  const missingPeople = Object.values(ppl).filter(p => !catalog.people.some(x => norm(x.name) === norm(p.name))).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  return { missingProducts, missingPeople };
+}
+function recoverSheet() {
+  const { missingProducts: mp, missingPeople: mu } = historyCatalog();
+  const priceList = p => Object.values(p.prices).sort((a, b) => b.last - a.last).map(e => `${e.place} ${BRL(e.price)}`).join(' · ') || BRL(p.price);
+  openSheet(`<div class="card-head"><h3>Recuperar do histórico</h3><button class="icon-btn close-x" id="rc-x" aria-label="Fechar">${I.x}</button></div>
+    <p class="hint">Produtos e pessoas das comandas salvas que não estão nos cadastros. Os preços vêm da comanda mais recente de cada local.</p>
+    ${mp.length ? `<div class="card-head"><span class="eyebrow">Produtos (${mp.length})</span><button class="btn small ghost" data-all="rp">Marcar todos</button></div>
+      <div class="rec-list">${mp.map((p, i) => `<label class="rec-row"><input type="checkbox" data-rp="${i}" checked><span><b>${esc(p.name)}</b><small>${esc(priceList(p))}</small></span></label>`).join('')}</div>` : ''}
+    ${mu.length ? `<div class="card-head"><span class="eyebrow">Pessoas (${mu.length})</span><button class="btn small ghost" data-all="ru">Marcar todos</button></div>
+      <div class="rec-list">${mu.map((p, i) => `<label class="rec-row"><input type="checkbox" data-ru="${i}" checked><span><b>${esc(p.name)}</b></span></label>`).join('')}</div>` : ''}
+    <div class="sheet-actions"><button class="btn ghost" id="rc-no">Cancelar</button><button class="btn" id="rc-ok">Recuperar selecionados</button></div>`, s => {
+    $('#rc-x', s).onclick = closeSheet; $('#rc-no', s).onclick = closeSheet;
+    $$('[data-all]', s).forEach(b => b.onclick = () => { const boxes = $$(`[data-${b.dataset.all}]`, s); const on = !boxes.every(x => x.checked); boxes.forEach(x => x.checked = on); });
+    $('#rc-ok', s).onclick = () => {
+      const pick = $$('[data-rp]', s).filter(x => x.checked).map(x => mp[+x.dataset.rp]);
+      const pickU = $$('[data-ru]', s).filter(x => x.checked).map(x => mu[+x.dataset.ru]);
+      if (!pick.length && !pickU.length) { toast('Marque ao menos um item para recuperar.'); return; }
+      pick.forEach(p => catalog.products.push(clone(p)));
+      pickU.forEach(p => catalog.people.push({ name: p.name, last: p.last }));
+      store.saveCatalog(); closeSheet(); render();
+      toast(`Recuperado: ${[pick.length ? plural(pick.length, 'produto', 'produtos') : '', pickU.length ? plural(pickU.length, 'pessoa', 'pessoas') : ''].filter(Boolean).join(' e ')}.`);
+    };
+  });
+}
+
+/* ---------- cupom como imagem e PDF ---------- */
+// no iPhone o arquivo vai para o menu de compartilhar (WhatsApp, Salvar em Arquivos, Fotos)
+let pendingFile = null;
+const fileSaver = {
+  async save({ filename, data }) {
+    const file = new File([data], filename, { type: data.type || 'application/octet-stream' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return; }
+      catch (e) {
+        if (e && e.name === 'AbortError') { const x = new Error('declined'); x.code = 'declined'; throw x; }
+        // o iPhone só abre o menu logo depois de um toque; se demorou, oferece um toque novo com o arquivo já pronto
+        if (e && e.name === 'NotAllowedError') { pendingFile = file; const x = new Error('again'); x.code = 'again'; throw x; }
+        throw e;
+      }
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(data); a.download = filename;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  },
+};
+async function downloadsNS() { return fileSaver; }
+const slug = s => placeKey(s || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'conta';
+async function receiptCanvas(r, b, calc) {
+  try { await Promise.all(['400 24px "IBM Plex Mono"', '600 24px "IBM Plex Mono"', '800 36px "Bricolage Grotesque"'].map(f => document.fonts.load(f))); } catch {}
+  const S = 2, M = 16 * S, W = 340 * S, PX = 20 * S, IW = W - PX * 2;
+  const C = { bg: '#EAF0EA', paper: '#FFFDF5', ink: '#24221C', muted: '#6E6858', line: '#CFC7B2', green: '#1D5A3B' };
+  const mono = (w, px) => `${w} ${px * S}px "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace`;
+  const disp = px => `800 ${px * S}px "Bricolage Grotesque", "Figtree", system-ui, sans-serif`;
+  const rows = [];
+  const R = (t, o = {}) => rows.push({ t, ...o });
+  R('center', { text: 'CONTA FÁCIL', font: mono(600, 14), lh: 22, color: C.green });
+  R('center', { text: b.place || 'Comanda', font: mono(400, 12.5), lh: 18 });
+  R('center', { text: fmtDateTime(b.closedAt || b.createdAt), font: mono(400, 12), lh: 18, color: C.muted });
+  R('dash'); R('center', { text: r.person.name, font: disp(20), lh: 30 });
+  if (r.members && r.members.length > 1) R('center', { text: `Cupom compartilhado · ${r.members.length} pessoas`, font: mono(400, 11), lh: 16, color: C.muted });
+  R('dash');
+  if (!r.lines.length) R('left', { text: 'Nenhum item consumido', font: mono(400, 12.5), lh: 18, color: C.muted });
+  r.lines.forEach(l => { if (l.header) { R('gap', { h: 4 }); R('pair', { left: l.header, right: BRL(l.value), font: mono(600, 13), lh: 20, color: C.green }); return; } R('pair', { left: l.name, right: BRL(l.value), font: mono(400, 12.5), lh: 18 }); R('left', { text: lineDetail(l), font: mono(400, 11), lh: 15, color: C.muted, indent: 8 }); R('gap', { h: 5 }); });
+  R('dash');
+  R('pair', { left: 'Consumo', right: BRL(r.gross), font: mono(400, 12.5), lh: 19 });
+  const dsl = r.discount > 0 ? () => R('pair', { left: (b.discount.label || 'Desconto') + (b.discount.at === 'after' ? ' (sobre o total)' : ''), right: '−' + BRL(r.discount), font: mono(400, 12.5), lh: 19 }) : null;
+  if (dsl && b.discount.at !== 'after') dsl();
+  if (b.service.enabled) R('pair', { left: serviceLabel(b) + (r.person.payService ? '' : ' · não paga'), right: BRL(r.service), font: mono(400, 12.5), lh: 19, color: r.person.payService ? C.ink : C.muted });
+  if (b.couvert.enabled) R('pair', { left: couvertLabel(r) + (r.person.payCouvert ? '' : ' · não paga'), right: BRL(r.couvert), font: mono(400, 12.5), lh: 19, color: r.person.payCouvert ? C.ink : C.muted });
+  if (dsl && b.discount.at === 'after') dsl();
+  R('rule'); R('pair', { left: 'TOTAL', right: BRL(r.total), font: mono(600, 16), lh: 26 });
+  const pay = payNote(r, calc);
+  if (pay.length) R('box', { lines: pay, font: mono(600, 12.5), lh: 18 });
+  const debts = pixDebts(calc).filter(x => x.unit === r.id);
+  if (debts.length === 1) {
+    try { const m = await qrMatrix(pixPayload(debts[0].key, debts[0].toName, debts[0].value)); R('qr', { m, label: `Pix de ${BRL(debts[0].value)} para ${debts[0].toName}` }); } catch {}
+  }
+  R('gap', { h: 6 });
+  R('center', { text: `Total da comanda: ${BRL(calc.total)} · ${plural(b.people.length, 'pessoa', 'pessoas')}`, font: mono(400, 11), lh: 16, color: C.muted });
+
+  const wrap = (ctx, text, maxW) => {
+    const out = []; let cur = '';
+    String(text).split(' ').forEach(w => { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; });
+    if (cur) out.push(cur); return out.length ? out : [''];
+  };
+  const pass = (ctx, draw) => {
+    let y = M + 22 * S;
+    rows.forEach(row => {
+      const color = row.color || C.ink;
+      if (row.t === 'gap') { y += row.h * S; return; }
+      if (row.t === 'dash' || row.t === 'rule') {
+        y += 6 * S;
+        if (draw) { ctx.save(); ctx.strokeStyle = row.t === 'rule' ? C.ink : C.line; ctx.lineWidth = (row.t === 'rule' ? 2 : 1) * S; if (row.t === 'dash') ctx.setLineDash([4 * S, 3 * S]); ctx.beginPath(); ctx.moveTo(M + PX, y); ctx.lineTo(M + PX + IW, y); ctx.stroke(); ctx.restore(); }
+        y += 8 * S; return;
+      }
+      ctx.font = row.font; ctx.textBaseline = 'alphabetic';
+      if (row.t === 'center' || row.t === 'left') {
+        const ind = (row.indent || 0) * S;
+        wrap(ctx, row.text, IW - ind).forEach(line => {
+          y += row.lh * S;
+          if (draw) { ctx.fillStyle = color; ctx.textAlign = row.t === 'center' ? 'center' : 'left'; ctx.fillText(line, row.t === 'center' ? M + W / 2 : M + PX + ind, y - 4 * S); }
+        });
+        return;
+      }
+      if (row.t === 'pair') {
+        const rw = ctx.measureText(row.right).width;
+        const lines = wrap(ctx, row.left, IW - rw - 12 * S);
+        lines.forEach((line, i) => {
+          y += row.lh * S;
+          if (draw) {
+            ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.fillText(line, M + PX, y - 4 * S);
+            if (i === 0) { ctx.textAlign = 'right'; ctx.fillText(row.right, M + PX + IW, y - 4 * S); }
+          }
+        });
+        return;
+      }
+      if (row.t === 'qr') {
+        y += 10 * S; const size = 150 * S;
+        if (draw) drawQR(ctx, row.m, M + (W - size) / 2, y, size);
+        y += size + 4 * S;
+        ctx.font = mono(400, 11);
+        if (draw) { ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.fillText(row.label, M + W / 2, y + 12 * S); }
+        y += 18 * S; return;
+      }
+      if (row.t === 'box') {
+        y += 8 * S; const top = y;
+        ctx.font = row.font;
+        const lines = row.lines.flatMap(t => wrap(ctx, t, IW - 16 * S));
+        const h = (lines.length * row.lh + 12) * S;
+        if (draw) {
+          ctx.save(); ctx.strokeStyle = C.ink; ctx.setLineDash([4 * S, 3 * S]); ctx.lineWidth = 1 * S;
+          ctx.strokeRect(M + PX, top, IW, h); ctx.restore();
+          ctx.fillStyle = C.ink; ctx.textAlign = 'center';
+          lines.forEach((t, i) => ctx.fillText(t, M + W / 2, top + (6 + (i + 1) * row.lh - 4) * S));
+        }
+        y += h;
+      }
+    });
+    return y + 26 * S + M;
+  };
+  const measure = document.createElement('canvas').getContext('2d');
+  const H = pass(measure, false);
+  const cv = document.createElement('canvas'); cv.width = W + M * 2; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, cv.width, cv.height);
+  // papel com borda serrilhada, como cupom de impressora térmica
+  const z = 6 * S, x0 = M, x1 = M + W, y0 = M, y1 = H - M;
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.12)'; ctx.shadowBlur = 10 * S; ctx.shadowOffsetY = 2 * S;
+  ctx.beginPath(); ctx.moveTo(x0, y0 + z);
+  for (let x = x0; x < x1; x += z * 2) { ctx.lineTo(x + z, y0); ctx.lineTo(Math.min(x + z * 2, x1), y0 + z); }
+  ctx.lineTo(x1, y1 - z);
+  for (let x = x1; x > x0; x -= z * 2) { ctx.lineTo(x - z, y1); ctx.lineTo(Math.max(x - z * 2, x0), y1 - z); }
+  ctx.closePath(); ctx.fillStyle = C.paper; ctx.fill(); ctx.restore();
+  pass(ctx, true);
+  return cv;
+}
+const canvasBlob = cv => new Promise(res => cv.toBlob(res, 'image/png'));
+let jsPDFReady;
+function loadJsPDF() {
+  if (window.jspdf?.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  if (!jsPDFReady) jsPDFReady = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = () => window.jspdf?.jsPDF ? res(window.jspdf.jsPDF) : rej(new Error('jspdf'));
+    s.onerror = () => { jsPDFReady = null; rej(new Error('jspdf')); };
+    document.head.appendChild(s);
+  });
+  return jsPDFReady;
+}
+async function canvasesToPDF(cvs) {
+  const JsPDF = await loadJsPDF();
+  let doc;
+  cvs.forEach((cv, i) => {
+    const w = cv.width / 2 * 0.75, h = cv.height / 2 * 0.75, o = h >= w ? 'p' : 'l';
+    if (!i) doc = new JsPDF({ unit: 'pt', format: [w, h], orientation: o });
+    else doc.addPage([w, h], o);
+    doc.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, w, h);
+  });
+  return doc.output('blob');
+}
+async function saveFile(filename, blob) {
+  const dl = await downloadsNS();
+  if (!dl) { toast('Salvar arquivo não está disponível aqui. Toque e segure a imagem para salvar.'); return false; }
+  try { await dl.save({ filename, data: blob }); return true; }
+  catch (e) {
+    if (e?.code === 'declined') return false;
+    if (e?.code === 'again') toast('Arquivo pronto.', { label: 'Compartilhar', run: () => { const f = pendingFile; pendingFile = null; if (f) navigator.share({ files: [f] }).catch(() => {}); } });
+    else toast('Não foi possível gerar o arquivo agora.');
+    return false;
+  }
+}
+async function shareReceipt(r, b, calc, back) {
+  loadJsPDF().catch(() => {});
+  openSheet(`<div class="card-head"><h3>Cupom de ${esc(r.person.name)}</h3><button class="icon-btn close-x" id="sr-x" aria-label="Fechar">${I.x}</button></div><div class="share-prev"><span class="hint">Gerando imagem…</span></div>`, s => { $('#sr-x', s).onclick = back || closeSheet; });
+  const cv = await receiptCanvas(r, b, calc);
+  const url = cv.toDataURL('image/png');
+  const dl = await downloadsNS();
+  const name = `cupom-${slug(r.person.name.replace(/ \+ /g, ' e '))}-${slug(b.place)}`;
+  const s = $('.sheet'); if (!s) return;
+  $('.share-prev', s).innerHTML = `<img src="${url}" alt="Cupom de ${esc(r.person.name)}">`;
+  s.insertAdjacentHTML('beforeend', `
+    <div class="share-actions">
+      <button class="share-btn" id="sr-txt">${I.copy}<span>Copiar texto</span></button>
+      <button class="share-btn" id="sr-pdf">${I.file}<span>PDF</span></button>
+      <button class="share-btn" id="sr-png">${I.image}<span>Imagem</span></button>
+    </div>
+    ${(() => { const ds = pixDebts(calc).filter(x => x.unit === r.id); return ds.map(x => `<button class="btn ghost" data-pixpay="${x.pid}">Pix copia e cola de ${esc(calc.per[x.pid].person.name.split(' ')[0])} · ${BRL(x.value)}</button>`).join(''); })()}
+    <p class="hint">${dl ? 'No iPhone, PDF e Imagem abrem o menu de compartilhar, com WhatsApp e outros apps. ' : ''}Você também pode tocar e segurar a imagem para salvar ou compartilhar.</p>`);
+  $$('[data-pixpay]', s).forEach(x => x.onclick = () => { const dbt = pixDebts(calc).find(z => z.pid === x.dataset.pixpay); if (dbt) pixSheet(dbt, () => shareReceipt(r, b, calc, back)); });
+  $('#sr-txt', s).onclick = () => copyText(receiptText(r, b, calc), 'Cupom copiado.');
+  $('#sr-png', s)?.addEventListener('click', async () => saveFile(name + '.png', await canvasBlob(cv)));
+  $('#sr-pdf', s)?.addEventListener('click', async e => {
+    const btn = e.currentTarget; btn.disabled = true;
+    try { await saveFile(name + '.pdf', await canvasesToPDF([cv])); } catch { toast('Não foi possível gerar o PDF agora.'); }
+    btn.disabled = false;
+  });
+}
+async function shareAllPDF(b, calc, btn) {
+  if (!(await downloadsNS())) { toast('Salvar arquivo não está disponível aqui. Use Compartilhar em cada cupom.'); return; }
+  if (btn) btn.disabled = true;
+  try {
+    const cvs = []; for (const u of calc.units) cvs.push(await receiptCanvas(u, b, calc));
+    await saveFile(`cupons-${slug(b.place)}.pdf`, await canvasesToPDF(cvs));
+  } catch { toast('Não foi possível gerar o PDF agora.'); }
+  if (btn) btn.disabled = false;
+}
+
+/* ---------- limpar e recomeçar ---------- */
+function resetSheet() {
+  const d = draft;
+  const inHistory = bills.some(b => b.id === d.id);
+  openSheet(`<h3>Limpar ou excluir comanda</h3>
+    <p class="hint" style="font-size:14.5px">${d.savedAt ? 'Esta comanda já está no histórico, que não será alterado.' : 'Esta comanda ainda não foi salva no histórico.'}${d.live ? ' A mudança também aparece para quem está na comanda ao vivo.' : ''}</p>
+    <div class="reset-opts">
+      <button class="reset-opt" id="rs-items"><b>Limpar os itens</b><span>Mantém o local e as pessoas da comanda. Bom para começar uma nova rodada.</span></button>
+      <button class="reset-opt" id="rs-all"><b>Recomeçar do zero</b><span>Apaga o local, as pessoas e os itens, mas mantém a comanda aberta.</span></button>
+      <button class="reset-opt danger" id="rs-del"><b>Excluir comanda</b><span>${inHistory ? 'Encerra a comanda e apaga ela também do histórico.' : 'Encerra e descarta a comanda. Você volta para a tela inicial.'}</span></button>
+    </div>
+    <div class="sheet-actions"><button class="btn ghost" id="rs-no">Cancelar</button></div>`, s => {
+    $('#rs-no', s).onclick = closeSheet;
+    $('#rs-items', s).onclick = () => {
+      closeSheet(); pending = {}; editingItemId = null;
+      const keep = { place: d.place, people: d.people.map(p => ({ ...p, payService: true, payCouvert: true })), live: d.live };
+      draft = { ...blankDraft(), ...keep, active: true, id: d.live ? d.id : newId() };
+      commit(); toast('Itens apagados. As pessoas continuam na comanda.');
+    };
+    $('#rs-all', s).onclick = () => {
+      closeSheet(); pending = {}; editingItemId = null;
+      if (draft.live) live.end();
+      draft = blankDraft(); draft.active = true; commit(); toast('Comanda zerada.');
+    };
+    $('#rs-del', s).onclick = () => deleteCurrent(false);
+  });
+}
+// toda vez que uma comanda aberta vai ser substituída, o app pergunta antes
+function confirmReplace(go) {
+  if (!draft.active || draft.isExample) return go();
+  const where = draft.place ? ` em ${draft.place}` : '';
+  const text = draft.savedAt
+    ? `Você está editando a comanda${where}, que já está no histórico. Alterações ainda não salvas serão perdidas; a versão do histórico continua.`
+    : `A comanda${where} está em andamento e ainda não foi salva no histórico. Ela será descartada.`;
+  confirmSheet('Substituir a comanda em andamento?', text, 'Substituir', go, true);
+}
+// excluir a comanda aberta (com Desfazer); se ela já estiver no histórico, sai de lá também
+function deleteCurrent(ask) {
+  const d = draft;
+  const inHistory = bills.some(b => b.id === d.id);
+  const go = () => {
+    closeSheet(); pending = {}; editingItemId = null;
+    if (draft.live) live.end();
+    const backup = { draft: clone(draft), bill: bills.find(b => b.id === d.id) || null };
+    if (backup.bill) { bills = bills.filter(b => b.id !== d.id); store.deleteBill(d.id); }
+    draft = blankDraft(); tab = 'inicio'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 });
+    toast('Comanda excluída.', { label: 'Desfazer', run: () => {
+      draft = migrate(backup.draft); draft.active = true; draft.live = null;
+      if (backup.bill) { bills = [backup.bill, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(backup.bill); }
+      tab = 'comanda'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 });
+    } });
+  };
+  if (inHistory) confirmSheet('Excluir também do histórico?', `A comanda de ${d.place || 'local sem nome'} sai do histórico e das estatísticas.`, 'Excluir', go, true);
+  else if (ask) confirmSheet('Excluir esta comanda?', `A comanda${d.place ? ' de ' + d.place : ''} será descartada. Você pode desfazer logo em seguida.`, 'Excluir', go, true);
+  else go();
+}
+function newBillAt(place, people) {
+  const go = () => {
+    if (draft.live) live.end();
+    pending = {}; editingItemId = null;
+    draft = blankDraft(); draft.place = place || ''; draft.active = true;
+    if (people) draft.people = people.map(n => newPerson(n));
+    tab = 'comanda'; commit(); window.scrollTo({ top: 0 });
+  };
+  confirmReplace(go);
+}
+
+/* ---------- aba Início ---------- */
+const viewInicio = {
+  html() {
+    const d = draft, U = usage();
+    const inProgress = d.active;
+    const c = inProgress ? compute(d) : null;
+    const places = recentPlaces(U).slice(0, 6);
+    const now = new Date();
+    const monthTotal = bills.filter(b => { const t = new Date(b.closedAt); return t.getMonth() === now.getMonth() && t.getFullYear() === now.getFullYear(); }).reduce((a, b) => a + b.total, 0);
+    const h = now.getHours(), greet = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+    return `
+    <div class="hero">
+      <p class="hero-greet">${greet}.</p>
+      <h2 class="hero-title">Onde vai ser hoje?</h2>
+      <form id="start-form" class="start-row" autocomplete="off">
+        <input id="start-place" autocomplete="off" autocapitalize="words" type="text" placeholder="Nome do local" aria-label="Nome do local" data-keep>
+        <button class="btn mustard" type="submit">Abrir comanda</button>
+      </form>
+      ${places.length ? `<div class="chips hero-chips">${places.map(p => `<button type="button" class="chip" data-start="${esc(p.name)}">${esc(p.name)}</button>`).join('')}</div>` : ''}
+    </div>
+
+    ${inProgress ? `<div class="card current">
+      <div class="card-head"><div><span class="eyebrow">${d.isExample ? 'Comanda de exemplo' : d.savedAt ? 'Editando comanda salva' : 'Comanda em andamento'}</span><h2>${esc(d.place || 'Sem local')}</h2></div>
+        <span class="cur-total num">${BRL(c.total)}</span></div>
+      <p class="hint">${plural(d.people.length, 'pessoa', 'pessoas')} · ${plural(d.items.length, 'item', 'itens')} · aberta em ${fmtDateTime(d.createdAt)}${d.live ? ' · comanda ao vivo' : ''}</p>
+      <div class="actions-bar"><button class="btn" id="go-comanda">Continuar</button>${d.isExample ? '<button class="btn ghost" id="end-example">Sair do exemplo</button>' : `<button class="btn ghost danger-text" id="del-current">${I.trash}Excluir comanda</button>`}</div>
+    </div>` : !bills.length ? `<button class="card example-link" id="go-example"><span><b>Ver uma comanda de exemplo</b><span class="hint">Boteco da Esquina, 4 pessoas, chopp dividido por unidade</span></span><span aria-hidden="true">→</span></button>` : ''}
+
+    ${store.db && !(d.live && inProgress) ? `<div class="card join">
+      <div class="card-head"><h2>Entrar com código</h2></div>
+      <p class="hint">Alguém da turma abriu uma comanda ao vivo? Digite o código ou cole o link.</p>
+      <form id="join-form" autocomplete="off"><input id="join-code" type="text" placeholder="Ex.: k7mq2xh9pa" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código da comanda" data-keep><button class="btn" type="submit">Entrar</button></form>
+    </div>` : ''}
+
+    ${bills.length ? `<div class="card">
+      <div class="card-head"><h2>Últimas comandas</h2><button class="btn small ghost" id="go-hist">Ver histórico</button></div>
+      <div class="mini-stats"><span><b class="num">${BRL(monthTotal)}</b> gastos neste mês</span><span><b class="num">${bills.length}</b> ${bills.length === 1 ? 'comanda salva' : 'comandas salvas'}</span></div>
+      <div class="hist">${bills.slice(0, 3).map(histRowHTML).join('')}</div>
+    </div>` : `<div class="empty">As comandas que você salvar aparecem aqui, com o gasto do mês.</div>`}`;
+  },
+  bind(v) {
+    const startEl = $('#start-place', v);
+    attachSuggest(startEl, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })), () => {
+      $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', norm(x.dataset.start) === norm(startEl.value)));
+    });
+    $('#start-form', v).addEventListener('submit', e => {
+      e.preventDefault();
+      const place = startEl.value.trim().replace(/\s+/g, ' ');
+      if (!place) { toast('Digite o nome do local ou toque numa sugestão.'); if (!isTouch) startEl.focus(); return; }
+      document.activeElement?.blur?.(); newBillAt(place);
+    });
+    // a sugestão só preenche o nome; a comanda abre ao tocar em Abrir comanda
+    $$('[data-start]', v).forEach(b => b.addEventListener('click', () => {
+      startEl.value = b.dataset.start;
+      $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', x === b));
+    }));
+    startEl.addEventListener('input', () => $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', norm(x.dataset.start) === norm(startEl.value))));
+    $('#join-form', v)?.addEventListener('submit', e => {
+      e.preventDefault(); document.activeElement?.blur?.();
+      const raw = $('#join-code', v).value.trim().toLowerCase();
+      const m = /#m([a-z0-9]{6,16})/.exec(raw) || /^([a-z0-9]{6,16})$/.exec(raw);
+      if (!m) { toast('Código inválido. Ele tem 10 letras e números.'); return; }
+      if (location.hash === '#m' + m[1]) live.boot(); else location.hash = 'm' + m[1];
+    });
+    $('#go-comanda', v)?.addEventListener('click', () => { tab = 'comanda'; render(); window.scrollTo({ top: 0 }); });
+    $('#del-current', v)?.addEventListener('click', () => deleteCurrent(true));
+    $('#go-example', v)?.addEventListener('click', () => { pending = {}; draft = exampleDraft(); draft.active = true; tab = 'comanda'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 }); });
+    $('#end-example', v)?.addEventListener('click', () => { draft = blankDraft(); LS.set('draft', draft); render(); });
+    $('#go-hist', v)?.addEventListener('click', () => { tab = 'historico'; render(); window.scrollTo({ top: 0 }); });
+    $$('[data-bill]', v).forEach(b => b.addEventListener('click', () => openBill(b.dataset.bill)));
+  },
+};
+function histRowHTML(b) {
+  const dt = new Date(b.closedAt);
+  return `<button class="hist-row" data-bill="${b.id}">
+    <span class="hist-date"><b>${String(dt.getDate()).padStart(2, '0')}</b><small>${dt.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</small></span>
+    <span style="min-width:0"><span class="hist-title" style="display:block">${esc(b.place || 'Comanda sem nome')}</span>
+      <span class="hist-sub" style="display:block">${esc(b.people.map(p => p.name).join(', '))} · ${plural(b.items.length, 'item', 'itens')}</span></span>
+    <span class="hist-total">${BRL(b.total)}</span>
+  </button>`;
+}
+
+// alterações em itens já confirmados ficam num rascunho até tocar em Salvar
+let pending = {};
+function pendingFor(it) { return pending[it.id] || null; }
+function stage(it) { if (!pending[it.id]) pending[it.id] = { a: { ...it.a }, qty: it.qty }; return pending[it.id]; }
+function pendingDirty(it) { const p = pending[it.id]; if (!p) return false; return p.qty !== it.qty || JSON.stringify(Object.entries(p.a).filter(([, v]) => v > 0).sort()) !== JSON.stringify(Object.entries(it.a).filter(([, v]) => v > 0).sort()); }
+
+function itemCardHTML(it, d, me) {
+  const ids = d.people.map(p => p.id);
+  const nm = id => esc(d.people.find(p => p.id === id)?.name || '');
+  const total = it.qty * it.price;
+  const head = (qty) => `<div class="item-top"><div style="min-width:0"><div class="item-name">${esc(it.name)}${it.fq ? `<span class="tag">${it.fq >= qty ? 'cortesia' : it.fq + ' cortesia'}</span>` : ''}</div><div class="item-meta num">${qty} × ${BRL(it.price)}</div></div>
+    <div class="item-total">${BRL(qty * it.price)}</div></div>`;
+  const footer = `<div class="item-actions"><span class="share">${it.lk ? (it.mode === 'units' ? 'Por unidade' : 'Dividido igualmente') + ' · confirmado' : 'Novo item · defina a divisão'}</span>
+    <span class="grp"><button class="btn small ghost" data-rename>${I.edit}Alterar</button><button class="btn small ghost del-btn" data-del>${I.trash}Remover</button></span></div>`;
+
+  /* ----- item confirmado ----- */
+  if (it.lk) {
+    const p = pendingFor(it); const cur = p || { a: it.a, qty: it.qty };
+    const dirty = pendingDirty(it);
+    let body;
+    if (it.mode === 'units') {
+      body = `<div class="units">${d.people.map(pp => {
+        const was = it.a[pp.id] || 0, now = cur.a[pp.id] || 0, delta = now - was;
+        return `<div class="unit-row ${now ? 'on' : ''}">
+          <span class="who-name">${avatar(pp.name)}<span class="${pp.id === me ? 'me-name' : ''}">${esc(pp.name)}</span></span>
+          <span class="unit-count"><span class="num">${now}</span>${delta ? `<span class="delta ${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '+' : ''}${delta}</span>` : ''}</span>
+          <span class="unit-btns"><button class="minus" data-dec="${pp.id}" aria-label="Tirar uma unidade de ${esc(pp.name)}" ${now ? '' : 'disabled'}>−1</button><button class="plus" data-inc="${pp.id}" aria-label="Mais uma unidade para ${esc(pp.name)}">+1</button></span>
+        </div>`; }).join('')}</div>`;
+    } else {
+      const who = ids.filter(id => (cur.a[id] || 0) > 0);
+      body = `<div class="chips" role="group" aria-label="Quem divide ${esc(it.name)}">${d.people.map(pp => {
+          const on = (cur.a[pp.id] || 0) > 0, was = (it.a[pp.id] || 0) > 0;
+          return `<button class="chip ${pp.id === me ? 'me' : ''} ${on !== was ? 'changed' : ''}" data-toggle="${pp.id}" aria-pressed="${on}">${esc(pp.name)}</button>`; }).join('')}</div>
+        <div class="row" style="align-items:center;justify-content:space-between">
+          <span class="share">${who.length > 1 ? `Dividido por ${who.length}: <span class="num">${BRL(Math.round((cur.qty - Math.min(it.fq || 0, cur.qty)) * it.price / who.length))}</span> cada` : who.length ? 'Item individual' : '<b style="color:var(--danger)">Ninguém marcado</b>'}</span>
+          <span class="unit-btns"><span class="hint">Qtd.</span><span class="num" style="min-width:22px;text-align:center;font-weight:600">${cur.qty}</span>${cur.qty !== it.qty ? `<span class="delta ${cur.qty > it.qty ? 'up' : 'down'}">${cur.qty > it.qty ? '+' : ''}${cur.qty - it.qty}</span>` : ''}
+            <button class="minus" data-qdec ${cur.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade a menos">−1</button><button class="plus" data-qinc aria-label="Mais uma unidade">+1</button></span>
+        </div>`;
+    }
+    let save = '';
+    if (dirty) {
+      const dq = cur.qty - it.qty;
+      const valid = it.mode === 'units' ? cur.qty > 0 : ids.some(id => (cur.a[id] || 0) > 0);
+      save = `<div class="pending-bar">
+        <span><b>Alteração não salva</b>${dq ? ` · ${dq > 0 ? '+' : ''}${plural(dq, 'unidade', 'unidades')} · ${dq > 0 ? '+' : '−'}${BRL(Math.abs(dq) * it.price)}` : ''}</span>
+        <span class="grp"><button class="btn small ghost" data-discard>Descartar</button><button class="btn small" data-save ${valid ? '' : 'disabled'}>${I.save}Salvar</button></span>
+      </div>`;
+    }
+    return `<div class="item locked ${dirty ? 'dirty' : ''}" data-item="${it.id}">
+      ${head(cur.qty)}${body}${save}${footer}</div>`;
+  }
+
+  /* ----- item novo: primeira divisão ----- */
+  const who = ids.filter(id => (it.a[id] || 0) > 0); const n = who.length;
+  const units = who.reduce((s, id) => s + (it.a[id] || 0), 0);
+  const ok = it.mode === 'units' ? (n > 0 && units === it.qty) : n > 0;
+  const seg = `<div class="seg" role="group" aria-label="Como dividir ${esc(it.name)}">
+    <button data-mode="equal" aria-pressed="${it.mode === 'equal'}">Igual entre os marcados</button>
+    <button data-mode="units" aria-pressed="${it.mode === 'units'}">Por unidade</button></div>`;
+  let body = '';
+  if (it.mode === 'units') {
+    const left = it.qty - units;
+    body = `<div class="units">${d.people.map(p => { const u = it.a[p.id] || 0; return `
+      <div class="unit-row ${u ? 'on' : ''}">
+        <span class="who-name">${avatar(p.name)}<span class="${p.id === me ? 'me-name' : ''}">${esc(p.name)}</span></span>
+        <span class="unit-count"><span class="num">${u}</span></span>
+        <span class="unit-btns"><button class="minus" data-unit="${p.id}" data-dir="-1" aria-label="Uma unidade a menos para ${esc(p.name)}" ${u ? '' : 'disabled'}>−1</button><button class="plus" data-unit="${p.id}" data-dir="1" aria-label="Uma unidade a mais para ${esc(p.name)}" ${left > 0 ? '' : 'disabled'}>+1</button></span>
+      </div>`; }).join('')}</div>
+      ${left === 0 ? `<div class="status ok">${I.ok}<span><b>${it.qty} de ${it.qty} distribuídas.</b> Já pode confirmar.</span></div>`
+        : left > 0 ? `<div class="status warn">${I.warn}<span><b>Faltam ${plural(left, 'unidade', 'unidades')}</b> (${units} de ${it.qty} distribuídas).</span></div>`
+        : `<div class="status bad">${I.warn}<span><b>${plural(-left, 'unidade', 'unidades')} a mais</b> (${units} de ${it.qty}).</span></div>`}`;
+  } else {
+    const all = n === ids.length && n > 0;
+    body = `${d.people.length ? `<div class="chips" role="group" aria-label="Quem consumiu ${esc(it.name)}">
+        ${d.people.map(p => `<button class="chip ${p.id === me ? 'me' : ''}" data-toggle="${p.id}" aria-pressed="${(it.a[p.id] || 0) > 0}">${esc(p.name)}</button>`).join('')}
+        ${d.people.length > 1 ? `<button class="chip all" data-all="${all ? 'none' : 'all'}">${all ? 'Ninguém' : 'Todos'}</button>` : ''}
+      </div>` : ''}
+      <span class="share">${!n ? '<b style="color:var(--danger)">Toque em quem consumiu.</b>' : n === 1 ? 'Item individual' : `Dividido por ${n}: <span class="num">${BRL(Math.round((it.qty - Math.min(it.fq || 0, it.qty)) * it.price / n))}</span> cada`}</span>`;
+  }
+  return `<div class="item open" data-item="${it.id}">
+    ${head(it.qty)}
+    ${d.people.length > 1 ? seg : ''}
+    ${body}
+    <div class="row" style="align-items:center;gap:10px"><span class="hint">Quantidade</span>
+      <span class="stepper sm"><button data-q="-1" aria-label="Diminuir quantidade" ${it.qty > 1 ? '' : 'disabled'}>−</button><span class="num">${it.qty}</span><button data-q="1" aria-label="Aumentar quantidade">+</button></span></div>
+    <button class="btn" data-confirm ${ok ? '' : 'disabled'}>${I.lock}Confirmar divisão</button>
+    ${footer}
+  </div>`;
+}
+
+function renameSheet(it) {
+  openSheet(`<h3>Alterar ${esc(it.name)}</h3>
+    <p class="hint">Aqui você corrige o cadastro do item. Para mudar quantidades, use +1 e −1 no próprio item.</p>
+    <form id="rn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
+      <div class="field"><label for="rn-name">Nome do produto</label><input id="rn-name" type="text" value="${esc(it.name)}"></div>
+      <div class="field"><label for="rn-price">Valor unitário (R$)</label><input id="rn-price" type="text" inputmode="numeric" data-money value="${moneyInput(it.price)}"></div>
+      <div class="sheet-actions"><button type="button" class="btn ghost" id="rn-no">Cancelar</button><button type="submit" class="btn">${I.save}Salvar alteração</button></div>
+    </form>`, s => {
+    $('#rn-no', s).onclick = closeSheet;
+    $('#rn-name', s).focus();
+    $('#rn-form', s).addEventListener('submit', e => {
+      e.preventDefault();
+      const name = $('#rn-name', s).value.trim().replace(/\s+/g, ' ');
+      const price = parseMoney($('#rn-price', s).value);
+      if (!name) { toast('Informe o nome do produto.'); return; }
+      if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); return; }
+      const cur = draft.items.find(x => x.id === it.id); if (!cur) { closeSheet(); return; }
+      const changed = cur.name !== name || cur.price !== price;
+      cur.name = name; cur.price = price; closeSheet();
+      if (changed) { commit(); toast('Item alterado.'); }
+    });
+  });
+}
+
+const viewComanda = {
+  html() {
+    const d = draft, calc = compute(d);
+    const editing = d.items.find(i => i.id === editingItemId);
+    const allIds = d.people.map(p => p.id);
+    const me = d.live ? LS.get('me.' + d.live.code, '') : '';
+    const itemsHTML = d.items.length ? d.items.map(it => itemCardHTML(it, d, me)).join('') : `<div class="empty">Nenhum item ainda. Lance o primeiro pedido acima.</div>`;
+
+    return `
+    ${d.isExample ? `<div class="banner"><span>Esta comanda é um <b>exemplo</b> para você ver como funciona.</span><button class="btn small mustard" id="clear-example">Começar a minha</button></div>` : ''}
+    ${d.live ? `<button class="live-strip" id="live-jump">${live.unsub && !live.closed ? '<span class="live-dot" aria-hidden="true"></span>' : ''}Comanda ao vivo ${live.closed ? 'encerrada' : live.unsub ? 'conectada' : 'desconectada'} · ver detalhes</button>` : ''}
+    ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. Alterações aqui podem ser salvas de novo em <b>Fechar</b>.</span><button class="btn small mustard" id="new-bill-top">Encerrar edição</button></div>` : ''}
+    <div class="card">
+      <div class="place-row">
+        <div class="field"><label for="place">Local</label><input id="place" type="text" placeholder="Ex.: Boteco do Zé" value="${esc(d.place)}" autocomplete="off" data-keep></div>
+        <div class="field"><label>&nbsp;</label><span class="hint num" style="padding-bottom:12px">${fmtDate(d.createdAt)}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Pessoas na comanda</h2><span class="hint">${plural(d.people.length, 'pessoa', 'pessoas')}</span></div>
+      <form class="row" id="person-form" autocomplete="off">
+        <div class="field grow"><label for="person-name">Nome</label><input id="person-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Digite e toque em Adicionar" data-keep></div>
+        <button class="btn" type="submit">${I.plus}Adicionar</button>
+      </form>
+      <div class="people">${d.people.map(p => `<span class="person">${avatar(p.name)}<span class="n">${esc(p.name)}</span><span class="num hint">${BRL(calc.per[p.id].gross)}</span><button data-rm-person="${p.id}" aria-label="Remover ${esc(p.name)}">${I.x}</button></span>`).join('') || '<span class="hint">Adicione quem está dividindo a comanda.</span>'}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>${editing ? 'Editar item' : 'Lançar item'}</h2>${editing ? '<button class="btn small ghost" id="cancel-edit">Cancelar edição</button>' : ''}</div>
+      <form id="item-form" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
+        <div class="field"><label for="item-name">Produto</label><input id="item-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Ex.: Chopp 500 ml" value="${editing ? esc(editing.name) : ''}" data-keep></div>
+        <div class="row">
+          <div class="field"><label for="item-qty">Quantidade</label>
+            <div class="stepper"><button type="button" data-step="-1" aria-label="Menos">−</button><input id="item-qty" type="number" min="1" step="1" inputmode="numeric" value="${editing ? editing.qty : 1}" data-keep><button type="button" data-step="1" aria-label="Mais">+</button></div></div>
+          <div class="field grow"><label for="item-price">Valor unitário (R$)</label><input id="item-price" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${editing ? moneyInput(editing.price) : ''}" data-keep></div>
+          <button class="btn" type="submit">${editing ? 'Salvar item' : I.plus + 'Lançar'}</button>
+        </div>
+        <p class="price-hint" id="price-hint" hidden></p>
+        <p class="price-hint other" id="dup-hint" hidden>Este produto já está na comanda. Para pedir mais, use <b>+1</b> no próprio item; lance de novo só se for outro pedido.</p>
+        ${!editing && d.people.length ? `<p class="hint">Todo item novo entra dividido entre todos. Marque quem consumiu (ou use <b>Por unidade</b> para indicar quantos cada um pediu) e toque em <b>Confirmar divisão</b>. Para pedir mais depois, toque em <b>+1</b> no item e em <b>Salvar</b>.</p>` : ''}
+        ${!d.people.length ? `<p class="hint">Adicione pessoas primeiro para poder dividir os itens.</p>` : ''}
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Itens da comanda</h2><span class="hint num">${plural(d.items.length, 'item', 'itens')} · ${BRL(calc.itemsGross)}</span></div>
+      <div class="items">${itemsHTML}</div>
+      ${d.items.length && d.people.length ? `<button class="btn mustard" id="go-close">Fechar a comanda</button>` : ''}
+    </div>
+
+    ${liveCardHTML()}
+
+    ${!d.isExample && (d.items.length || d.people.length || d.place) ? `<button class="btn ghost reset-btn" id="reset">${I.refresh}Limpar ou excluir comanda</button>` : ''}`;
+  },
+  bind(v) {
+    const d = draft;
+    $('#clear-example', v)?.addEventListener('click', () => { draft = blankDraft(); LS.set('draft', draft); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); setTimeout(() => { if (!isTouch) $('#start-place')?.focus(); }, 0); });
+    $('#reset', v)?.addEventListener('click', resetSheet);
+    $('#live-jump', v)?.addEventListener('click', () => $('#live-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    $('#new-bill-top', v)?.addEventListener('click', () => { pending = {}; draft = blankDraft(); tab = 'inicio'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 }); });
+    const addPerson = name => {
+      name = name.trim().replace(/\s+/g, ' ');
+      if (!name) return;
+      if (d.people.some(p => norm(p.name) === norm(name))) { toast(`${name} já está na comanda.`); return; }
+      const p = newPerson(name);
+      const prevCount = d.people.length;
+      d.people.push(p);
+      // só entra automaticamente em itens ainda abertos e divididos igual entre todos; itens confirmados não mudam
+      d.items.forEach(it => { if (!it.lk && it.mode === 'equal' && prevCount && Object.keys(it.a).filter(k => it.a[k] > 0).length === prevCount) it.a[p.id] = 1; });
+      const inp = $('#person-name'); if (inp) inp.value = '';
+      commit(); afterSubmit('#person-name');
+    };
+    $('#place', v).addEventListener('change', e => { d.place = e.target.value.trim(); commit(); });
+    attachSuggest($('#place', v), () => recentPlaces().map(p => ({ label: p.name })), x => { if (d.place !== x.label) { d.place = x.label; commit(); } });
+    // listas ordenadas pelo uso: quem mais aparece e o que já foi pedido neste local vêm primeiro
+    const Uu = usage();
+    attachSuggest($('#person-name', v), () => catalog.people.filter(p => !d.people.some(x => norm(x.name) === norm(p.name)))
+      .sort((a, b) => (Uu.people[norm(b.name)] || 0) - (Uu.people[norm(a.name)] || 0) || (b.last || 0) - (a.last || 0)).map(p => ({ label: p.name })), x => addPerson(x.label));
+
+    // mesa ao vivo
+    $('#live-start', v)?.addEventListener('click', () => live.start());
+    $('#live-copy', v)?.addEventListener('click', () => copyText(live.link(), 'Link da comanda copiado.'));
+    $('#live-invite', v)?.addEventListener('click', async () => {
+      const text = `Comanda ao vivo${d.place ? ' em ' + d.place : ''} no Conta Fácil. Abra o link ou digite o código ${d.live.code} em "Entrar com código".`;
+      try { await navigator.share({ title: 'Conta Fácil', text, url: live.link() }); } catch (e) { if (e && e.name !== 'AbortError') copyText(text + '\n' + live.link(), 'Convite copiado.'); }
+    });
+    $('#live-reconnect', v)?.addEventListener('click', () => { live.stop(); live.subscribe(); });
+    $('#live-end', v)?.addEventListener('click', () => {
+      const host = d.live.host && !live.closed;
+      confirmSheet(host ? 'Encerrar a comanda ao vivo?' : 'Sair da comanda ao vivo?',
+        host ? 'Os amigos param de conseguir marcar itens. A comanda continua aqui para você fechar.' : 'Você deixa de receber as atualizações. Uma cópia da comanda fica aqui com você.',
+        host ? 'Encerrar' : 'Sair', () => live.end());
+    });
+    $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { const code = d.live.code; LS.set('me.' + code, LS.get('me.' + code, '') === b.dataset.me ? '' : b.dataset.me); render(); }));
+
+    $('#person-form', v).addEventListener('submit', e => { e.preventDefault(); if (isTouch) document.activeElement?.blur?.(); addPerson($('#person-name', v).value); });
+    $$('[data-rm-person]', v).forEach(b => b.addEventListener('click', () => {
+      const id = b.dataset.rmPerson; const p = d.people.find(x => x.id === id);
+      const has = d.items.some(i => (i.a[id] || 0) > 0);
+      const go = () => {
+        d.people = d.people.filter(x => x.id !== id);
+        d.items.forEach(i => {
+          const u = i.a[id] || 0; if (!u) return;
+          delete i.a[id]; delete pending[i.id];
+          if (i.mode === 'units' && i.lk) i.qty = Math.max(1, i.qty - u);
+          if (!Object.keys(i.a).length) i.lk = false;
+        });
+        leaveGroup(d, id);
+        delete d.custom[id]; delete d.cover[id]; Object.keys(d.cover).forEach(k => { if (d.cover[k] === id) delete d.cover[k]; }); if (d.payer === id) d.payer = ''; commit();
+      };
+      const n = d.items.filter(i => (i.a[id] || 0) > 0).length;
+      confirmSheet(`Remover ${p.name}?`, has
+        ? `${p.name} está em ${plural(n, 'item', 'itens')}. Nos itens por unidade, as unidades dessa pessoa saem da comanda. Nos divididos igual, o valor passa a ser dividido entre os demais.`
+        : `${p.name} sai da comanda.`, 'Remover', go, true);
+    }));
+
+    // formulário de item
+    const nameEl = $('#item-name', v), priceEl = $('#item-price', v), qtyEl = $('#item-qty', v);
+    let autoFilled = false;
+    const hintEl = $('#price-hint', v);
+    const fillFrom = (name, force) => {
+      const info = priceInfo(findProduct(name), d.place);
+      if (!info) { if (autoFilled) { priceEl.value = ''; autoFilled = false; } hintEl.hidden = true; return; }
+      if (force || !priceEl.value || autoFilled) { priceEl.value = moneyInput(info.price); autoFilled = true; }
+      hintEl.hidden = false;
+      hintEl.className = 'price-hint' + (info.here ? '' : ' other');
+      hintEl.textContent = info.here ? `Preço registrado ${d.place ? 'em ' + d.place : 'para este local'}.` : `Último preço${info.where ? ' em ' + info.where : ''}. Confira o cardápio daqui.`;
+      dupHint(name);
+    };
+    const dupEl = $('#dup-hint', v);
+    const dupHint = name => { const has = d.items.some(it => norm(it.name) === norm(name)); dupEl.hidden = !has; };
+    nameEl.addEventListener('input', () => { fillFrom(nameEl.value); dupHint(nameEl.value); });
+    attachSuggest(nameEl, () => catalog.products.map(p => ({ p, i: priceInfo(p, d.place), n: Uu.products[norm(p.name)] || 0 }))
+      .sort((a, b) => (!!b.i?.here - !!a.i?.here) || b.n - a.n || a.p.name.localeCompare(b.p.name, 'pt-BR'))
+      .map(({ p, i }) => ({ label: p.name, right: i ? BRL(i.price) + (i.here ? '' : ' · outro local') : '', dim: i && !i.here })),
+      x => { fillFrom(x.label, true); syncClr(); if (!isTouch) qtyEl.focus(); });
+    priceEl.addEventListener('input', () => { autoFilled = false; hintEl.hidden = true; });
+    // × dentro do campo para apagar o nome do produto
+    const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'sg-clear'; clr.setAttribute('aria-label', 'Limpar produto'); clr.innerHTML = I.x;
+    nameEl.parentNode.insertBefore(clr, nameEl.nextSibling);
+    const syncClr = () => { clr.hidden = !nameEl.value; };
+    syncClr(); ['input', 'change', 'focus'].forEach(ev => nameEl.addEventListener(ev, syncClr));
+    clr.addEventListener('pointerdown', e => e.preventDefault());
+    clr.addEventListener('click', () => { nameEl.value = ''; syncClr(); $('#dup-hint', v).hidden = true; if (autoFilled) { priceEl.value = ''; hintEl.hidden = true; autoFilled = false; } nameEl.focus(); setTimeout(() => { const el = document.getElementById('item-name'); if (el) { el.focus(); el.dispatchEvent(new Event('input', { bubbles: true })); } }, 0); });
+    $$('[data-step]', v).forEach(b => b.addEventListener('click', () => { qtyEl.value = Math.max(1, (parseInt(qtyEl.value) || 1) + +b.dataset.step); }));
+    $('#cancel-edit', v)?.addEventListener('click', () => { editingItemId = null; render(); });
+    $('#item-form', v).addEventListener('submit', e => {
+      e.preventDefault();
+      if (isTouch) document.activeElement?.blur?.();
+      const name = nameEl.value.trim().replace(/\s+/g, ' ');
+      const qty = Math.max(1, parseInt(qtyEl.value) || 1);
+      const price = parseMoney(priceEl.value);
+      if (!name) { toast('Informe o nome do produto.'); nameEl.focus(); return; }
+      if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); priceEl.focus(); return; }
+      if (editingItemId) {
+        const it = d.items.find(i => i.id === editingItemId); if (it) Object.assign(it, { name, qty, price }); editingItemId = null; toast('Item atualizado.');
+      } else {
+        d.items.push({ id: newId(), o: nextOrder(), name, qty, price, fq: 0, mode: 'equal', lk: false, a: Object.fromEntries(d.people.map(p => [p.id, 1])) });
+      }
+      nameEl.value = ''; priceEl.value = ''; qtyEl.value = 1; hintEl.hidden = true; dupEl.hidden = true;
+      commit(); afterSubmit('#item-name');
+    });
+
+    // cartões de item
+    $$('[data-item]', v).forEach(card => {
+      const it = d.items.find(i => i.id === card.dataset.item);
+      if (!it) return;
+      $('[data-rename]', card)?.addEventListener('click', () => renameSheet(it));
+      $('[data-del]', card)?.addEventListener('click', () => confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda${it.lk ? ', mesmo com a divisão já confirmada' : ''}.`, 'Remover', () => { delete pending[it.id]; d.items = d.items.filter(i => i.id !== it.id); commit(); }, true));
+
+      if (it.lk) {
+        const touch = () => { if (!pendingDirty(it)) delete pending[it.id]; render(); };
+        $$('[data-inc]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it); p.a[b.dataset.inc] = (p.a[b.dataset.inc] || 0) + 1; p.qty++; touch(); }));
+        $$('[data-dec]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it), id = b.dataset.dec; if (!(p.a[id] > 0)) return; p.a[id]--; if (!p.a[id]) delete p.a[id]; p.qty--; touch(); }));
+        $$('[data-toggle]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it), id = b.dataset.toggle; if ((p.a[id] || 0) > 0) delete p.a[id]; else p.a[id] = 1; touch(); }));
+        $('[data-qinc]', card)?.addEventListener('click', () => { stage(it).qty++; touch(); });
+        $('[data-qdec]', card)?.addEventListener('click', () => { const p = stage(it); if (p.qty > 1) p.qty--; touch(); });
+        $('[data-discard]', card)?.addEventListener('click', () => { delete pending[it.id]; render(); });
+        $('[data-save]', card)?.addEventListener('click', () => {
+          const p = pending[it.id]; if (!p) return;
+          const dq = p.qty - it.qty;
+          it.a = Object.fromEntries(Object.entries(p.a).filter(([, x]) => x > 0)); it.qty = p.qty; it.fq = Math.min(it.fq || 0, it.qty);
+          delete pending[it.id]; commit();
+          toast(`Alteração salva em ${it.name}${dq ? ` (${dq > 0 ? '+' : ''}${plural(dq, 'unidade', 'unidades')})` : ''}.`);
+        });
+        return;
+      }
+
+      $('[data-confirm]', card)?.addEventListener('click', () => { it.lk = true; commit(); toast(`${it.name}: divisão confirmada.`); });
+      $$('[data-mode]', card).forEach(b => b.addEventListener('click', () => {
+        const m = b.dataset.mode; if (m === it.mode) return;
+        const who = d.people.map(p => p.id).filter(id => (it.a[id] || 0) > 0);
+        const base = who.length ? who : d.people.map(p => p.id);
+        if (m === 'units') {
+          // ponto de partida: parte inteira igual para cada um; o que sobrar você distribui
+          const each = Math.floor(it.qty / base.length);
+          it.a = each ? Object.fromEntries(base.map(id => [id, each])) : {};
+        } else it.a = Object.fromEntries(base.map(id => [id, 1]));
+        it.mode = m; commit();
+      }));
+      $$('[data-unit]', card).forEach(b => b.addEventListener('click', () => {
+        const id = b.dataset.unit, dir = +b.dataset.dir;
+        const used = Object.values(it.a).reduce((s, x) => s + x, 0);
+        if (dir > 0 && used >= it.qty) return;
+        const nv = (it.a[id] || 0) + dir;
+        if (nv <= 0) delete it.a[id]; else it.a[id] = nv;
+        commit();
+      }));
+      $$('[data-toggle]', card).forEach(b => b.addEventListener('click', () => {
+        const id = b.dataset.toggle; if ((it.a[id] || 0) > 0) delete it.a[id]; else it.a[id] = 1; commit();
+      }));
+      $('[data-all]', card)?.addEventListener('click', e => { it.a = e.currentTarget.dataset.all === 'all' ? Object.fromEntries(d.people.map(p => [p.id, it.a[p.id] || 1])) : {}; commit(); });
+      $$('[data-q]', card).forEach(b => b.addEventListener('click', () => { it.qty = Math.max(1, it.qty + +b.dataset.q); it.fq = Math.min(it.fq || 0, it.qty); commit(); }));
+    });
+    $('#go-close', v)?.addEventListener('click', () => { tab = 'fechar'; render(); window.scrollTo({ top: 0 }); });
+  },
+};
+
+/* ---------- aba Fechar ---------- */
+// quanto cada um paga e para quem (lista só de leitura, no histórico)
+function settleHTML(c) {
+  if (!c.units.length || c.total <= 0) return '';
+  const debts = pixDebts(c);
+  return `<div class="card settle">
+    <div class="card-head"><h2>Quanto cada um paga</h2></div>
+    <div class="who">${c.ids.map(id => { const nm = c.per[id].person.name, plan = planOf(c, id);
+      const out = plan.filter(x => x.k !== 'in').reduce((a, x) => a + x.v, 0);
+      return `<div class="who-row settle-row">
+      <div class="who-name">${avatar(nm)}<span>${esc(nm)}</span></div>
+      <div class="who-total">${out ? BRL(out) : '—'}</div>
+      <div class="who-sub"><span class="hint">${plan.length ? esc(plan.map(x => x.t).join(' · ')) : 'não paga nada'}</span>${debts.some(x => x.pid === id) ? `<button class="btn small ghost pix-btn" data-pixpay="${id}">Pix</button>` : ''}</div>
+    </div>`; }).join('')}</div>
+  </div>`;
+}
+// quadro de grupos: arraste uma pessoa sobre outra (ou toque numa e depois na outra)
+let pickSel = null;
+const openAdj = new Set();
+// juntar a pessoa "pid" ao grupo de "target" (pessoa ou grupo)
+function joinGroup(d, pid, target) {
+  const groups = cleanGroups(d);
+  const leave = id => groups.forEach(g => { g.members = g.members.filter(m => m !== id); g.payers = g.payers.filter(m => m !== id); });
+  let dest;
+  if (target.startsWith('g:')) dest = groups.find(g => g.id === target.slice(2));
+  else {
+    const other = target.slice(2); if (other === pid) return false;
+    dest = groups.find(g => g.members.includes(other));
+    if (!dest) { leave(pid); dest = { id: newId(), members: [other], payers: [other] }; groups.push(dest); }
+  }
+  if (!dest || dest.members.includes(pid)) return false;
+  leave(pid); dest.members.push(pid);
+  d.groups = groups.map(g => ({ ...g, payers: g.payers.length ? g.payers : g.members.slice(0, 1) })).filter(g => g.members.length > 1);
+  return true;
+}
+function leaveGroup(d, pid) {
+  d.groups = cleanGroups(d).map(g => ({ ...g, members: g.members.filter(m => m !== pid), payers: g.payers.filter(m => m !== pid) }))
+    .map(g => ({ ...g, payers: g.payers.length ? g.payers : g.members.slice(0, 1) })).filter(g => g.members.length > 1);
+}
+function bindGroups(v, d) {
+  const card = $('#groups-card', v); if (!card) return;
+  const act = (pid, target) => { pickSel = null; if (joinGroup(d, pid, target)) { commit(); toast('Grupo atualizado.'); } else render({ preserve: true }); };
+  $('#pick-cancel', card)?.addEventListener('click', () => { pickSel = null; render({ preserve: true }); });
+  $$('[data-payer-t]', card).forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const pid = b.dataset.payerT, g = cleanGroups(d).find(x => x.members.includes(pid)); if (!g) return;
+    const on = g.payers.includes(pid);
+    if (on && g.payers.length === 1) { toast('O grupo precisa de pelo menos uma pessoa que paga.'); return; }
+    g.payers = on ? g.payers.filter(x => x !== pid) : [...g.payers, pid];
+    d.groups = cleanGroups(d).map(x => x.id === g.id ? g : x); commit();
+  }));
+  $$('[data-ungroup]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); leaveGroup(d, b.dataset.ungroup); pickSel = null; commit(); }));
+  // toque: escolher uma pessoa e depois o destino
+  card.addEventListener('click', e => {
+    if (Date.now() - dragState.droppedAt < 80) return;
+    if (e.target.closest('button, input, label, select, textarea, .switch')) return;
+    const chipEl = e.target.closest('[data-drag]'), box = e.target.closest('[data-drop]');
+    if (!pickSel) { if (chipEl) { pickSel = chipEl.dataset.drag; render({ preserve: true }); } return; }
+    if (chipEl && chipEl.dataset.drag === pickSel) { pickSel = null; render({ preserve: true }); return; }
+    if (chipEl) { const g = c_groupOf(d, chipEl.dataset.drag); return act(pickSel, g ? 'g:' + g : 'p:' + chipEl.dataset.drag); }
+    if (box) { const t = box.dataset.drop; if (t === 'out') { leaveGroup(d, pickSel); pickSel = null; return commit(); } return act(pickSel, t); }
+  });
+  // arrastar e soltar (dedo ou mouse)
+  $$('[data-drag]', card).forEach(el => el.addEventListener('pointerdown', e => {
+    if (e.target.closest('button') || e.button > 0) return;
+    dragState.start = { x: e.clientX, y: e.clientY, pid: el.dataset.drag, el, id: e.pointerId };
+  }));
+}
+const c_groupOf = (d, pid) => cleanGroups(d).find(g => g.members.includes(pid))?.id || null;
+const dragState = { start: null, ghost: null, over: null, droppedAt: 0 };
+document.addEventListener('pointermove', e => {
+  const st = dragState.start; if (!st || e.pointerId !== st.id) return;
+  if (!dragState.ghost) {
+    if (Math.hypot(e.clientX - st.x, e.clientY - st.y) < 8) return;
+    const g = st.el.cloneNode(true); g.classList.add('drag-ghost'); document.body.appendChild(g);
+    dragState.ghost = g; st.el.classList.add('dragging'); document.body.classList.add('is-dragging');
+  }
+  e.preventDefault();
+  dragState.ghost.style.transform = `translate(${e.clientX - 20}px, ${e.clientY - 20}px)`;
+  const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-drop]');
+  if (dragState.over !== under) { dragState.over?.classList.remove('drop-on'); dragState.over = under; under?.classList.add('drop-on'); }
+}, { passive: false });
+const endDrag = e => {
+  const st = dragState.start; if (!st || (e && e.pointerId !== st.id)) return;
+  dragState.start = null;
+  if (!dragState.ghost) return;
+  dragState.ghost.remove(); dragState.ghost = null; document.body.classList.remove('is-dragging');
+  st.el.classList.remove('dragging');
+  const over = dragState.over; dragState.over = null; over?.classList.remove('drop-on');
+  dragState.droppedAt = Date.now();
+  if (!over || e?.type === 'pointercancel') return;
+  const t = over.dataset.drop, d = draft;
+  pickSel = null;
+  if (t === 'out') { if (c_groupOf(d, st.pid)) { leaveGroup(d, st.pid); commit(); toast('Saiu do grupo.'); } return; }
+  if (t === 'p:' + st.pid) return;
+  if (joinGroup(d, st.pid, t)) { commit(); toast('Grupo atualizado.'); }
+};
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
+// cartão único de pagamento: quem pagou o local, grupos e quanto cada um paga, numa caixa por cupom
+function paymentHTML(d, c) {
+  if (!c.units.length) return '';
+  const nm = pid => c.per[pid].person.name;
+  const first = pid => esc(nm(pid).split(' ')[0]);
+  const debts = pixDebts(c);
+  const multiPeople = d.people.length > 1;
+
+  // quem vai pagar a conta
+  let who = '';
+  if (d.payMode === 'single') {
+    who = `<div class="chips">${d.people.map(p => `<button class="chip" data-payer="${p.id}" aria-pressed="${d.payer === p.id}">${esc(p.name)}</button>`).join('')}</div>`;
+    if (c.missingPayer) who += '<p class="hint">Toque em quem vai pagar a conta.</p>';
+  }
+  let warn = '';
+  if (!c.missingPayer && c.payDiff < 0) warn = `<div class="status warn">${I.warn}<span>Faltam <b>${BRL(-c.payDiff)}</b> para cobrir o total de ${BRL(c.total)}. Ajuste os valores personalizados.</span></div>`;
+  if (c.payDiff > 0) warn = `<div class="status warn">${I.warn}<span>Os valores personalizados passam <b>${BRL(c.payDiff)}</b> do total de ${BRL(c.total)}.</span></div>`;
+
+  // botão de valor personalizado ao lado do nome (quem paga a conta inteira cobre o restante e não precisa dele)
+  const cvBtn = pid => c.payer === pid ? '' : `<button class="cv-t" data-cv="${pid}" aria-pressed="${c.per[pid].custom}" aria-label="Valor personalizado para ${esc(nm(pid))}">R$</button>`;
+  const chip = (pid, u) => {
+    const multi = u.members.length > 1, isPayer = u.payers.includes(pid);
+    return `<span class="pchip ${multi ? 'in' : 'solo'} ${pickSel === pid ? 'picked' : ''}" data-drag="${pid}">
+      ${avatar(nm(pid))}<span class="pc-name">${esc(nm(pid))}</span>
+      ${cvBtn(pid)}${multi ? `<button class="pay-t" data-payer-t="${pid}" aria-pressed="${isPayer}" aria-label="${isPayer ? 'Responsável pelo pagamento' : 'Tornar responsável pelo pagamento'}">${isPayer ? 'paga' : 'não paga'}</button>
+        <button class="pc-x" data-ungroup="${pid}" aria-label="Tirar ${esc(nm(pid))} do grupo">${I.x}</button>` : ''}
+    </span>`;
+  };
+  const unitBox = u => {
+    const multi = u.members.length > 1;
+    const lines = u.members.map(pid => {
+      const p = c.per[pid], plan = planOf(c, pid), who = multi ? `<b>${first(pid)}</b> ` : '';
+      let h = `<div class="pdetail">${multi ? `<span class="pd-name">${first(pid)} · <b class="num">${BRL(p.total)}</b></span>` : ''}<span class="num">Consumo ${BRL(p.gross)}</span>${p.discount ? `<span class="num">Desconto −${BRL(p.discount)}</span>` : ''}
+        ${d.service.enabled ? `<label class="switch"><input type="checkbox" data-pay-svc="${pid}" ${p.person.payService ? 'checked' : ''}><span class="track"></span>Serviço <span class="num">${BRL(p.service)}</span></label>` : ''}
+        ${d.couvert.enabled ? `<label class="switch"><input type="checkbox" data-pay-cv="${pid}" ${p.person.payCouvert ? 'checked' : ''}><span class="track"></span>Couvert</label>` : ''}</div>`;
+      if (p.custom) h += `<div class="cv-row"><label for="cv-${pid}">${multi ? first(pid) + ' vai' : 'Vai'} pagar</label><input id="cv-${pid}" data-custom="${pid}" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${moneyInput(d.custom[pid] || 0)}" data-keep><span class="hint">Parte na conta: ${BRL(p.share)}. A diferença é acertada entre vocês.</span></div>`;
+      const gap = p.custom && d.payMode !== 'single' ? p.share - (d.custom[pid] || 0) : 0;
+      if (gap > 0) {
+        const opts = c.ids.filter(id => id !== pid && !c.per[id].custom && c.per[id].share > 0);
+        if (opts.length) h += `<div class="cover-row"><span class="eyebrow">Quem cobre os ${BRL(gap)} que faltam?</span><div class="chips">
+          <button class="chip" data-cover="${pid}" data-to="" aria-pressed="${!c.coverOf[pid]}">Todos</button>
+          ${opts.map(id => `<button class="chip" data-cover="${pid}" data-to="${id}" aria-pressed="${c.coverOf[pid] === id}">${esc(nm(id).split(' ')[0])}</button>`).join('')}</div></div>`;
+      }
+      if (!plan.length) h += `<div class="urow"><span class="hint">${who}não paga nada</span></div>`;
+      plan.forEach(x => {
+        h += `<div class="urow ${x.k === 'in' ? 'recv' : ''}"><span>${who}${esc(x.t).replace(/R\$\s?[\d.]+,\d{2}/, m => `<b class="num">${m}</b>`)}</span>${x.k === 'out' && debts.some(z => z.pid === pid) ? `<button class="btn small ghost pix-btn" data-pixpay="${pid}">Pix</button>` : ''}</div>`;
+      });
+      if (plan.some(x => x.k === 'in')) h += `<div class="pix-row"><label for="pix-${pid}">Pix de ${first(pid)}</label><input id="pix-${pid}" type="text" data-pix="${esc(nm(pid))}" value="${esc(pixOf(nm(pid)))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocomplete="off" autocapitalize="off" spellcheck="false" data-keep></div>`;
+      return h;
+    }).join('');
+    return `<div class="ubox ${multi ? 'group' : ''}" data-drop="${multi ? 'g:' + u.id : 'p:' + u.id}">
+      ${multi ? `<div class="ubox-tagline"><span class="ubox-tag">Cupom compartilhado${u.payers.length > 1 ? ` · ${u.payers.length} pagam` : ''}</span><b class="num ubox-total">${BRL(u.total)}</b></div>` : ''}
+      <div class="ubox-head"><div class="ubox-people">${u.members.map(m => chip(m, u)).join('')}</div>${multi ? '' : `<b class="num ubox-total">${BRL(u.total)}</b>`}</div>
+      ${lines}
+    </div>`;
+  };
+
+  return `<div class="card pay-card" id="groups-card">
+    <div class="card-head"><h2>Pagamento</h2></div>
+    <div class="field"><span class="eyebrow">Quem vai pagar a conta?</span>
+      <div class="seg" role="group" aria-label="Quem vai pagar a conta?">
+        <button data-paymode="none" aria-pressed="${d.payMode === 'none'}">Cada um paga o seu</button>
+        <button data-paymode="single" aria-pressed="${d.payMode === 'single'}">Uma pessoa paga tudo</button>
+      </div>${who}</div>
+    <div class="field"><span class="eyebrow">Quem paga o quê</span>
+      <p class="hint">Toque em <b>R$</b> ao lado do nome para alguém pagar um valor diferente.${multiPeople ? ` Para juntar pessoas num cupom só, arraste uma sobre a outra ou toque numa e depois na outra. No grupo, toque em <b>paga</b> para definir quem acerta a conta.` : ''}</p>
+    </div>
+    ${warn}
+    ${pickSel ? `<div class="pick-hint">${I.users}<span>Agora toque em quem vai ficar no mesmo cupom de <b>${esc(c.per[pickSel]?.person.name || '')}</b>.</span><button class="btn small ghost" id="pick-cancel">Cancelar</button></div>` : ''}
+    <div class="ubox-list">${c.units.map(unitBox).join('')}</div>
+    <div class="drop-out" data-drop="out">Solte aqui para tirar do grupo</div>
+    ${c.transfers.length ? `<button class="btn small ghost" id="copy-transfers" style="align-self:flex-start">${I.copy}Copiar acertos</button>` : ''}
+  </div>`;
+}
+const viewFechar = {
+  html() {
+    const d = draft, c = compute(d), s = d.service, ds = d.discount;
+    if (!d.people.length || !d.items.length) return `<div class="empty">Adicione pessoas e itens na aba Comanda para fechar a comanda.</div>`;
+    const names = ids => ids.map(id => c.per[id].person.name).join(', ');
+    let note = '';
+    if (s.enabled && c.skipped.length) {
+      note = s.policy === 'discount'
+        ? `<b>${esc(names(c.skipped))}</b> não paga${c.skipped.length > 1 ? 'm' : ''} o serviço. A taxa total fica <b class="num">${BRL(c.skippedValue)}</b> menor.`
+        : (c.service > 0 ? `<b class="num">${BRL(c.skippedValue)}</b> de serviço de ${esc(names(c.skipped))} redistribuídos entre ${plural(c.payers.length, 'pessoa', 'pessoas')}, proporcional ao consumo de cada uma.` : `Ninguém com consumo vai pagar o serviço, então não há para quem redistribuir.`);
+    }
+    const me = d.live ? LS.get('me.' + d.live.code, '') : '';
+    const myUnit = me && c.unitOf[me];
+    const order = myUnit ? [myUnit, ...c.units.map(u => u.id).filter(x => x !== myUnit)] : c.units.map(u => u.id);
+    return `
+    ${c.incomplete.length ? `<div class="banner warn"><span><b>Distribuição incompleta, item fora da conta:</b> ${c.incomplete.map(x => `${esc(x.it.name)} (${x.units} de ${x.it.qty} unidades)`).join(', ')}.</span><button class="btn small ghost" data-fix>Corrigir</button></div>` : ''}
+    ${c.openItems.length ? `<div class="banner"><span><b>${plural(c.openItems.length, 'item aguarda', 'itens aguardam')} confirmação:</b> ${esc(c.openItems.map(i => i.name).join(', '))}. Os valores já aparecem abaixo, mas a comanda só pode ser salva depois que todos forem confirmados.</span><button class="btn small mustard" data-fix>Revisar</button></div>` : ''}
+    ${c.unassigned.length ? `<div class="banner warn"><span><b>${plural(c.unassigned.length, 'item sem ninguém marcado ficou', 'itens sem ninguém marcado ficaram')} fora da comanda:</b> ${esc(c.unassigned.map(i => i.name).join(', '))}.</span><button class="btn small ghost" id="fix-items">Corrigir</button></div>` : ''}
+    <div class="sum-grid">
+      <div class="sum"><span class="eyebrow">Consumo</span><b>${BRL(c.consumoBruto)}</b></div>
+      <div class="sum"><span class="eyebrow">Serviço</span><b>${BRL(c.service)}</b></div>
+      ${d.couvert.enabled ? `<div class="sum"><span class="eyebrow">Couvert</span><b>${BRL(c.couvert)}</b></div>` : ''}
+      ${c.discount ? `<div class="sum"><span class="eyebrow">Desconto</span><b>−${BRL(c.discount)}</b></div>` : ''}
+      <div class="sum total"><span class="eyebrow">Total da comanda</span><b>${BRL(c.total)}</b></div>
+    </div>
+
+
+
+
+
+
+
+
+    <div class="card">
+      <div class="card-head"><h2>Taxa de serviço</h2>
+        <label class="switch"><input type="checkbox" id="svc-on" ${s.enabled ? 'checked' : ''}><span class="track"></span>Cobrar</label></div>
+      ${s.enabled ? `
+      <div class="row" style="align-items:center">
+        <div class="seg" role="group" aria-label="Tipo de taxa">
+          <button data-mode="p10" aria-pressed="${s.mode === 'pct' && s.pct === 10}">10%</button>
+          <button data-mode="pct" aria-pressed="${s.mode === 'pct' && s.pct !== 10}">Outro %</button>
+          <button data-mode="fixed" aria-pressed="${s.mode === 'fixed'}">Valor fixo</button>
+        </div>
+        ${s.mode === 'pct' && s.pct !== 10 ? `<div class="field" style="width:110px"><input id="svc-pct" type="text" inputmode="decimal" value="${pctStr(s.pct)}" aria-label="Percentual" data-keep></div><span class="hint">%</span>` : ''}
+        ${s.mode === 'fixed' ? `<div class="field" style="width:140px"><input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep></div><span class="hint">dividido proporcionalmente ao consumo</span>` : ''}
+      </div>
+      <div class="field"><span class="eyebrow">Se alguém não pagar o serviço</span>
+        <div class="seg" role="group" aria-label="O que fazer com o serviço de quem não paga">
+          <button data-policy="discount" aria-pressed="${s.policy === 'discount'}">Descontar da comanda</button>
+          <button data-policy="redistribute" aria-pressed="${s.policy === 'redistribute'}">Redistribuir entre os demais</button>
+        </div></div>
+      ${note ? `<div class="policy-note">${note}</div>` : `<p class="hint">Para tirar o serviço de alguém, desligue a chave <b>Serviço</b> da pessoa em <b>Pagamento</b>.</p>`}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
+    </div>
+
+    ${d.couvert.enabled ? `<div class="card">
+      <div class="card-head"><h2>Couvert artístico</h2>
+        <label class="switch"><input type="checkbox" id="cv-on" ${d.couvert.enabled ? 'checked' : ''}><span class="track"></span>Cobrar</label></div>
+      <div class="row" style="align-items:center"><div class="field" style="width:140px"><input id="cv-val" type="text" inputmode="numeric" data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa" data-keep></div><span class="hint">por pessoa</span></div>
+    </div>` : ''}
+
+    ${ds.enabled ? `<div class="card">
+      <div class="card-head"><h2>Desconto</h2>
+        <label class="switch"><input type="checkbox" id="ds-on" ${ds.enabled ? 'checked' : ''}><span class="track"></span>Aplicar</label></div>
+      <div class="row" style="align-items:flex-end">
+        <div class="field grow"><label for="ds-label">Motivo</label><input id="ds-label" type="text" value="${esc(ds.label)}" placeholder="Ex.: Happy hour" data-keep></div>
+        <div class="seg" role="group" aria-label="Tipo de desconto"><button data-dsmode="value" aria-pressed="${ds.mode === 'value'}">R$</button><button data-dsmode="pct" aria-pressed="${ds.mode === 'pct'}">%</button></div>
+        <div class="field" style="width:120px"><label for="ds-val">${ds.mode === 'pct' ? 'Percentual' : 'Valor'}</label><input id="ds-val" type="text" ${ds.mode === 'pct' ? 'inputmode="decimal"' : 'inputmode="numeric" data-money'} value="${ds.mode === 'pct' ? pctStr(ds.pct) : moneyInput(ds.value)}" data-keep></div>
+      </div>
+      <div class="field"><span class="eyebrow">Onde o desconto incide</span>
+        <div class="seg" role="group" aria-label="Onde o desconto incide">
+          <button data-dsat="after" aria-pressed="${ds.at === 'after'}">No total, depois do serviço</button>
+          <button data-dsat="before" aria-pressed="${ds.at !== 'after'}">No consumo, antes do serviço</button>
+        </div></div>
+      <div class="policy-note">${ds.at === 'after'
+        ? `O desconto é aplicado depois de somar consumo, serviço${d.couvert.enabled ? ' e couvert' : ''}, e é dividido proporcionalmente ao total de cada pessoa.${c.discount ? ` <b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(c.total + c.discount)}</b>.` : ''}`
+        : `O desconto sai do consumo, e o serviço é calculado sobre o valor já descontado. A divisão é proporcional ao consumo de cada pessoa.${c.discount ? ` <b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(c.consumoBruto)}</b>.` : ''}`}</div>
+    </div>` : ''}
+
+    ${c.freeValue || openAdj.has('fq') ? `<div class="card">
+      <div class="card-head"><h2>Cortesia</h2>${c.freeValue ? `<span class="hint num">−${BRL(c.freeValue)}</span>` : '<button class="btn small ghost" id="fq-close">Remover</button>'}</div>
+      <p class="hint">Informe quantas unidades de cada produto o local não cobrou. O desconto sai da parte de quem consumiu o produto, proporcionalmente ao que cada um pediu.</p>
+      <div class="who">${d.items.map(it => `<div class="who-row free-row">
+        <div style="min-width:0"><div style="font-weight:600;overflow-wrap:anywhere">${esc(it.name)}</div>
+          <div class="hint num">${it.qty} × ${BRL(it.price)}${it.fq ? ` · <b style="color:var(--green)">−${BRL(it.fq * it.price)}</b>` : ''}</div></div>
+        <span class="unit-btns"><button class="minus" data-fq="${it.id}" data-dir="-1" ${it.fq ? '' : 'disabled'} aria-label="Uma cortesia a menos em ${esc(it.name)}">−1</button>
+          <span class="fq-count num">${it.fq || 0}<small>/${it.qty}</small></span>
+          <button class="plus" data-fq="${it.id}" data-dir="1" ${it.fq < it.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span>
+      </div>`).join('')}</div>
+    </div>` : ''}
+    ${!d.couvert.enabled || !ds.enabled || !(c.freeValue || openAdj.has('fq')) ? `<div class="adj">
+      <span class="eyebrow">Ajustes da comanda</span>
+      <div class="adj-btns">
+        ${!d.couvert.enabled ? `<button class="adj-btn" data-adj="cv">${I.plus}Couvert</button>` : ''}
+        ${!ds.enabled ? `<button class="adj-btn" data-adj="ds">${I.plus}Desconto</button>` : ''}
+        ${!(c.freeValue || openAdj.has('fq')) ? `<button class="adj-btn" data-adj="fq">${I.plus}Cortesia</button>` : ''}
+      </div>
+    </div>` : ''}
+
+    ${paymentHTML(d, c)}
+
+    <div class="card">
+      <div class="card-head"><h2>Cupons</h2></div><div class="btn-row"><button class="btn small ghost" id="copy-all">${I.copy}Copiar todos</button><button class="btn small ghost" id="pdf-all">${I.file}Todos em PDF</button></div>
+      <div class="receipts">${order.map(id => `<div class="receipt-wrap">${receiptHTML(c.U[id], d, c)}<button class="btn small" data-share="${id}">${I.share}Compartilhar cupom de ${esc(c.U[id].name)}</button></div>`).join('')}</div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn" id="save-bill">${I.save}${d.savedAt ? 'Atualizar e encerrar' : 'Salvar e encerrar'}</button>
+      ${d.savedAt ? '<button class="btn ghost" id="end-edit">Encerrar sem salvar</button>' : `<button class="btn ghost danger-text" id="del-bill">${I.trash}Excluir comanda</button>`}
+    </div>`;
+  },
+  bind(v) {
+    const d = draft, s = d.service, ds = d.discount;
+    $('#fix-items', v)?.addEventListener('click', () => { tab = 'comanda'; render(); });
+    $$('[data-fix]', v).forEach(b => b.addEventListener('click', () => { tab = 'comanda'; render(); window.scrollTo({ top: 0 }); }));
+    // serviço
+    $('#svc-on', v)?.addEventListener('change', e => { s.enabled = e.target.checked; commit(); });
+    $$('[data-mode]', v).forEach(b => b.addEventListener('click', () => {
+      const m = b.dataset.mode;
+      if (m === 'p10') { s.mode = 'pct'; s.pct = 10; }
+      else if (m === 'pct') { s.mode = 'pct'; if (s.pct === 10) s.pct = 12; }
+      else { s.mode = 'fixed'; if (!s.fixed) s.fixed = Math.round(compute(d).consumo * 0.1); }
+      commit();
+    }));
+    $('#svc-pct', v)?.addEventListener('change', e => { const n = parseFloat(String(e.target.value).replace(',', '.')); if (isFinite(n) && n >= 0 && n <= 100) s.pct = Math.round(n * 100) / 100; else toast('Use um percentual entre 0 e 100.'); commit(); });
+    $('#svc-fixed', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) s.fixed = c; commit(); });
+    $$('[data-policy]', v).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.policy; commit(); }));
+    // desconto
+    $('#ds-on', v)?.addEventListener('change', e => { ds.enabled = e.target.checked; commit(); });
+    $('#ds-label', v)?.addEventListener('change', e => { ds.label = e.target.value.trim() || 'Desconto'; commit(); });
+    $$('[data-dsat]', v).forEach(b => b.addEventListener('click', () => { ds.at = b.dataset.dsat; commit(); }));
+    $$('[data-dsmode]', v).forEach(b => b.addEventListener('click', () => { ds.mode = b.dataset.dsmode; commit(); }));
+    $('#ds-val', v)?.addEventListener('change', e => {
+      if (ds.mode === 'pct') { const n = parseFloat(String(e.target.value).replace(',', '.')); if (isFinite(n) && n >= 0 && n <= 100) ds.pct = Math.round(n * 100) / 100; else toast('Use um percentual entre 0 e 100.'); }
+      else { const c = parseMoney(e.target.value); if (c !== null) ds.value = c; }
+      commit();
+    });
+    $$('[data-fq]', v).forEach(b => b.addEventListener('click', () => {
+      const it = d.items.find(x => x.id === b.dataset.fq); if (!it) return;
+      it.fq = Math.max(0, Math.min(it.qty, (it.fq || 0) + +b.dataset.dir)); commit();
+    }));
+    // ajustes recolhidos
+    $$('[data-adj]', v).forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.adj;
+      if (k === 'cv') { d.couvert.enabled = true; commit(); }
+      else if (k === 'ds') { ds.enabled = true; commit(); }
+      else { openAdj.add('fq'); render({ preserve: true }); }
+    }));
+    $('#fq-close', v)?.addEventListener('click', () => { openAdj.delete('fq'); render({ preserve: true }); });
+    // couvert
+    $('#cv-on', v)?.addEventListener('change', e => { d.couvert.enabled = e.target.checked; commit(); });
+    $('#cv-val', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) d.couvert.value = c; commit(); });
+    $$('[data-pay-svc]', v).forEach(i => i.addEventListener('change', () => { d.people.find(p => p.id === i.dataset.paySvc).payService = i.checked; commit(); }));
+    $$('[data-pay-cv]', v).forEach(i => i.addEventListener('change', () => { d.people.find(p => p.id === i.dataset.payCv).payCouvert = i.checked; commit(); }));
+    bindGroups(v, d);
+    $$('[data-pixpay]', v).forEach(b => b.addEventListener('click', () => { const x = pixDebts(compute(d)).find(z => z.pid === b.dataset.pixpay); if (x) pixSheet(x); }));
+    $$('[data-pix]', v).forEach(i => i.addEventListener('change', () => savePixKey(i.dataset.pix, i.value, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); })));
+    // quem pagou
+    $$('[data-paymode]', v).forEach(b => b.addEventListener('click', () => { d.payMode = b.dataset.paymode; commit(); }));
+    $$('[data-payer]', v).forEach(b => b.addEventListener('click', () => { d.payer = b.dataset.payer; commit(); }));
+    $$('[data-cv]', v).forEach(b => b.addEventListener('click', e => {
+      e.stopPropagation(); const pid = b.dataset.cv; d.custom = d.custom || {};
+      if (pid in d.custom) { delete d.custom[pid]; commit(); return; }
+      d.custom[pid] = compute(d).per[pid].paid; commit();
+      requestAnimationFrame(() => { const i = document.getElementById('cv-' + pid); if (i) { i.focus(); i.select?.(); } });
+    }));
+    $$('[data-cover]', v).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); d.cover = d.cover || {}; if (b.dataset.to) d.cover[b.dataset.cover] = b.dataset.to; else delete d.cover[b.dataset.cover]; commit(); }));
+    $$('[data-custom]', v).forEach(i => i.addEventListener('change', () => { d.custom[i.dataset.custom] = parseMoney(i.value) || 0; commit(); }));
+    const c = compute(d);
+    $('#copy-transfers', v)?.addEventListener('click', () => copyText(['Acertos — ' + (d.place || 'Comanda'), ...c.transfers.map(t => { const to = c.per[t.to].person.name, k = pixOf(to); return `${c.per[t.from].person.name} paga ${BRL(t.value)} para ${to}${k ? ' (Pix: ' + k + ')' : ''}`; })].join('\n'), 'Acertos copiados.'));
+    $$('[data-share]', v).forEach(b => b.addEventListener('click', () => shareReceipt(c.U[b.dataset.share], d, c)));
+    $('#pdf-all', v)?.addEventListener('click', e => shareAllPDF(d, c, e.currentTarget));
+    $('#copy-all', v)?.addEventListener('click', () => copyText(c.units.map(u => receiptText(u, d, c)).join('\n\n'), 'Todos os cupons copiados.'));
+    $('#save-bill', v)?.addEventListener('click', saveBill);
+    $('#del-bill', v)?.addEventListener('click', () => deleteCurrent(true));
+    $('#end-edit', v)?.addEventListener('click', () => confirmSheet('Encerrar sem salvar?', 'As alterações desta edição serão perdidas. A versão do histórico continua como estava.', 'Encerrar', () => { if (draft.live) live.end(); pending = {}; draft = blankDraft(); tab = 'inicio'; LS.set('draft', draft); render(); window.scrollTo({ top: 0 }); }, true));
+  },
+};
+
+function saveBill() {
+  const d = draft, c = compute(d);
+  if (c.unassigned.length || c.incomplete.length) { toast('Acerte a divisão de todos os itens antes de salvar.'); return; }
+  if (d.items.some(pendingDirty)) { toast('Há itens com alterações não salvas. Salve ou descarte antes de continuar.'); return; }
+  if (c.openItems.length) { toast(`Confirme a divisão de ${plural(c.openItems.length, 'item', 'itens')} antes de salvar.`); return; }
+  if (c.missingPayer) { toast('Escolha quem vai pagar a conta em Pagamento antes de salvar.'); return; }
+  if (c.payDiff !== 0) { toast(`Os valores personalizados ${c.payDiff > 0 ? 'passam' : 'ficam'} ${BRL(Math.abs(c.payDiff))} ${c.payDiff > 0 ? 'do' : 'abaixo do'} total. Ajuste antes de salvar.`); return; }
+  const firstSave = !bills.some(b => b.id === d.id);
+  const now = Date.now();
+  d.savedAt = now;
+  const { live: _l, isExample: _e, ...rest } = d;
+  const bill = clone({ ...rest, closedAt: firstSave ? now : (bills.find(b => b.id === d.id)?.closedAt || now), total: c.total });
+  bills = [bill, ...bills.filter(b => b.id !== bill.id)].sort((a, b) => b.closedAt - a.closedAt);
+  d.people.forEach(p => {
+    const k = catalog.people.find(x => norm(x.name) === norm(p.name));
+    if (k) k.last = now; else catalog.people.push({ name: p.name, last: now });
+  });
+  d.items.forEach(it => rememberPrice(it.name, it.price, d.place, now));
+  store.saveCatalog(); store.saveBill(bill);
+  if (draft.live) live.end();
+  pending = {}; editingItemId = null;
+  draft = blankDraft(); tab = 'inicio';
+  LS.set('draft', draft); render(); window.scrollTo({ top: 0 });
+  toast(firstSave ? 'Comanda salva no histórico e encerrada.' : 'Comanda atualizada no histórico.');
+}
+
+/* ---------- aba Histórico (com estatísticas) ---------- */
+function statsHTML() {
+  const meName = catalog.me || '';
+  const rows = bills.map(b => { const c = compute(b); const mp = b.people.find(p => norm(p.name) === norm(meName)); return { b, c, mine: mp ? c.per[mp.id].total : null }; });
+  const mineRows = rows.filter(r => r.mine !== null);
+  const useMine = !!meName;
+  const total = rows.reduce((a, r) => a + r.c.total, 0);
+  const mineTotal = mineRows.reduce((a, r) => a + r.mine, 0);
+  // últimos 6 meses
+  const now = new Date(); const months = [];
+  for (let k = 5; k >= 0; k--) { const dt = new Date(now.getFullYear(), now.getMonth() - k, 1); months.push({ y: dt.getFullYear(), m: dt.getMonth(), v: 0, n: 0, label: dt.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '') }); }
+  rows.forEach(r => { const dt = new Date(r.b.closedAt); const mo = months.find(x => x.y === dt.getFullYear() && x.m === dt.getMonth()); if (mo) { const v = useMine ? r.mine : r.c.total; if (v !== null) { mo.v += v; mo.n++; } } });
+  const max = Math.max(...months.map(m => m.v), 1);
+  const maxIdx = months.reduce((bi, m, i, arr) => m.v > arr[bi].v ? i : bi, 0);
+  // rankings
+  const places = {}; rows.forEach(r => { const k = (r.b.place || 'Sem nome').trim(); const key = norm(k); places[key] = places[key] || { name: k, n: 0, v: 0 }; places[key].n++; places[key].v += useMine ? (r.mine || 0) : r.c.total; });
+  const topPlaces = Object.values(places).sort((a, b) => b.n - a.n || b.v - a.v).slice(0, 5);
+  const friends = {}; (useMine ? mineRows : rows).forEach(r => r.b.people.forEach(p => { if (norm(p.name) === norm(meName)) return; const key = norm(p.name); friends[key] = friends[key] || { name: p.name, n: 0 }; friends[key].n++; }));
+  const topFriends = Object.values(friends).sort((a, b) => b.n - a.n).slice(0, 5);
+  const prods = {}; rows.forEach(r => r.b.items.forEach(it => { const key = norm(it.name); prods[key] = prods[key] || { name: it.name, q: 0 }; prods[key].q += it.qty; }));
+  const topProds = Object.values(prods).sort((a, b) => b.q - a.q).slice(0, 5);
+  const rank = (list, val, fmt, avatars) => { const mx = Math.max(...list.map(val), 1); return list.length ? `<div class="rank">${list.map(x => `<div class="rank-row"><span class="nm">${avatars ? avatar(x.name) : ''}<span>${esc(x.name)}</span></span><span class="vl">${fmt(x)}</span><div class="track2"><div class="fill" style="width:${Math.round(val(x) / mx * 100)}%"></div></div></div>`).join('')}</div>` : '<p class="hint">Sem dados ainda.</p>'; };
+  const avg = useMine ? (mineRows.length ? Math.round(mineTotal / mineRows.length) : 0) : Math.round(total / rows.length);
+  return `<div class="card">
+    <div class="card-head"><h2>Resumo</h2>
+      <span class="me-pick"><label class="hint" for="me-select">Mostrar gastos de</label><select id="me-select"><option value="">Todas as pessoas</option>${catalog.people.map(p => `<option value="${esc(p.name)}" ${norm(p.name) === norm(meName) ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></span></div>
+    <div class="stats-tiles">
+      <div class="sum"><span class="eyebrow">Comandas</span><b>${useMine ? mineRows.length : rows.length}</b></div>
+      <div class="sum"><span class="eyebrow">${useMine ? 'Gasto de ' + esc(meName.split(' ')[0]) : 'Gasto total'}</span><b>${BRL(useMine ? mineTotal : total)}</b></div>
+      <div class="sum"><span class="eyebrow">Média por comanda</span><b>${BRL(avg)}</b></div>
+      <div class="sum"><span class="eyebrow">Este mês</span><b>${BRL(months[5].v)}</b></div>
+    </div>
+    <div>
+      <span class="eyebrow">${useMine ? 'Gasto de ' + esc(meName.split(' ')[0]) : 'Gasto total'} nos últimos 6 meses</span>
+      <div class="chart" role="img" aria-label="Gasto por mês">${months.map((m, i) => `
+        <div class="bar-col" tabindex="0">
+          ${(i === maxIdx || i === 5) && m.v > 0 ? `<span class="bar-val" style="bottom:${Math.max(2, m.v / max * 100)}%">${BRL(m.v).replace(/,\d\d$/, '')}</span>` : ''}
+          <span class="bar-tip">${m.label}: ${BRL(m.v)} · ${plural(m.n, 'comanda', 'comandas')}</span>
+          <div class="bar ${m.v ? '' : 'zero'}" style="height:${m.v ? Math.max(2, m.v / max * 100) : 1}%"></div>
+        </div>`).join('')}</div>
+      <div class="chart-x">${months.map(m => `<span>${m.label}</span>`).join('')}</div>
+    </div>
+    ${!meName ? '<p class="hint">Escolha uma pessoa em <b>Mostrar gastos de</b> para ver só o gasto dela e com quem ela mais sai.</p>' : ''}
+  </div>
+  <div class="two-col">
+    <div class="card"><h2>Locais mais frequentes</h2>${rank(topPlaces, x => x.n, x => `${plural(x.n, 'vez', 'vezes')} · ${BRL(x.v)}`)}</div>
+    <div class="card"><h2>${useMine ? 'Com quem ' + esc(meName.split(' ')[0]) + ' mais sai' : 'Quem mais aparece'}</h2>${rank(topFriends, x => x.n, x => plural(x.n, 'comanda', 'comandas'), true)}</div>
+    <div class="card"><h2>Mais pedidos</h2>${rank(topProds, x => x.q, x => plural(x.q, 'unidade', 'unidades'))}</div>
+  </div>`;
+}
+const viewHistorico = {
+  html() {
+    if (!bills.length) return `<div class="empty">Nenhuma comanda salva ainda. Ao fechar uma comanda, toque em <b>Salvar e encerrar</b> e ela aparece aqui, junto com suas estatísticas.</div>`;
+    return `${statsHTML()}
+      <div class="card-head" style="padding-inline:4px"><h2 style="font-family:var(--f-display);font-size:19px;margin:0">Comandas salvas</h2><span class="hint">${plural(bills.length, 'comanda', 'comandas')}</span></div>
+      <div class="hist">${bills.map(histRowHTML).join('')}</div>`;
+  },
+  bind(v) {
+    $$('[data-bill]', v).forEach(b => b.addEventListener('click', () => openBill(b.dataset.bill)));
+    $('#me-select', v)?.addEventListener('change', e => { catalog.me = e.target.value; store.saveCatalog(); render(); });
+  },
+};
+function openBill(id) {
+  const b = bills.find(x => x.id === id); if (!b) return;
+  const c = compute(b);
+  openSheet(`<div class="card-head"><div><h3>${esc(b.place || 'Comanda sem nome')}</h3><span class="hint">${fmtDateTime(b.closedAt)} · ${plural(b.people.length, 'pessoa', 'pessoas')} · total ${BRL(c.total)}</span></div><button class="icon-btn close-x" id="sh-x" aria-label="Fechar">${I.x}</button></div>
+    ${settleHTML(c)}
+    <div class="receipts">${c.units.map(u => `<div class="receipt-wrap">${receiptHTML(u, b, c)}<button class="btn small" data-share="${u.id}">${I.share}Compartilhar</button></div>`).join('')}</div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="sh-pdf">${I.file}Todos em PDF</button>
+      <button class="btn ghost" id="sh-del" style="color:var(--danger)">${I.trash}Excluir</button>
+      <button class="btn ghost" id="sh-edit">Abrir para editar</button>
+      <button class="btn" id="sh-reuse">Repetir comanda</button>
+    </div>
+    <button class="btn ghost" id="sh-close">Fechar</button>`, s => {
+    $('#sh-x', s).onclick = closeSheet;
+    $('#sh-close', s).onclick = closeSheet;
+    $$('[data-share]', s).forEach(x => x.onclick = () => shareReceipt(c.U[x.dataset.share], b, c, () => openBill(id)));
+    $$('[data-pixpay]', s).forEach(x => x.onclick = () => { const dbt = pixDebts(c).find(z => z.pid === x.dataset.pixpay); if (dbt) pixSheet(dbt, () => openBill(id)); });
+    $('#sh-pdf', s).onclick = e => shareAllPDF(b, c, e.currentTarget);
+    $('#sh-del', s).onclick = () => confirmSheet('Excluir esta comanda?', 'Ela sai do histórico e das estatísticas. Pessoas e produtos cadastrados continuam, e dá para desfazer logo em seguida.', 'Excluir', () => {
+      const gone = bills.find(x => x.id === id);
+      bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(); if (draft.id === id) draft.savedAt = null; LS.set('draft', draft); render();
+      toast('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
+    }, true);
+    const replace = fn => {
+      const go = () => { if (draft.live) live.end(); pending = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(); commit(); window.scrollTo({ top: 0 }); };
+      confirmReplace(go);
+    };
+    $('#sh-edit', s).onclick = () => replace(() => migrate({ ...clone(b), savedAt: b.closedAt, isExample: false, live: null }));
+    $('#sh-reuse', s).onclick = () => replace(() => {
+      const d = blankDraft(); d.place = b.place;
+      const map = {}; b.people.forEach(p => { const np = { ...newPerson(p.name) }; map[p.id] = np.id; d.people.push(np); });
+      d.items = b.items.map(i => ({ ...clone(i), id: newId(), fq: 0, a: Object.fromEntries(Object.entries(i.a).filter(([k]) => map[k]).map(([k, v]) => [map[k], v])) }));
+      d.service = { ...b.service }; d.couvert = { ...b.couvert }; d.discount = { ...b.discount, enabled: false };
+      return d;
+    });
+  });
+}
+
+/* ---------- aba Cadastros ---------- */
+const viewCadastros = {
+  html() {
+    const U = usage();
+    const cnt = p => U.people[norm(p.name)] || 0, pc = p => U.products[norm(p.name)] || 0;
+    const ppl = [...catalog.people].sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name, 'pt-BR'));
+    const prods = [...catalog.products].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const used = n => n ? `em ${plural(n, 'comanda salva', 'comandas salvas')}` : 'em nenhuma comanda salva';
+    // preços por local que faltam em produtos já cadastrados são completados direto do histórico
+    if (backfillPrices()) store.saveCatalog();
+    const H = historyCatalog(), nMiss = H.missingProducts.length + H.missingPeople.length;
+    return `<p class="hint" style="padding-inline:4px">Pessoas e produtos entram aqui quando você salva uma comanda. O preço de cada produto fica guardado por local, e o número de comandas vem do histórico.</p>
+
+    <div class="card">
+      <div class="card-head"><h2>Pessoas</h2><span class="hint">${ppl.length}</span></div>
+      ${ppl.length ? `<div class="cat-list">${ppl.map(p => `<div class="cat-row"><span class="nm" style="display:flex;gap:8px;align-items:center">${avatar(p.name)}<span style="min-width:0">${esc(p.name)}<small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(p.pix) : ''}</small></span></span><button class="btn small ghost" data-pix-edit="${esc(p.name)}">Pix</button>
+        <button class="icon-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>` : '<div class="empty">Nenhuma pessoa cadastrada ainda.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Produtos e preços por local</h2><span class="hint">${prods.length}</span></div>
+      ${prods.length ? `<div class="prod-list">${prods.map((p, i) => {
+        const entries = Object.entries(p.prices || {}).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
+        return `<div class="prod">
+          <div class="prod-head"><span class="nm">${esc(p.name)}<small>${used(pc(p))}</small></span>
+            <button class="icon-btn del" data-del-prod="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>
+          ${entries.length ? entries.map(([k, e]) => `<div class="price-row"><span class="pl">${esc(e.place)}</span>
+            <input type="text" inputmode="numeric" data-money value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Preço de ${esc(p.name)} em ${esc(e.place)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">
+            <button class="icon-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar preço de ${esc(e.place)}">${I.x}</button></div>`).join('')
+          : `<div class="price-row"><span class="pl hint">Sem local</span><input type="text" inputmode="numeric" data-money value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" aria-label="Preço de ${esc(p.name)}" id="pp-${i}-x"><span></span></div>`}
+        </div>`; }).join('')}</div>` : '<div class="empty">Nenhum produto cadastrado ainda.</div>'}
+    </div>
+
+    ${bills.length ? `<div class="live-offer"><span>${I.refresh}<span><b>Recuperar do histórico</b><span class="hint">${nMiss
+      ? `${[H.missingProducts.length ? plural(H.missingProducts.length, 'produto', 'produtos') : '', H.missingPeople.length ? plural(H.missingPeople.length, 'pessoa', 'pessoas') : ''].filter(Boolean).join(' e ')} das comandas salvas ${nMiss === 1 ? 'está' : 'estão'} fora dos cadastros.`
+      : 'Todos os produtos e pessoas das comandas salvas já estão nos cadastros.'}</span></span></span>
+      <button class="btn small ghost" id="recover" ${nMiss ? '' : 'disabled'}>Recuperar</button></div>` : ''}`;
+  },
+  bind(v) {
+    $('#recover', v)?.addEventListener('click', recoverSheet);
+    $$('[data-pix-edit]', v).forEach(b => b.addEventListener('click', () => {
+      const name = b.dataset.pixEdit;
+      openSheet(`<h3>Chave Pix de ${esc(name)}</h3><p class="hint">A chave aparece no cupom de quem deve pagar a ${esc(name)}.</p>
+        <form id="px-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off"><div class="field"><label for="px-in">Chave Pix</label><input id="px-in" type="text" value="${esc(pixOf(name))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocapitalize="off" spellcheck="false"></div>
+        <div class="sheet-actions"><button type="button" class="btn ghost" id="px-no">Cancelar</button><button type="submit" class="btn">${I.save}Salvar</button></div></form>`, s => {
+        $('#px-no', s).onclick = closeSheet;
+        $('#px-form', s).addEventListener('submit', e => { e.preventDefault(); const val = $('#px-in', s).value; closeSheet(); savePixKey(name, val, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); }); });
+      });
+    }));
+    $$('[data-del-person]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delPerson} do cadastro?`, 'A pessoa deixa de aparecer nas sugestões. As comandas do histórico não mudam.', 'Excluir', () => {
+      const idx = catalog.people.findIndex(p => p.name === b.dataset.delPerson); if (idx < 0) return;
+      const [gone] = catalog.people.splice(idx, 1), wasMe = norm(catalog.me) === norm(gone.name);
+      if (wasMe) catalog.me = '';
+      store.saveCatalog(); render();
+      toast(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.people.splice(idx, 0, gone); if (wasMe) catalog.me = gone.name; store.saveCatalog(); render(); } });
+    }, true)));
+    $$('[data-del-prod]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delProd} do cadastro?`, 'O produto e os preços guardados por local saem das sugestões. As comandas do histórico não mudam, e dá para recuperar o produto a partir delas.', 'Excluir', () => {
+      const idx = catalog.products.findIndex(p => p.name === b.dataset.delProd); if (idx < 0) return;
+      const [gone] = catalog.products.splice(idx, 1);
+      store.saveCatalog(); render();
+      toast(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.products.splice(idx, 0, gone); store.saveCatalog(); render(); } });
+    }, true)));
+    $$('[data-pdel]', v).forEach(b => b.addEventListener('click', () => {
+      const p = catalog.products.find(x => x.name === b.dataset.pdel); if (!p) return;
+      delete p.prices[b.dataset.pk]; store.saveCatalog(); render(); toast('Preço do local apagado.');
+    }));
+    $$('[data-pprod]', v).forEach(i => i.addEventListener('change', () => {
+      const c = parseMoney(i.value), p = catalog.products.find(x => x.name === i.dataset.pprod);
+      if (!c || !p) { toast('Valor inválido. Digite, por exemplo, 12,90.'); render(); return; }
+      if (i.dataset.pk && p.prices[i.dataset.pk]) Object.assign(p.prices[i.dataset.pk], { price: c, edited: true }); else p.price = c;
+      store.saveCatalog(); i.value = moneyInput(c); toast('Preço atualizado.');
+    }));
+  },
+};
+
+/* ---------- início ---------- */
+if (draft.live) { draft.isExample = false; draft.active = true; }
+if (backfillPrices()) LS.set('catalog', catalog);
+render();
+store.init();
+window.addEventListener('hashchange', () => live.boot());
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('sw', e));
+</script>
+
+</body></html>
