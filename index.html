@@ -501,6 +501,9 @@ body.is-dragging .drop-out{display:flex}
 .oa-install summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;padding:6px 0}
 .join form{flex-wrap:nowrap}
 .join input{min-width:0}
+.item .sec{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:-4px}
+.item{cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.item.sel{border-color:var(--green)!important;box-shadow:0 0 0 3px var(--green-soft)}
 /* guia interativo */
 .tour{position:fixed;inset:0;z-index:45;pointer-events:none}
 .tour.dim{background:rgba(8,16,12,.45)}
@@ -1427,7 +1430,7 @@ function render(opts = {}) {
   }
   if (typeof tour !== 'undefined' && tour.active()) { if (!draft.isExample) tour.stop(); else requestAnimationFrame(() => tour.place()); }
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; pickSel = null; render(); window.scrollTo({ top: 0 }); } });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; pickSel = null; selItem = null; render(); window.scrollTo({ top: 0 }); } });
 
 /* ---------- aba Comanda ---------- */
 function liveCardHTML() {
@@ -1914,14 +1917,18 @@ function pendingFor(it) { return pending[it.id] || null; }
 function stage(it) { if (!pending[it.id]) pending[it.id] = { a: { ...it.a }, qty: it.qty }; return pending[it.id]; }
 function pendingDirty(it) { const p = pending[it.id]; if (!p) return false; return p.qty !== it.qty || JSON.stringify(Object.entries(p.a).filter(([, v]) => v > 0).sort()) !== JSON.stringify(Object.entries(it.a).filter(([, v]) => v > 0).sort()); }
 
+// item selecionado: mostra Alterar e Remover
+let selItem = null;
 function itemCardHTML(it, d, me) {
   const ids = d.people.map(p => p.id);
   const nm = id => esc(d.people.find(p => p.id === id)?.name || '');
   const total = it.qty * it.price;
   const head = (qty) => `<div class="item-top"><div style="min-width:0"><div class="item-name">${esc(it.name)}${it.fq ? `<span class="tag">${it.fq >= qty ? 'cortesia' : it.fq + ' cortesia'}</span>` : ''}</div><div class="item-meta num">${qty} × ${BRL(it.price)}</div></div>
     <div class="item-total">${BRL(qty * it.price)}</div></div>`;
-  const footer = `<div class="item-actions"><span class="share">${it.lk ? (it.mode === 'units' ? 'Por unidade' : 'Dividido igualmente') + ' · confirmado' : 'Novo item · defina a divisão'}</span>
-    <span class="grp"><button class="btn small ghost" data-rename>${I.edit}Alterar</button><button class="btn small ghost del-btn" data-del>${I.trash}Remover</button></span></div>`;
+  const sel = selItem === it.id;
+  const footer = `<div class="item-actions"><span class="share">${it.lk ? (it.mode === 'units' ? 'Por unidade' : 'Dividido igualmente') + ' · confirmado' : 'Novo item'}</span>
+    ${sel ? `<span class="grp"><button class="btn small ghost" data-rename>${I.edit}Alterar</button><button class="btn small ghost del-btn" data-del>${I.trash}Remover</button></span>` : ''}</div>`;
+  const sec = t => `<span class="sec">${t}</span>`;
 
   /* ----- item confirmado ----- */
   if (it.lk) {
@@ -1956,8 +1963,8 @@ function itemCardHTML(it, d, me) {
         <span class="grp"><button class="btn small ghost" data-discard>Descartar</button><button class="btn small" data-save ${valid ? '' : 'disabled'}>${I.save}Salvar</button></span>
       </div>`;
     }
-    return `<div class="item locked ${dirty ? 'dirty' : ''}" data-item="${it.id}">
-      ${head(cur.qty)}${body}${save}${footer}</div>`;
+    return `<div class="item locked ${dirty ? 'dirty' : ''} ${sel ? 'sel' : ''}" data-item="${it.id}">
+      ${head(cur.qty)}${sec(it.mode === 'units' ? 'Unidades de cada um' : 'Quem consumiu')}${body}${save}${footer}</div>`;
   }
 
   /* ----- item novo: primeira divisão ----- */
@@ -1965,7 +1972,7 @@ function itemCardHTML(it, d, me) {
   const units = who.reduce((s, id) => s + (it.a[id] || 0), 0);
   const ok = it.mode === 'units' ? (n > 0 && units === it.qty) : n > 0;
   const seg = `<div class="seg" role="group" aria-label="Como dividir ${esc(it.name)}">
-    <button data-mode="equal" aria-pressed="${it.mode === 'equal'}">Igual entre os marcados</button>
+    <button data-mode="equal" aria-pressed="${it.mode === 'equal'}">Igual</button>
     <button data-mode="units" aria-pressed="${it.mode === 'units'}">Por unidade</button></div>`;
   let body = '';
   if (it.mode === 'units') {
@@ -1987,9 +1994,10 @@ function itemCardHTML(it, d, me) {
       </div>` : ''}
       <span class="share">${!n ? '<b style="color:var(--danger)">Toque em quem consumiu.</b>' : n === 1 ? 'Item individual' : `Dividido por ${n}: <span class="num">${BRL(Math.round((it.qty - Math.min(it.fq || 0, it.qty)) * it.price / n))}</span> cada`}</span>`;
   }
-  return `<div class="item open" data-item="${it.id}">
+  return `<div class="item open ${sel ? 'sel' : ''}" data-item="${it.id}">
     ${head(it.qty)}
-    ${d.people.length > 1 ? seg : ''}
+    ${d.people.length > 1 ? sec('Como dividir') + seg : ''}
+    ${d.people.length ? sec(it.mode === 'units' ? 'Unidades de cada um' : 'Quem consumiu') : ''}
     ${body}
     <div class="row" style="align-items:center;gap:10px"><span class="hint">Quantidade</span>
       <span class="stepper sm"><button data-q="-1" aria-label="Diminuir quantidade" ${it.qty > 1 ? '' : 'disabled'}>−</button><span class="num">${it.qty}</span><button data-q="1" aria-label="Aumentar quantidade">+</button></span></div>
@@ -2182,6 +2190,10 @@ const viewComanda = {
     $$('[data-item]', v).forEach(card => {
       const it = d.items.find(i => i.id === card.dataset.item);
       if (!it) return;
+      card.addEventListener('click', e => {
+        if (e.target.closest('button, input, select, textarea, label, a')) return;
+        selItem = selItem === it.id ? null : it.id; render({ preserve: true });
+      });
       $('[data-rename]', card)?.addEventListener('click', () => renameSheet(it));
       $('[data-del]', card)?.addEventListener('click', () => confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda${it.lk ? ', mesmo com a divisão já confirmada' : ''}.`, 'Remover', () => { delete pending[it.id]; d.items = d.items.filter(i => i.id !== it.id); commit(); }, true));
 
@@ -2784,8 +2796,8 @@ const TOUR = [
   { tab: 'inicio', sel: '.join', skip: true, t: 'Entrar numa comanda ao vivo', d: 'Quando alguém da turma compartilhar uma comanda, digite aqui o código que receber.' },
   { tab: 'comanda', sel: '#people-card', t: 'Pessoas na mesa', d: 'Adicione quem está dividindo a conta. Nomes que você já usou aparecem como sugestão, e o valor ao lado de cada um é o consumo até agora.' },
   { tab: 'comanda', sel: '#item-card', t: 'Lançar um pedido', d: 'Informe produto, quantidade e preço da unidade. O app lembra o preço de cada produto em cada lugar e preenche sozinho na próxima vez.' },
-  { tab: 'comanda', sel: '.item.open', alt: '.items > .item:last-child', t: 'Dividir um item', d: 'Todo item novo chega marcado para todos. Toque nos nomes para tirar ou incluir alguém. Use Por unidade quando cada um pediu uma quantidade diferente. Depois, toque em Confirmar divisão. Experimente!' },
-  { tab: 'comanda', sel: '.item.locked', t: 'Pedir mais', d: 'Num item confirmado, use +1 e −1 para mudar a quantidade ou quem consumiu e toque em Salvar. Alterar corrige nome e preço; Remover tira o item da comanda.' },
+  { tab: 'comanda', sel: '.item.open', alt: '.items > .item:last-child', t: 'Dividir um item', d: 'Todo item novo chega marcado para todos. Em Como dividir, escolha Igual ou Por unidade, quando cada um pediu uma quantidade diferente. Toque nos nomes para tirar ou incluir alguém e depois em Confirmar divisão. Experimente!' },
+  { tab: 'comanda', sel: '.item.locked', t: 'Pedir mais', d: 'Num item confirmado, use +1 e −1 para mudar a quantidade ou quem consumiu e toque em Salvar. Toque no item para ver Alterar, que corrige nome e preço, e Remover.' },
   { tab: 'comanda', sel: '#live-offer', alt: '#live-card', skip: true, t: 'Comanda ao vivo', d: 'Compartilhe a comanda com a turma: cada um marca o que consumiu pelo próprio celular e todos veem as mudanças na hora. Você recebe um link e um código para mandar no grupo.' },
   { tab: 'comanda', sel: '#go-close', t: 'Hora de pagar', d: 'Toque em Fechar a comanda para ver quanto cada um deve.' },
   { tab: 'fechar', sel: '.sum-grid', t: 'Resumo da conta', d: 'Consumo, serviço, ajustes e o total. Confira se o total bate com a conta do lugar.' },
