@@ -492,6 +492,15 @@ body.is-dragging .drop-out{display:flex}
 .btn-row .btn{padding-inline:6px;gap:6px}
 .receipt-wrap > .btn{white-space:normal;text-align:center}
 
+.online-list{display:flex;flex-wrap:wrap;gap:6px}
+.on-chip{display:inline-flex;align-items:center;gap:6px;background:var(--green-soft);color:var(--green);border-radius:99px;padding:3px 10px 3px 3px;font-weight:600;font-size:13.5px}
+.on-chip .avatar{width:22px;height:22px;font-size:10.5px}
+.on-chip.anon{padding:4px 10px;background:var(--surface-2);color:var(--muted)}
+#live-online:empty{display:none}
+.live-code.big b{font-size:26px}
+.oa-install summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;padding:6px 0}
+.join form{flex-wrap:nowrap}
+.join input{min-width:0}
 /* guia interativo */
 .tour{position:fixed;inset:0;z-index:45;pointer-events:none}
 .tour.dim{background:rgba(8,16,12,.45)}
@@ -845,8 +854,12 @@ const store = {
 };
 
 /* ---------- mesa ao vivo ---------- */
+// cada aparelho tem um id fixo; "quem é você" vem da escolha feita no cartão da comanda ao vivo
+const DEVICE = (() => { let id = LS.get('device', ''); if (!id) { id = newId() + newId(); LS.set('device', id); } return id; })();
+const BEAT_MS = 60000, STALE_MS = 150000;
+const isStandalone = () => { try { return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches; } catch { return false; } };
 const live = {
-  unsub: null, last: null, readOnly: false, closed: false, connecting: false,
+  unsub: null, last: null, readOnly: false, closed: false, connecting: false, online: {}, beatTimer: null, tickTimer: null,
   ref(code) { return store.db.doc('mesas/' + code); },
   link() { return APP_URL + '#m' + draft.live.code; },
   available() { return !!store.db; },
@@ -855,6 +868,7 @@ const live = {
     if (m && store.db) {
       const code = m[1];
       if (draft.live?.code === code) return this.subscribe();
+      if (isTouch && !isStandalone() && !this.browserOk) return openInAppSheet(code);
       try {
         const snap = await this.ref(code).get();
         if (!snap.exists) { toast('Essa comanda ao vivo não foi encontrada.'); return draft.live && this.subscribe(); }
@@ -886,12 +900,15 @@ const live = {
       if (!draft.live || draft.live.code !== code) return;
       if (!snap.exists) { this.closed = true; render({ preserve: true }); return; }
       const data = snap.data();
+      const wasClosed = this.closed;
       this.closed = !!data.closed;
+      this.online = isObj(data.online) ? { ...data.online } : {};
       const next = fromShared(data, draft);
       const nextShared = toShared(next);
-      if (JSON.stringify(nextShared) === JSON.stringify(toShared(draft)) && this.last) { this.last = nextShared; render({ preserve: true }); return; }
+      if (JSON.stringify(nextShared) === JSON.stringify(toShared(draft)) && this.last) { this.last = nextShared; if (wasClosed !== this.closed) render({ preserve: true }); else paintPresence(); return; }
       draft = next; this.last = nextShared; saveDraft(); render({ preserve: true });
     }, err => { console.warn('live', err); this.unsub = null; toast('A conexão com a comanda ao vivo caiu. Toque em Reconectar.'); render({ preserve: true }); });
+    this.startBeats();
     render({ preserve: true });
   },
   push() {
@@ -908,7 +925,39 @@ const live = {
       this.last = null;
     });
   },
-  stop() { if (this.unsub) { try { this.unsub(); } catch {} } this.unsub = null; },
+  stop() { this.offline(); clearInterval(this.beatTimer); clearInterval(this.tickTimer); this.beatTimer = this.tickTimer = null; if (this.unsub) { try { this.unsub(); } catch {} } this.unsub = null; this.online = {}; },
+  // presença: um sinal por minuto enquanto o app está aberto na tela; sai na hora ao fechar ou bloquear o celular
+  me() { return draft.live ? LS.get('me.' + draft.live.code, '') : ''; },
+  beat() {
+    if (!draft.live || !store.db || this.closed || document.visibilityState === 'hidden') return;
+    const code = draft.live.code, entry = { p: this.me() || '', at: Date.now() };
+    this.online[DEVICE] = entry;
+    store.queue(() => this.ref(code).update({ online: { [DEVICE]: entry } }), e => console.warn('presença', e));
+  },
+  offline() {
+    if (!draft.live || !store.db || !this.unsub) return;
+    const code = draft.live.code; delete this.online[DEVICE];
+    try { this.ref(code).update({ online: { [DEVICE]: null } }).catch(() => {}); } catch {}
+  },
+  startBeats() {
+    clearInterval(this.beatTimer); clearInterval(this.tickTimer);
+    this.beat();
+    this.beatTimer = setInterval(() => this.beat(), BEAT_MS);
+    this.tickTimer = setInterval(() => paintPresence(), 30000);
+  },
+  people() {
+    // quem está online agora: um por aparelho; aparelhos sem nome escolhido contam como "sem nome"
+    const now = Date.now(), seen = new Set(), named = [], devices = [];
+    let anon = 0;
+    Object.entries(this.online || {}).forEach(([dev, x]) => {
+      if (!x || typeof x.at !== 'number' || now - x.at > STALE_MS) return;
+      devices.push(dev);
+      const p = x.p && draft.people.find(q => q.id === x.p);
+      if (p) { if (!seen.has(p.id)) { seen.add(p.id); named.push({ ...p, you: dev === DEVICE }); } else if (dev === DEVICE) named.find(n => n.id === p.id).you = true; }
+      else anon++;
+    });
+    return { count: devices.length, named, anon, youAnon: devices.includes(DEVICE) && !(this.online[DEVICE] && draft.people.some(q => q.id === this.online[DEVICE].p)) };
+  },
   async end() {
     const code = draft.live?.code; const host = draft.live?.host;
     this.stop();
@@ -918,6 +967,39 @@ const live = {
     commit();
   },
 };
+
+// no iPhone, um link sempre abre no Safari, nunca no app da tela de início: a ponte é o código
+function openInAppSheet(code) {
+  openSheet(`<div class="card-head"><h3>Comanda ao vivo</h3><button class="icon-btn close-x" id="oa-x" aria-label="Fechar">${I.x}</button></div>
+    <p class="hint" style="font-size:14.5px">Tem o Conta Fácil na tela de início? Abra o app, toque em <b>Entrar com código</b> e em <b>Colar</b>.</p>
+    <div class="live-code big"><span class="eyebrow">Código</span><b class="num">${esc(code)}</b></div>
+    <button class="btn" id="oa-copy">${I.copy}Copiar código</button>
+    <button class="btn ghost" id="oa-here">Continuar no navegador</button>
+    <details class="oa-install"><summary>Ainda não tenho o app</summary><p class="hint">Toque em <b>Compartilhar</b> no Safari e em <b>Adicionar à Tela de Início</b>. Depois, abra o app pelo ícone e entre com o código.</p></details>`, s => {
+    $('#oa-x', s).onclick = closeSheet;
+    $('#oa-copy', s).onclick = () => copyText(code, 'Código copiado. Agora abra o app.');
+    $('#oa-here', s).onclick = () => { closeSheet(); live.browserOk = true; live.boot(); };
+  });
+}
+// contador de quem está online, atualizado sem redesenhar a tela
+function presenceHTML(compact) {
+  if (!draft.live || !live.unsub || live.closed) return '';
+  const { count, named, anon } = live.people();
+  if (!count) return '';
+  const first = n => esc(n.name.split(' ')[0]) + (n.you ? ' (você)' : '');
+  if (compact) {
+    const names = named.map(first);
+    if (anon) names.push(anon === 1 ? '1 sem nome' : anon + ' sem nome');
+    return `${count} online · ${names.join(', ')}`;
+  }
+  return `<span class="eyebrow">${count} online agora</span><div class="online-list">${named.map(n => `<span class="on-chip">${avatar(n.name)}${first(n)}</span>`).join('')}${anon ? `<span class="on-chip anon">${anon === 1 ? '1 pessoa sem nome' : anon + ' pessoas sem nome'}</span>` : ''}</div>`;
+}
+function paintPresence() {
+  const a = $('#live-online'); if (a) a.innerHTML = presenceHTML(false);
+  const b = $('#live-online-strip'); if (b) b.textContent = presenceHTML(true) ? ' · ' + presenceHTML(true) : '';
+}
+document.addEventListener('visibilitychange', () => { if (!draft.live || !live.unsub) return; if (document.visibilityState === 'hidden') live.offline(); else live.beat(); });
+window.addEventListener('pagehide', () => live.offline());
 
 /* ---------- estado ---------- */
 function exampleDraft() {
@@ -1365,6 +1447,7 @@ function liveCardHTML() {
       <div class="linkbox"><code>${esc(live.link())}</code><button class="btn small" id="live-copy">${I.copy}Copiar link</button></div>
       <div class="live-code"><span class="eyebrow">Código da comanda</span><b class="num">${esc(draft.live.code)}</b></div>
       ${navigator.share ? `<button class="btn small mustard" id="live-invite">${I.share}Convidar a turma</button>` : ''}` : ''}
+    <div class="field" id="live-online">${presenceHTML(false)}</div>
     ${!live.closed && draft.people.length ? `<div class="field"><span class="eyebrow">Quem é você nesta comanda?</span>
       <div class="chips">${draft.people.map(p => `<button class="chip" data-me="${p.id}" aria-pressed="${me === p.id}">${esc(p.name)}</button>`).join('')}</div></div>` : ''}
     <div class="actions-bar">
@@ -1768,7 +1851,7 @@ const viewInicio = {
 
     ${store.db && !(d.live && inProgress) ? `<div class="card join">
       <div class="card-head"><h2>Entrar com código</h2></div>
-      <form id="join-form" autocomplete="off"><input id="join-code" type="text" placeholder="Ex.: k7mq2xh9pa" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código da comanda" data-keep><button class="btn" type="submit">Entrar</button></form>
+      <form id="join-form" autocomplete="off"><input id="join-code" type="text" placeholder="Código" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código da comanda" data-keep>${navigator.clipboard?.readText ? '<button class="btn ghost" type="button" id="join-paste">Colar</button>' : ''}<button class="btn" type="submit">Entrar</button></form>
     </div>` : ''}
 
     ${bills.length ? `<div class="card">
@@ -1794,11 +1877,16 @@ const viewInicio = {
       $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', x === b));
     }));
     startEl.addEventListener('input', () => $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', norm(x.dataset.start) === norm(startEl.value))));
+    $('#join-paste', v)?.addEventListener('click', async () => {
+      try { const t = (await navigator.clipboard.readText()).trim(); if (t) { $('#join-code', v).value = t; $('#join-form', v).requestSubmit(); } else toast('Nada copiado.'); }
+      catch { toast('Não deu para colar. Toque e segure no campo e escolha Colar.'); }
+    });
     $('#join-form', v)?.addEventListener('submit', e => {
       e.preventDefault(); document.activeElement?.blur?.();
       const raw = $('#join-code', v).value.trim().toLowerCase();
       const m = /#m([a-z0-9]{6,16})/.exec(raw) || /^([a-z0-9]{6,16})$/.exec(raw);
       if (!m) { toast('Código inválido. Ele tem 10 letras e números.'); return; }
+      live.browserOk = true; // quem digita o código já está onde quer usar
       if (location.hash === '#m' + m[1]) live.boot(); else location.hash = 'm' + m[1];
     });
     $('#go-comanda', v)?.addEventListener('click', () => { exitExample(); tab = 'comanda'; render(); window.scrollTo({ top: 0 }); });
@@ -1942,7 +2030,7 @@ const viewComanda = {
 
     return `
     ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small mustard" id="clear-example">Sair</button></span></div>` : ''}
-    ${d.live ? `<button class="live-strip" id="live-jump">${live.unsub && !live.closed ? '<span class="live-dot" aria-hidden="true"></span>' : ''}Comanda ao vivo ${live.closed ? 'encerrada' : live.unsub ? 'conectada' : 'desconectada'} · ver detalhes</button>` : ''}
+    ${d.live ? `<button class="live-strip" id="live-jump">${live.unsub && !live.closed ? '<span class="live-dot" aria-hidden="true"></span>' : ''}Comanda ao vivo ${live.closed ? 'encerrada' : live.unsub ? '' : 'desconectada'}<span id="live-online-strip">${presenceHTML(true) ? ' · ' + presenceHTML(true) : ''}</span></button>` : ''}
     ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. Alterações aqui podem ser salvas de novo em <b>Fechar</b>.</span><button class="btn small mustard" id="new-bill-top">Encerrar edição</button></div>` : ''}
     <div class="card">
       <div class="place-row">
@@ -2015,7 +2103,7 @@ const viewComanda = {
     $('#live-start', v)?.addEventListener('click', () => live.start());
     $('#live-copy', v)?.addEventListener('click', () => copyText(live.link(), 'Link da comanda copiado.'));
     $('#live-invite', v)?.addEventListener('click', async () => {
-      const text = `Comanda ao vivo${d.place ? ' em ' + d.place : ''} no Conta Fácil. Abra o link ou digite o código ${d.live.code} em "Entrar com código".`;
+      const text = `Comanda ao vivo${d.place ? ' em ' + d.place : ''} no Conta Fácil.\nCódigo: ${d.live.code}\nNo app, toque em Entrar com código. Sem o app, abra o link:`;
       try { await navigator.share({ title: 'Conta Fácil', text, url: live.link() }); } catch (e) { if (e && e.name !== 'AbortError') copyText(text + '\n' + live.link(), 'Convite copiado.'); }
     });
     $('#live-reconnect', v)?.addEventListener('click', () => { live.stop(); live.subscribe(); });
@@ -2025,7 +2113,7 @@ const viewComanda = {
         host ? 'Os amigos param de conseguir marcar itens. A comanda continua aqui para você fechar.' : 'Você deixa de receber as atualizações. Uma cópia da comanda fica aqui com você.',
         host ? 'Encerrar' : 'Sair', () => live.end());
     });
-    $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { const code = d.live.code; LS.set('me.' + code, LS.get('me.' + code, '') === b.dataset.me ? '' : b.dataset.me); render(); }));
+    $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { const code = d.live.code; LS.set('me.' + code, LS.get('me.' + code, '') === b.dataset.me ? '' : b.dataset.me); live.beat(); render(); }));
 
     $('#person-form', v).addEventListener('submit', e => { e.preventDefault(); if (isTouch) document.activeElement?.blur?.(); addPerson($('#person-name', v).value); });
     $$('[data-rm-person]', v).forEach(b => b.addEventListener('click', () => {
