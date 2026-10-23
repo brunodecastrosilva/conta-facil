@@ -240,8 +240,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .mini-toggle[aria-pressed="true"]{color:var(--green);background:var(--green-soft)}
 .mini-toggle:hover{color:var(--ink)}
 .join{display:flex;flex-direction:column;gap:8px}
-.join form{display:flex;gap:8px}
-.join input{flex:1 1 auto;font-family:var(--f-mono);text-transform:lowercase}
 .chip.me{box-shadow:inset 0 0 0 2px var(--mustard)}
 .chip[aria-pressed="true"].me{box-shadow:inset 0 0 0 2px var(--mustard)}
 .item.open{border:1.5px solid var(--mustard);background:var(--surface);box-shadow:0 0 0 4px var(--mustard-soft)}
@@ -366,9 +364,6 @@ nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);backgroun
 .pchip.dragging{opacity:.35}
 .pay-t{border:0;border-radius:99px;font-size:11.5px;font-weight:700;padding:4px 8px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .pay-t[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
-.pc-x{border:0;background:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--muted);padding:0}
-.pc-x svg{width:14px;height:14px}
-.pc-x:hover{color:var(--danger);background:var(--danger-soft)}
 .drop-on{box-shadow:0 0 0 3px var(--mustard)}
 .pchip.drop-on{border-color:var(--mustard)}
 .drag-ghost{position:fixed;left:0;top:0;z-index:80;pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.25);opacity:.95}
@@ -402,8 +397,6 @@ body.is-dragging{user-select:none;-webkit-user-select:none}
 .ubox.group .pchip{width:100%}
 .ubox.group .pchip .pc-name{flex:1 1 auto}
 .pay-t{white-space:nowrap}
-.cv-t{border:0;border-radius:99px;font-size:12px;font-weight:700;font-family:var(--f-mono);padding:4px 9px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);flex:none}
-.cv-t[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
 .cv-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;font-size:13.5px;border-top:1px dashed var(--line);padding-top:8px}
 .cv-row label{font-weight:600}
 .cv-row .hint{grid-column:1/-1}
@@ -479,8 +472,6 @@ body.is-dragging .drop-out{display:flex}
 .receipt-wrap > .btn{white-space:normal;text-align:center}
 
 .oa-install summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;padding:6px 0}
-.join form{flex-wrap:nowrap}
-.join input{min-width:0}
 .item .sec{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:-4px}
 .item{cursor:pointer;transition:box-shadow .15s,border-color .15s}
 .item.sel{border-color:var(--green)!important;box-shadow:0 0 0 3px var(--green-soft)}
@@ -503,13 +494,22 @@ body.is-dragging .drop-out{display:flex}
 .ex-icon{width:38px;height:38px;border-radius:10px;background:var(--mustard-soft);color:var(--mustard-ink);display:grid;place-items:center;flex:none}
 .ex-banner .grp{display:flex;gap:6px}
 
-/* entrar na comanda de um amigo */
+/* entrar numa comanda ao vivo */
 .join-icon,.lo-icon{background:var(--green-soft);color:var(--green)}
-.join-field{position:relative;flex:1 1 auto;min-width:0;display:flex}
-.join-field input{padding-right:78px}
+/* a caixa ocupa a linha toda; ao tocar nela, encolhe e o Entrar e o ícone de colar aparecem */
+.join{--ease:cubic-bezier(.2,.8,.2,1)}
+.join form{display:grid;grid-template-columns:minmax(0,1fr) 0px;column-gap:0;transition:grid-template-columns .3s var(--ease),column-gap .3s var(--ease)}
+.join.open form{grid-template-columns:minmax(0,1fr) 92px;column-gap:8px}
+.join-field{position:relative;display:flex;min-width:0}
+.join-field input{flex:1 1 auto;min-width:0;font-family:var(--f-mono);text-transform:lowercase;transition:padding-right .3s var(--ease),border-color .15s,box-shadow .15s}
+.join.open .join-field input{padding-right:46px}
 .join input:placeholder-shown{font-family:var(--f-body);text-transform:none}
-.join-paste{position:absolute;right:5px;top:5px;bottom:5px;border:0;border-radius:8px;padding:0 12px;background:var(--surface);color:var(--green);font-weight:700;font-size:13.5px;box-shadow:inset 0 0 0 1px var(--line)}
-.join .btn{flex:none}
+.join-paste{position:absolute;right:1px;top:50%;width:44px;height:44px;margin-top:-22px;border:0;background:none;padding:0;color:var(--green);display:grid;place-items:center;opacity:0;transform:scale(.5);pointer-events:none;transition:opacity .2s .1s,transform .3s .1s var(--ease)}
+.join-paste svg{width:21px;height:21px}
+.join-paste:active{opacity:.55}
+.join.open .join-paste{opacity:1;transform:none;pointer-events:auto}
+.join-go{min-width:0;overflow:hidden;padding-inline:0;opacity:0;transform:translateX(12px);pointer-events:none;transition:opacity .22s .05s,transform .3s var(--ease)}
+.join.open .join-go{opacity:1;transform:none;pointer-events:auto}
 
 /* comanda ao vivo: painel no topo da aba Comanda */
 .live-panel{--lp-soft:color-mix(in srgb,var(--green-ink) 14%,transparent);--lp-line:color-mix(in srgb,var(--green-ink) 22%,transparent);
@@ -548,6 +548,18 @@ body.is-dragging .drop-out{display:flex}
 .code-box{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface);border-radius:12px;padding:12px 12px 14px;box-shadow:inset 0 0 0 1px var(--line)}
 .code-val{display:flex;gap:.5em;font-family:var(--f-mono);font-weight:600;font-size:28px;letter-spacing:.12em;color:var(--ink);user-select:all;-webkit-user-select:all}
 .qr-wrap.sm canvas{width:min(190px,52vw)}
+.ubox{cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.ubox.sel{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.ubox.group.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 30%,transparent)}
+.ubox.target{border-style:dashed;border-color:var(--mustard)}
+.ubox.picking{border-color:var(--mustard);box-shadow:0 0 0 3px var(--mustard-soft)}
+.uact{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px;animation:adj-in .22s cubic-bezier(.2,.8,.2,1)}
+.uact-who{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.uact .grp{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
+.uact .btn{padding-inline:6px;gap:6px}
+.adj-in{animation:adj-in .34s cubic-bezier(.2,.8,.2,1)}
+@keyframes adj-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.adj-in{animation:none}}
 .ds-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
 </style>
 
@@ -624,6 +636,7 @@ const I = {
   refresh: '<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
   lock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   live: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19 5a10 10 0 0 1 0 14M5 19A10 10 0 0 1 5 5"/></svg>',
+  paste: '<svg class="i" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>',
   qr: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M17 20h4v-3"/></svg>',
 };
 
@@ -1005,7 +1018,7 @@ const codeShort = code => code.length === 10 ? code.slice(0, 5) + ' ' + code.sli
 // no iPhone, um link sempre abre no Safari, nunca no app da tela de início: a ponte é o código
 function openInAppSheet(code) {
   openSheet(`<div class="card-head"><h3>Comanda ao vivo</h3><button class="icon-btn close-x" id="oa-x" aria-label="Fechar">${I.x}</button></div>
-    <p class="hint" style="font-size:14.5px">Tem o Conta Fácil na tela de início? Copie o código, abra o app e toque em <b>Colar</b> em <b>Comanda de um amigo</b>.</p>
+    <p class="hint" style="font-size:14.5px">Tem o Conta Fácil na tela de início? Copie o código, abra o app e cole em <b>Comanda ao vivo</b>, na tela inicial.</p>
     <div class="code-box"><span class="eyebrow">Código</span>${codeHTML(code)}</div>
     <button class="btn" id="oa-copy">${I.copy}Copiar código</button>
     <button class="btn ghost" id="oa-here">Continuar no navegador</button>
@@ -1017,7 +1030,7 @@ function openInAppSheet(code) {
 }
 // convite: QR code para quem está na mesa, link e código para mandar no grupo
 function inviteText() {
-  return `Comanda ao vivo${draft.place ? ' em ' + draft.place : ''} no Conta Fácil.\nCódigo: ${codeShort(draft.live.code)}\nNo app, toque em Colar em Comanda de um amigo, na tela inicial. Sem o app, abra o link:`;
+  return `Comanda ao vivo${draft.place ? ' em ' + draft.place : ''} no Conta Fácil.\nCódigo: ${codeShort(draft.live.code)}\nNo app, cole o código em Comanda ao vivo, na tela inicial. Sem o app, abra o link:`;
 }
 function inviteSheet() {
   if (!draft.live || draft.isExample) return;
@@ -1104,7 +1117,7 @@ function commit(opts = {}) {
   if (draft.live && live.readOnly) { toast('Você só pode acompanhar esta comanda.'); if (live.last) draft = fromShared(live.last, draft); render(); return; }
   saveDraft();
   if (draft.live) live.push();
-  render();
+  render(opts);
 }
 
 /* ---------- sem zoom (pinça e duplo toque) ---------- */
@@ -1152,17 +1165,29 @@ function maskMoney(el) {
   el.value = digits ? BRL(parseInt(digits, 10)) : '';
   try { const n = el.value.length; el.setSelectionRange(n, n); } catch {}
 }
+// percentual com a mesma digitação: 1 → 0,01%, 1000 → 10,00%; o símbolo fica sempre no fim
+const pctFmt = h => (h / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+const pctInput = p => pctFmt(Math.round((p || 0) * 100));
+const parsePct = s => { const dg = String(s ?? '').replace(/\D/g, ''); return dg ? Math.min(10000, parseInt(dg, 10)) / 100 : null; };
+function maskPct(el) {
+  const digits = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 5);
+  el.value = digits ? pctFmt(Math.min(10000, parseInt(digits, 10))) : '';
+  caretEnd(el);
+}
+const caretEnd = el => { try { const n = el.value.length - (el.matches('[data-pct]') && el.value.endsWith('%') ? 1 : 0); el.setSelectionRange(n, n); } catch {} };
 document.addEventListener('input', e => {
-  const el = e.target; if (!el.matches || !el.matches('[data-money]')) return;
+  const el = e.target; if (!el.matches || !el.matches('[data-money],[data-pct]')) return;
   // o primeiro número digitado depois de tocar no campo substitui o valor sugerido
   if (el.dataset.fresh === '1' && e.inputType && e.inputType.startsWith('insert') && e.data && /\d/.test(e.data)) el.value = e.data;
   el.dataset.fresh = '';
-  maskMoney(el);
+  // apagar o % apaga o último número
+  if (el.matches('[data-pct]') && e.inputType === 'deleteContentBackward' && el.value && !el.value.endsWith('%')) el.value = el.value.replace(/\d(?=\D*$)/, '');
+  if (el.matches('[data-pct]')) maskPct(el); else maskMoney(el);
 }, true);
 ['focusin', 'click'].forEach(ev => document.addEventListener(ev, e => {
-  const el = e.target; if (!el.matches || !el.matches('[data-money]')) return;
+  const el = e.target; if (!el.matches || !el.matches('[data-money],[data-pct]')) return;
   if (ev === 'focusin') el.dataset.fresh = '1';
-  setTimeout(() => { try { const n = el.value.length; el.setSelectionRange(n, n); } catch {} }, 0);
+  setTimeout(() => caretEnd(el), 0);
 }));
 // "OK"/Enter em campo solto confirma e fecha o teclado
 document.addEventListener('keydown', e => {
@@ -1454,6 +1479,15 @@ async function copyText(text, okMsg) {
 }
 
 /* ---------- render ---------- */
+// o elemento tocado fica parado na tela quando algo acima dele muda de tamanho (o Safari não faz isso sozinho)
+function anchorKey(el) {
+  for (let x = el; x && x.id !== 'view'; x = x.parentElement) {
+    if (x.dataset?.item) return `[data-item="${CSS.escape(x.dataset.item)}"]`;
+    if (x.dataset?.unit) return `[data-unit="${CSS.escape(x.dataset.unit)}"]`;
+    if (x.id) return '#' + CSS.escape(x.id);
+  }
+  return null;
+}
 function renderSync() {
   const el = $('#sync');
   const isLive = draft.live && live.unsub && !live.closed;
@@ -1461,6 +1495,13 @@ function renderSync() {
   $('span', el).textContent = isLive ? 'Comanda ao vivo' : (store.mode === 'cloud' ? 'Salvo na nuvem' : 'Salvo neste aparelho');
 }
 function render(opts = {}) {
+  let anc = null;
+  if (opts.anchor !== false) {
+    const t = lastPress.target;
+    const from = opts.anchor?.from || (Date.now() - lastPress.at < 900 && t?.closest?.('#view') ? anchorKey(t) : null);
+    const el = from && $(from);
+    if (el) anc = { to: opts.anchor?.to || from, y: el.getBoundingClientRect().top };
+  }
   // ao receber mudanças de outras pessoas, mantém o que você está digitando
   let keep = null, focusId = null, sel = null;
   if (opts.preserve) {
@@ -1487,9 +1528,10 @@ function render(opts = {}) {
     Object.entries(keep).forEach(([id, val]) => { const i = document.getElementById(id); if (i) i.value = val; });
     if (focusId) { const f = document.getElementById(focusId); if (f) { f.focus({ preventScroll: true }); try { sel && f.setSelectionRange(sel[0], sel[1]); } catch {} } }
   }
+  if (anc) { const el = $(anc.to); if (el) { const dy = el.getBoundingClientRect().top - anc.y; if (Math.abs(dy) > 1) window.scrollBy(0, dy); } }
   if (typeof tour !== 'undefined' && tour.active()) { if (!draft.isExample) tour.stop(); else requestAnimationFrame(() => tour.place()); }
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; pickSel = null; selItem = null; render(); window.scrollTo({ top: 0 }); } });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { tab = 'inicio'; render(); } return; } if (b) { tab = b.dataset.tab; pickSel = null; selItem = null; selPay = null; render(); window.scrollTo({ top: 0 }); } });
 
 /* ---------- aba Comanda ---------- */
 let liveWho = false; // lista "Quem é você?" aberta depois de já ter escolhido
@@ -1916,10 +1958,10 @@ const viewInicio = {
     </div>
 
     ${store.db && !(d.live && inProgress) ? `<div class="card ex-card join" id="join-card">
-      <div class="ex-head"><span class="ex-icon join-icon">${I.users}</span><span><b>Comanda de um amigo</b><span class="hint">Entre com o código que te mandaram e marque o que você consumiu</span></span></div>
+      <div class="ex-head"><span class="ex-icon join-icon">${I.live}</span><span><b>Comanda ao vivo</b><span class="hint">Entre com o código que um amigo compartilhou e marque o que você consumiu</span></span></div>
       <form id="join-form" autocomplete="off">
-        <span class="join-field"><input id="join-code" type="text" placeholder="Código ou link" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link da comanda" data-keep>${navigator.clipboard?.readText ? '<button class="join-paste" type="button" id="join-paste">Colar</button>' : ''}</span>
-        <button class="btn" type="submit">Entrar</button></form>
+        <span class="join-field"><input id="join-code" type="text" placeholder="Código ou link" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link da comanda ao vivo" data-keep>${navigator.clipboard?.readText ? `<button class="join-paste" type="button" id="join-paste" aria-label="Colar">${I.paste}</button>` : ''}</span>
+        <button class="btn join-go" type="submit">Entrar</button></form>
     </div>` : ''}
 
     ${bills.length ? `<div class="card">
@@ -1945,6 +1987,16 @@ const viewInicio = {
       $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', x === b));
     }));
     startEl.addEventListener('input', () => $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', norm(x.dataset.start) === norm(startEl.value))));
+    const jCard = $('#join-card', v), jIn = $('#join-code', v);
+    if (jCard) {
+      const sync = () => jCard.classList.toggle('open', document.activeElement === jIn || !!jIn.value.trim());
+      jIn.addEventListener('focus', sync);
+      jIn.addEventListener('input', sync);
+      jIn.addEventListener('blur', () => setTimeout(sync, 120));
+      // tocar em Entrar ou em colar não tira o foco do campo, senão os botões somem antes do toque
+      $$('.join-go, .join-paste', jCard).forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
+      requestAnimationFrame(sync);
+    }
     $('#join-paste', v)?.addEventListener('click', async () => {
       try { const t = (await navigator.clipboard.readText()).trim(); if (t) { $('#join-code', v).value = t; $('#join-form', v).requestSubmit(); } else toast('Nada copiado.'); }
       catch { toast('Não deu para colar. Toque e segure no campo e escolha Colar.'); }
@@ -2323,9 +2375,20 @@ function settleHTML(c) {
     </div>`; }).join('')}</div>
   </div>`;
 }
-// quadro de grupos: arraste uma pessoa sobre outra (ou toque numa e depois na outra)
+// quadro de grupos: arraste uma pessoa sobre outra, ou toque no cartão e em Juntar com…
 let pickSel = null;
+// cartão de pagamento selecionado: mostra Pagar outro valor e Juntar com…
+let selPay = null;
 const openAdj = new Set();
+// ajustes ligados, na ordem em que foram ligados: cada novo entra logo acima dos botões, onde a pessoa tocou
+const ADJ = ['cv', 'ds', 'fq'];
+let adjFresh = null;
+function adjActive(d, c) {
+  const on = { cv: !!d.couvert.enabled, ds: !!d.discount.enabled, fq: !!(c.freeValue || openAdj.has('fq')) };
+  const ord = (d.adjOrder || []).filter(k => on[k]);
+  ADJ.forEach(k => { if (on[k] && !ord.includes(k)) ord.push(k); });
+  return { on, ord };
+}
 // juntar a pessoa "pid" ao grupo de "target" (pessoa ou grupo)
 function joinGroup(d, pid, target) {
   const groups = cleanGroups(d);
@@ -2348,7 +2411,7 @@ function leaveGroup(d, pid) {
 }
 function bindGroups(v, d) {
   const card = $('#groups-card', v); if (!card) return;
-  const act = (pid, target) => { pickSel = null; if (joinGroup(d, pid, target)) { commit(); toast('Grupo atualizado.'); } else render({ preserve: true }); };
+  const act = (pid, target) => { pickSel = null; if (joinGroup(d, pid, target)) { selPay = null; commit(); toast('Agora estão no mesmo cupom.'); } else render({ preserve: true }); };
   $('#pick-cancel', card)?.addEventListener('click', () => { pickSel = null; render({ preserve: true }); });
   $$('[data-payer-t]', card).forEach(b => b.addEventListener('click', e => {
     e.stopPropagation();
@@ -2358,16 +2421,20 @@ function bindGroups(v, d) {
     g.payers = on ? g.payers.filter(x => x !== pid) : [...g.payers, pid];
     d.groups = cleanGroups(d).map(x => x.id === g.id ? g : x); commit();
   }));
-  $$('[data-ungroup]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); leaveGroup(d, b.dataset.ungroup); pickSel = null; commit(); }));
-  // toque: escolher uma pessoa e depois o destino
+  $$('[data-ungroup]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); leaveGroup(d, b.dataset.ungroup); pickSel = null; selPay = b.dataset.ungroup; commit(); toast('Saiu do grupo.'); }));
+  $$('[data-join]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); pickSel = b.dataset.join; selPay = null; render({ preserve: true }); }));
+  // toque no cartão: seleciona (como nos itens da comanda); depois de Juntar com…, escolhe o cupom
   card.addEventListener('click', e => {
     if (Date.now() - dragState.droppedAt < 80) return;
-    if (e.target.closest('button, input, label, select, textarea, .switch')) return;
-    const chipEl = e.target.closest('[data-drag]'), box = e.target.closest('[data-drop]');
-    if (!pickSel) { if (chipEl) { pickSel = chipEl.dataset.drag; render({ preserve: true }); } return; }
-    if (chipEl && chipEl.dataset.drag === pickSel) { pickSel = null; render({ preserve: true }); return; }
-    if (chipEl) { const g = c_groupOf(d, chipEl.dataset.drag); return act(pickSel, g ? 'g:' + g : 'p:' + chipEl.dataset.drag); }
-    if (box) { const t = box.dataset.drop; if (t === 'out') { leaveGroup(d, pickSel); pickSel = null; return commit(); } return act(pickSel, t); }
+    if (e.target.closest('button, input, label, select, textarea, .switch, a')) return;
+    const box = e.target.closest('[data-unit]');
+    if (pickSel) {
+      if (!box) return;
+      if (box.classList.contains('picking')) { pickSel = null; render({ preserve: true }); return; }
+      return act(pickSel, box.dataset.drop);
+    }
+    if (!box) return;
+    selPay = selPay === box.dataset.unit ? null : box.dataset.unit; render({ preserve: true });
   });
   // arrastar e soltar (dedo ou mouse)
   $$('[data-drag]', card).forEach(el => el.addEventListener('pointerdown', e => {
@@ -2422,15 +2489,22 @@ function paymentHTML(d, c) {
   if (!c.missingPayer && c.payDiff < 0) warn = `<div class="status warn">${I.warn}<span>Faltam <b>${BRL(-c.payDiff)}</b> para cobrir o total de ${BRL(c.total)}. Ajuste os valores personalizados.</span></div>`;
   if (c.payDiff > 0) warn = `<div class="status warn">${I.warn}<span>Os valores personalizados passam <b>${BRL(c.payDiff)}</b> do total de ${BRL(c.total)}.</span></div>`;
 
-  // botão de valor personalizado ao lado do nome (quem paga a conta inteira cobre o restante e não precisa dele)
-  const cvBtn = pid => c.payer === pid ? '' : `<button class="cv-t" data-cv="${pid}" aria-pressed="${c.per[pid].custom}" aria-label="Valor personalizado para ${esc(nm(pid))}">R$</button>`;
   const chip = (pid, u) => {
     const multi = u.members.length > 1, isPayer = u.payers.includes(pid);
     return `<span class="pchip ${multi ? 'in' : 'solo'} ${pickSel === pid ? 'picked' : ''}" data-drag="${pid}">
       ${avatar(nm(pid))}<span class="pc-name">${esc(nm(pid))}</span>
-      ${cvBtn(pid)}${multi ? `<button class="pay-t" data-payer-t="${pid}" aria-pressed="${isPayer}" aria-label="${isPayer ? 'Responsável pelo pagamento' : 'Tornar responsável pelo pagamento'}">${isPayer ? 'paga' : 'não paga'}</button>
-        <button class="pc-x" data-ungroup="${pid}" aria-label="Tirar ${esc(nm(pid))} do grupo">${I.x}</button>` : ''}
+      ${multi ? `<button class="pay-t" data-payer-t="${pid}" aria-pressed="${isPayer}" aria-label="${isPayer ? 'Responsável pelo pagamento' : 'Tornar responsável pelo pagamento'}">${isPayer ? 'paga' : 'não paga'}</button>` : ''}
     </span>`;
+  };
+  // ações do cartão selecionado (quem paga a conta inteira cobre o restante e não escolhe outro valor)
+  const actions = (pid, u) => {
+    const multi = u.members.length > 1, custom = c.per[pid].custom;
+    const val = c.payer === pid ? '' : custom
+      ? `<button class="btn small ghost" data-cv="${pid}">${I.refresh}Valor da conta</button>`
+      : `<button class="btn small ghost" data-cv="${pid}">${I.edit}Pagar outro valor</button>`;
+    const grp = multi ? `<button class="btn small ghost" data-ungroup="${pid}">${I.x}Sair do grupo</button>`
+      : c.units.length > 1 ? `<button class="btn small ghost" data-join="${pid}">${I.users}Juntar com…</button>` : '';
+    return val || grp ? `<div class="uact">${multi ? `<span class="uact-who">${first(pid)}</span>` : ''}<span class="grp">${val}${grp}</span></div>` : '';
   };
   const unitBox = u => {
     const multi = u.members.length > 1;
@@ -2452,9 +2526,11 @@ function paymentHTML(d, c) {
         h += `<div class="urow ${x.k === 'in' ? 'recv' : ''}"><span>${who}${esc(x.t).replace(/R\$\s?[\d.]+,\d{2}/, m => `<b class="num">${m}</b>`)}</span>${x.k === 'out' && debts.some(z => z.pid === pid) ? `<button class="btn small ghost pix-btn" data-pixpay="${pid}">Pix</button>` : ''}</div>`;
       });
       if (plan.some(x => x.k === 'in')) h += `<div class="pix-row"><label for="pix-${pid}">Pix de ${first(pid)}</label><input id="pix-${pid}" type="text" data-pix="${esc(nm(pid))}" value="${esc(pixOf(nm(pid)))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocomplete="off" autocapitalize="off" spellcheck="false" data-keep></div>`;
+      if (selPay === u.id && !pickSel) h += actions(pid, u);
       return h;
     }).join('');
-    return `<div class="ubox ${multi ? 'group' : ''}" data-drop="${multi ? 'g:' + u.id : 'p:' + u.id}">
+    const picking = pickSel && u.members.includes(pickSel);
+    return `<div class="ubox ${multi ? 'group' : ''} ${selPay === u.id && !pickSel ? 'sel' : ''} ${pickSel && !picking ? 'target' : ''} ${picking ? 'picking' : ''}" data-unit="${u.id}" data-drop="${multi ? 'g:' + u.id : 'p:' + u.id}">
       ${multi ? `<div class="ubox-tagline"><span class="ubox-tag">Cupom compartilhado${u.payers.length > 1 ? ` · ${u.payers.length} pagam` : ''}</span><b class="num ubox-total">${BRL(u.total)}</b></div>` : ''}
       <div class="ubox-head"><div class="ubox-people">${u.members.map(m => chip(m, u)).join('')}</div>${multi ? '' : `<b class="num ubox-total">${BRL(u.total)}</b>`}</div>
       ${lines}
@@ -2470,7 +2546,7 @@ function paymentHTML(d, c) {
       </div>${who}</div>
     <span class="eyebrow">Quem paga o quê</span>
     ${warn}
-    ${pickSel ? `<div class="pick-hint">${I.users}<span>Agora toque em quem vai ficar no mesmo cupom de <b>${esc(c.per[pickSel]?.person.name || '')}</b>.</span><button class="btn small ghost" id="pick-cancel">Cancelar</button></div>` : ''}
+    ${pickSel ? `<div class="pick-hint">${I.users}<span>Toque no cartão de quem vai ficar no mesmo cupom de <b>${esc(c.per[pickSel]?.person.name || '')}</b>.</span><button class="btn small ghost" id="pick-cancel">Cancelar</button></div>` : ''}
     <div class="ubox-list">${c.units.map(unitBox).join('')}</div>
     <div class="drop-out" data-drop="out">Solte aqui para tirar do grupo</div>
     ${c.transfers.length ? `<button class="btn small ghost" id="copy-transfers" style="align-self:flex-start">${I.copy}Copiar acertos</button>` : ''}
@@ -2490,6 +2566,38 @@ const viewFechar = {
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
     const myUnit = me && c.unitOf[me];
     const order = myUnit ? [myUnit, ...c.units.map(u => u.id).filter(x => x !== myUnit)] : c.units.map(u => u.id);
+    const adj = adjActive(d, c), fresh = k => adjFresh === k ? ' adj-in' : '';
+    const adjCard = {
+      cv: () => `<div class="card${fresh('cv')}" id="cv-card">
+      <div class="card-head"><h2>Couvert artístico</h2>
+        <label class="switch"><input type="checkbox" id="cv-on" checked><span class="track"></span>Cobrar</label></div>
+      <div class="row" style="align-items:center"><div class="field" style="width:140px"><input id="cv-val" type="text" inputmode="numeric" data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa" data-keep></div><span class="hint">por pessoa</span></div>
+    </div>`,
+      ds: () => `<div class="card${fresh('ds')}" id="ds-card">
+      <div class="card-head"><h2>Desconto</h2>
+        <label class="switch"><input type="checkbox" id="ds-on" checked><span class="track"></span>Aplicar</label></div>
+      <div class="ds-row">
+        <div class="seg" role="group" aria-label="Tipo de desconto"><button data-dsmode="value" aria-pressed="${ds.mode === 'value'}">R$</button><button data-dsmode="pct" aria-pressed="${ds.mode === 'pct'}">%</button></div>
+        <input id="ds-val" type="text" inputmode="numeric" ${ds.mode === 'pct' ? `data-pct value="${pctInput(ds.pct)}" aria-label="Percentual de desconto"` : `data-money value="${moneyInput(ds.value)}" aria-label="Valor do desconto"`} data-keep>
+      </div>
+      <div class="field"><span class="eyebrow">Onde o desconto incide</span>
+        <div class="seg" role="group" aria-label="Onde o desconto incide">
+          <button data-dsat="after" aria-pressed="${ds.at === 'after'}">No total, depois do serviço</button>
+          <button data-dsat="before" aria-pressed="${ds.at !== 'after'}">No consumo, antes do serviço</button>
+        </div></div>
+      <div class="policy-note"><b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(ds.at === 'after' ? c.total + c.discount : c.consumoBruto)}</b></div>
+    </div>`,
+      fq: () => `<div class="card${fresh('fq')}" id="fq-card">
+      <div class="card-head"><h2>Cortesia</h2>${c.freeValue ? `<span class="hint num">−${BRL(c.freeValue)}</span>` : '<button class="btn small ghost" id="fq-close">Remover</button>'}</div>
+      <div class="who">${d.items.map(it => `<div class="who-row free-row">
+        <div style="min-width:0"><div style="font-weight:600;overflow-wrap:anywhere">${esc(it.name)}</div>
+          <div class="hint num">${it.qty} × ${BRL(it.price)}${it.fq ? ` · <b style="color:var(--green)">−${BRL(it.fq * it.price)}</b>` : ''}</div></div>
+        <span class="unit-btns"><button class="minus" data-fq="${it.id}" data-dir="-1" ${it.fq ? '' : 'disabled'} aria-label="Uma cortesia a menos em ${esc(it.name)}">−1</button>
+          <span class="fq-count num">${it.fq || 0}<small>/${it.qty}</small></span>
+          <button class="plus" data-fq="${it.id}" data-dir="1" ${it.fq < it.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span>
+      </div>`).join('')}</div>
+    </div>`,
+    };
     return `
     ${c.incomplete.length ? `<div class="banner warn"><span><b>Distribuição incompleta, item fora da conta:</b> ${c.incomplete.map(x => `${esc(x.it.name)} (${x.units} de ${x.it.qty} unidades)`).join(', ')}.</span><button class="btn small ghost" data-fix>Corrigir</button></div>` : ''}
     ${c.openItems.length ? `<div class="banner"><span><b>${plural(c.openItems.length, 'item aguarda', 'itens aguardam')} confirmação:</b> ${esc(c.openItems.map(i => i.name).join(', '))}. Os valores já aparecem abaixo, mas a comanda só pode ser salva depois que todos forem confirmados.</span><button class="btn small mustard" data-fix>Revisar</button></div>` : ''}
@@ -2498,7 +2606,7 @@ const viewFechar = {
       <div class="sum"><span class="eyebrow">Consumo</span><b>${BRL(c.consumoBruto)}</b></div>
       <div class="sum"><span class="eyebrow">Serviço</span><b>${BRL(c.service)}</b></div>
       ${d.couvert.enabled ? `<div class="sum"><span class="eyebrow">Couvert</span><b>${BRL(c.couvert)}</b></div>` : ''}
-      ${c.discount ? `<div class="sum"><span class="eyebrow">Desconto</span><b>−${BRL(c.discount)}</b></div>` : ''}
+      ${ds.enabled ? `<div class="sum"><span class="eyebrow">Desconto</span><b>−${BRL(c.discount)}</b></div>` : ''}
       <div class="sum total"><span class="eyebrow">Total da comanda</span><b>${BRL(c.total)}</b></div>
     </div>
 
@@ -2519,7 +2627,7 @@ const viewFechar = {
           <button data-mode="pct" aria-pressed="${s.mode === 'pct' && s.pct !== 10}">Outro %</button>
           <button data-mode="fixed" aria-pressed="${s.mode === 'fixed'}">Valor fixo</button>
         </div>
-        ${s.mode === 'pct' && s.pct !== 10 ? `<div class="field" style="width:110px"><input id="svc-pct" type="text" inputmode="decimal" value="${pctStr(s.pct)}" aria-label="Percentual" data-keep></div><span class="hint">%</span>` : ''}
+        ${s.mode === 'pct' && s.pct !== 10 ? `<div class="field" style="width:140px"><input id="svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa" data-keep></div>` : ''}
         ${s.mode === 'fixed' ? `<div class="field" style="width:140px"><input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep></div>` : ''}
       </div>
       <div class="field"><span class="eyebrow">Se alguém não pagar o serviço</span>
@@ -2530,43 +2638,13 @@ const viewFechar = {
       ${note ? `<div class="policy-note">${note}</div>` : ''}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
     </div>
 
-    ${d.couvert.enabled ? `<div class="card">
-      <div class="card-head"><h2>Couvert artístico</h2>
-        <label class="switch"><input type="checkbox" id="cv-on" ${d.couvert.enabled ? 'checked' : ''}><span class="track"></span>Cobrar</label></div>
-      <div class="row" style="align-items:center"><div class="field" style="width:140px"><input id="cv-val" type="text" inputmode="numeric" data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa" data-keep></div><span class="hint">por pessoa</span></div>
-    </div>` : ''}
-
-    ${ds.enabled ? `<div class="card" id="ds-card">
-      <div class="card-head"><h2>Desconto</h2>
-        <label class="switch"><input type="checkbox" id="ds-on" ${ds.enabled ? 'checked' : ''}><span class="track"></span>Aplicar</label></div>
-      <div class="ds-row">
-        <div class="seg" role="group" aria-label="Tipo de desconto"><button data-dsmode="value" aria-pressed="${ds.mode === 'value'}">R$</button><button data-dsmode="pct" aria-pressed="${ds.mode === 'pct'}">%</button></div>
-        <input id="ds-val" type="text" ${ds.mode === 'pct' ? 'inputmode="decimal"' : 'inputmode="numeric" data-money'} value="${ds.mode === 'pct' ? pctStr(ds.pct) + '%' : moneyInput(ds.value)}" aria-label="${ds.mode === 'pct' ? 'Percentual de desconto' : 'Valor do desconto'}" data-keep>
-      </div>
-      <div class="field"><span class="eyebrow">Onde o desconto incide</span>
-        <div class="seg" role="group" aria-label="Onde o desconto incide">
-          <button data-dsat="after" aria-pressed="${ds.at === 'after'}">No total, depois do serviço</button>
-          <button data-dsat="before" aria-pressed="${ds.at !== 'after'}">No consumo, antes do serviço</button>
-        </div></div>
-      ${c.discount ? `<div class="policy-note"><b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(ds.at === 'after' ? c.total + c.discount : c.consumoBruto)}</b></div>` : ''}
-    </div>` : ''}
-
-    ${c.freeValue || openAdj.has('fq') ? `<div class="card" id="fq-card">
-      <div class="card-head"><h2>Cortesia</h2>${c.freeValue ? `<span class="hint num">−${BRL(c.freeValue)}</span>` : '<button class="btn small ghost" id="fq-close">Remover</button>'}</div>
-      <div class="who">${d.items.map(it => `<div class="who-row free-row">
-        <div style="min-width:0"><div style="font-weight:600;overflow-wrap:anywhere">${esc(it.name)}</div>
-          <div class="hint num">${it.qty} × ${BRL(it.price)}${it.fq ? ` · <b style="color:var(--green)">−${BRL(it.fq * it.price)}</b>` : ''}</div></div>
-        <span class="unit-btns"><button class="minus" data-fq="${it.id}" data-dir="-1" ${it.fq ? '' : 'disabled'} aria-label="Uma cortesia a menos em ${esc(it.name)}">−1</button>
-          <span class="fq-count num">${it.fq || 0}<small>/${it.qty}</small></span>
-          <button class="plus" data-fq="${it.id}" data-dir="1" ${it.fq < it.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span>
-      </div>`).join('')}</div>
-    </div>` : ''}
-    ${!d.couvert.enabled || !ds.enabled || !(c.freeValue || openAdj.has('fq')) ? `<div class="adj">
+    ${adj.ord.map(k => adjCard[k]()).join('')}
+    ${adj.ord.length < 3 ? `<div class="adj" id="adj-area">
       <span class="eyebrow">Ajustes da comanda</span>
       <div class="adj-btns">
-        ${!d.couvert.enabled ? `<button class="adj-btn" data-adj="cv">${I.plus}Couvert</button>` : ''}
-        ${!ds.enabled ? `<button class="adj-btn" data-adj="ds">${I.plus}Desconto</button>` : ''}
-        ${!(c.freeValue || openAdj.has('fq')) ? `<button class="adj-btn" data-adj="fq">${I.plus}Cortesia</button>` : ''}
+        ${!adj.on.cv ? `<button class="adj-btn" data-adj="cv">${I.plus}Couvert</button>` : ''}
+        ${!adj.on.ds ? `<button class="adj-btn" data-adj="ds">${I.plus}Desconto</button>` : ''}
+        ${!adj.on.fq ? `<button class="adj-btn" data-adj="fq">${I.plus}Cortesia</button>` : ''}
       </div>
     </div>` : ''}
 
@@ -2595,32 +2673,37 @@ const viewFechar = {
       else { s.mode = 'fixed'; if (!s.fixed) s.fixed = Math.round(compute(d).consumo * 0.1); }
       commit();
     }));
-    $('#svc-pct', v)?.addEventListener('change', e => { const n = parseFloat(String(e.target.value).replace(',', '.')); if (isFinite(n) && n >= 0 && n <= 100) s.pct = Math.round(n * 100) / 100; else toast('Use um percentual entre 0 e 100.'); commit(); });
+    $('#svc-pct', v)?.addEventListener('change', e => { s.pct = parsePct(e.target.value) ?? 0; commit(); });
     $('#svc-fixed', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) s.fixed = c; commit(); });
     $$('[data-policy]', v).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.policy; commit(); }));
     // desconto
-    $('#ds-on', v)?.addEventListener('change', e => { ds.enabled = e.target.checked; commit(); });
+    const adjOff = (k, off) => { off(); d.adjOrder = (d.adjOrder || []).filter(x => x !== k); commit({ anchor: { from: '#' + k + '-card', to: '#adj-area' } }); };
+    $('#ds-on', v)?.addEventListener('change', () => adjOff('ds', () => { ds.enabled = false; }));
     $$('[data-dsat]', v).forEach(b => b.addEventListener('click', () => { ds.at = b.dataset.dsat; commit(); }));
     $$('[data-dsmode]', v).forEach(b => b.addEventListener('click', () => { ds.mode = b.dataset.dsmode; commit(); }));
     $('#ds-val', v)?.addEventListener('change', e => {
-      if (ds.mode === 'pct') { const n = parseFloat(String(e.target.value).replace(',', '.')); if (isFinite(n) && n >= 0 && n <= 100) ds.pct = Math.round(n * 100) / 100; else toast('Use um percentual entre 0 e 100.'); }
-      else { const c = parseMoney(e.target.value); if (c !== null) ds.value = c; }
+      if (ds.mode === 'pct') ds.pct = parsePct(e.target.value) ?? 0;
+      else { const c = parseMoney(e.target.value); ds.value = c ?? 0; }
       commit();
     });
     $$('[data-fq]', v).forEach(b => b.addEventListener('click', () => {
       const it = d.items.find(x => x.id === b.dataset.fq); if (!it) return;
       it.fq = Math.max(0, Math.min(it.qty, (it.fq || 0) + +b.dataset.dir)); commit();
     }));
-    // ajustes recolhidos
+    // ajustes: o novo cartão ocupa o lugar dos botões e entra com uma animação curta
     $$('[data-adj]', v).forEach(b => b.addEventListener('click', () => {
-      const k = b.dataset.adj;
-      if (k === 'cv') { d.couvert.enabled = true; commit(); }
-      else if (k === 'ds') { ds.enabled = true; commit(); }
-      else { openAdj.add('fq'); render({ preserve: true }); }
+      const k = b.dataset.adj, anchor = { from: '#adj-area', to: '#' + k + '-card' };
+      d.adjOrder = [...(d.adjOrder || []).filter(x => x !== k), k];
+      adjFresh = k;
+      if (k === 'cv') { d.couvert.enabled = true; commit({ anchor }); }
+      else if (k === 'ds') { ds.enabled = true; commit({ anchor }); }
+      else { openAdj.add('fq'); render({ preserve: true, anchor }); }
+      $('#' + k + '-card')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }));
-    $('#fq-close', v)?.addEventListener('click', () => { openAdj.delete('fq'); render({ preserve: true }); });
+    $('#fq-close', v)?.addEventListener('click', () => { openAdj.delete('fq'); d.adjOrder = (d.adjOrder || []).filter(x => x !== 'fq'); render({ preserve: true, anchor: { from: '#fq-card', to: '#adj-area' } }); });
+    adjFresh = null;
     // couvert
-    $('#cv-on', v)?.addEventListener('change', e => { d.couvert.enabled = e.target.checked; commit(); });
+    $('#cv-on', v)?.addEventListener('change', () => adjOff('cv', () => { d.couvert.enabled = false; }));
     $('#cv-val', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) d.couvert.value = c; commit(); });
     $$('[data-pay-svc]', v).forEach(i => i.addEventListener('change', () => { d.people.find(p => p.id === i.dataset.paySvc).payService = i.checked; commit(); }));
     $$('[data-pay-cv]', v).forEach(i => i.addEventListener('change', () => { d.people.find(p => p.id === i.dataset.payCv).payCouvert = i.checked; commit(); }));
@@ -2634,7 +2717,8 @@ const viewFechar = {
       e.stopPropagation(); const pid = b.dataset.cv; d.custom = d.custom || {};
       if (pid in d.custom) { delete d.custom[pid]; commit(); return; }
       d.custom[pid] = compute(d).per[pid].paid; commit();
-      requestAnimationFrame(() => { const i = document.getElementById('cv-' + pid); if (i) { i.focus(); i.select?.(); } });
+      // o campo recebe o foco no mesmo toque, para o teclado do iPhone abrir
+      const i = document.getElementById('cv-' + pid); if (i) i.focus();
     }));
     $$('[data-cover]', v).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); d.cover = d.cover || {}; if (b.dataset.to) d.cover[b.dataset.cover] = b.dataset.to; else delete d.cover[b.dataset.cover]; commit(); }));
     $$('[data-custom]', v).forEach(i => i.addEventListener('change', () => { d.custom[i.dataset.custom] = parseMoney(i.value) || 0; commit(); }));
@@ -2853,7 +2937,7 @@ const viewCadastros = {
 /* ---------- guia interativo (só na comanda de exemplo) ---------- */
 const TOUR = [
   { tab: 'inicio', sel: '#start-form', t: 'Abrir uma comanda', d: 'Digite o nome do bar ou restaurante e toque em Abrir comanda. Os lugares onde você já foi aparecem como atalhos.' },
-  { tab: 'inicio', sel: '.join', skip: true, t: 'Comanda de um amigo', d: 'Quando alguém da turma compartilhar a comanda ao vivo, cole aqui o código ou o link que recebeu. Assim você marca o que consumiu pelo seu celular.' },
+  { tab: 'inicio', sel: '.join', skip: true, t: 'Entrar numa comanda ao vivo', d: 'Quando alguém da turma compartilhar a comanda ao vivo, toque na caixa e cole o código ou o link que recebeu. Assim você marca o que consumiu pelo seu celular.' },
   { tab: 'comanda', sel: '#people-card', t: 'Pessoas na mesa', d: 'Adicione quem está dividindo a conta. Nomes que você já usou aparecem como sugestão, e o valor ao lado de cada um é o consumo até agora.' },
   { tab: 'comanda', sel: '#item-card', t: 'Lançar um pedido', d: 'Informe produto, quantidade e preço da unidade. O app lembra o preço de cada produto em cada lugar e preenche sozinho na próxima vez.' },
   { tab: 'comanda', sel: '.item.open', alt: '.items > .item:last-child', t: 'Dividir um item', d: 'Todo item novo chega marcado para todos. Em Como dividir, escolha Igual ou Por unidade, quando cada um pediu uma quantidade diferente. Toque nos nomes para tirar ou incluir alguém e depois em Confirmar divisão. Experimente!' },
@@ -2865,7 +2949,7 @@ const TOUR = [
   { tab: 'fechar', sel: '#fq-card', skip: true, t: 'Cortesia', d: 'Informe quantas unidades o lugar não cobrou. O desconto sai da parte de quem consumiu aquele produto.' },
   { tab: 'fechar', sel: '.adj', skip: true, t: 'Couvert e desconto', d: 'Inclua couvert artístico por pessoa e descontos em reais ou em porcentagem, antes ou depois do serviço.' },
   { tab: 'fechar', sel: '#groups-card .seg', t: 'Quem paga a conta', d: 'Cada um paga a sua parte, ou uma pessoa paga tudo e os outros acertam com ela depois.' },
-  { tab: 'fechar', sel: '.ubox', t: 'Quanto cada um paga', d: 'Toque em R$ para alguém pagar um valor diferente; a diferença é acertada entre vocês. Desligue Serviço de quem não deve pagar. Arraste um nome sobre outro para juntar duas pessoas num cupom só.' },
+  { tab: 'fechar', sel: '.ubox', t: 'Quanto cada um paga', d: 'Toque no cartão de uma pessoa para ela pagar outro valor ou juntar com alguém num cupom só; a diferença é acertada entre vocês. Desligue Serviço de quem não deve pagar.' },
   { tab: 'fechar', sel: '.pix-btn', skip: true, t: 'Pagar com Pix', d: 'O app gera o Pix copia e cola e o QR code já com o valor certo. A chave de quem recebe fica salva no cadastro da pessoa.' },
   { tab: 'fechar', sel: '.receipt-wrap', t: 'Cupons', d: 'Cada pessoa recebe um cupom com o que consumiu. Compartilhe como imagem, PDF ou texto.' },
   { tab: 'fechar', sel: '#save-bill', t: 'Salvar e encerrar', d: 'Guarda a comanda no histórico e deixa o app pronto para a próxima. No exemplo, nada é salvo.' },
