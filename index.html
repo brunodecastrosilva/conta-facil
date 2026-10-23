@@ -361,14 +361,12 @@ nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);backgroun
 .gpay b{color:var(--ink)}
 .solo-area{border:1.5px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .12s}
 .solo-area.empty{align-items:center;padding:14px}
-.pchip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 6px 4px 4px;min-height:40px;max-width:100%}
-.pchip .pc-name{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pchip{display:inline-flex;align-items:center;gap:9px;min-height:40px;max-width:100%}
+.pchip .pc-name{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .pchip .pc-v{font-size:12px;color:var(--muted)}
-.pchip.picked{border-color:var(--mustard);box-shadow:0 0 0 3px var(--mustard-soft)}
 .pay-t{border:0;border-radius:99px;font-size:11.5px;font-weight:700;padding:4px 8px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .pay-t[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
 .drop-on{box-shadow:0 0 0 3px var(--mustard)}
-.pchip.drop-on{border-color:var(--mustard)}
 .drag-ghost{position:fixed;left:0;top:0;z-index:80;pointer-events:none;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 32px);background:var(--surface);color:var(--ink);border:1.5px solid var(--mustard);border-radius:99px;padding:5px 14px 5px 5px;box-shadow:0 14px 30px rgba(0,0,0,.28);animation:dg-in .18s cubic-bezier(.2,.8,.2,1)}
 @keyframes dg-in{from{opacity:0;scale:.85}to{opacity:1;scale:1}}
 .dg-avs{display:flex;padding-left:6px;flex:none}
@@ -811,8 +809,10 @@ function compute(d) {
   // quem vai pagar o local: valores personalizados primeiro; o restante fica com quem paga a conta
   // ("Uma pessoa paga") ou é dividido entre os demais na proporção da parte de cada um ("Cada um paga o seu")
   const single = d.payMode === 'single' && per[d.payer] ? d.payer : '';
+  // quem está num cupom compartilhado sem pagar não tem valor próprio (vale também para dados antigos ou de outro aparelho)
+  const nonPay = new Set(groups.flatMap(g => g.members.filter(m => !g.payers.includes(m))));
   const custom = {};
-  Object.entries(d.custom || {}).forEach(([k, v]) => { if (per[k] && k !== single) custom[k] = Math.max(0, Math.round(v) || 0); });
+  Object.entries(d.custom || {}).forEach(([k, v]) => { if (per[k] && k !== single && !nonPay.has(k)) custom[k] = Math.max(0, Math.round(v) || 0); });
   const paidBy = {}, coverOf = {}; ids.forEach(id => paidBy[id] = custom[id] || 0);
   const rest = total - Object.values(custom).reduce((a, b) => a + b, 0);
   if (rest > 0) {
@@ -2430,7 +2430,12 @@ function adjActive(d, c) {
   ADJ.forEach(k => { if (on[k] && !ord.includes(k)) ord.push(k); });
   return { on, ord };
 }
-// juntar a pessoa "pid" ao grupo de "target" (pessoa ou grupo)
+// quem passa a não pagar perde o valor personalizado e o "quem cobre a diferença"
+function dropCustom(d, pid) {
+  if (d.custom) delete d.custom[pid];
+  if (d.cover) { delete d.cover[pid]; Object.keys(d.cover).forEach(k => { if (d.cover[k] === pid) delete d.cover[k]; }); }
+}
+// juntar a pessoa "pid" ao grupo de "target" (pessoa ou grupo); quem entra não paga até ser marcado como "paga"
 function joinGroup(d, pid, target) {
   const groups = cleanGroups(d);
   const leave = id => groups.forEach(g => { g.members = g.members.filter(m => m !== id); g.payers = g.payers.filter(m => m !== id); });
@@ -2442,7 +2447,7 @@ function joinGroup(d, pid, target) {
     if (!dest) { leave(pid); dest = { id: newId(), members: [other], payers: [other] }; groups.push(dest); }
   }
   if (!dest || dest.members.includes(pid)) return false;
-  leave(pid); dest.members.push(pid);
+  leave(pid); dest.members.push(pid); dropCustom(d, pid);
   d.groups = groups.map(g => ({ ...g, payers: g.payers.length ? g.payers : g.members.slice(0, 1) })).filter(g => g.members.length > 1);
   return true;
 }
@@ -2460,6 +2465,7 @@ function bindGroups(v, d) {
     const on = g.payers.includes(pid);
     if (on && g.payers.length === 1) { toast('O grupo precisa de pelo menos uma pessoa que paga.'); return; }
     g.payers = on ? g.payers.filter(x => x !== pid) : [...g.payers, pid];
+    if (on) dropCustom(d, pid);
     d.groups = cleanGroups(d).map(x => x.id === g.id ? g : x); commit();
   }));
   $$('[data-ungroup]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); leaveGroup(d, b.dataset.ungroup); pickSel = null; selPay = b.dataset.ungroup; commit(); toast('Saiu do grupo.'); }));
@@ -2594,7 +2600,7 @@ function paymentHTML(d, c) {
   // ações do cartão selecionado (quem paga a conta inteira cobre o restante e não escolhe outro valor)
   const actions = (pid, u) => {
     const multi = u.members.length > 1, custom = c.per[pid].custom;
-    const val = c.payer === pid ? '' : custom
+    const val = c.payer === pid || !u.payers.includes(pid) ? '' : custom
       ? `<button class="btn small ghost" data-cv="${pid}">${I.refresh}Valor da conta</button>`
       : `<button class="btn small ghost" data-cv="${pid}">${I.edit}Pagar outro valor</button>`;
     const grp = multi ? `<button class="btn small ghost" data-ungroup="${pid}">${I.x}Sair do grupo</button>`
@@ -3063,10 +3069,22 @@ const TOUR = [
   { tab: 'inicio', sel: '#ex-card', t: 'Pronto!', d: 'Você pode rever este guia quando quiser pela comanda de exemplo. Toque em Sair do exemplo para começar a sua.' },
 ];
 const tour = {
-  i: -1, el: null, bound: false, raf: 0,
+  i: -1, el: null, bound: false, raf: 0, watchId: 0, lastKey: '',
   active() { return this.i >= 0 && !!this.el; },
-  start(at = 0) { if (!draft.isExample) return; this.mount(); this.show(at, 1); },
-  stop() { this.i = -1; if (this.el) { this.el.remove(); this.el = null; } },
+  start(at = 0) { if (!draft.isExample) return; this.mount(); this.show(at, 1); this.watch(); },
+  stop() { this.i = -1; cancelAnimationFrame(this.watchId); this.watchId = 0; if (this.el) { this.el.remove(); this.el = null; } },
+  // o destaque acompanha o que muda de lugar depois de aberto (fontes que terminam de carregar, cartões que aparecem)
+  watch() {
+    cancelAnimationFrame(this.watchId); this.lastKey = '';
+    const tick = () => {
+      if (!this.active()) return;
+      const st = TOUR[this.i], t = st && tab === st.tab ? this.target(st) : null, r = t && t.getBoundingClientRect();
+      const key = (r ? [r.left, r.top, r.width, r.height].map(Math.round).join() : '-') + '|' + window.innerHeight + '|' + ($('.tour-card', this.el)?.offsetHeight || 0);
+      if (key !== this.lastKey) { this.lastKey = key; this.place(); }
+      this.watchId = requestAnimationFrame(tick);
+    };
+    this.watchId = requestAnimationFrame(tick);
+  },
   mount() {
     if (this.el) return;
     const el = document.createElement('div'); el.className = 'tour';
