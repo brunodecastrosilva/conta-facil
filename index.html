@@ -164,27 +164,25 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 /* receipts */
 .receipts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px;align-items:start}
 .receipt-wrap{display:flex;flex-direction:column;gap:8px;min-width:0}
-.receipt{--zz:6px;--paper-accent:#1D5A3B;background:var(--paper);color:var(--paper-ink);font-family:var(--f-mono);font-size:12.5px;line-height:19px;padding:16px 20px 20px;margin-block:var(--zz);position:relative;filter:drop-shadow(0 2px 5px rgba(0,0,0,.13))}
+.receipt{--zz:6px;background:var(--paper);color:var(--paper-ink);font-family:var(--f-mono);font-size:12.5px;line-height:19px;padding:16px 20px 20px;margin-block:var(--zz);position:relative;filter:drop-shadow(0 2px 5px rgba(0,0,0,.13))}
 /* bordas serrilhadas de cupom de impressora térmica */
 .receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:var(--zz);background-size:12px var(--zz);background-repeat:repeat-x}
 .receipt::before{top:calc(-1 * var(--zz));background-image:conic-gradient(from 135deg at top,var(--paper) 90deg,#0000 0)}
 .receipt::after{bottom:calc(-1 * var(--zz));background-image:conic-gradient(from -45deg at bottom,var(--paper) 90deg,#0000 0)}
-.rc-brand{text-align:center;font-weight:600;font-size:14px;line-height:22px;color:var(--paper-accent);letter-spacing:.02em}
+.rc-brand{text-align:center;font-weight:600;font-size:14px;line-height:22px;letter-spacing:.02em}
 .rc-center{text-align:center;line-height:18px}
 .rc-center.rc-muted{font-size:12px}
 .rc-small{font-size:11px!important;line-height:16px}
 .receipt .rc-who{text-align:center;font-family:var(--f-display);font-weight:800;font-size:20px;line-height:30px;letter-spacing:-.01em;margin-top:-2px}
-.receipt hr{border:0;border-top:1px dashed var(--paper-line);margin:6px 0 8px}
+.receipt hr{border:0;border-top:1px dashed var(--paper-ink);margin:6px 0 8px}
 .rc-line{display:flex;justify-content:space-between;gap:12px}
 .rc-line span:first-child{min-width:0;overflow-wrap:anywhere}
 .rc-line span:last-child{white-space:nowrap}
-.rc-detail{color:var(--paper-muted);font-size:11px;line-height:15px;padding-left:8px}
+.rc-detail{font-size:11px;line-height:15px;padding-left:8px}
 .rc-total{font-weight:600;font-size:16px;line-height:26px;border-top:2px solid var(--paper-ink);padding-top:4px;margin-top:6px}
-.rc-section{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:11px;line-height:12px;font-weight:600;letter-spacing:.16em;color:var(--paper-muted)}
-.rc-section::before,.rc-section::after{content:"";flex:1;border-top:1px dashed var(--paper-line)}
-.rc-in{color:var(--paper-accent)}
-.rc-foot{text-align:center;color:var(--paper-muted);font-size:11px;line-height:16px;margin-top:8px}
-.rc-muted{color:var(--paper-muted)}
+.rc-section{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:11px;line-height:12px;font-weight:600;letter-spacing:.16em}
+.rc-section::before,.rc-section::after{content:"";flex:1;border-top:1px dashed var(--paper-ink)}
+.rc-foot{text-align:center;font-size:11px;line-height:16px;margin-top:8px}
 
 /* history */
 .hist{display:flex;flex-direction:column;gap:8px}
@@ -343,27 +341,12 @@ nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);backgroun
   nav.tabs{gap:3px}
   nav.tabs button{font-size:10.5px;letter-spacing:-.01em;padding-inline:1px}
 }
-.rc-sub{font-weight:600;font-size:13px;line-height:20px;color:var(--paper-accent)}
-.who-by{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px;color:var(--muted)}
-.who-by label{font-weight:600}
-.who-by select{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:6px 8px;min-height:36px;max-width:100%;color:var(--ink)}
-.group-note{flex-basis:100%;color:var(--green);font-weight:600}
+.rc-sub{font-weight:600;font-size:13px;line-height:20px}
 .who-row.covered .who-total{color:var(--muted)}
 .paid-tag{color:var(--green);font-weight:700}
 .sheet .settle{box-shadow:none;border:1px solid var(--line)}
 .hist-total{display:flex;flex-direction:column;align-items:flex-end}
 .gboard{display:flex;flex-direction:column;gap:10px}
-.gbox{border:1.5px solid var(--green);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--green-soft);transition:box-shadow .12s}
-.gbox-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.gbox-head b{font-size:15px}
-.gmembers,.solo-chips{display:flex;flex-wrap:wrap;gap:6px}
-.gpay{font-size:13px;color:var(--muted)}
-.gpay b{color:var(--ink)}
-.solo-area{border:1.5px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .12s}
-.solo-area.empty{align-items:center;padding:14px}
-.pchip{display:inline-flex;align-items:center;gap:9px;min-height:40px;max-width:100%}
-.pchip .pc-name{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.pchip .pc-v{font-size:12px;color:var(--muted)}
 .pay-t{border:0;border-radius:99px;font-size:11.5px;font-weight:700;padding:4px 8px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .pay-t[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
 .drop-on{box-shadow:0 0 0 3px var(--mustard)}
@@ -399,9 +382,6 @@ body.is-dragging{user-select:none;-webkit-user-select:none}
 .pix-code{width:100%;font-family:var(--f-mono);font-size:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;resize:none;word-break:break-all}
 .pix-btn{min-height:32px;padding:4px 10px}
 .pay-card{gap:14px}
-.ubox.group .ubox-people{flex-direction:column;align-items:stretch;flex:1 1 auto}
-.ubox.group .pchip{width:100%}
-.ubox.group .pchip .pc-name{flex:1 1 auto}
 .pay-t{white-space:nowrap}
 .cv-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;font-size:13.5px;border-top:1px dashed var(--line);padding-top:8px}
 .cv-row label{font-weight:600}
@@ -410,14 +390,8 @@ body.is-dragging{user-select:none;-webkit-user-select:none}
 .ubox-list{display:flex;flex-direction:column;gap:10px}
 .ubox{border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--surface);transition:box-shadow .12s}
 .ubox.group{border:1.5px solid var(--green);background:var(--green-soft)}
-.ubox-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.ubox-people{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
-.ubox-total{font-size:15px;padding-top:9px;white-space:nowrap}
-.ubox-tagline{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.ubox-tagline .ubox-total{padding-top:0}
 .ubox-tag{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green)}
 .urow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px;border-top:1px dashed var(--line);padding-top:8px}
-.urow-act{display:flex;align-items:center;gap:8px;margin-left:auto}
 .urow.recv{color:var(--green)}
 .ubox .pix-row{grid-template-columns:auto minmax(0,1fr)}
 .drop-out{display:none;border:1.5px dashed var(--danger);color:var(--danger);border-radius:12px;padding:14px;justify-content:center;font-weight:600;font-size:13.5px}
@@ -468,8 +442,6 @@ body.is-dragging.drag-out .drop-out{display:flex}
 .sg-wrap > .sg-clear svg{width:16px;height:16px}
 .sg-wrap > .sg-clear[hidden]{display:none}
 #item-name{padding-right:46px}
-.pdetail{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
-.pd-name{flex:1 0 100%;color:var(--ink);font-size:13.5px;font-weight:600}
 .btn,.adj-btn{white-space:nowrap}
 .btn svg,.adj-btn svg,.chip svg{flex:none}
 .actions-bar{display:grid;grid-template-columns:1fr;gap:8px}
@@ -556,14 +528,32 @@ body.is-dragging.drag-out .drop-out{display:flex}
 .ubox{cursor:pointer;transition:box-shadow .15s,border-color .15s,opacity .15s,transform .15s;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .ubox input{-webkit-user-select:text;user-select:text}
 .umem{display:flex;flex-direction:column;gap:8px}
+.ubox.group .umem{background:var(--surface);border-radius:12px;padding:10px;transition:box-shadow .15s}
+.ubox.group .umem.sel{box-shadow:0 0 0 2px var(--green)}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:2px 2px 0}
+.ghead b{font-size:15px;white-space:nowrap}
+.mhead{display:flex;align-items:center;gap:9px;min-height:36px}
+.mname{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto}
+.mhead .pay-t{flex:none}
+.mtotal{margin-left:auto;font-size:15px;white-space:nowrap}
+.prows{display:flex;flex-direction:column;border-top:1px dashed var(--line)}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto 48px;gap:10px;align-items:center;min-height:38px;font-size:13.5px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.prow:last-child{border-bottom:0}
+.prow .pl{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .pv{color:var(--ink);font-size:13px;text-align:right;white-space:nowrap}
+.prow .pc{display:flex;justify-content:flex-end}
+.prow.sw{cursor:pointer}
+.prow.off .pl,.prow.off .pv{color:var(--muted)}
+.prow.off .pv{font-family:var(--f-body);font-size:12.5px}
+.plan{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
+.plan .urow{border-top:0;padding-top:0}
 .ubox.lifting{opacity:.4;transform:scale(.98)}
 .ubox.drop-on{border-color:var(--mustard);box-shadow:0 0 0 3px var(--mustard)}
 .ubox.sel{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
 .ubox.group.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 30%,transparent)}
 .ubox.target{border-style:dashed;border-color:var(--mustard)}
 .ubox.picking{border-color:var(--mustard);box-shadow:0 0 0 3px var(--mustard-soft)}
-.uact{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px;animation:adj-in .22s cubic-bezier(.2,.8,.2,1)}
-.uact-who{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.uact{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:10px;animation:adj-in .22s cubic-bezier(.2,.8,.2,1)}
 .uact .grp{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .uact .btn{padding-inline:6px;gap:6px}
 .adj-in{animation:adj-in .34s cubic-bezier(.2,.8,.2,1)}
@@ -1733,7 +1723,8 @@ const slug = s => placeKey(s || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g
 async function receiptCanvas(r, b, calc) {
   try { await Promise.all(['400 24px "IBM Plex Mono"', '600 24px "IBM Plex Mono"', '800 36px "Bricolage Grotesque"'].map(f => document.fonts.load(f))); } catch {}
   const S = 2, M = 16 * S, W = 340 * S, PX = 20 * S, IW = W - PX * 2;
-  const C = { bg: '#EAF0EA', paper: '#FFFDF5', ink: '#24221C', muted: '#6E6858', line: '#CFC7B2', green: '#1D5A3B' };
+  // tinta única, como uma impressora térmica
+  const C = { bg: '#EAF0EA', paper: '#FFFDF5', ink: '#1A1915' };
   const mono = (w, px) => `${w} ${px * S}px "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace`;
   const disp = px => `800 ${px * S}px "Bricolage Grotesque", "Figtree", system-ui, sans-serif`;
   const rows = receiptRows(r, b, calc);
@@ -1743,18 +1734,18 @@ async function receiptCanvas(r, b, calc) {
     if (q) { try { rows.splice(i + 1, 0, { t: 'qr', m: await qrMatrix(pixPayload(q.key, q.toName, q.value)), label: `Pix de ${BRL(q.value)} para ${q.toName}` }); } catch {} }
   }
   const look = {
-    brand: { font: mono(600, 14), lh: 22, color: C.green, align: 'center' },
+    brand: { font: mono(600, 14), lh: 22, align: 'center' },
     center: { font: mono(400, 12.5), lh: 18, align: 'center' },
     small: { font: mono(400, 11), lh: 16, align: 'center' },
     who: { font: disp(20), lh: 30, align: 'center' },
-    note: { font: mono(400, 12.5), lh: 18, color: C.muted },
-    detail: { font: mono(400, 11), lh: 15, color: C.muted, indent: 8 },
-    foot: { font: mono(400, 11), lh: 16, color: C.muted, align: 'center' },
+    note: { font: mono(400, 12.5), lh: 18 },
+    detail: { font: mono(400, 11), lh: 15, indent: 8 },
+    foot: { font: mono(400, 11), lh: 16, align: 'center' },
     pair: { font: mono(400, 12.5), lh: 19 },
-    sub: { font: mono(600, 13), lh: 20, color: C.green },
+    sub: { font: mono(600, 13), lh: 20 },
     total: { font: mono(600, 16), lh: 26 },
   };
-  const toneColor = t => t === 'muted' ? C.muted : t === 'in' ? C.green : null;
+  const toneColor = () => null;
   const wrap = (ctx, text, maxW) => {
     const out = []; let cur = '';
     String(text).split(' ').forEach(w => { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; });
@@ -1765,16 +1756,16 @@ async function receiptCanvas(r, b, calc) {
     let y = M + 22 * S;
     rows.forEach(row => {
       if (row.t === 'gap') { y += row.h * S; return; }
-      if (row.t === 'dash') { y += 6 * S; if (draw) line(ctx, M + PX, M + PX + IW, y, true, 1, C.line); y += 8 * S; return; }
+      if (row.t === 'dash') { y += 6 * S; if (draw) line(ctx, M + PX, M + PX + IW, y, true, 1, C.ink); y += 8 * S; return; }
       if (row.t === 'section') {
         y += 20 * S; ctx.font = mono(600, 11);
         // letras espaçadas como na tela (0,16em), desenhadas uma a uma
         const sp = 11 * .16 * S, chars = [...row.text], ws = chars.map(ch => ctx.measureText(ch).width);
         const tw = ws.reduce((a, w) => a + w, 0) + sp * (chars.length - 1), cx = M + W / 2;
         if (draw) {
-          ctx.fillStyle = C.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
           let x = cx - tw / 2; chars.forEach((ch, i) => { ctx.fillText(ch, x, y); x += ws[i] + sp; });
-          line(ctx, M + PX, cx - tw / 2 - 8 * S, y, true, 1, C.line); line(ctx, cx + tw / 2 + 8 * S, M + PX + IW, y, true, 1, C.line);
+          line(ctx, M + PX, cx - tw / 2 - 8 * S, y, true, 1, C.ink); line(ctx, cx + tw / 2 + 8 * S, M + PX + IW, y, true, 1, C.ink);
         }
         y += 10 * S; return;
       }
@@ -1782,7 +1773,7 @@ async function receiptCanvas(r, b, calc) {
         y += 10 * S; const size = 150 * S;
         if (draw) drawQR(ctx, row.m, M + (W - size) / 2, y, size, C.paper, C.ink);
         y += size + 4 * S; ctx.font = mono(400, 11);
-        if (draw) { ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(row.label, M + W / 2, y + 12 * S); }
+        if (draw) { ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(row.label, M + W / 2, y + 12 * S); }
         y += 18 * S; return;
       }
       const lk = look[row.t === 'center' && row.small ? 'small' : row.t]; if (!lk) return;
@@ -2481,8 +2472,14 @@ function bindGroups(v, d) {
       return act(pickSel, box.dataset.drop);
     }
     if (!box) return;
-    selPay = selPay === box.dataset.unit ? null : box.dataset.unit; render({ preserve: true });
+    const multi = box.classList.contains('group'), mem = e.target.closest('[data-mem]');
+    const key = !multi ? box.dataset.unit : mem ? mem.dataset.mem : 'g:' + box.dataset.unit;
+    selPay = selPay === key ? null : key; render({ preserve: true });
   });
+  $$('[data-ungroup-all]', card).forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation(); const g = cleanGroups(d).find(x => x.id === b.dataset.ungroupAll); if (!g) return;
+    g.members.forEach(pid => leaveGroup(d, pid)); selPay = null; pickSel = null; commit(); toast('Grupo desfeito.');
+  }));
   // segurar e arrastar o cartão inteiro (no computador, basta arrastar)
   card.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) return dragCancel();
@@ -2500,12 +2497,13 @@ const c_groupOf = (d, pid) => cleanGroups(d).find(g => g.members.includes(pid))?
 // arrastar cartões de pagamento: segurar um instante levanta o cartão; deslizar sem segurar rola a página
 const drag = { pend: null, timer: 0, on: null, x: 0, y: 0, ghost: null, over: null, raf: 0, droppedAt: 0 };
 function dragSource(el) {
-  if (!el.closest || el.closest('button, input, select, textarea, label, a, .switch')) return null;
+  // as linhas com chave também levantam o cartão; só a chave e os botões ficam de fora
+  if (!el.closest || el.closest('button, input, select, textarea, a, .switch, label:not(.prow)')) return null;
   const box = el.closest('#groups-card [data-unit]'); if (!box || pickSel) return null;
   const c = compute(draft), u = c.U[box.dataset.unit]; if (!u) return null;
   const multi = u.members.length > 1;
   // num cupom compartilhado, segurar a parte de uma pessoa leva só ela; segurar o topo leva o grupo todo
-  const m = multi && (el.closest('[data-drag]')?.dataset.drag || el.closest('[data-mem]')?.dataset.mem);
+  const m = multi && el.closest('[data-mem]')?.dataset.mem;
   const pids = !multi ? [u.members[0]] : m ? [m] : [...u.members];
   return { unit: u.id, pids, group: multi, whole: multi && pids.length > 1 };
 }
@@ -2590,14 +2588,7 @@ function paymentHTML(d, c) {
   if (!c.missingPayer && c.payDiff < 0) warn = `<div class="status warn">${I.warn}<span>Faltam <b>${BRL(-c.payDiff)}</b> para cobrir o total de ${BRL(c.total)}. Ajuste os valores personalizados.</span></div>`;
   if (c.payDiff > 0) warn = `<div class="status warn">${I.warn}<span>Os valores personalizados passam <b>${BRL(c.payDiff)}</b> do total de ${BRL(c.total)}.</span></div>`;
 
-  const chip = (pid, u) => {
-    const multi = u.members.length > 1, isPayer = u.payers.includes(pid);
-    return `<span class="pchip ${multi ? 'in' : 'solo'} ${pickSel === pid ? 'picked' : ''}" data-drag="${pid}">
-      ${avatar(nm(pid))}<span class="pc-name">${esc(nm(pid))}</span>
-      ${multi ? `<button class="pay-t" data-payer-t="${pid}" aria-pressed="${isPayer}" aria-label="${isPayer ? 'Responsável pelo pagamento' : 'Tornar responsável pelo pagamento'}">${isPayer ? 'paga' : 'não paga'}</button>` : ''}
-    </span>`;
-  };
-  // ações do cartão selecionado (quem paga a conta inteira cobre o restante e não escolhe outro valor)
+  // ações de quem foi tocado (quem paga a conta inteira cobre o restante e não escolhe outro valor)
   const actions = (pid, u) => {
     const multi = u.members.length > 1, custom = c.per[pid].custom;
     const val = c.payer === pid || !u.payers.includes(pid) ? '' : custom
@@ -2605,36 +2596,45 @@ function paymentHTML(d, c) {
       : `<button class="btn small ghost" data-cv="${pid}">${I.edit}Pagar outro valor</button>`;
     const grp = multi ? `<button class="btn small ghost" data-ungroup="${pid}">${I.x}Sair do grupo</button>`
       : c.units.length > 1 ? `<button class="btn small ghost" data-join="${pid}">${I.users}Juntar com…</button>` : '';
-    return val || grp ? `<div class="uact">${multi ? `<span class="uact-who">${first(pid)}</span>` : ''}<span class="grp">${val}${grp}</span></div>` : '';
+    return val || grp ? `<div class="uact"><span class="grp">${val}${grp}</span></div>` : '';
+  };
+  // uma linha por informação: rótulo, valor e, quando houver, a chave da pessoa
+  const row = (label, value, ctl = '', off = false) => `<div class="prow${off ? ' off' : ''}"><span class="pl">${label}</span><span class="pv num">${value}</span><span class="pc">${ctl}</span></div>`;
+  const swRow = (label, value, attr, on) => `<label class="prow sw${on ? '' : ' off'}"><span class="pl">${label}</span><span class="pv num">${on ? value : 'não paga'}</span><span class="pc"><span class="switch"><input type="checkbox" ${attr} ${on ? 'checked' : ''} aria-label="${esc(label)}"><span class="track"></span></span></span></label>`;
+  // a pessoa: cabeçalho, linhas de valores e o que ela faz com o dinheiro; tudo num bloco só
+  const member = (pid, u) => {
+    const multi = u.members.length > 1, p = c.per[pid], plan = planOf(c, pid), isPayer = u.payers.includes(pid);
+    const sel = selPay === pid && !pickSel;
+    let h = `<div class="mhead">${avatar(nm(pid))}<span class="mname">${esc(nm(pid))}</span>
+      ${multi ? `<button class="pay-t" data-payer-t="${pid}" aria-pressed="${isPayer}" aria-label="${isPayer ? 'Paga o cupom. Tocar para não pagar' : 'Não paga o cupom. Tocar para pagar'}">${isPayer ? 'paga' : 'não paga'}</button>` : ''}
+      <b class="num mtotal">${BRL(p.total)}</b></div>
+      <div class="prows">${row('Consumo', BRL(p.gross))}${p.discount ? row('Desconto', '−' + BRL(p.discount)) : ''}
+      ${d.service.enabled ? swRow(serviceLabel(d), BRL(p.service), `data-pay-svc="${pid}"`, p.person.payService) : ''}
+      ${d.couvert.enabled ? swRow('Couvert', BRL(p.couvert), `data-pay-cv="${pid}"`, p.person.payCouvert) : ''}</div>`;
+    if (p.custom) h += `<div class="cv-row"><label for="cv-${pid}">Vai pagar</label><input id="cv-${pid}" data-custom="${pid}" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${moneyInput(d.custom[pid] || 0)}" data-keep><span class="hint">Parte na conta: ${BRL(p.share)}. A diferença é acertada entre vocês.</span></div>`;
+    const gap = p.custom && d.payMode !== 'single' ? p.share - (d.custom[pid] || 0) : 0;
+    if (gap > 0) {
+      const opts = c.ids.filter(id => id !== pid && !c.per[id].custom && c.per[id].share > 0);
+      if (opts.length) h += `<div class="cover-row"><span class="eyebrow">Quem cobre os ${BRL(gap)} que faltam?</span><div class="chips">
+        <button class="chip" data-cover="${pid}" data-to="" aria-pressed="${!c.coverOf[pid]}">Todos</button>
+        ${opts.map(id => `<button class="chip" data-cover="${pid}" data-to="${id}" aria-pressed="${c.coverOf[pid] === id}">${esc(nm(id).split(' ')[0])}</button>`).join('')}</div></div>`;
+    }
+    // "paga ao local" só aparece quando diz algo novo: quem paga só a própria parte já está no valor do topo
+    const plain = d.payMode !== 'single' && !p.custom && u.payers.length === 1;
+    const lines = plan.filter(x => !(x.k === 'place' && plain && x.v === p.share));
+    if (lines.length) h += `<div class="plan">${lines.map(x => `<div class="urow ${x.k === 'in' ? 'recv' : ''}"><span>${esc(cap(x.t)).replace(/R\$\s?[\d.]+,\d{2}/, m => `<b class="num">${m}</b>`)}</span>${x.k === 'out' && debts.some(z => z.pid === pid) ? `<button class="btn small ghost pix-btn" data-pixpay="${pid}">Pix</button>` : ''}</div>`).join('')}</div>`;
+    if (plan.some(x => x.k === 'in')) h += `<div class="pix-row"><label for="pix-${pid}">Pix de ${first(pid)}</label><input id="pix-${pid}" type="text" data-pix="${esc(nm(pid))}" value="${esc(pixOf(nm(pid)))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocomplete="off" autocapitalize="off" spellcheck="false" data-keep></div>`;
+    if (sel) h += actions(pid, u);
+    return `<div class="umem${sel && multi ? ' sel' : ''}" data-mem="${pid}">${h}</div>`;
   };
   const unitBox = u => {
     const multi = u.members.length > 1;
-    const lines = u.members.map(pid => {
-      const p = c.per[pid], plan = planOf(c, pid), who = multi ? `<b>${first(pid)}</b> ` : '';
-      let h = `<div class="pdetail">${multi ? `<span class="pd-name">${first(pid)} · <b class="num">${BRL(p.total)}</b></span>` : ''}<span class="num">Consumo ${BRL(p.gross)}</span>${p.discount ? `<span class="num">Desconto −${BRL(p.discount)}</span>` : ''}
-        ${d.service.enabled ? `<label class="switch"><input type="checkbox" data-pay-svc="${pid}" ${p.person.payService ? 'checked' : ''}><span class="track"></span>Serviço <span class="num">${BRL(p.service)}</span></label>` : ''}
-        ${d.couvert.enabled ? `<label class="switch"><input type="checkbox" data-pay-cv="${pid}" ${p.person.payCouvert ? 'checked' : ''}><span class="track"></span>Couvert</label>` : ''}</div>`;
-      if (p.custom) h += `<div class="cv-row"><label for="cv-${pid}">${multi ? first(pid) + ' vai' : 'Vai'} pagar</label><input id="cv-${pid}" data-custom="${pid}" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${moneyInput(d.custom[pid] || 0)}" data-keep><span class="hint">Parte na conta: ${BRL(p.share)}. A diferença é acertada entre vocês.</span></div>`;
-      const gap = p.custom && d.payMode !== 'single' ? p.share - (d.custom[pid] || 0) : 0;
-      if (gap > 0) {
-        const opts = c.ids.filter(id => id !== pid && !c.per[id].custom && c.per[id].share > 0);
-        if (opts.length) h += `<div class="cover-row"><span class="eyebrow">Quem cobre os ${BRL(gap)} que faltam?</span><div class="chips">
-          <button class="chip" data-cover="${pid}" data-to="" aria-pressed="${!c.coverOf[pid]}">Todos</button>
-          ${opts.map(id => `<button class="chip" data-cover="${pid}" data-to="${id}" aria-pressed="${c.coverOf[pid] === id}">${esc(nm(id).split(' ')[0])}</button>`).join('')}</div></div>`;
-      }
-      if (!plan.length) h += `<div class="urow"><span class="hint">${who}não paga nada</span></div>`;
-      plan.forEach(x => {
-        h += `<div class="urow ${x.k === 'in' ? 'recv' : ''}"><span>${who}${esc(x.t).replace(/R\$\s?[\d.]+,\d{2}/, m => `<b class="num">${m}</b>`)}</span>${x.k === 'out' && debts.some(z => z.pid === pid) ? `<button class="btn small ghost pix-btn" data-pixpay="${pid}">Pix</button>` : ''}</div>`;
-      });
-      if (plan.some(x => x.k === 'in')) h += `<div class="pix-row"><label for="pix-${pid}">Pix de ${first(pid)}</label><input id="pix-${pid}" type="text" data-pix="${esc(nm(pid))}" value="${esc(pixOf(nm(pid)))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocomplete="off" autocapitalize="off" spellcheck="false" data-keep></div>`;
-      if (selPay === u.id && !pickSel) h += actions(pid, u);
-      return `<div class="umem" data-mem="${pid}">${h}</div>`;
-    }).join('');
     const picking = pickSel && u.members.includes(pickSel);
-    return `<div class="ubox ${multi ? 'group' : ''} ${selPay === u.id && !pickSel ? 'sel' : ''} ${pickSel && !picking ? 'target' : ''} ${picking ? 'picking' : ''}" data-unit="${u.id}" data-drop="${multi ? 'g:' + u.id : 'p:' + u.id}">
-      ${multi ? `<div class="ubox-tagline"><span class="ubox-tag">Cupom compartilhado${u.payers.length > 1 ? ` · ${u.payers.length} pagam` : ''}</span><b class="num ubox-total">${BRL(u.total)}</b></div>` : ''}
-      <div class="ubox-head"><div class="ubox-people">${u.members.map(m => chip(m, u)).join('')}</div>${multi ? '' : `<b class="num ubox-total">${BRL(u.total)}</b>`}</div>
-      ${lines}
+    const sel = !pickSel && (multi ? selPay === 'g:' + u.id : selPay === u.id);
+    const head = multi ? `<div class="ghead" data-ghead><span class="ubox-tag">Cupom compartilhado</span><b class="num">${BRL(u.total)}</b></div>` : '';
+    const gact = multi && sel ? `<div class="uact"><span class="grp"><button class="btn small ghost" data-ungroup-all="${u.id}">${I.x}Desfazer grupo</button></span></div>` : '';
+    return `<div class="ubox ${multi ? 'group' : ''} ${sel ? 'sel' : ''} ${pickSel && !picking ? 'target' : ''} ${picking ? 'picking' : ''}" data-unit="${u.id}" data-drop="${multi ? 'g:' + u.id : 'p:' + u.id}">
+      ${head}${u.members.map(m => member(m, u)).join('')}${gact}
     </div>`;
   };
 
@@ -3060,7 +3060,7 @@ const TOUR = [
   { tab: 'fechar', sel: '#fq-card', skip: true, t: 'Cortesia', d: 'Informe quantas unidades o lugar não cobrou. O desconto sai da parte de quem consumiu aquele produto.' },
   { tab: 'fechar', sel: '.adj', skip: true, t: 'Couvert e desconto', d: 'Inclua couvert artístico por pessoa e descontos em reais ou em porcentagem, antes ou depois do serviço.' },
   { tab: 'fechar', sel: '#groups-card .seg', t: 'Quem paga a conta', d: 'Cada um paga a sua parte, ou uma pessoa paga tudo e os outros acertam com ela depois.' },
-  { tab: 'fechar', sel: '.ubox', t: 'Quanto cada um paga', d: 'Toque no cartão de uma pessoa para ela pagar outro valor ou juntar com alguém num cupom só. Para juntar mais rápido, segure o cartão e arraste sobre o de outra pessoa. Desligue Serviço de quem não deve pagar.' },
+  { tab: 'fechar', sel: '.ubox', t: 'Quanto cada um paga', d: 'Toque numa pessoa para ela pagar outro valor ou juntar com alguém num cupom só. Para juntar mais rápido, segure o cartão e arraste sobre o de outra pessoa. Desligue Serviço de quem não deve pagar.' },
   { tab: 'fechar', sel: '.pix-btn', skip: true, t: 'Pagar com Pix', d: 'O app gera o Pix copia e cola e o QR code já com o valor certo. A chave de quem recebe fica salva no cadastro da pessoa.' },
   { tab: 'fechar', sel: '.receipt-wrap', t: 'Cupons', d: 'Cada pessoa recebe um cupom com o que consumiu. Compartilhe como imagem, PDF ou texto.' },
   { tab: 'fechar', sel: '#save-bill', t: 'Salvar e encerrar', d: 'Guarda a comanda no histórico e deixa o app pronto para a próxima. No exemplo, nada é salvo.' },
