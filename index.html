@@ -162,23 +162,28 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .policy-note b{color:var(--ink)}
 
 /* receipts */
-.receipts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;align-items:start}
+.receipts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px;align-items:start}
 .receipt-wrap{display:flex;flex-direction:column;gap:8px;min-width:0}
-.receipt{background:var(--paper);color:var(--paper-ink);font-family:var(--f-mono);font-size:12.5px;line-height:1.5;padding:18px 16px 22px;position:relative;
-  filter:drop-shadow(0 2px 6px rgba(0,0,0,.12));
-  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100%, conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100%;
-  -webkit-mask-composite:source-in; mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100% intersect, conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) 50% / 12px 100%}
-.receipt .rc-head{text-align:center;padding-block:4px 8px}
-.receipt .rc-head b{font-size:14px;letter-spacing:.06em;display:block}
-.receipt .rc-who{text-align:center;font-weight:600;font-size:15px;margin:6px 0 2px;font-family:var(--f-display);letter-spacing:0}
-.receipt hr{border:0;border-top:1px dashed var(--paper-line);margin:8px 0}
-.rc-line{display:flex;justify-content:space-between;gap:10px}
+.receipt{--zz:6px;--paper-accent:#1D5A3B;background:var(--paper);color:var(--paper-ink);font-family:var(--f-mono);font-size:12.5px;line-height:19px;padding:16px 20px 20px;margin-block:var(--zz);position:relative;filter:drop-shadow(0 2px 5px rgba(0,0,0,.13))}
+/* bordas serrilhadas de cupom de impressora térmica */
+.receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:var(--zz);background-size:12px var(--zz);background-repeat:repeat-x}
+.receipt::before{top:calc(-1 * var(--zz));background-image:conic-gradient(from 135deg at top,var(--paper) 90deg,#0000 0)}
+.receipt::after{bottom:calc(-1 * var(--zz));background-image:conic-gradient(from -45deg at bottom,var(--paper) 90deg,#0000 0)}
+.rc-brand{text-align:center;font-weight:600;font-size:14px;line-height:22px;color:var(--paper-accent);letter-spacing:.02em}
+.rc-center{text-align:center;line-height:18px}
+.rc-center.rc-muted{font-size:12px}
+.rc-small{font-size:11px!important;line-height:16px}
+.receipt .rc-who{text-align:center;font-family:var(--f-display);font-weight:800;font-size:20px;line-height:30px;letter-spacing:-.01em;margin-top:-2px}
+.receipt hr{border:0;border-top:1px dashed var(--paper-line);margin:6px 0 8px}
+.rc-line{display:flex;justify-content:space-between;gap:12px}
 .rc-line span:first-child{min-width:0;overflow-wrap:anywhere}
 .rc-line span:last-child{white-space:nowrap}
-.rc-detail{color:var(--paper-muted);font-size:11.5px;padding-left:8px}
-.rc-item{margin-bottom:6px}
-.rc-total{font-weight:600;font-size:15px;border-top:2px solid var(--paper-ink);padding-top:6px;margin-top:6px}
-.rc-foot{text-align:center;color:var(--paper-muted);font-size:11px;margin-top:10px}
+.rc-detail{color:var(--paper-muted);font-size:11px;line-height:15px;padding-left:8px}
+.rc-total{font-weight:600;font-size:16px;line-height:26px;border-top:2px solid var(--paper-ink);padding-top:4px;margin-top:6px}
+.rc-section{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:11px;line-height:12px;font-weight:600;letter-spacing:.16em;color:var(--paper-muted)}
+.rc-section::before,.rc-section::after{content:"";flex:1;border-top:1px dashed var(--paper-line)}
+.rc-in{color:var(--paper-accent)}
+.rc-foot{text-align:center;color:var(--paper-muted);font-size:11px;line-height:16px;margin-top:8px}
 .rc-muted{color:var(--paper-muted)}
 
 /* history */
@@ -338,8 +343,7 @@ nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);backgroun
   nav.tabs{gap:3px}
   nav.tabs button{font-size:10.5px;letter-spacing:-.01em;padding-inline:1px}
 }
-.rc-sub{display:flex;justify-content:space-between;gap:10px;font-weight:600;margin:8px 0 4px;padding-bottom:2px;border-bottom:1px dotted var(--paper-line)}
-.rc-shared{text-align:center;color:var(--paper-muted);font-size:11px;margin-bottom:2px}
+.rc-sub{font-weight:600;font-size:13px;line-height:20px;color:var(--paper-accent)}
 .who-by{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px;color:var(--muted)}
 .who-by label{font-weight:600}
 .who-by select{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:6px 8px;min-height:36px;max-width:100%;color:var(--ink)}
@@ -357,16 +361,20 @@ nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);backgroun
 .gpay b{color:var(--ink)}
 .solo-area{border:1.5px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .12s}
 .solo-area.empty{align-items:center;padding:14px}
-.pchip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 6px 4px 4px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;min-height:40px;max-width:100%}
+.pchip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 6px 4px 4px;min-height:40px;max-width:100%}
 .pchip .pc-name{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .pchip .pc-v{font-size:12px;color:var(--muted)}
 .pchip.picked{border-color:var(--mustard);box-shadow:0 0 0 3px var(--mustard-soft)}
-.pchip.dragging{opacity:.35}
 .pay-t{border:0;border-radius:99px;font-size:11.5px;font-weight:700;padding:4px 8px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .pay-t[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
 .drop-on{box-shadow:0 0 0 3px var(--mustard)}
 .pchip.drop-on{border-color:var(--mustard)}
-.drag-ghost{position:fixed;left:0;top:0;z-index:80;pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.25);opacity:.95}
+.drag-ghost{position:fixed;left:0;top:0;z-index:80;pointer-events:none;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 32px);background:var(--surface);color:var(--ink);border:1.5px solid var(--mustard);border-radius:99px;padding:5px 14px 5px 5px;box-shadow:0 14px 30px rgba(0,0,0,.28);animation:dg-in .18s cubic-bezier(.2,.8,.2,1)}
+@keyframes dg-in{from{opacity:0;scale:.85}to{opacity:1;scale:1}}
+.dg-avs{display:flex;padding-left:6px;flex:none}
+.dg-avs .avatar{width:30px;height:30px;margin-left:-6px;box-shadow:0 0 0 2px var(--surface)}
+.dg-name{font-weight:700;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.drag-ghost b{font-size:14px;white-space:nowrap}
 body.is-dragging{user-select:none;-webkit-user-select:none}
 .pick-hint{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--mustard-soft);color:var(--mustard-ink);border-radius:10px;padding:8px 10px;font-size:13.5px}
 .pick-hint > span{flex:1 1 180px}
@@ -415,9 +423,8 @@ body.is-dragging{user-select:none;-webkit-user-select:none}
 .urow.recv{color:var(--green)}
 .ubox .pix-row{grid-template-columns:auto minmax(0,1fr)}
 .drop-out{display:none;border:1.5px dashed var(--danger);color:var(--danger);border-radius:12px;padding:14px;justify-content:center;font-weight:600;font-size:13.5px}
-body.is-dragging .drop-out{display:flex}
+body.is-dragging.drag-out .drop-out{display:flex}
 .me-name{box-shadow:inset 0 -2px 0 var(--mustard)}
-.rc-pay{margin-top:8px;border:1px dashed var(--paper-ink);border-radius:6px;padding:6px 8px;text-align:center;font-weight:600}
 
 /* estatísticas */
 .stats-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -548,7 +555,11 @@ body.is-dragging .drop-out{display:flex}
 .code-box{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface);border-radius:12px;padding:12px 12px 14px;box-shadow:inset 0 0 0 1px var(--line)}
 .code-val{display:flex;gap:.5em;font-family:var(--f-mono);font-weight:600;font-size:28px;letter-spacing:.12em;color:var(--ink);user-select:all;-webkit-user-select:all}
 .qr-wrap.sm canvas{width:min(190px,52vw)}
-.ubox{cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.ubox{cursor:pointer;transition:box-shadow .15s,border-color .15s,opacity .15s,transform .15s;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.ubox input{-webkit-user-select:text;user-select:text}
+.umem{display:flex;flex-direction:column;gap:8px}
+.ubox.lifting{opacity:.4;transform:scale(.98)}
+.ubox.drop-on{border-color:var(--mustard);box-shadow:0 0 0 3px var(--mustard)}
 .ubox.sel{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
 .ubox.group.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 30%,transparent)}
 .ubox.target{border-style:dashed;border-color:var(--mustard)}
@@ -1316,15 +1327,22 @@ function planOf(c, pid) {
   return L;
 }
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-function payNote(r, c) {
+// pagamento no cupom: o que cada pessoa faz com o dinheiro, nas mesmas linhas de valor do cupom
+function payRows(r, c) {
   const u = c.U && c.U[r.id]; if (!u) return [];
-  const first = pid => c.per[pid].person.name.split(' ')[0];
-  const multi = u.members.length > 1, L = [];
+  const multi = u.members.length > 1, name = pid => c.per[pid].person.name, first = pid => name(pid).split(' ')[0];
+  const debts = pixDebts(c).filter(x => x.unit === r.id);
+  const rows = [];
   u.members.forEach(pid => planOf(c, pid).forEach(x => {
-    L.push(multi ? `${first(pid)} ${x.t}` : cap(x.t));
-    const k = x.k === 'out' && pixOf(c.per[x.to].person.name); if (k) L.push('Pix: ' + k);
+    const what = x.k === 'place' ? (c.payer === pid ? 'paga a conta' : 'paga ao local') : x.k === 'out' ? 'paga para ' + name(x.to) : 'recebe de ' + name(x.from);
+    rows.push({ t: 'pair', left: multi ? first(pid) + ' ' + what : cap(what), right: BRL(x.v), tone: x.k === 'in' ? 'in' : '' });
+    const k = x.k === 'out' && pixOf(name(x.to));
+    if (k) rows.push({ t: 'detail', text: 'Pix: ' + k, qr: debts.length === 1 ? debts.find(z => z.pid === pid && z.toName === name(x.to)) : null });
   }));
-  return L;
+  // quem só paga o próprio total ao local não precisa da seção: o TOTAL já diz tudo
+  const plan = !multi && planOf(c, u.members[0]);
+  if (plan && plan.length === 1 && plan[0].k === 'place' && c.payer !== u.members[0] && plan[0].v === r.total) return [];
+  return rows;
 }
 // chave Pix guardada no cadastro da pessoa
 const pixOf = name => (draft.isExample && draft.demoPix && draft.demoPix[name]) || (catalog.people.find(p => norm(p.name) === norm(name))?.pix || '').trim();
@@ -1408,9 +1426,9 @@ async function qrMatrix(text) {
   const q = await loadQR(); const qr = q(0, 'M'); qr.addData(text); qr.make();
   const n = qr.getModuleCount(); return { n, dark: (r, c) => qr.isDark(r, c) };
 }
-function drawQR(ctx, m, x, y, size) {
+function drawQR(ctx, m, x, y, size, bg = '#FFFFFF', ink = '#000000') {
   const quiet = 2, cell = size / (m.n + quiet * 2);
-  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x, y, size, size); ctx.fillStyle = '#000000';
+  ctx.fillStyle = bg; ctx.fillRect(x, y, size, size); ctx.fillStyle = ink;
   for (let r = 0; r < m.n; r++) for (let c = 0; c < m.n; c++) if (m.dark(r, c)) ctx.fillRect(Math.floor(x + (c + quiet) * cell), Math.floor(y + (r + quiet) * cell), Math.ceil(cell), Math.ceil(cell));
 }
 function pixSheet(debt, back) {
@@ -1426,48 +1444,85 @@ function pixSheet(debt, back) {
   });
 }
 const couvertLabel = r => 'Couvert artístico' + (r.cvPayers > 1 ? ` (${r.cvPayers}×)` : '');
-function receiptHTML(r, b, calc) {
-  const p = r.person;
-  const lines = r.lines.map(l => l.header
-    ? `<div class="rc-sub"><span>${esc(l.header)}</span><span>${BRL(l.value)}</span></div>`
-    : `<div class="rc-item"><div class="rc-line"><span>${esc(l.name)}</span><span>${BRL(l.value)}</span></div>
-    <div class="rc-detail">${esc(lineDetail(l))}</div></div>`).join('') || '<div class="rc-muted">Nenhum item consumido</div>';
-  let mid = '';
-  const dsLine = r.discount > 0 ? `<div class="rc-line"><span>Desconto${b.discount.at === 'after' ? ' (sobre o total)' : ''}</span><span>−${BRL(r.discount)}</span></div>` : '';
-  if (b.discount.at !== 'after') mid += dsLine;
+// o cupom é montado uma vez e desenhado igual na tela, na imagem, no PDF e no texto
+function receiptRows(r, b, calc) {
+  const p = r.person, R = [], add = (t, o = {}) => R.push({ t, ...o });
+  add('brand', { text: 'CONTA FÁCIL' });
+  add('center', { text: b.place || 'Comanda' });
+  add('center', { text: fmtDateTime(b.closedAt || b.createdAt), tone: 'muted' });
+  add('dash');
+  add('who', { text: p.name });
+  if (r.members && r.members.length > 1) add('center', { text: `Cupom compartilhado · ${r.members.length} pessoas`, tone: 'muted', small: true });
+  add('dash');
+  if (!r.lines.length) add('note', { text: 'Nenhum item consumido' });
+  r.lines.forEach((l, i) => {
+    if (l.header) { if (i) add('gap', { h: 6 }); add('sub', { left: l.header, right: BRL(l.value) }); return; }
+    add('pair', { left: l.name, right: BRL(l.value) });
+    add('detail', { text: lineDetail(l) });
+    add('gap', { h: 5 });
+  });
+  add('dash');
+  add('pair', { left: 'Consumo', right: BRL(r.gross) });
+  const ds = r.discount > 0 ? () => add('pair', { left: 'Desconto' + (b.discount.at === 'after' ? ' (sobre o total)' : ''), right: '−' + BRL(r.discount) }) : null;
+  if (ds && b.discount.at !== 'after') ds();
   if (b.service.enabled) {
-    if (!p.payService) mid += `<div class="rc-line rc-muted"><span>${serviceLabel(b)} · não paga</span><span>${BRL(0)}</span></div>`;
+    if (!p.payService) add('pair', { left: serviceLabel(b) + ' · não paga', right: BRL(0), tone: 'muted' });
     else {
-      const extra = r.service - r.serviceNominal;
-      mid += `<div class="rc-line"><span>${serviceLabel(b)}</span><span>${BRL(r.service)}</span></div>` + (extra > 0 ? `<div class="rc-detail">inclui ${BRL(extra)} redistribuídos</div>` : '');
+      add('pair', { left: serviceLabel(b), right: BRL(r.service) });
+      const extra = r.service - r.serviceNominal; if (extra > 0) add('detail', { text: `inclui ${BRL(extra)} redistribuídos` });
     }
   }
-  if (b.couvert.enabled) mid += p.payCouvert ? `<div class="rc-line"><span>${couvertLabel(r)}</span><span>${BRL(r.couvert)}</span></div>` : `<div class="rc-line rc-muted"><span>Couvert · não paga</span><span>${BRL(0)}</span></div>`;
-  if (b.discount.at === 'after') mid += dsLine;
-  const pay = payNote(r, calc);
-  return `<div class="receipt">
-    <div class="rc-head"><b>CONTA FÁCIL</b>${esc(b.place || 'Comanda')}<br>${fmtDateTime(b.closedAt || b.createdAt)}</div>
-    <hr><div class="rc-who">${esc(p.name)}</div>${r.members && r.members.length > 1 ? `<div class="rc-shared">Cupom compartilhado · ${r.members.length} pessoas</div>` : ''}<hr>
-    ${lines}<hr>
-    <div class="rc-line"><span>Consumo</span><span>${BRL(r.gross)}</span></div>${mid}
-    <div class="rc-line rc-total"><span>TOTAL</span><span>${BRL(r.total)}</span></div>
-    ${pay.length ? `<div class="rc-pay">${pay.map(esc).join('<br>')}</div>` : ''}
-    <div class="rc-foot">Total da comanda: ${BRL(calc.total)} · ${plural(b.people.length, 'pessoa', 'pessoas')}</div>
-  </div>`;
+  if (b.couvert.enabled) add('pair', p.payCouvert ? { left: couvertLabel(r), right: BRL(r.couvert) } : { left: 'Couvert · não paga', right: BRL(0), tone: 'muted' });
+  if (ds && b.discount.at === 'after') ds();
+  add('total', { left: 'TOTAL', right: BRL(r.total) });
+  const pay = payRows(r, calc);
+  if (pay.length) { add('section', { text: 'PAGAMENTO' }); pay.forEach(x => R.push(x)); }
+  add('foot', { text: `Total da comanda: ${BRL(calc.total)} · ${plural(b.people.length, 'pessoa', 'pessoas')}` });
+  return R;
+}
+function receiptHTML(r, b, calc) {
+  const body = receiptRows(r, b, calc).map(x => {
+    const tone = x.tone ? ' rc-' + x.tone : '';
+    switch (x.t) {
+      case 'brand': return `<div class="rc-brand">${esc(x.text)}</div>`;
+      case 'center': return `<div class="rc-center${tone}${x.small ? ' rc-small' : ''}">${esc(x.text)}</div>`;
+      case 'who': return `<div class="rc-who">${esc(x.text)}</div>`;
+      case 'dash': return '<hr>';
+      case 'gap': return `<div style="height:${x.h}px"></div>`;
+      case 'note': return `<div class="rc-muted">${esc(x.text)}</div>`;
+      case 'sub': return `<div class="rc-line rc-sub"><span>${esc(x.left)}</span><span>${esc(x.right)}</span></div>`;
+      case 'pair': return `<div class="rc-line${tone}"><span>${esc(x.left)}</span><span>${esc(x.right)}</span></div>`;
+      case 'detail': return `<div class="rc-detail">${esc(x.text)}</div>`;
+      case 'total': return `<div class="rc-line rc-total"><span>${esc(x.left)}</span><span>${esc(x.right)}</span></div>`;
+      case 'section': return `<div class="rc-section">${esc(x.text)}</div>`;
+      case 'foot': return `<div class="rc-foot">${esc(x.text)}</div>`;
+    }
+    return '';
+  }).join('');
+  return `<div class="receipt">${body}</div>`;
 }
 function receiptText(r, b, calc) {
   const W = 34, pad = (a, z) => { a = String(a); z = String(z); return a + ' '.repeat(Math.max(1, W - a.length - z.length)) + z; };
-  const L = ['CONTA FÁCIL — ' + (b.place || 'Comanda'), fmtDateTime(b.closedAt || b.createdAt), 'Cupom de: ' + r.person.name, '-'.repeat(W)];
-  r.lines.forEach(l => { if (l.header) { L.push('', '== ' + l.header + ' (' + BRL(l.value) + ')'); return; } L.push(pad(l.name.slice(0, W - 12), BRL(l.value))); L.push('  ' + lineDetail(l)); });
-  if (!r.lines.length) L.push('Nenhum item consumido');
-  L.push('-'.repeat(W), pad('Consumo', BRL(r.gross)));
-  const dsT = r.discount > 0 ? pad('Desconto' + (b.discount.at === 'after' ? ' (total)' : ''), '−' + BRL(r.discount)) : null;
-  if (dsT && b.discount.at !== 'after') L.push(dsT);
-  if (b.service.enabled) L.push(pad(serviceLabel(b) + (r.person.payService ? '' : ' · não paga'), BRL(r.service)));
-  if (b.couvert.enabled) L.push(pad('Couvert' + (r.cvPayers > 1 ? ` (${r.cvPayers}x)` : '') + (r.person.payCouvert ? '' : ' · não paga'), BRL(r.couvert)));
-  if (dsT && b.discount.at === 'after') L.push(dsT);
-  L.push(pad('TOTAL', BRL(r.total)));
-  payNote(r, calc).forEach(x => L.push('>> ' + x));
+  const L = [];
+  receiptRows(r, b, calc).forEach(x => {
+    switch (x.t) {
+      case 'brand': case 'center': L.push(x.text); break;
+      case 'foot': L.push('', x.text); break;
+      case 'who': L.push('Cupom de: ' + x.text); break;
+      case 'dash': L.push('-'.repeat(W)); break;
+      case 'note': L.push(x.text); break;
+      case 'sub': if (!L[L.length - 1].startsWith('---')) L.push(''); L.push(pad(x.left.toUpperCase().slice(0, W - 12), x.right)); break;
+      case 'pair': {
+        const room = W - x.right.length - 1;
+        if (x.left.length <= room) L.push(pad(x.left, x.right));
+        else { L.push(x.left); L.push(pad('', x.right)); }
+        break;
+      }
+      case 'detail': L.push('  ' + x.text); break;
+      case 'total': L.push('='.repeat(W), pad(x.left, x.right)); break;
+      case 'section': { const t = ' ' + x.text + ' ', l = Math.floor((W - t.length) / 2); L.push('', '-'.repeat(l) + t + '-'.repeat(W - l - t.length)); break; }
+    }
+  });
   pixDebts(calc).filter(x => x.unit === r.id).forEach(x => L.push('', `Pix copia e cola (${calc.per[x.pid].person.name}, ${BRL(x.value)}):`, pixPayload(x.key, x.toName, x.value)));
   return L.join('\n');
 }
@@ -1681,90 +1736,76 @@ async function receiptCanvas(r, b, calc) {
   const C = { bg: '#EAF0EA', paper: '#FFFDF5', ink: '#24221C', muted: '#6E6858', line: '#CFC7B2', green: '#1D5A3B' };
   const mono = (w, px) => `${w} ${px * S}px "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace`;
   const disp = px => `800 ${px * S}px "Bricolage Grotesque", "Figtree", system-ui, sans-serif`;
-  const rows = [];
-  const R = (t, o = {}) => rows.push({ t, ...o });
-  R('center', { text: 'CONTA FÁCIL', font: mono(600, 14), lh: 22, color: C.green });
-  R('center', { text: b.place || 'Comanda', font: mono(400, 12.5), lh: 18 });
-  R('center', { text: fmtDateTime(b.closedAt || b.createdAt), font: mono(400, 12), lh: 18, color: C.muted });
-  R('dash'); R('center', { text: r.person.name, font: disp(20), lh: 30 });
-  if (r.members && r.members.length > 1) R('center', { text: `Cupom compartilhado · ${r.members.length} pessoas`, font: mono(400, 11), lh: 16, color: C.muted });
-  R('dash');
-  if (!r.lines.length) R('left', { text: 'Nenhum item consumido', font: mono(400, 12.5), lh: 18, color: C.muted });
-  r.lines.forEach(l => { if (l.header) { R('gap', { h: 4 }); R('pair', { left: l.header, right: BRL(l.value), font: mono(600, 13), lh: 20, color: C.green }); return; } R('pair', { left: l.name, right: BRL(l.value), font: mono(400, 12.5), lh: 18 }); R('left', { text: lineDetail(l), font: mono(400, 11), lh: 15, color: C.muted, indent: 8 }); R('gap', { h: 5 }); });
-  R('dash');
-  R('pair', { left: 'Consumo', right: BRL(r.gross), font: mono(400, 12.5), lh: 19 });
-  const dsl = r.discount > 0 ? () => R('pair', { left: 'Desconto' + (b.discount.at === 'after' ? ' (sobre o total)' : ''), right: '−' + BRL(r.discount), font: mono(400, 12.5), lh: 19 }) : null;
-  if (dsl && b.discount.at !== 'after') dsl();
-  if (b.service.enabled) R('pair', { left: serviceLabel(b) + (r.person.payService ? '' : ' · não paga'), right: BRL(r.service), font: mono(400, 12.5), lh: 19, color: r.person.payService ? C.ink : C.muted });
-  if (b.couvert.enabled) R('pair', { left: couvertLabel(r) + (r.person.payCouvert ? '' : ' · não paga'), right: BRL(r.couvert), font: mono(400, 12.5), lh: 19, color: r.person.payCouvert ? C.ink : C.muted });
-  if (dsl && b.discount.at === 'after') dsl();
-  R('rule'); R('pair', { left: 'TOTAL', right: BRL(r.total), font: mono(600, 16), lh: 26 });
-  const pay = payNote(r, calc);
-  if (pay.length) R('box', { lines: pay, font: mono(600, 12.5), lh: 18 });
-  const debts = pixDebts(calc).filter(x => x.unit === r.id);
-  if (debts.length === 1) {
-    try { const m = await qrMatrix(pixPayload(debts[0].key, debts[0].toName, debts[0].value)); R('qr', { m, label: `Pix de ${BRL(debts[0].value)} para ${debts[0].toName}` }); } catch {}
+  const rows = receiptRows(r, b, calc);
+  // QR code do Pix logo abaixo da chave, quando o cupom tem um Pix só
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const q = rows[i].qr;
+    if (q) { try { rows.splice(i + 1, 0, { t: 'qr', m: await qrMatrix(pixPayload(q.key, q.toName, q.value)), label: `Pix de ${BRL(q.value)} para ${q.toName}` }); } catch {} }
   }
-  R('gap', { h: 6 });
-  R('center', { text: `Total da comanda: ${BRL(calc.total)} · ${plural(b.people.length, 'pessoa', 'pessoas')}`, font: mono(400, 11), lh: 16, color: C.muted });
-
+  const look = {
+    brand: { font: mono(600, 14), lh: 22, color: C.green, align: 'center' },
+    center: { font: mono(400, 12.5), lh: 18, align: 'center' },
+    small: { font: mono(400, 11), lh: 16, align: 'center' },
+    who: { font: disp(20), lh: 30, align: 'center' },
+    note: { font: mono(400, 12.5), lh: 18, color: C.muted },
+    detail: { font: mono(400, 11), lh: 15, color: C.muted, indent: 8 },
+    foot: { font: mono(400, 11), lh: 16, color: C.muted, align: 'center' },
+    pair: { font: mono(400, 12.5), lh: 19 },
+    sub: { font: mono(600, 13), lh: 20, color: C.green },
+    total: { font: mono(600, 16), lh: 26 },
+  };
+  const toneColor = t => t === 'muted' ? C.muted : t === 'in' ? C.green : null;
   const wrap = (ctx, text, maxW) => {
     const out = []; let cur = '';
     String(text).split(' ').forEach(w => { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; });
     if (cur) out.push(cur); return out.length ? out : [''];
   };
+  const line = (ctx, x0, x1, y, dashed, width, color) => { ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width * S; if (dashed) ctx.setLineDash([4 * S, 3 * S]); ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); ctx.restore(); };
   const pass = (ctx, draw) => {
     let y = M + 22 * S;
     rows.forEach(row => {
-      const color = row.color || C.ink;
       if (row.t === 'gap') { y += row.h * S; return; }
-      if (row.t === 'dash' || row.t === 'rule') {
-        y += 6 * S;
-        if (draw) { ctx.save(); ctx.strokeStyle = row.t === 'rule' ? C.ink : C.line; ctx.lineWidth = (row.t === 'rule' ? 2 : 1) * S; if (row.t === 'dash') ctx.setLineDash([4 * S, 3 * S]); ctx.beginPath(); ctx.moveTo(M + PX, y); ctx.lineTo(M + PX + IW, y); ctx.stroke(); ctx.restore(); }
-        y += 8 * S; return;
+      if (row.t === 'dash') { y += 6 * S; if (draw) line(ctx, M + PX, M + PX + IW, y, true, 1, C.line); y += 8 * S; return; }
+      if (row.t === 'section') {
+        y += 20 * S; ctx.font = mono(600, 11);
+        // letras espaçadas como na tela (0,16em), desenhadas uma a uma
+        const sp = 11 * .16 * S, chars = [...row.text], ws = chars.map(ch => ctx.measureText(ch).width);
+        const tw = ws.reduce((a, w) => a + w, 0) + sp * (chars.length - 1), cx = M + W / 2;
+        if (draw) {
+          ctx.fillStyle = C.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          let x = cx - tw / 2; chars.forEach((ch, i) => { ctx.fillText(ch, x, y); x += ws[i] + sp; });
+          line(ctx, M + PX, cx - tw / 2 - 8 * S, y, true, 1, C.line); line(ctx, cx + tw / 2 + 8 * S, M + PX + IW, y, true, 1, C.line);
+        }
+        y += 10 * S; return;
       }
-      ctx.font = row.font; ctx.textBaseline = 'alphabetic';
-      if (row.t === 'center' || row.t === 'left') {
-        const ind = (row.indent || 0) * S;
-        wrap(ctx, row.text, IW - ind).forEach(line => {
-          y += row.lh * S;
-          if (draw) { ctx.fillStyle = color; ctx.textAlign = row.t === 'center' ? 'center' : 'left'; ctx.fillText(line, row.t === 'center' ? M + W / 2 : M + PX + ind, y - 4 * S); }
-        });
-        return;
+      if (row.t === 'qr') {
+        y += 10 * S; const size = 150 * S;
+        if (draw) drawQR(ctx, row.m, M + (W - size) / 2, y, size, C.paper, C.ink);
+        y += size + 4 * S; ctx.font = mono(400, 11);
+        if (draw) { ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(row.label, M + W / 2, y + 12 * S); }
+        y += 18 * S; return;
       }
-      if (row.t === 'pair') {
+      const lk = look[row.t === 'center' && row.small ? 'small' : row.t]; if (!lk) return;
+      if (row.t === 'foot') y += 8 * S;
+      if (row.t === 'total') { y += 6 * S; if (draw) line(ctx, M + PX, M + PX + IW, y, false, 2, C.ink); y += 4 * S; }
+      ctx.font = lk.font; ctx.textBaseline = 'alphabetic';
+      const color = toneColor(row.tone) || lk.color || C.ink;
+      if (row.left !== undefined) {
         const rw = ctx.measureText(row.right).width;
-        const lines = wrap(ctx, row.left, IW - rw - 12 * S);
-        lines.forEach((line, i) => {
-          y += row.lh * S;
+        wrap(ctx, row.left, IW - rw - 12 * S).forEach((t, i) => {
+          y += lk.lh * S;
           if (draw) {
-            ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.fillText(line, M + PX, y - 4 * S);
-            if (i === 0) { ctx.textAlign = 'right'; ctx.fillText(row.right, M + PX + IW, y - 4 * S); }
+            ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.fillText(t, M + PX, y - 4 * S);
+            if (!i) { ctx.textAlign = 'right'; ctx.fillText(row.right, M + PX + IW, y - 4 * S); }
           }
         });
         return;
       }
-      if (row.t === 'qr') {
-        y += 10 * S; const size = 150 * S;
-        if (draw) drawQR(ctx, row.m, M + (W - size) / 2, y, size);
-        y += size + 4 * S;
-        ctx.font = mono(400, 11);
-        if (draw) { ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.fillText(row.label, M + W / 2, y + 12 * S); }
-        y += 18 * S; return;
-      }
-      if (row.t === 'box') {
-        y += 8 * S; const top = y;
-        ctx.font = row.font;
-        const lines = row.lines.flatMap(t => wrap(ctx, t, IW - 16 * S));
-        const h = (lines.length * row.lh + 12) * S;
-        if (draw) {
-          ctx.save(); ctx.strokeStyle = C.ink; ctx.setLineDash([4 * S, 3 * S]); ctx.lineWidth = 1 * S;
-          ctx.strokeRect(M + PX, top, IW, h); ctx.restore();
-          ctx.fillStyle = C.ink; ctx.textAlign = 'center';
-          lines.forEach((t, i) => ctx.fillText(t, M + W / 2, top + (6 + (i + 1) * row.lh - 4) * S));
-        }
-        y += h;
-      }
+      const ind = (lk.indent || 0) * S;
+      wrap(ctx, row.text, IW - ind).forEach(t => {
+        y += lk.lh * S;
+        if (draw) { ctx.fillStyle = color; ctx.textAlign = lk.align === 'center' ? 'center' : 'left'; ctx.fillText(t, lk.align === 'center' ? M + W / 2 : M + PX + ind, y - 4 * S); }
+      });
     });
     return y + 26 * S + M;
   };
@@ -2425,7 +2466,7 @@ function bindGroups(v, d) {
   $$('[data-join]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); pickSel = b.dataset.join; selPay = null; render({ preserve: true }); }));
   // toque no cartão: seleciona (como nos itens da comanda); depois de Juntar com…, escolhe o cupom
   card.addEventListener('click', e => {
-    if (Date.now() - dragState.droppedAt < 80) return;
+    if (Date.now() - drag.droppedAt < 350) return;
     if (e.target.closest('button, input, label, select, textarea, .switch, a')) return;
     const box = e.target.closest('[data-unit]');
     if (pickSel) {
@@ -2436,43 +2477,97 @@ function bindGroups(v, d) {
     if (!box) return;
     selPay = selPay === box.dataset.unit ? null : box.dataset.unit; render({ preserve: true });
   });
-  // arrastar e soltar (dedo ou mouse)
-  $$('[data-drag]', card).forEach(el => el.addEventListener('pointerdown', e => {
-    if (e.target.closest('button') || e.button > 0) return;
-    dragState.start = { x: e.clientX, y: e.clientY, pid: el.dataset.drag, el, id: e.pointerId };
-  }));
+  // segurar e arrastar o cartão inteiro (no computador, basta arrastar)
+  card.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return dragCancel();
+    const src = dragSource(e.target); if (!src) return;
+    const t = e.touches[0];
+    drag.pend = { ...src, x: t.clientX, y: t.clientY };
+    clearTimeout(drag.timer); drag.timer = setTimeout(() => dragStart(drag.pend.x, drag.pend.y), 320);
+  }, { passive: true });
+  card.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || e.button) return;
+    const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
+  });
 }
 const c_groupOf = (d, pid) => cleanGroups(d).find(g => g.members.includes(pid))?.id || null;
-const dragState = { start: null, ghost: null, over: null, droppedAt: 0 };
-document.addEventListener('pointermove', e => {
-  const st = dragState.start; if (!st || e.pointerId !== st.id) return;
-  if (!dragState.ghost) {
-    if (Math.hypot(e.clientX - st.x, e.clientY - st.y) < 8) return;
-    const g = st.el.cloneNode(true); g.classList.add('drag-ghost'); document.body.appendChild(g);
-    dragState.ghost = g; st.el.classList.add('dragging'); document.body.classList.add('is-dragging');
-  }
-  e.preventDefault();
-  dragState.ghost.style.transform = `translate(${e.clientX - 20}px, ${e.clientY - 20}px)`;
-  const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-drop]');
-  if (dragState.over !== under) { dragState.over?.classList.remove('drop-on'); dragState.over = under; under?.classList.add('drop-on'); }
+// arrastar cartões de pagamento: segurar um instante levanta o cartão; deslizar sem segurar rola a página
+const drag = { pend: null, timer: 0, on: null, x: 0, y: 0, ghost: null, over: null, raf: 0, droppedAt: 0 };
+function dragSource(el) {
+  if (!el.closest || el.closest('button, input, select, textarea, label, a, .switch')) return null;
+  const box = el.closest('#groups-card [data-unit]'); if (!box || pickSel) return null;
+  const c = compute(draft), u = c.U[box.dataset.unit]; if (!u) return null;
+  const multi = u.members.length > 1;
+  // num cupom compartilhado, segurar a parte de uma pessoa leva só ela; segurar o topo leva o grupo todo
+  const m = multi && (el.closest('[data-drag]')?.dataset.drag || el.closest('[data-mem]')?.dataset.mem);
+  const pids = !multi ? [u.members[0]] : m ? [m] : [...u.members];
+  return { unit: u.id, pids, group: multi, whole: multi && pids.length > 1 };
+}
+function dragCancel() { clearTimeout(drag.timer); drag.pend = null; }
+function dragStart(x, y) {
+  const p = drag.pend; dragCancel(); if (!p || drag.on) return;
+  const c = compute(draft), u = c.U[p.unit]; if (!u) return;
+  const one = p.pids.length === 1, per = one && c.per[p.pids[0]];
+  const name = one ? per.person.name : u.name, total = one ? per.total : u.total;
+  const g = document.createElement('div'); g.className = 'drag-ghost';
+  g.innerHTML = `<span class="dg-avs">${p.pids.slice(0, 3).map(id => avatar(c.per[id].person.name)).join('')}</span><span class="dg-name">${esc(name)}</span><b class="num">${BRL(total)}</b>`;
+  document.body.appendChild(g);
+  drag.on = p; drag.ghost = g;
+  document.body.classList.add('is-dragging'); document.body.classList.toggle('drag-out', p.group);
+  const out = $('.drop-out'); if (out) out.textContent = p.whole ? 'Solte aqui para desfazer o grupo' : 'Solte aqui para tirar do grupo';
+  try { navigator.vibrate?.(12); } catch {}
+  dragMove(x, y);
+  cancelAnimationFrame(drag.raf); drag.raf = requestAnimationFrame(dragScroll);
+}
+function dragTarget(x, y) {
+  const t = document.elementFromPoint(x, y)?.closest('#groups-card [data-drop]');
+  return t && t.dataset.unit !== drag.on.unit ? t : null;
+}
+function dragMove(x, y) {
+  drag.x = x; drag.y = y;
+  const g = drag.ghost; if (!g) return;
+  g.style.transform = `translate(${Math.round(x - g.offsetWidth / 2)}px, ${Math.round(y - g.offsetHeight - 34)}px)`;
+  $('#groups-card [data-unit="' + CSS.escape(drag.on.unit) + '"]')?.classList.add('lifting');
+  const t = dragTarget(x, y);
+  if (drag.over !== t) { drag.over?.classList.remove('drop-on'); drag.over = t; t?.classList.add('drop-on'); }
+}
+// perto do topo ou do pé da tela, a página rola sozinha para alcançar os outros cartões
+function dragScroll() {
+  if (!drag.on) return;
+  const top = ($('#tabs')?.getBoundingClientRect().bottom || 0) + 70, bot = window.innerHeight - 90;
+  const v = drag.y < top ? -Math.min(16, (top - drag.y) / 3) : drag.y > bot ? Math.min(16, (drag.y - bot) / 3) : 0;
+  if (v) { window.scrollBy(0, v); dragMove(drag.x, drag.y); }
+  drag.raf = requestAnimationFrame(dragScroll);
+}
+function dragEnd(drop) {
+  const p = drag.on; if (!p) return dragCancel();
+  cancelAnimationFrame(drag.raf);
+  const t = drop ? dragTarget(drag.x, drag.y) : null;
+  drag.ghost?.remove(); drag.ghost = null; drag.on = null; drag.over?.classList.remove('drop-on'); drag.over = null;
+  document.body.classList.remove('is-dragging', 'drag-out'); $$('.ubox.lifting').forEach(x => x.classList.remove('lifting'));
+  drag.droppedAt = Date.now();
+  if (!t) return;
+  const d = draft, to = t.dataset.drop; pickSel = null; selPay = null;
+  if (to === 'out') { if (!p.group) return; p.pids.forEach(pid => leaveGroup(d, pid)); commit(); toast(p.whole ? 'Grupo desfeito.' : 'Saiu do grupo.'); return; }
+  let dest = to, changed = false;
+  p.pids.forEach(pid => { if (joinGroup(d, pid, dest)) { changed = true; const gid = c_groupOf(d, pid); if (gid) dest = 'g:' + gid; } });
+  if (changed) { commit(); toast('Agora estão no mesmo cupom.'); } else render({ preserve: true });
+}
+document.addEventListener('touchmove', e => {
+  const t = e.touches[0]; if (!t) return;
+  if (drag.on) { e.preventDefault(); dragMove(t.clientX, t.clientY); return; }
+  if (drag.pend && Math.hypot(t.clientX - drag.pend.x, t.clientY - drag.pend.y) > 8) dragCancel();
 }, { passive: false });
-const endDrag = e => {
-  const st = dragState.start; if (!st || (e && e.pointerId !== st.id)) return;
-  dragState.start = null;
-  if (!dragState.ghost) return;
-  dragState.ghost.remove(); dragState.ghost = null; document.body.classList.remove('is-dragging');
-  st.el.classList.remove('dragging');
-  const over = dragState.over; dragState.over = null; over?.classList.remove('drop-on');
-  dragState.droppedAt = Date.now();
-  if (!over || e?.type === 'pointercancel') return;
-  const t = over.dataset.drop, d = draft;
-  pickSel = null;
-  if (t === 'out') { if (c_groupOf(d, st.pid)) { leaveGroup(d, st.pid); commit(); toast('Saiu do grupo.'); } return; }
-  if (t === 'p:' + st.pid) return;
-  if (joinGroup(d, st.pid, t)) { commit(); toast('Grupo atualizado.'); }
-};
-document.addEventListener('pointerup', endDrag);
-document.addEventListener('pointercancel', endDrag);
+document.addEventListener('touchend', e => { if (drag.on) { e.preventDefault(); dragEnd(true); } else dragCancel(); }, { passive: false });
+document.addEventListener('touchcancel', () => drag.on ? dragEnd(false) : dragCancel());
+document.addEventListener('contextmenu', e => { if (drag.on || drag.pend) e.preventDefault(); });
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  if (drag.on) { dragMove(e.clientX, e.clientY); return; }
+  if (drag.pend?.mouse && Math.hypot(e.clientX - drag.pend.x, e.clientY - drag.pend.y) > 6) dragStart(e.clientX, e.clientY);
+});
+document.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') return; drag.on ? dragEnd(true) : dragCancel(); });
+window.addEventListener('blur', () => drag.on && dragEnd(false));
 // cartão único de pagamento: quem pagou o local, grupos e quanto cada um paga, numa caixa por cupom
 function paymentHTML(d, c) {
   if (!c.units.length) return '';
@@ -2527,7 +2622,7 @@ function paymentHTML(d, c) {
       });
       if (plan.some(x => x.k === 'in')) h += `<div class="pix-row"><label for="pix-${pid}">Pix de ${first(pid)}</label><input id="pix-${pid}" type="text" data-pix="${esc(nm(pid))}" value="${esc(pixOf(nm(pid)))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocomplete="off" autocapitalize="off" spellcheck="false" data-keep></div>`;
       if (selPay === u.id && !pickSel) h += actions(pid, u);
-      return h;
+      return `<div class="umem" data-mem="${pid}">${h}</div>`;
     }).join('');
     const picking = pickSel && u.members.includes(pickSel);
     return `<div class="ubox ${multi ? 'group' : ''} ${selPay === u.id && !pickSel ? 'sel' : ''} ${pickSel && !picking ? 'target' : ''} ${picking ? 'picking' : ''}" data-unit="${u.id}" data-drop="${multi ? 'g:' + u.id : 'p:' + u.id}">
@@ -2588,7 +2683,8 @@ const viewFechar = {
       <div class="policy-note"><b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(ds.at === 'after' ? c.total + c.discount : c.consumoBruto)}</b></div>
     </div>`,
       fq: () => `<div class="card${fresh('fq')}" id="fq-card">
-      <div class="card-head"><h2>Cortesia</h2>${c.freeValue ? `<span class="hint num">−${BRL(c.freeValue)}</span>` : '<button class="btn small ghost" id="fq-close">Remover</button>'}</div>
+      <div class="card-head"><h2>Cortesia</h2>
+        <label class="switch"><input type="checkbox" id="fq-on" checked><span class="track"></span>Aplicar</label></div>
       <div class="who">${d.items.map(it => `<div class="who-row free-row">
         <div style="min-width:0"><div style="font-weight:600;overflow-wrap:anywhere">${esc(it.name)}</div>
           <div class="hint num">${it.qty} × ${BRL(it.price)}${it.fq ? ` · <b style="color:var(--green)">−${BRL(it.fq * it.price)}</b>` : ''}</div></div>
@@ -2596,6 +2692,7 @@ const viewFechar = {
           <span class="fq-count num">${it.fq || 0}<small>/${it.qty}</small></span>
           <button class="plus" data-fq="${it.id}" data-dir="1" ${it.fq < it.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span>
       </div>`).join('')}</div>
+      ${c.freeValue ? `<div class="policy-note"><b class="num">−${BRL(c.freeValue)}</b> em ${plural(d.items.reduce((a, it) => a + (it.fq || 0), 0), 'unidade', 'unidades')} sem cobrança</div>` : ''}
     </div>`,
     };
     return `
@@ -2700,7 +2797,15 @@ const viewFechar = {
       else { openAdj.add('fq'); render({ preserve: true, anchor }); }
       $('#' + k + '-card')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }));
-    $('#fq-close', v)?.addEventListener('click', () => { openAdj.delete('fq'); d.adjOrder = (d.adjOrder || []).filter(x => x !== 'fq'); render({ preserve: true, anchor: { from: '#fq-card', to: '#adj-area' } }); });
+    // desligar a cortesia zera as unidades marcadas; dá para desfazer logo em seguida
+    $('#fq-on', v)?.addEventListener('change', () => {
+      const before = Object.fromEntries(d.items.filter(it => it.fq).map(it => [it.id, it.fq]));
+      adjOff('fq', () => { d.items.forEach(it => { it.fq = 0; }); openAdj.delete('fq'); });
+      if (Object.keys(before).length) toast('Cortesia desligada.', { label: 'Desfazer', run: () => {
+        draft.items.forEach(it => { if (before[it.id]) it.fq = Math.min(it.qty, before[it.id]); });
+        openAdj.add('fq'); draft.adjOrder = [...(draft.adjOrder || []).filter(x => x !== 'fq'), 'fq']; commit();
+      } });
+    });
     adjFresh = null;
     // couvert
     $('#cv-on', v)?.addEventListener('change', () => adjOff('cv', () => { d.couvert.enabled = false; }));
@@ -2949,7 +3054,7 @@ const TOUR = [
   { tab: 'fechar', sel: '#fq-card', skip: true, t: 'Cortesia', d: 'Informe quantas unidades o lugar não cobrou. O desconto sai da parte de quem consumiu aquele produto.' },
   { tab: 'fechar', sel: '.adj', skip: true, t: 'Couvert e desconto', d: 'Inclua couvert artístico por pessoa e descontos em reais ou em porcentagem, antes ou depois do serviço.' },
   { tab: 'fechar', sel: '#groups-card .seg', t: 'Quem paga a conta', d: 'Cada um paga a sua parte, ou uma pessoa paga tudo e os outros acertam com ela depois.' },
-  { tab: 'fechar', sel: '.ubox', t: 'Quanto cada um paga', d: 'Toque no cartão de uma pessoa para ela pagar outro valor ou juntar com alguém num cupom só; a diferença é acertada entre vocês. Desligue Serviço de quem não deve pagar.' },
+  { tab: 'fechar', sel: '.ubox', t: 'Quanto cada um paga', d: 'Toque no cartão de uma pessoa para ela pagar outro valor ou juntar com alguém num cupom só. Para juntar mais rápido, segure o cartão e arraste sobre o de outra pessoa. Desligue Serviço de quem não deve pagar.' },
   { tab: 'fechar', sel: '.pix-btn', skip: true, t: 'Pagar com Pix', d: 'O app gera o Pix copia e cola e o QR code já com o valor certo. A chave de quem recebe fica salva no cadastro da pessoa.' },
   { tab: 'fechar', sel: '.receipt-wrap', t: 'Cupons', d: 'Cada pessoa recebe um cupom com o que consumiu. Compartilhe como imagem, PDF ou texto.' },
   { tab: 'fechar', sel: '#save-bill', t: 'Salvar e encerrar', d: 'Guarda a comanda no histórico e deixa o app pronto para a próxima. No exemplo, nada é salvo.' },
