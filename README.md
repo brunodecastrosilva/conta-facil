@@ -1,7 +1,86 @@
 # Conta Fácil
 
-Divida a comanda sem calculadora. App web instalável: no iPhone, abra o endereço no Safari e toque em **Compartilhar → Adicionar à Tela de Início**.
+Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-- `index.html` — o app inteiro
-- `fb.js` / `config.js` — conexão com o Firebase, usado só pela comanda ao vivo
-- `sw.js` / `manifest.webmanifest` / `icons/` — instalação e uso offline
+**Fase de testes** · versão 1.1.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+
+Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil e Estudo Fácil) e segue o padrão comum descrito em
+[`comum/PADRAO.md`](comum/PADRAO.md).
+
+## O que o app faz
+
+- Abra uma comanda com o nome do local; os lugares onde você já foi viram atalhos
+- Lance os pedidos e divida cada item igualmente ou por unidade, com cortesias, couvert, desconto e taxa de serviço (percentual ou valor fixo)
+- Feche a conta: quanto cada um paga, quem paga por quem, cupons em imagem, PDF ou texto e Pix copia e cola com QR code
+- **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
+- Histórico com estatísticas e cadastros de pessoas, chaves Pix e preços de cada produto em cada local
+- **Use em vários aparelhos (opcional):** histórico e cadastros sincronizados, criptografados, num gist secreto da sua conta GitHub
+- **Avalie o app e relate problemas** em Ajustes → Ajude a melhorar
+- Tema claro, escuro ou automático; funciona sem internet depois da primeira visita
+- Comanda de exemplo com um guia que mostra cada função
+
+## Como usar
+
+Abra o endereço em qualquer navegador, no celular, no tablet ou no computador. Para instalar:
+
+- **iPhone:** no Safari, toque em **Compartilhar → Adicionar à Tela de Início**
+- **Android:** no Chrome, menu **⋮ → Instalar app**
+- **Computador:** ícone de instalar na barra de endereço do Chrome ou do Edge
+
+## Onde ficam os dados
+
+| Dado | Onde fica |
+|---|---|
+| Comanda aberta, histórico, cadastros e preferências | neste aparelho (armazenamento do navegador, chaves `contafacil.*`) |
+| Comanda ao vivo (quando você liga) | Firestore do projeto no Firebase (Google), coleção `mesas` |
+| Histórico e cadastros, com a sincronização ligada | gist secreto na conta GitHub do usuário, criptografado no aparelho (AES-256) |
+| Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback` |
+
+A comanda aberta não vai para a sincronização: para dividir a mesma comanda entre celulares, use a comanda ao vivo.
+A janela **Ajustes → Sobre e privacidade** explica isso para quem usa o app.
+
+## Para desenvolver
+
+O app não tem etapa de build nem dependências: o que está no repositório é o que vai para o ar.
+O Node (22 ou mais novo) só é usado para o servidor local, os testes e a verificação do padrão.
+
+```bash
+npm start                         # abre em http://localhost:8080/conta-facil/
+npm install                       # primeira vez: instala o Playwright, usado nos testes
+npx playwright install chromium   # primeira vez: baixa o navegador dos testes
+npm test                          # testes do Kit Fácil e do app, sem internet
+npm run verificar                 # padrão do Projeto Integrador, segredos e versão
+```
+
+Os testes simulam o GitHub (sincronização) e o Firebase (avaliações); nada toca nos dados reais.
+O modo sem internet (service worker) só funciona em `https`, ou seja, no endereço publicado.
+
+## Estrutura
+
+| Arquivo | Conteúdo |
+|---|---|
+| `index.html` | o app inteiro: estrutura, estilo e código |
+| `fb.js`, `config.js` | conexão com o Firebase da comanda ao vivo |
+| `comum/` | **Kit Fácil**: avaliação, Sobre e privacidade, tema, sincronização e o padrão do projeto. Igual nos três apps: não edite só aqui |
+| `sw.js`, `manifest.webmanifest`, `icons/` | instalação e uso sem internet |
+| `tests/` | testes do app |
+
+## Serviços externos e configuração
+
+| Serviço | Para quê | Custo | O que configurar |
+|---|---|---|---|
+| Firebase (projeto `conta-facil-2c1f9`) | comanda ao vivo (Firestore e login anônimo) e avaliações | plano gratuito | publicar a regra de [`comum/regras-firestore-feedback.txt`](comum/regras-firestore-feedback.txt) para as avaliações chegarem |
+| GitHub (gist) | sincronização entre aparelhos | gratuito | nada no projeto; cada pessoa usa a própria conta |
+| Google Fonts, cdnjs, gstatic | fontes, QR code, PDF e biblioteca do Firebase | gratuito | nada |
+
+A configuração web do Firebase em `config.js` é pública por natureza (não é senha); quem protege o banco são as regras do Firestore.
+Recomendado restringir a chave por referenciador no Google Cloud (veja o `PADRAO.md`, item 9).
+
+## Publicação
+
+GitHub Pages a partir da branch `main`, pasta raiz. Antes de publicar: `npm run verificar` e `npm test`, e confira o app
+no celular e no computador. O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
+
+## Uso do código
+
+O código está público durante a fase de testes, sem licença de uso definida: todos os direitos reservados.
