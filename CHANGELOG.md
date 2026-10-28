@@ -2,6 +2,24 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.2.0 · 2026-10-27
+
+Padronização da interface e dos Ajustes com o Elétrica Fácil e o Estudo Fácil (Kit Fácil 2).
+
+- **Alto da tela:** Ajustes, a **nuvem** e o **balão** ficam no canto direito, iguais nos três apps.
+  A nuvem mostra o estado real da sincronização (sincronizado, sincronizando, pendente, erro, sem internet ou desligada);
+  tocar nela mostra a conta, a última sincronização e as ações.
+- **Balão:** escolha entre **Avaliar o app** (nota de 1 a 5 e comentário opcional) e **Relatar um problema**
+  (descrição, com categoria e gravidade opcionais).
+- **Navegação:** as abas saíram do topo e foram para a barra de baixo no celular e no tablet; no computador viram um menu lateral.
+- **Ajustes em guias:** as oito guias comuns da família, na mesma ordem dos outros apps, e a guia **Comandas**.
+  No computador, a lista e a guia aberta ficam lado a lado. "Você nas comandas" foi para Conta e perfil.
+- **Privacidade e segurança:** novo botão para apagar os dados deste aparelho (não mexe na nuvem).
+- **Fonte comum da família** (Atkinson Hyperlegible, feita para leitura fácil); o cupom continua com a fonte de impressora.
+- O indicador antigo do topo ("só neste aparelho" / "comanda ao vivo") deu lugar à nuvem; o estado da comanda ao vivo
+  continua no painel da própria comanda e na guia Ajustes → Comandas.
+- A cópia de segurança antiga (1.1.0) continua sendo aceita na restauração.
+
 ## 1.1.0 · 2026-10-26
 
 Adequação às diretrizes do Projeto Integrador.

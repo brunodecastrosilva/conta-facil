@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box}html{scroll-padding-top:calc(var(--kf-barra-h,60px) + env(safe-area-inset-top,0px))}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <title>Conta Fácil</title>
 <meta name="description" content="Divida a comanda sem calculadora">
 <meta name="theme-color" content="#EAF0EA" media="(prefers-color-scheme: light)">
@@ -10,33 +10,36 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-</head><body>
+</head><body class="kf-casca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400..700&family=Atkinson+Hyperlegible+Next:wght@400..800&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="comum/kit-facil.css">
 <style>
 /* Layout: coluna única estilo app de bolso; comanda de boteco (verde azulejo + chopp) e cupons em papel térmico */
 :root{
   --bg:#EAF0EA; --surface:#FFFFFF; --surface-2:#F3F7F2; --line:#D2DCD3;
   --ink:#14241B; --muted:#56695D; --green:#1D5A3B; --green-ink:#FFFFFF; --green-soft:#DCEBE1;
-  --mustard:#D3931A; --mustard-soft:#FBEFD2; --mustard-ink:#5A3D05; --danger:#B0382A; --danger-soft:#F8E1DD;
+  --mustard:#D3931A; --mustard-soft:#FBEFD2; --mustard-ink:#5A3D05; --danger:var(--kf-bad); --danger-soft:var(--kf-bad-soft);
   --paper:#FFFDF5; --paper-ink:#24221C; --paper-muted:#6E6858; --paper-line:#CFC7B2;
   --shadow:0 1px 2px rgba(20,36,27,.06),0 6px 18px rgba(20,36,27,.06);
-  --f-display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
-  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  /* fontes do sistema de design comum (comum/kit-facil.css); o cupom usa uma fonte de impressora térmica */
+  --f-display:var(--kf-font-display);
+  --f-body:var(--kf-font);
+  --f-mono:var(--kf-font-mono);
+  --f-cupom:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
   --r:14px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0D1712; --surface:#15221B; --surface-2:#1B2B22; --line:#2A3E32;
   --ink:#E4EEE7; --muted:#92A799; --green:#46A272; --green-ink:#06120B; --green-soft:#1C3A2A;
-  --mustard:#E9B24C; --mustard-soft:#3A2E15; --mustard-ink:#F6DDA6; --danger:#E77B69; --danger-soft:#3D1E19;
+  --mustard:#E9B24C; --mustard-soft:#3A2E15; --mustard-ink:#F6DDA6; --danger:var(--kf-bad); --danger-soft:var(--kf-bad-soft);
   --paper:#ECE6D6; --paper-ink:#1E1C17; --paper-muted:#5F5A4C; --paper-line:#B9B09A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.25); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0D1712; --surface:#15221B; --surface-2:#1B2B22; --line:#2A3E32;
   --ink:#E4EEE7; --muted:#92A799; --green:#46A272; --green-ink:#06120B; --green-soft:#1C3A2A;
-  --mustard:#E9B24C; --mustard-soft:#3A2E15; --mustard-ink:#F6DDA6; --danger:#E77B69; --danger-soft:#3D1E19;
+  --mustard:#E9B24C; --mustard-soft:#3A2E15; --mustard-ink:#F6DDA6; --danger:var(--kf-bad); --danger-soft:var(--kf-bad-soft);
   --paper:#ECE6D6; --paper-ink:#1E1C17; --paper-muted:#5F5A4C; --paper-line:#B9B09A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.25); color-scheme:dark}
 
@@ -51,22 +54,7 @@ button{cursor:pointer}
 .num{font-variant-numeric:tabular-nums;font-family:var(--f-mono)}
 
 /* header */
-header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:20px 12px}
-.brand{display:flex;align-items:center;gap:10px}
-.brand-mark{width:38px;height:38px;border-radius:10px;background:var(--green);display:grid;place-items:center;flex:none}
-.brand h1{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.02em;margin:0;line-height:1}
-.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
-.sync{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
-.sync i{width:8px;height:8px;border-radius:50%;background:var(--mustard);display:inline-block}
-.sync.cloud i{background:var(--green)}
 
-nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);padding-block:8px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
-nav.tabs button{border:0;background:var(--surface);border-radius:10px;padding:7px 2px 6px;font-weight:600;font-size:11.5px;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;min-width:0}
-nav.tabs button span.lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-nav.tabs button svg{width:19px;height:19px}
-nav.tabs .badge{position:absolute;top:3px;right:4px}
-nav.tabs button[aria-selected="true"]{background:var(--green);color:var(--green-ink);box-shadow:none}
-nav.tabs .badge{font-family:var(--f-mono);font-size:11px;background:var(--mustard);color:#2a1d02;border-radius:99px;padding:0 6px;line-height:17px}
 
 section.view{display:flex;flex-direction:column;gap:16px;padding-top:8px}
 .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px}
@@ -165,7 +153,7 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 /* receipts */
 .receipts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px;align-items:start}
 .receipt-wrap{display:flex;flex-direction:column;gap:8px;min-width:0}
-.receipt{--zz:6px;background:var(--paper);color:var(--paper-ink);font-family:var(--f-mono);font-size:12.5px;line-height:19px;padding:16px 20px 20px;margin-block:var(--zz);position:relative;filter:drop-shadow(0 2px 5px rgba(0,0,0,.13))}
+.receipt{--zz:6px;background:var(--paper);color:var(--paper-ink);font-family:var(--f-cupom);font-size:12.5px;line-height:19px;padding:16px 20px 20px;margin-block:var(--zz);position:relative;filter:drop-shadow(0 2px 5px rgba(0,0,0,.13))}
 /* bordas serrilhadas de cupom de impressora térmica */
 .receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:var(--zz);background-size:12px var(--zz);background-repeat:repeat-x}
 .receipt::before{top:calc(-1 * var(--zz));background-image:conic-gradient(from 135deg at top,var(--paper) 90deg,#0000 0)}
@@ -317,7 +305,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .share-btn svg{width:22px;height:22px;color:var(--green)}
 .share-btn:hover{box-shadow:inset 0 0 0 1.5px var(--green)}
 .share-btn:disabled{opacity:.5}
-nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);background:transparent}
 [hidden]{display:none!important}
 .toast{display:flex;align-items:center;gap:12px;pointer-events:none}
 .toast-act{pointer-events:auto}
@@ -334,14 +321,6 @@ nav.tabs button.off{opacity:.38;box-shadow:inset 0 0 0 1px var(--line);backgroun
 .hero-chips .chip[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
 .sum.total{grid-column:1 / -1;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .sum.total b{font-size:20px}
-.brand h1{white-space:nowrap}
-@media (max-width:400px){
-  .brand small{display:none}
-  .brand h1{font-size:23px}
-  .sync{font-size:11.5px}
-  nav.tabs{gap:3px}
-  nav.tabs button{font-size:10.5px;letter-spacing:-.01em;padding-inline:1px}
-}
 .rc-sub{font-weight:600;font-size:13px;line-height:20px}
 .who-row.covered .who-total{color:var(--muted)}
 .paid-tag{color:var(--green);font-weight:700}
@@ -562,60 +541,36 @@ body.is-dragging.drag-out .drop-out{display:flex}
 @media (prefers-reduced-motion: reduce){.adj-in{animation:none}}
 .ds-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
 
-/* Kit Fácil: componentes comuns do Projeto Integrador, com as cores do Conta Fácil */
+/* Kit Fácil: a cor de destaque e os neutros do Conta Fácil ligados ao sistema de design comum (comum/kit-facil.css) */
 :root{
   --kf-bg:var(--bg); --kf-surface:var(--surface); --kf-surface-2:var(--surface-2); --kf-line:var(--line); --kf-line-2:var(--line);
-  --kf-ink:var(--ink); --kf-muted:var(--muted); --kf-accent:var(--green); --kf-accent-ink:var(--green-ink); --kf-accent-soft:var(--green-soft);
-  --kf-focus:var(--mustard); --kf-ok:var(--green); --kf-ok-soft:var(--green-soft); --kf-warn:var(--mustard-ink); --kf-warn-soft:var(--mustard-soft);
-  --kf-bad:var(--danger); --kf-bad-soft:var(--danger-soft); --kf-star:var(--mustard); --kf-scrim:rgba(8,16,12,.55);
-  --kf-font:var(--f-body); --kf-font-display:var(--f-display); --kf-r-lg:18px; --kf-r-btn:10px; --kf-r-campo:10px;
+  --kf-ink:var(--ink); --kf-muted:var(--muted); --kf-accent:var(--green); --kf-accent-ink:var(--green-ink); --kf-accent-soft:var(--green-soft); --kf-accent-texto:var(--green);
+  --kf-focus:var(--mustard); --kf-scrim:rgba(8,16,12,.55);
 }
-.toast{z-index:95}
-/* topo: onde estão os dados e o botão de Ajustes */
-.top-acts{display:flex;align-items:center;gap:4px;min-width:0;flex:none}
-button.sync{border:0;background:none;padding:6px 6px;min-height:40px;border-radius:10px;cursor:pointer;font-family:inherit}
-@media (hover:hover){button.sync:hover{background:var(--surface-2)}}
-.sync.busy i{background:var(--green);animation:sync-pisca .8s infinite alternate}
-.sync.off i{background:var(--muted)}
-.sync.bad i{background:var(--danger)}
-@keyframes sync-pisca{to{opacity:.3}}
-@media (prefers-reduced-motion: reduce){.sync.busy i{animation:none}}
-.top-aj{width:40px;height:40px;background:transparent;box-shadow:none;color:var(--ink)}
-.top-aj svg{width:22px;height:22px}
-.top-aj[aria-current="page"]{background:var(--green);color:var(--green-ink)}
-@media (max-width:400px){.sync span{display:none}}
-/* Ajustes */
-.aj-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 2px 0}
-.aj-head h2{font-family:var(--f-display);font-weight:800;font-size:24px;letter-spacing:-.02em;margin:0}
-.foot-note{color:var(--muted);font-size:13px;text-align:center;margin:4px 0 0}
+/* moldura comum: barra superior, navegação embaixo (celular e tablet) e trilho lateral (computador) */
+.marca-conta{background:var(--green)}
+.wrap{padding-block:8px calc(var(--kf-nav-h) + 48px + env(safe-area-inset-bottom,0px))}
+.wrap.largo{max-width:1040px}
+@media (min-width:1024px){.wrap{padding-bottom:64px}}
+.kf-nav-it .badge,.kf-trilho-it .badge{font-family:var(--f-mono);font-size:11px;font-weight:700;background:var(--mustard);color:#2a1d02;border-radius:99px;padding:0 6px;line-height:17px}
+.kf-nav-it .badge{position:absolute;top:2px;left:calc(50% + 6px)}
+.kf-trilho-it .badge{margin-left:auto}
+.toast{z-index:95;bottom:calc(var(--kf-nav-h) + 16px + env(safe-area-inset-bottom,0px))}
+.tour-card.dock{bottom:calc(var(--kf-nav-h) + 16px + env(safe-area-inset-bottom,0px))}
+@media (min-width:1024px){.toast{bottom:24px;left:calc(50% + var(--kf-trilho-w) / 2)}.tour-card.dock{bottom:16px}.tour-card{left:calc(var(--kf-trilho-w) + 16px)}}
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <div class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
-      </div>
-      <div><h1>Conta Fácil</h1><small>Divida a comanda sem calculadora</small></div>
-    </div>
-    <div class="top-acts"><button type="button" class="sync" id="sync"><i></i><span>Salvo neste aparelho</span></button><button type="button" class="icon-btn top-aj" id="go-ajustes" aria-label="Ajustes" title="Ajustes"></button></div>
-  </header>
-
-  <nav class="tabs" role="tablist" id="tabs">
-    <button role="tab" data-tab="inicio" id="tab-inicio"></button>
-    <button role="tab" data-tab="comanda" id="tab-comanda"></button>
-    <button role="tab" data-tab="fechar" id="tab-fechar"></button>
-    <button role="tab" data-tab="historico" id="tab-historico"></button>
-    <button role="tab" data-tab="cadastros" id="tab-cadastros"></button>
-  </nav>
-
-  <main id="view"></main>
-</div>
+<header class="kf-barra" id="barra"><div class="kf-barra-in"><div class="kf-marca"><span class="kf-marca-ic marca-conta" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span><span class="kf-marca-nome">Conta Fácil</span></div><div id="topo"></div></div></header>
+<aside class="kf-trilho" aria-label="Seções"><div class="kf-marca"><span class="kf-marca-ic marca-conta" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span><span class="kf-marca-nome">Conta Fácil</span></div>
+  <div role="tablist" aria-label="Seções" id="trilho"><button role="tab" class="kf-trilho-it" data-tab="inicio" id="trilho-inicio"></button><button role="tab" class="kf-trilho-it" data-tab="comanda" id="trilho-comanda"></button><button role="tab" class="kf-trilho-it" data-tab="fechar" id="trilho-fechar"></button><button role="tab" class="kf-trilho-it" data-tab="historico" id="trilho-historico"></button><button role="tab" class="kf-trilho-it" data-tab="cadastros" id="trilho-cadastros"></button></div>
+</aside>
+<div class="wrap"><main id="view"></main></div>
+<nav class="kf-nav" aria-label="Seções"><div class="kf-nav-in" role="tablist" id="tabs"><button role="tab" class="kf-nav-it" data-tab="inicio" id="tab-inicio"></button><button role="tab" class="kf-nav-it" data-tab="comanda" id="tab-comanda"></button><button role="tab" class="kf-nav-it" data-tab="fechar" id="tab-fechar"></button><button role="tab" class="kf-nav-it" data-tab="historico" id="tab-historico"></button><button role="tab" class="kf-nav-it" data-tab="cadastros" id="tab-cadastros"></button></div></nav>
 <div id="overlay-root"></div>
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.1.0';
+const VERSAO = '1.2.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -1233,7 +1188,10 @@ function aplicarSync(R) {
 KitFacil.iniciar({
   app: 'conta-facil', nome: 'Conta Fácil', versao: VERSAO, icone: 'icons/icon-192.png',
   resumo: 'Divide a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.',
-  tela: () => tab, toast: (m, a) => toast(m, a), exemploDados: 'as comandas, os nomes e as chaves Pix',
+  tela: () => tab, toast: (m, a) => toast(m, a), exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
+  abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
+  emAjustes: () => tab === 'ajustes',
+  copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
     'As comandas, o histórico e os cadastros (nomes, chaves Pix e preços por local) ficam guardados neste aparelho.',
     'Comanda ao vivo (opcional): o local, os nomes, os pedidos e os valores da comanda vão para o Firebase (Google), para todos da mesa verem as mudanças na hora, e continuam lá depois de encerrada. Quem tem o código ou o link entra na comanda: compartilhe só com quem está na mesa.',
@@ -1247,7 +1205,6 @@ SY = KitFacil.sync.criar({
   carimbar: carimbarSync, aplicar: aplicarSync, pacote: () => pacoteSync(false),
   mesmo: (a, r) => KitFacil.canon(a) === KitFacil.canon({ v: r.v, bills: r.bills, people: r.people, products: r.products, me: r.me ?? '', st: r.st, del: r.del }),
   redesenhar: () => render({ preserve: true }),
-  aoEstado: () => renderSync(),
   ocupado: () => !!$('#overlay-root').innerHTML || isField(document.activeElement) || (typeof tour !== 'undefined' && tour.active()),
   textoLigada: () => `Sincronização ligada. ${plural(bills.length, 'comanda salva', 'comandas salvas')} neste aparelho.`,
 });
@@ -1671,21 +1628,7 @@ function anchorKey(el) {
   }
   return null;
 }
-function renderSync() {
-  const el = $('#sync'); if (!el) return;
-  const isLive = draft.live && live.unsub && !live.closed;
-  let cls = '', txt = 'Salvo neste aparelho', dica = 'Os dados ficam neste aparelho. Toque para ver os ajustes.';
-  if (isLive) { cls = 'cloud'; txt = 'Comanda ao vivo'; dica = 'Comanda ao vivo conectada.'; }
-  else if (SY && SY.ligada()) {
-    const s = SY.situacao();
-    cls = s === 'ok' ? 'cloud' : s === 'busy' ? 'busy' : s === 'offline' ? 'off' : 'bad';
-    txt = SY.rotuloCurto(); dica = SY.texto();
-  }
-  el.className = 'sync' + (cls ? ' ' + cls : '');
-  $('span', el).textContent = txt;
-  el.title = dica;
-  el.setAttribute('aria-label', txt + '. Abrir ajustes');
-}
+function renderSync() { KitFacil.topo.atualizar(); }
 function render(opts = {}) {
   let anc = null;
   if (opts.anchor !== false) {
@@ -1702,17 +1645,17 @@ function render(opts = {}) {
   }
   const TABS = { inicio: [I.home, 'Início'], comanda: [I.receipt, 'Comanda'], fechar: [I.calc, 'Fechar'], historico: [I.clock, 'Histórico'], cadastros: [I.users, 'Cadastros'] };
   if (!draft.active && (tab === 'comanda' || tab === 'fechar')) tab = 'inicio';
-  $$('#tabs button').forEach(b => {
+  $$('[data-tab]').forEach(b => {
     b.setAttribute('aria-selected', b.dataset.tab === tab);
     const off = !draft.active && (b.dataset.tab === 'comanda' || b.dataset.tab === 'fechar');
     b.classList.toggle('off', off); b.setAttribute('aria-disabled', off);
     const [ic, lbl] = TABS[b.dataset.tab];
-    const badge = b.dataset.tab === 'comanda' && !draft.isExample && draft.items.length ? `<span class="badge">${draft.items.length}</span>` : '';
-    b.innerHTML = ic + `<span class="lbl">${lbl}</span>` + badge;
+    const badge = b.dataset.tab === 'comanda' && !draft.isExample && draft.items.length ? `<span class="badge" aria-label="${plural(draft.items.length, 'item', 'itens')}">${draft.items.length}</span>` : '';
+    b.innerHTML = b.classList.contains('kf-nav-it') ? `<span class="kf-nav-ic">${ic}</span><span class="kf-nav-l">${lbl}</span>${badge}` : `${ic}<span>${lbl}</span>${badge}`;
   });
   const v = $('#view');
   const fn = { inicio: viewInicio, comanda: viewComanda, fechar: viewFechar, historico: viewHistorico, cadastros: viewCadastros, ajustes: viewAjustes }[tab];
-  const aj = $('#go-ajustes'); if (aj) { if (!aj.innerHTML) aj.innerHTML = I.ajustes; aj.setAttribute('aria-current', tab === 'ajustes' ? 'page' : 'false'); }
+  $('.wrap').classList.toggle('largo', tab === 'ajustes');
   v.innerHTML = `<section class="view">${fn.html()}</section>`;
   fn.bind(v);
   prepFields(v);
@@ -1724,7 +1667,9 @@ function render(opts = {}) {
   if (anc) { const el = $(anc.to); if (el) { const dy = el.getBoundingClientRect().top - anc.y; if (Math.abs(dy) > 1) window.scrollBy(0, dy); } }
   if (typeof tour !== 'undefined' && tour.active()) { if (!draft.isExample) tour.stop(); else requestAnimationFrame(() => tour.place()); }
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { sairDosAjustes(); tab = 'inicio'; render(); } return; } if (b) { sairDosAjustes(); tab = b.dataset.tab; pickSel = null; selItem = null; selPay = null; render(); window.scrollTo({ top: 0 }); } });
+const aoTocarAba = e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { sairDosAjustes(); tab = 'inicio'; render(); } return; } if (b) { sairDosAjustes(); tab = b.dataset.tab; pickSel = null; selItem = null; selPay = null; render(); window.scrollTo({ top: 0 }); } };
+$('#tabs').addEventListener('click', aoTocarAba);
+$('#trilho').addEventListener('click', aoTocarAba);
 /* ---------- Ajustes: abre pelo botão do topo; o Voltar do navegador fecha ---------- */
 let tabAntesAjustes = 'inicio';
 function abrirAjustes() {
@@ -1735,14 +1680,12 @@ function abrirAjustes() {
 }
 function fecharAjustes() {
   if (tab !== 'ajustes') return;
-  if (history.state && history.state.ajustes) { history.back(); return; } // o popstate volta para a aba anterior
+  if (history.state && history.state.ajustes) { history.go(history.state.kfAjPush ? -2 : -1); return; } // o popstate volta para a aba anterior
   tab = tabAntesAjustes; render(); window.scrollTo({ top: 0 });
 }
 // trocar de aba estando nos Ajustes tira a entrada dos Ajustes do histórico do navegador
-function sairDosAjustes() { if (tab === 'ajustes' && history.state && history.state.ajustes) { tab = tabAntesAjustes; history.back(); } }
+function sairDosAjustes() { if (tab === 'ajustes' && history.state && history.state.ajustes) { tab = tabAntesAjustes; history.go(history.state.kfAjPush ? -2 : -1); } }
 window.addEventListener('popstate', () => { if (tab === 'ajustes' && !(history.state && history.state.ajustes)) { tab = tabAntesAjustes; closeSheet(); render(); window.scrollTo({ top: 0 }); } });
-$('#go-ajustes').addEventListener('click', () => tab === 'ajustes' ? fecharAjustes() : abrirAjustes());
-$('#sync').addEventListener('click', () => { if (draft.live && live.unsub && !live.closed && tab !== 'comanda') { sairDosAjustes(); tab = 'comanda'; render(); window.scrollTo({ top: 0 }); } else abrirAjustes(); });
 
 /* ---------- aba Comanda ---------- */
 let liveWho = false; // lista "Quem é você?" aberta depois de já ter escolhido
@@ -1887,12 +1830,12 @@ const fileSaver = {
 async function downloadsNS() { return fileSaver; }
 const slug = s => placeKey(s || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'conta';
 async function receiptCanvas(r, b, calc) {
-  try { await Promise.all(['400 24px "IBM Plex Mono"', '600 24px "IBM Plex Mono"', '800 36px "Bricolage Grotesque"'].map(f => document.fonts.load(f))); } catch {}
+  try { await Promise.all(['400 24px "IBM Plex Mono"', '600 24px "IBM Plex Mono"', '800 36px "Atkinson Hyperlegible Next"'].map(f => document.fonts.load(f))); } catch {}
   const S = 2, M = 16 * S, W = 340 * S, PX = 20 * S, IW = W - PX * 2;
   // tinta única, como uma impressora térmica
   const C = { bg: '#EAF0EA', paper: '#FFFDF5', ink: '#1A1915' };
   const mono = (w, px) => `${w} ${px * S}px "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace`;
-  const disp = px => `800 ${px * S}px "Bricolage Grotesque", "Figtree", system-ui, sans-serif`;
+  const disp = px => `800 ${px * S}px "Atkinson Hyperlegible Next", system-ui, sans-serif`;
   const rows = receiptRows(r, b, calc);
   // QR code do Pix logo abaixo da chave, quando o cupom tem um Pix só
   for (let i = rows.length - 1; i >= 0; i--) {
@@ -3211,48 +3154,54 @@ const viewCadastros = {
 };
 
 
-/* ---------- aba Ajustes (padrão do Projeto Integrador) ---------- */
+/* ---------- aba Ajustes: guias comuns do Kit Fácil + a guia própria "Comandas" ---------- */
+function baixarCopiaConta() {
+  const real = draft.isExample ? loadRealDraft() : draft;
+  KitFacil.copia.baixar({ bills, catalog, draft: real.active ? real : null }, 1);
+}
+async function restaurarCopiaConta(f) {
+  const j = await KitFacil.copia.ler(f);
+  const d = j && j.dados;
+  if (!d || !Array.isArray(d.bills) || !d.catalog || typeof d.catalog !== 'object') { toast('Esse arquivo não é uma cópia do Conta Fácil.'); return; }
+  const quando = fmtDate(Date.parse(j.em) || Date.now());
+  const ppl = Array.isArray(d.catalog.people) ? d.catalog.people.length : 0;
+  KitFacil.dialogo.confirmar({ titulo: 'Restaurar a cópia?', ok: 'Restaurar', perigo: true,
+    texto: `A cópia de ${quando} tem ${plural(d.bills.length, 'comanda salva', 'comandas salvas')} e ${plural(ppl, 'pessoa cadastrada', 'pessoas cadastradas')}. O histórico e os cadastros deste aparelho${SY.ligada() ? ' e dos aparelhos sincronizados' : ''} serão substituídos.`,
+    aoConfirmar: () => {
+      bills = d.bills.map(migrate).sort(ordemBills);
+      catalog = fixCatalog(d.catalog);
+      store.saveBill(); store.saveCatalog();
+      const real = draft.isExample ? loadRealDraft() : draft;
+      let extra = '';
+      if (d.draft && !real.active && !draft.live && !draft.isExample) { draft = migrate(d.draft); saveDraft(); extra = ' A comanda que estava aberta também voltou.'; }
+      render(); toast('Cópia restaurada.' + extra);
+    } });
+}
+const ICONE_COMANDA = '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>';
 const viewAjustes = {
   html() {
-    const inst = KitFacil.instalarHTML();
-    return `<div class="aj-head"><h2>Ajustes</h2><button class="btn small ghost" id="aj-voltar">${I.back}Voltar</button></div>
-    <div class="card" id="aj-sync"><h2>Usar em vários aparelhos</h2>${SY.cartaoHTML()}</div>
-    <div class="card"><h2>Aparência</h2>${KitFacil.tema.seletorHTML()}</div>
-    <div class="card"><h2>Cópia de segurança</h2>
-      <p class="kf-ajuda">Baixe um arquivo com o histórico e os cadastros. ${SY.ligada() ? 'Com a sincronização ligada, os dados já ficam guardados na nuvem: a cópia é uma garantia extra.' : 'Sem a sincronização, os dados ficam só neste aparelho: guarde uma cópia de vez em quando.'}</p>
-      <div class="btn-row"><button class="btn ghost" id="bk-baixar">${I.download}Baixar cópia</button><button class="btn ghost" id="bk-restaurar">${I.upload}Restaurar cópia</button></div>
-      <input type="file" id="bk-file" accept=".json,application/json" hidden></div>
-    <div class="card"><h2>Ajude a melhorar</h2>${KitFacil.ajudaHTML()}</div>
-    ${inst ? `<div class="card"><h2>Instalar o app</h2>${inst}</div>` : ''}
-    <p class="foot-note">Conta Fácil ${VERSAO}</p>`;
+    const pessoas = [...catalog.people].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const vivo = store.db ? 'Disponível: conectado ao servidor da comanda ao vivo.' : store.ready ? 'Indisponível agora: sem conexão com o servidor. Confira a internet.' : 'Conectando ao servidor…';
+    return KitFacil.ajustes.html({
+      extras: {
+        conta: `<div class="kf-bloco"><h3>Você nas comandas</h3>
+          <p class="kf-ajuda">Escolha o seu nome entre as pessoas cadastradas. O Histórico usa essa escolha para mostrar os seus gastos e com quem você mais sai.</p>
+          ${pessoas.length ? `<div class="field"><label for="aj-me">Seu nome</label><select id="aj-me" class="kf-entrada"><option value="">Não escolhido</option>${pessoas.map(p => `<option value="${esc(p.name)}" ${norm(p.name) === norm(catalog.me) ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>`
+            : '<p class="kf-ajuda">Ainda não há pessoas cadastradas. Elas entram nos Cadastros quando você salva a primeira comanda.</p>'}</div>`,
+      },
+      resumos: { conta: catalog.me ? `Você é ${catalog.me}` : undefined },
+      produto: [{ id: 'comandas', titulo: 'Comandas', icone: ICONE_COMANDA, resumo: 'Comanda ao vivo, guia e cadastros',
+        html: `<div class="kf-bloco"><h3>Comanda ao vivo</h3><p class="kf-texto">${esc(vivo)}</p>
+            <p class="kf-ajuda">Na comanda ao vivo, cada pessoa marca o que consumiu pelo próprio celular. O local, os nomes, os pedidos e os valores ficam no Firebase (Google) enquanto a comanda existe. Para começar, abra uma comanda e toque em Compartilhar com a turma.</p></div>
+          <div class="kf-bloco"><h3>Guia do app</h3><p class="kf-ajuda">Uma comanda de exemplo mostra cada função, passo a passo. Nada do exemplo é salvo.</p><button type="button" class="kf-btn kf-sec" id="aj-exemplo">Ver a comanda de exemplo</button></div>
+          <div class="kf-bloco"><h3>Cadastros</h3><p class="kf-ajuda">Pessoas, chaves Pix e o preço de cada produto em cada local ficam na aba Cadastros.</p><button type="button" class="kf-btn kf-sec" id="aj-cadastros">Abrir Cadastros</button></div>` }],
+    });
   },
   bind(v) {
-    $('#aj-voltar', v).addEventListener('click', fecharAjustes);
-    $('#bk-baixar', v).addEventListener('click', () => {
-      const real = draft.isExample ? loadRealDraft() : draft;
-      KitFacil.copia.baixar({ bills, catalog, draft: real.active ? real : null }, 1);
-    });
-    const fi = $('#bk-file', v);
-    $('#bk-restaurar', v).addEventListener('click', () => fi.click());
-    fi.addEventListener('change', async () => {
-      const f = fi.files && fi.files[0]; fi.value = ''; if (!f) return;
-      const j = await KitFacil.copia.ler(f);
-      const d = j && j.dados;
-      if (!d || !Array.isArray(d.bills) || !d.catalog || typeof d.catalog !== 'object') { toast('Esse arquivo não é uma cópia do Conta Fácil.'); return; }
-      const quando = fmtDate(Date.parse(j.em) || Date.now());
-      const ppl = Array.isArray(d.catalog.people) ? d.catalog.people.length : 0;
-      KitFacil.dialogo.confirmar({ titulo: 'Restaurar a cópia?', ok: 'Restaurar', perigo: true,
-        texto: `A cópia de ${quando} tem ${plural(d.bills.length, 'comanda salva', 'comandas salvas')} e ${plural(ppl, 'pessoa cadastrada', 'pessoas cadastradas')}. O histórico e os cadastros deste aparelho${SY.ligada() ? ' e dos aparelhos sincronizados' : ''} serão substituídos.`,
-        aoConfirmar: () => {
-          bills = d.bills.map(migrate).sort(ordemBills);
-          catalog = fixCatalog(d.catalog);
-          store.saveBill(); store.saveCatalog();
-          const real = draft.isExample ? loadRealDraft() : draft;
-          let extra = '';
-          if (d.draft && !real.active && !draft.live && !draft.isExample) { draft = migrate(d.draft); saveDraft(); extra = ' A comanda que estava aberta também voltou.'; }
-          render(); toast('Cópia restaurada.' + extra);
-        } });
-    });
+    KitFacil.ajustes.ligar(v);
+    $('#aj-me', v)?.addEventListener('change', e => { catalog.me = e.target.value; store.saveCatalog(); KitFacil.ajustes.resumo('conta', catalog.me ? `Você é ${catalog.me}` : 'Sem cadastro · dados neste aparelho'); toast(catalog.me ? `Pronto: você é ${catalog.me}.` : 'Nome desmarcado.'); });
+    $('#aj-exemplo', v)?.addEventListener('click', () => { sairDosAjustes(); exitExample(); enterExample(); });
+    $('#aj-cadastros', v)?.addEventListener('click', () => { sairDosAjustes(); tab = 'cadastros'; render(); window.scrollTo({ top: 0 }); });
   },
 };
 
@@ -3275,8 +3224,8 @@ const TOUR = [
   { tab: 'fechar', sel: '.pix-btn', skip: true, t: 'Pagar com Pix', d: 'O app gera o Pix copia e cola e o QR code já com o valor certo. A chave de quem recebe fica salva no cadastro da pessoa.' },
   { tab: 'fechar', sel: '.receipt-wrap', t: 'Cupons', d: 'Cada pessoa recebe um cupom com o que consumiu. Compartilhe como imagem, PDF ou texto.' },
   { tab: 'fechar', sel: '#save-bill', t: 'Salvar e encerrar', d: 'Guarda a comanda no histórico e deixa o app pronto para a próxima. No exemplo, nada é salvo.' },
-  { tab: 'historico', sel: '#tab-historico', t: 'Histórico', d: 'Suas comandas salvas, o gasto por mês, os lugares mais frequentes e com quem você mais sai. Dá para reabrir, editar ou repetir uma comanda antiga.' },
-  { tab: 'cadastros', sel: '#tab-cadastros', t: 'Cadastros', d: 'Pessoas, chaves Pix e o preço de cada produto em cada lugar, usados para preencher tudo mais rápido.' },
+  { tab: 'historico', sel: '[data-tab="historico"]', t: 'Histórico', d: 'Suas comandas salvas, o gasto por mês, os lugares mais frequentes e com quem você mais sai. Dá para reabrir, editar ou repetir uma comanda antiga.' },
+  { tab: 'cadastros', sel: '[data-tab="cadastros"]', t: 'Cadastros', d: 'Pessoas, chaves Pix e o preço de cada produto em cada lugar, usados para preencher tudo mais rápido.' },
   { tab: 'inicio', sel: '#ex-card', t: 'Pronto!', d: 'Você pode rever este guia quando quiser pela comanda de exemplo. Toque em Sair do exemplo para começar a sua.' },
 ];
 const tour = {
@@ -3308,7 +3257,7 @@ const tour = {
       window.addEventListener('resize', again);
     }
   },
-  target(st) { return (st && ($(st.sel) || (st.alt && $(st.alt)))) || null; },
+  target(st) { const vis = q => q && $$(q).find(el => el.getClientRects().length); return (st && (vis(st.sel) || (st.alt && vis(st.alt)))) || null; },
   show(n, dir) {
     if (!draft.isExample) return this.stop();
     // passos que não existem nesta tela (sem internet, sem cortesia…) são pulados
@@ -3347,12 +3296,15 @@ const tour = {
     if (t) {
       const r = t.getBoundingClientRect();
       // o destaque não passa por baixo da barra de abas fixa no topo
-      const nav = $('#tabs'), navB = nav && !nav.contains(t) ? nav.getBoundingClientRect().bottom + 2 : 4;
-      const y1 = Math.max(r.top - pad, navB), y2 = Math.min(r.bottom + pad, vh - 4);
+      // o destaque não passa por baixo da barra superior nem da navegação de baixo (a não ser que seja nelas)
+      const barra = $('#barra'), baixo = $('.kf-nav'), naNav = !!(baixo && baixo.contains(t));
+      const navB = barra ? barra.getBoundingClientRect().bottom + 2 : 4;
+      const fundo = baixo && baixo.getClientRects().length && !naNav ? baixo.getBoundingClientRect().top - 2 : vh - 4;
+      const y1 = Math.max(r.top - pad, naNav ? 4 : navB), y2 = Math.min(r.bottom + pad, fundo);
       hole.hidden = y2 - y1 < 8;
       Object.assign(hole.style, { left: (r.left - pad) + 'px', top: y1 + 'px', width: (r.width + pad * 2) + 'px', height: Math.max(0, y2 - y1) + 'px' });
       // fora da tela (a pessoa rolou): o cartão fica embaixo
-      if (!hole.hidden && y2 + gap + ch <= vh - gap) top = y2 + gap;
+      if (!hole.hidden && y2 + gap + ch <= fundo - gap) top = y2 + gap;
       else if (!hole.hidden && y1 - gap - ch >= navB) top = y1 - gap - ch;
     } else hole.hidden = true;
     if (top === undefined) { card.style.top = ''; card.classList.add('dock'); }
@@ -3364,6 +3316,8 @@ const tour = {
 /* ---------- início ---------- */
 if (draft.live) { draft.isExample = false; draft.active = true; }
 if (backfillPrices()) LS.set('catalog', catalog);
+// área superior direita padronizada: Ajustes, nuvem e balão
+$('#topo').outerHTML = KitFacil.topo.html({ ajustes: true });
 // link de "Conectar outro aparelho" (a chave vem depois do #, que não sai do aparelho)
 const linkSync = SY.tokenDoLink();
 if (linkSync) try { history.replaceState(null, '', location.pathname + location.search); } catch {}

@@ -2,7 +2,7 @@
 
 Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-**Fase de testes** · versão 1.1.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+**Fase de testes** · versão 1.2.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil e Estudo Fácil) e segue o padrão comum descrito em
 [`comum/PADRAO.md`](comum/PADRAO.md).
@@ -15,7 +15,8 @@ Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil e Estudo Fá
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - Histórico com estatísticas e cadastros de pessoas, chaves Pix e preços de cada produto em cada local
 - **Use em vários aparelhos (opcional):** histórico e cadastros sincronizados, criptografados, num gist secreto da sua conta GitHub
-- **Avalie o app e relate problemas** em Ajustes → Ajude a melhorar
+- **Avalie o app e relate problemas** pelo balão no alto da tela (ou em Ajustes → Avaliação e feedback)
+- **Nuvem no alto da tela:** mostra se os dados estão sincronizados, sincronizando, pendentes, com erro ou sem internet
 - Tema claro, escuro ou automático; funciona sem internet depois da primeira visita
 - Comanda de exemplo com um guia que mostra cada função
 
@@ -37,7 +38,7 @@ Abra o endereço em qualquer navegador, no celular, no tablet ou no computador. 
 | Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback` |
 
 A comanda aberta não vai para a sincronização: para dividir a mesma comanda entre celulares, use a comanda ao vivo.
-A janela **Ajustes → Sobre e privacidade** explica isso para quem usa o app.
+A guia **Ajustes → Privacidade e segurança** explica isso para quem usa o app.
 
 ## Para desenvolver
 
@@ -55,13 +56,23 @@ npm run verificar                 # padrão do Projeto Integrador, segredos e ve
 Os testes simulam o GitHub (sincronização) e o Firebase (avaliações); nada toca nos dados reais.
 O modo sem internet (service worker) só funciona em `https`, ou seja, no endereço publicado.
 
+## Interface
+
+Segue o padrão comum da família (veja [`comum/PADRAO.md`](comum/PADRAO.md)):
+
+- **Alto da tela, à direita:** Ajustes, nuvem da sincronização e balão de avaliação, nessa ordem
+- **Navegação:** barra embaixo no celular e no tablet; menu lateral no computador (a partir de 1024 px)
+- **Ajustes:** as oito guias comuns (Conta e perfil, Sincronização e armazenamento, Aparência, Preferências gerais,
+  Notificações, Privacidade e segurança, Avaliação e feedback, Sobre o aplicativo) e a guia própria **Comandas**
+  (comanda ao vivo, guia do app e atalho para os Cadastros). "Você nas comandas" fica em Conta e perfil.
+
 ## Estrutura
 
 | Arquivo | Conteúdo |
 |---|---|
 | `index.html` | o app inteiro: estrutura, estilo e código |
 | `fb.js`, `config.js` | conexão com o Firebase da comanda ao vivo |
-| `comum/` | **Kit Fácil**: avaliação, Sobre e privacidade, tema, sincronização e o padrão do projeto. Igual nos três apps: não edite só aqui |
+| `comum/` | **Kit Fácil**: sistema de design comum, barra superior, Ajustes, avaliação, sincronização e o padrão do projeto. Igual nos três apps: não edite só aqui |
 | `sw.js`, `manifest.webmanifest`, `icons/` | instalação e uso sem internet |
 | `tests/` | testes do app |
 
