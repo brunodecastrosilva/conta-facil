@@ -571,7 +571,7 @@ body.is-dragging.drag-out .drop-out{display:flex}
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.3.0';
+const VERSAO = '1.3.1';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -1192,7 +1192,8 @@ KitFacil.iniciar({
   tela: () => tab, toast: (m, a) => toast(m, a), exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '1.3.0', itens: [
+  novidades: [{ versao: '1.3.1', itens: [
+    'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
     'Novo: "Pague um chopp para o criador!", com QR code e Pix copia e cola. É opcional, o app continua gratuito.',
