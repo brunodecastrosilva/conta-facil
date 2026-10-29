@@ -563,14 +563,15 @@ body.is-dragging.drag-out .drop-out{display:flex}
 <header class="kf-barra" id="barra"><div class="kf-barra-in"><div class="kf-marca"><span class="kf-marca-ic marca-conta" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span><span class="kf-marca-nome">Conta Fácil</span></div><div id="topo"></div></div></header>
 <aside class="kf-trilho" aria-label="Seções"><div class="kf-marca"><span class="kf-marca-ic marca-conta" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span><span class="kf-marca-nome">Conta Fácil</span></div>
   <div role="tablist" aria-label="Seções" id="trilho"><button role="tab" class="kf-trilho-it" data-tab="inicio" id="trilho-inicio"></button><button role="tab" class="kf-trilho-it" data-tab="comanda" id="trilho-comanda"></button><button role="tab" class="kf-trilho-it" data-tab="fechar" id="trilho-fechar"></button><button role="tab" class="kf-trilho-it" data-tab="historico" id="trilho-historico"></button><button role="tab" class="kf-trilho-it" data-tab="cadastros" id="trilho-cadastros"></button></div>
+  <span id="trilho-ajustes"></span>
 </aside>
 <div class="wrap"><main id="view"></main></div>
-<nav class="kf-nav" aria-label="Seções"><div class="kf-nav-in" role="tablist" id="tabs"><button role="tab" class="kf-nav-it" data-tab="inicio" id="tab-inicio"></button><button role="tab" class="kf-nav-it" data-tab="comanda" id="tab-comanda"></button><button role="tab" class="kf-nav-it" data-tab="fechar" id="tab-fechar"></button><button role="tab" class="kf-nav-it" data-tab="historico" id="tab-historico"></button><button role="tab" class="kf-nav-it" data-tab="cadastros" id="tab-cadastros"></button></div></nav>
+<nav class="kf-nav" aria-label="Seções"><div class="kf-nav-in" role="tablist" id="tabs"><button role="tab" class="kf-nav-it" data-tab="inicio" id="tab-inicio"></button><button role="tab" class="kf-nav-it" data-tab="comanda" id="tab-comanda"></button><button role="tab" class="kf-nav-it" data-tab="fechar" id="tab-fechar"></button><button role="tab" class="kf-nav-it" data-tab="historico" id="tab-historico"></button><button role="tab" class="kf-nav-it" data-tab="cadastros" id="tab-cadastros"></button><span id="tab-ajustes-lugar" hidden></span></div></nav>
 <div id="overlay-root"></div>
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.2.0';
+const VERSAO = '1.3.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -1191,6 +1192,18 @@ KitFacil.iniciar({
   tela: () => tab, toast: (m, a) => toast(m, a), exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
+  novidades: [{ versao: '1.3.0', itens: [
+    'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
+    'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
+    'Novo: "Pague um chopp para o criador!", com QR code e Pix copia e cola. É opcional, o app continua gratuito.',
+    'Depois de cada atualização, o app mostra uma vez o que mudou. A lista também fica em Ajustes, Sobre o aplicativo.',
+    'Correção: o Conta Fácil agora tem identidade própria na instalação e não se confunde mais com os outros apps no mesmo aparelho.',
+  ] }],
+  boasVindas: {
+    novo: () => !bills.length && !(catalog.people || []).length && !draft.active,
+    passos: [['Abra uma comanda', 'Na tela inicial, dê o nome do local e toque em Abrir comanda.'], ['Marque o que cada um pediu', 'Na aba Comanda, adicione os itens e diga quem consumiu.'], ['Feche a conta', 'Na aba Fechar, o app soma serviço, couvert e desconto e diz quanto cada um paga, com Pix.']],
+    exemplo: () => enterExample(), rotuloExemplo: 'Ver exemplo guiado',
+  },
   copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
     'As comandas, o histórico e os cadastros (nomes, chaves Pix e preços por local) ficam guardados neste aparelho.',
@@ -3317,7 +3330,10 @@ const tour = {
 if (draft.live) { draft.isExample = false; draft.active = true; }
 if (backfillPrices()) LS.set('catalog', catalog);
 // área superior direita padronizada: Ajustes, nuvem e balão
-$('#topo').outerHTML = KitFacil.topo.html({ ajustes: true });
+$('#topo').outerHTML = KitFacil.topo.html({ principal: true });
+// Ajustes é o último item da navegação (barra de baixo no celular, pé do trilho no computador)
+$('#tab-ajustes-lugar').outerHTML = KitFacil.nav.ajustes('nav', { role: 'tab', id: 'tab-ajustes' });
+$('#trilho-ajustes').outerHTML = KitFacil.nav.ajustes('trilho', { id: 'trilho-ajustes' });
 // link de "Conectar outro aparelho" (a chave vem depois do #, que não sai do aparelho)
 const linkSync = SY.tokenDoLink();
 if (linkSync) try { history.replaceState(null, '', location.pathname + location.search); } catch {}

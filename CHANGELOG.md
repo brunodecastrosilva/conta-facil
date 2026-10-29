@@ -2,6 +2,17 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.3.0 · 2026-10-28
+
+Kit Fácil 2.1, igual nos três apps (Leis Globais v1.5 do Projeto Integrador).
+
+- **Ajustes na barra de baixo:** Ajustes deixa o alto da tela e vira o último item da barra de baixo; no computador, fica no pé do menu lateral. Tocar de novo volta para a lista de guias.
+- **Alto da tela:** chopp, nuvem e balão, nessa ordem. O chopp só aparece nas telas principais.
+- **Pague um chopp para o criador!** Janela com QR code e Pix copia e cola, também em *Sobre o aplicativo*. É opcional: o app continua gratuito e igual para todos. O ícone aparece quando a chave Pix do criador for cadastrada no Kit.
+- **Novidades:** depois de cada atualização, o app mostra uma vez o que mudou; a lista fica em *Sobre o aplicativo*.
+- **Boas-vindas:** quem abre o app pela primeira vez vê os três primeiros passos e o atalho para o exemplo guiado.
+- **Correção:** o manifesto agora tem identidade própria (`/conta-facil/`). Antes, o Chrome podia achar que o Conta Fácil já estava instalado quando outro app da família estava. Quem já instalou o app pode precisar instalar de novo.
+
 ## 1.2.0 · 2026-10-27
 
 Padronização da interface e dos Ajustes com o Elétrica Fácil e o Estudo Fácil (Kit Fácil 2).

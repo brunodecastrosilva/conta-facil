@@ -3,13 +3,14 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { preparar, aparelho, githubFalso, firestoreFalso, semRolagemLateral, conferirTopo, guiasAjustes, GUIAS_COMUNS, TOKEN_TESTE, RAIZ } from '../comum/testes/ambiente.mjs';
+import { preparar, aparelho, githubFalso, firestoreFalso, semRolagemLateral, conferirTopo, conferirNavAjustes, guiasAjustes, GUIAS_COMUNS, TOKEN_TESTE, RAIZ } from '../comum/testes/ambiente.mjs';
 
 let amb, versao;
 before(async () => { amb = await preparar(); versao = JSON.parse(await readFile(RAIZ + '/package.json', 'utf8')).version; });
 after(async () => { await amb?.encerrar(); });
 const esperar = async (cond, ms = 8000) => { const fim = Date.now() + ms; while (Date.now() < fim) { if (await cond()) return true; await new Promise(r => setTimeout(r, 50)); } return false; };
-const AJ = '.kf-topo [data-kf="ajustes"]';
+// Ajustes fica na navegação: barra de baixo (celular e tablet) ou pé do trilho (computador)
+const AJ = '.kf-nav [data-kf="ajustes"]:visible, .kf-trilho [data-kf="ajustes"]:visible';
 /* abre uma guia dos Ajustes (no celular, a lista vira a guia aberta) */
 const guia = async (p, id) => { if (!(await p.locator('[data-kf-aj]').count())) await p.click(AJ); await p.click(`.kf-aj-lista [data-kf-aj-ir="${id}"]`); await p.locator(`#kf-aj-${id}.kf-aberta, [data-kf-aj][data-ativa="${id}"]`).first().waitFor(); };
 const TELAS = [[{ width: 360, height: 740 }, 'celular pequeno'], [{ width: 390, height: 844 }, 'celular'], [{ width: 820, height: 1180 }, 'tablet'], [{ width: 1440, height: 900 }, 'computador']];
@@ -34,6 +35,8 @@ test('abre sem erros em celular, tablet e computador, sem rolagem lateral', asyn
     // uma só navegação visível: barra de baixo no celular e no tablet, trilho lateral no computador
     const navs = await a.page.evaluate(() => ['.kf-nav', '.kf-trilho'].filter(q => document.querySelector(q).getClientRects().length));
     assert.deepEqual(navs, [viewport.width >= 1024 ? '.kf-trilho' : '.kf-nav'], `navegação no ${nome}`);
+    const navAj = await conferirNavAjustes(a.page);
+    assert.deepEqual(navAj.erros, [], `Ajustes na navegação no ${nome}`);
     await a.page.click(AJ);
     await a.page.locator('.kf-aj-h').waitFor();
     assert.ok(await semRolagemLateral(a.page), `rolagem lateral nos Ajustes no ${nome}`);
@@ -69,10 +72,11 @@ test('Ajustes: guias comuns na ordem do padrão, guia Comandas, e o Voltar do na
   assert.ok(await esperar(async () => (await p.getAttribute('[data-kf-aj]', 'data-ativa')) === ''));
   await p.goBack();
   assert.ok(await esperar(async () => (await p.getAttribute('#tab-historico', 'aria-selected')) === 'true'), 'o Voltar não voltou para o Histórico');
-  // a engrenagem também fecha; e trocar de aba estando numa guia sai dos Ajustes
+  // tocar em Ajustes numa guia volta para a lista; trocar de aba estando numa guia sai dos Ajustes
   await p.click(AJ);
+  await guia(p, 'aparencia');
   await p.click(AJ);
-  assert.ok(await esperar(async () => (await p.getAttribute('#tab-historico', 'aria-selected')) === 'true'));
+  assert.ok(await esperar(async () => (await p.getAttribute('[data-kf-aj]', 'data-ativa')) === ''), 'Ajustes na navegação não voltou para a lista');
   await guia(p, 'aparencia');
   await p.click('#tab-cadastros');
   assert.equal(await p.getAttribute('#tab-cadastros', 'aria-selected'), 'true');
