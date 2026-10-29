@@ -571,7 +571,7 @@ body.is-dragging.drag-out .drop-out{display:flex}
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.3.1';
+const VERSAO = '1.3.2';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -872,6 +872,7 @@ const LS = {
 };
 // histórico, cadastros e comanda ficam neste aparelho; o Firebase só guarda as comandas ao vivo.
 // Com a sincronização ligada (Ajustes), histórico e cadastros também vão, criptografados, para um gist secreto do usuário.
+const LIVE_PRAZO_DIAS = 30; // comandas ao vivo ficam no Firebase até 30 dias depois de criadas ou encerradas
 const store = {
   mode: 'local', db: null, ready: false, chain: Promise.resolve(),
   queue(fn, onErr) { this.chain = this.chain.then(fn).catch(e => (onErr || (x => console.warn('db', x)))(e)); return this.chain; },
@@ -897,6 +898,13 @@ const isStandalone = () => { try { return navigator.standalone === true || match
 const live = {
   unsub: null, last: null, readOnly: false, closed: false, connecting: false, online: {}, beatTimer: null, tickTimer: null,
   ref(code) { return store.db.doc('mesas/' + code); },
+  /* prazo de guarda (política de privacidade): a comanda ao vivo é apagada 30 dias depois de criada ou encerrada,
+     pela regra de TTL do Firestore no campo expiraEm. Vai numa gravação à parte: se a regra do banco ainda não aceitar
+     o campo, a comanda continua funcionando normalmente. */
+  carimbarPrazo(code) {
+    const expiraEm = new Date(Date.now() + LIVE_PRAZO_DIAS * 864e5);
+    store.queue(() => this.ref(code).update({ expiraEm }), e => console.warn('prazo da comanda ao vivo', e && e.code));
+  },
   link() { return APP_URL + '#m' + draft.live.code; },
   available() { return !!store.db; },
   async boot() {
@@ -923,6 +931,7 @@ const live = {
     const body = { ...toShared(draft), closed: false, v: 1 };
     try {
       await this.ref(code).set(body);
+      this.carimbarPrazo(code);
       this.last = toShared(draft);
       saveDraft(); render(); this.subscribe(); window.scrollTo({ top: 0 });
       inviteSheet();
@@ -997,7 +1006,7 @@ const live = {
   async end() {
     const code = draft.live?.code; const host = draft.live?.host;
     this.stop();
-    if (code && host && store.db && !this.closed) store.queue(() => this.ref(code).update({ closed: true }));
+    if (code && host && store.db && !this.closed) { store.queue(() => this.ref(code).update({ closed: true })); this.carimbarPrazo(code); }
     draft.live = null; this.last = null; this.closed = false; this.readOnly = false; liveWho = false;
     try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch {}
     commit();
@@ -1192,7 +1201,7 @@ KitFacil.iniciar({
   tela: () => tab, toast: (m, a) => toast(m, a), exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '1.3.1', itens: [
+  novidades: [{ versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
     'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
@@ -1208,7 +1217,7 @@ KitFacil.iniciar({
   copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
     'As comandas, o histórico e os cadastros (nomes, chaves Pix e preços por local) ficam guardados neste aparelho.',
-    'Comanda ao vivo (opcional): o local, os nomes, os pedidos e os valores da comanda vão para o Firebase (Google), para todos da mesa verem as mudanças na hora, e continuam lá depois de encerrada. Quem tem o código ou o link entra na comanda: compartilhe só com quem está na mesa.',
+    'Comanda ao vivo (opcional): o local, os nomes, os pedidos e os valores da comanda vão para o Firebase (Google), para todos da mesa verem as mudanças na hora, e são apagados até 30 dias depois de encerrada. Quem tem o código ou o link entra na comanda: compartilhe só com quem está na mesa.',
   ],
 });
 KitFacil.tema.iniciar({ chave: 'contafacil.pref', cores: { claro: '#EAF0EA', escuro: '#0D1712' } });

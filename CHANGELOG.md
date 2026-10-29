@@ -2,6 +2,11 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.3.2 · 2026-10-29
+
+- **Prazo de guarda:** Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.
+- Kit Fácil 2.1.2.
+
 ## 1.3.1 · 2026-10-29
 
 - **Pague um chopp para o criador!** O chopp passa a aparecer no alto da tela (e em *Sobre o aplicativo*), com QR code e Pix copia e cola. É opcional: o app continua gratuito e igual para todos.

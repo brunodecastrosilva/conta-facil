@@ -2,7 +2,7 @@
 
 Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-**Fase de testes** · versão 1.3.1 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+**Fase de testes** · versão 1.3.2 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil e Estudo Fácil) e segue o padrão comum descrito em
 [`comum/PADRAO.md`](comum/PADRAO.md).
@@ -36,9 +36,9 @@ Abra o endereço em qualquer navegador, no celular, no tablet ou no computador. 
 | Dado | Onde fica |
 |---|---|
 | Comanda aberta, histórico, cadastros e preferências | neste aparelho (armazenamento do navegador, chaves `contafacil.*`) |
-| Comanda ao vivo (quando você liga) | Firestore do projeto no Firebase (Google), coleção `mesas` |
+| Comanda ao vivo (quando você liga) | Firestore do projeto no Firebase (Google), coleção `mesas`; apagada 30 dias depois de criada ou encerrada |
 | Histórico e cadastros, com a sincronização ligada | gist secreto na conta GitHub do usuário, criptografado no aparelho (AES-256) |
-| Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback` |
+| Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback`; apagados depois de 2 anos |
 
 A comanda aberta não vai para a sincronização: para dividir a mesma comanda entre celulares, use a comanda ao vivo.
 A guia **Ajustes → Privacidade e segurança** explica isso para quem usa o app.
