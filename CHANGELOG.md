@@ -2,6 +2,12 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.3.3 · 2026-10-29
+
+- No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.
+- A janela do chopp ficou mais simples: um só botão, Copiar código Pix.
+- Kit Fácil 2.1.3.
+
 ## 1.3.2 · 2026-10-29
 
 - **Prazo de guarda:** Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.

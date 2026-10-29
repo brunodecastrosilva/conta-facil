@@ -1,6 +1,6 @@
 {
   "name": "conta-facil",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Conta Fácil: divida a comanda sem calculadora. App web instalável (PWA) do Projeto Integrador.",
   "private": true,
   "type": "module",
