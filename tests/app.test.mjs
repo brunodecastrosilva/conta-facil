@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { preparar, aparelho, githubFalso, firestoreFalso, semRolagemLateral, conferirTopo, conferirNavAjustes, abrirAjustesPelaNav, irPelaNav, guiasAjustes, GUIAS_COMUNS, TOKEN_TESTE, RAIZ } from '../comum/testes/ambiente.mjs';
+import { preparar, aparelho, githubFalso, firestoreFalso, semRolagemLateral, conferirTopo, conferirNavAjustes, abrirAjustesPelaNav, irPelaNav, guiasAjustes, GUIAS_COMUNS, TOKEN_TESTE, RAIZ, escolher } from '../comum/testes/ambiente.mjs';
 
 let amb, versao;
 before(async () => { amb = await preparar(); versao = JSON.parse(await readFile(RAIZ + '/package.json', 'utf8')).version; });
@@ -85,7 +85,7 @@ test('Ajustes: guias comuns na ordem do padrão, guia Comandas, e o Voltar do na
   // "Você nas comandas" (guia Conta e perfil) continua escolhendo o nome
   await salvarComanda(p, 'Bar', ['Ana', 'Bruno'], { nome: 'Água', qtd: 1, preco: 500 });
   await guia(p, 'conta');
-  await p.selectOption('#aj-me', 'Ana');
+  await escolher(p, '#aj-me', 'Ana');
   assert.equal(await p.evaluate(() => catalog.me), 'Ana');
   assert.equal(await p.textContent('[data-kf-aj-resumo="conta"]'), 'Você é Ana');
   assert.deepEqual(a.erros, []);

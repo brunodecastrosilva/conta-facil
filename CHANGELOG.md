@@ -2,6 +2,14 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.8.0 · 2026-10-30
+
+- As listas de escolha (pessoa dos gastos, seu nome nos Ajustes) agora são do próprio app, iguais no iPhone, no
+  Android e no computador.
+- "Ainda não tenho o app" abre e fecha com o mesmo movimento suave dos outros apps.
+- Kit Fácil 2.5.0: lista de escolha do Kit no lugar da lista do sistema e seções que abrem e fecham com movimento
+  comum (`KitFacil.escolha`, `KitFacil.secao`, `KitFacil.movimento`).
+
 ## 1.7.0 · 2026-10-30
 
 - Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.

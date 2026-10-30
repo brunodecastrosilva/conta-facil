@@ -2,7 +2,7 @@
 
 Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-**Fase de testes** · versão 1.7.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+**Fase de testes** · versão 1.8.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil e Estudo Fácil) e segue o padrão comum descrito em
 [`comum/PADRAO.md`](comum/PADRAO.md).
