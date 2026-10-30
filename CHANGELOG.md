@@ -2,6 +2,11 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.4.0 · 2026-10-29
+
+- **Comanda ao vivo apagada ao encerrar:** quando o anfitrião encerra, a comanda sai do Firebase na hora e o link para de funcionar. Para dividir de novo, compartilhe outra vez (código novo). Só o aparelho que criou a comanda consegue apagá-la.
+- Comandas nunca encerradas continuam vencendo 30 dias depois de criadas e saem na limpeza mensal.
+
 ## 1.3.4 · 2026-10-29
 
 - **Privacidade:** comandas ao vivo ficam guardadas 30 dias depois de encerradas e são apagadas na limpeza mensal seguinte (o plano gratuito do Firebase não permite exclusão automática).

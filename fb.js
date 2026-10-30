@@ -26,6 +26,7 @@ export async function connect() {
         set: data => fs.setDoc(ref, data),
         // mescla só os campos que mudaram (objetos aninhados também), para várias pessoas editarem juntas
         update: patch => fs.setDoc(ref, patch, { merge: true }),
+        delete: () => fs.deleteDoc(ref),
         onSnapshot: (ok, err) => fs.onSnapshot(ref, s => ok(snap(s)), err),
       };
     },

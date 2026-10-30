@@ -232,34 +232,42 @@ test('comanda de exemplo e guia continuam funcionando', async () => {
   await a.fechar();
 });
 
-test('comanda ao vivo: grava o prazo de 30 dias ao criar e ao encerrar, sem travar a comanda se o banco recusar', async () => {
+test('comanda ao vivo: guarda quem criou, vence 30 dias depois de criada e é apagada ao encerrar; recusa do banco não trava', async () => {
   const a = await aparelho(amb);
   const p = a.page;
   await p.locator('#view .hero').waitFor();
-  const r = await p.evaluate(async () => {
-    // banco de mentira: guarda as gravações; recusa o campo expiraEm na primeira vez (regra ainda não publicada)
-    const gravacoes = []; let recusou = false;
-    store.db = { uid: 'teste', doc: path => ({
+  const rodar = recusarApagar => p.evaluate(async recusarApagar => {
+    const gravacoes = [];
+    store.db = { uid: 'aparelho-anfitriao', doc: path => ({
       get: async () => ({ exists: true, data: () => ({}) }),
       set: async d => { gravacoes.push(['set', path, d]); },
-      update: async d => { if ('expiraEm' in d && !recusou) { recusou = true; throw Object.assign(new Error('negado'), { code: 'permission-denied' }); } gravacoes.push(['update', path, d]); },
+      update: async d => { gravacoes.push(['update', path, d]); },
+      delete: async () => { if (recusarApagar) throw Object.assign(new Error('negado'), { code: 'permission-denied' }); gravacoes.push(['delete', path]); },
       onSnapshot: () => () => {},
     }) };
     const d = blankDraft(); d.place = 'Bar'; d.people = ['Ana', 'Bia'].map(newPerson); d.active = true; draft = d; saveDraft();
-    await live.start();
-    await store.chain;
-    const criada = !!draft.live;
     const antes = Date.now();
-    live.end();
-    await store.chain;
-    const prazo = gravacoes.find(g => g[0] === 'update' && g[2].expiraEm);
-    return { criada, recusou, fechou: gravacoes.some(g => g[0] === 'update' && g[2].closed === true),
-      dias: prazo ? Math.round((prazo[2].expiraEm.getTime() - antes) / 864e5) : null, ehData: prazo ? prazo[2].expiraEm instanceof Date : false };
-  });
-  assert.equal(r.criada, true, 'a comanda ao vivo não abriu');
-  assert.equal(r.recusou, true);
-  assert.equal(r.fechou, true, 'a comanda não foi encerrada');
-  assert.equal(r.ehData, true, 'expiraEm precisa ser data (o TTL do Firestore só lê data e hora)');
-  assert.equal(r.dias, 30);
+    await live.start(); await store.chain;
+    const aberta = !!draft.live;
+    live.end(); await store.chain;
+    const criou = gravacoes.find(g => g[0] === 'set'), prazo = gravacoes.find(g => g[0] === 'update' && g[2].expiraEm);
+    const iFechou = gravacoes.findIndex(g => g[0] === 'update' && g[2].closed === true), iApagou = gravacoes.findIndex(g => g[0] === 'delete');
+    return { aberta, saiu: !draft.live, hostUid: criou && criou[2].hostUid,
+      dias: prazo ? Math.round((prazo[2].expiraEm.getTime() - antes) / 864e5) : null, ehData: !!prazo && prazo[2].expiraEm instanceof Date,
+      fechou: iFechou >= 0, apagou: iApagou >= 0, ordem: iApagou > iFechou };
+  }, recusarApagar);
+  const ok = await rodar(false);
+  assert.equal(ok.aberta, true, 'a comanda ao vivo não abriu');
+  assert.equal(ok.hostUid, 'aparelho-anfitriao', 'a comanda não guarda quem criou (hostUid)');
+  assert.equal(ok.ehData, true, 'expiraEm precisa ser data');
+  assert.equal(ok.dias, 30);
+  assert.equal(ok.fechou, true, 'a comanda não foi encerrada');
+  assert.equal(ok.apagou && ok.ordem, true, 'a comanda não foi apagada depois de encerrada');
+  // regra antiga (sem permissão de apagar): fica só encerrada e o app segue normalmente
+  const recusado = await rodar(true);
+  assert.equal(recusado.fechou, true);
+  assert.equal(recusado.apagou, false);
+  assert.equal(recusado.saiu, true, 'o anfitrião não saiu da comanda ao vivo');
+  assert.deepEqual(a.erros, []);
   await a.fechar();
 });
