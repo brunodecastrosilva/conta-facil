@@ -2,6 +2,11 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.5.0 · 2026-10-29
+
+- Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.
+- Kit Fácil 2.2.0: a barra de baixo tem no máximo 5 posições; com mais seções, as principais e o "Mais".
+
 ## 1.4.0 · 2026-10-29
 
 - **Comanda ao vivo apagada ao encerrar:** quando o anfitrião encerra, a comanda sai do Firebase na hora e o link para de funcionar. Para dividir de novo, compartilhe outra vez (código novo). Só o aparelho que criou a comanda consegue apagá-la.

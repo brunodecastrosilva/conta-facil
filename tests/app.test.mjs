@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { preparar, aparelho, githubFalso, firestoreFalso, semRolagemLateral, conferirTopo, conferirNavAjustes, guiasAjustes, GUIAS_COMUNS, TOKEN_TESTE, RAIZ } from '../comum/testes/ambiente.mjs';
+import { preparar, aparelho, githubFalso, firestoreFalso, semRolagemLateral, conferirTopo, conferirNavAjustes, abrirAjustesPelaNav, irPelaNav, guiasAjustes, GUIAS_COMUNS, TOKEN_TESTE, RAIZ } from '../comum/testes/ambiente.mjs';
 
 let amb, versao;
 before(async () => { amb = await preparar(); versao = JSON.parse(await readFile(RAIZ + '/package.json', 'utf8')).version; });
@@ -12,7 +12,7 @@ const esperar = async (cond, ms = 8000) => { const fim = Date.now() + ms; while 
 // Ajustes fica na navegação: barra de baixo (celular e tablet) ou pé do trilho (computador)
 const AJ = '.kf-nav [data-kf="ajustes"]:visible, .kf-trilho [data-kf="ajustes"]:visible';
 /* abre uma guia dos Ajustes (no celular, a lista vira a guia aberta) */
-const guia = async (p, id) => { if (!(await p.locator('[data-kf-aj]').count())) await p.click(AJ); await p.click(`.kf-aj-lista [data-kf-aj-ir="${id}"]`); await p.locator(`#kf-aj-${id}.kf-aberta, [data-kf-aj][data-ativa="${id}"]`).first().waitFor(); };
+const guia = async (p, id) => { if (!(await p.locator('[data-kf-aj]').count())) await abrirAjustesPelaNav(p); await p.click(`.kf-aj-lista [data-kf-aj-ir="${id}"]`); await p.locator(`#kf-aj-${id}.kf-aberta, [data-kf-aj][data-ativa="${id}"]`).first().waitFor(); };
 const TELAS = [[{ width: 360, height: 740 }, 'celular pequeno'], [{ width: 390, height: 844 }, 'celular'], [{ width: 820, height: 1180 }, 'tablet'], [{ width: 1440, height: 900 }, 'computador']];
 
 /* cria uma comanda salva usando as próprias funções do app */
@@ -37,7 +37,7 @@ test('abre sem erros em celular, tablet e computador, sem rolagem lateral', asyn
     assert.deepEqual(navs, [viewport.width >= 1024 ? '.kf-trilho' : '.kf-nav'], `navegação no ${nome}`);
     const navAj = await conferirNavAjustes(a.page);
     assert.deepEqual(navAj.erros, [], `Ajustes na navegação no ${nome}`);
-    await a.page.click(AJ);
+    await abrirAjustesPelaNav(a.page);
     await a.page.locator('.kf-aj-h').waitFor();
     assert.ok(await semRolagemLateral(a.page), `rolagem lateral nos Ajustes no ${nome}`);
     await guia(a.page, 'comandas');
@@ -59,10 +59,10 @@ test('Ajustes: guias comuns na ordem do padrão, guia Comandas, e o Voltar do na
   const a = await aparelho(amb);
   const p = a.page;
   await p.click('#tab-historico');
-  await p.click(AJ);
+  await abrirAjustesPelaNav(p);
   assert.deepEqual(await guiasAjustes(p), { comuns: GUIAS_COMUNS, produto: ['Comandas'] });
   assert.ok((await p.textContent('#view')).includes(`Conta Fácil ${versao}`), 'falta a versão nos Ajustes');
-  assert.equal(await p.getAttribute(AJ, 'aria-current'), 'page');
+  assert.equal(await p.locator('.kf-nav [data-kf=\"ajustes\"]').getAttribute('aria-current'), 'page');
   // guia aberta e Voltar (no celular, volta para a lista; de novo, sai dos Ajustes)
   await guia(p, 'sincronizacao');
   await p.goBack();
@@ -73,12 +73,12 @@ test('Ajustes: guias comuns na ordem do padrão, guia Comandas, e o Voltar do na
   await p.goBack();
   assert.ok(await esperar(async () => (await p.getAttribute('#tab-historico', 'aria-selected')) === 'true'), 'o Voltar não voltou para o Histórico');
   // tocar em Ajustes numa guia volta para a lista; trocar de aba estando numa guia sai dos Ajustes
-  await p.click(AJ);
+  await abrirAjustesPelaNav(p);
   await guia(p, 'aparencia');
-  await p.click(AJ);
+  await abrirAjustesPelaNav(p);
   assert.ok(await esperar(async () => (await p.getAttribute('[data-kf-aj]', 'data-ativa')) === ''), 'Ajustes na navegação não voltou para a lista');
   await guia(p, 'aparencia');
-  await p.click('#tab-cadastros');
+  await irPelaNav(p, 'Cadastros');
   assert.equal(await p.getAttribute('#tab-cadastros', 'aria-selected'), 'true');
   await p.waitForTimeout(150);
   assert.equal(await p.getAttribute('#tab-cadastros', 'aria-selected'), 'true', 'o Voltar automático desfez a troca de aba');
@@ -96,7 +96,7 @@ test('computador: Ajustes em duas colunas, com o trilho lateral', async () => {
   const a = await aparelho(amb, { viewport: { width: 1440, height: 900 } });
   const p = a.page;
   await p.click('#trilho-historico');
-  await p.click(AJ);
+  await abrirAjustesPelaNav(p);
   const lado = await p.evaluate(() => { const l = document.querySelector('.kf-aj-lista').getBoundingClientRect(), s = document.querySelector('.kf-aj-sec.kf-aberta, .kf-aj-sec:first-child').getBoundingClientRect(); return l.right <= s.left && Math.abs(l.top - s.top) < 60; });
   assert.ok(lado, 'lista e guia não estão lado a lado');
   await p.click('.kf-aj-lista [data-kf-aj-ir="comandas"]');
