@@ -564,7 +564,7 @@ button.minus,button.plus{min-height:44px}
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.8.0';
+const VERSAO = '1.9.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -1195,7 +1195,7 @@ KitFacil.iniciar({
   tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
+  novidades: [{ versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
     'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
@@ -1644,8 +1644,10 @@ function render(opts = {}) {
   $('.wrap').classList.toggle('largo', tab === 'ajustes');
   // telas principais (menos o Início) abrem com o cabeçalho comum do Kit: título e uma linha do que a tela faz
   const CAB = { comanda: 'Quem está na mesa e o que foi pedido.', fechar: 'Quanto cada pessoa paga, com serviço e desconto.', historico: 'Suas comandas salvas, o gasto por mês e os lugares mais frequentes.', cadastros: 'Pessoas, chaves Pix e o preço de cada produto em cada lugar.' };
+  const trocou = v.dataset.telaAtual !== tab; v.dataset.telaAtual = tab;
   v.innerHTML = `<section class="view">${CAB[tab] ? KitFacil.ui.cabecalho({ titulo: TABS[tab][1], sub: CAB[tab] }) : ''}${fn.html()}</section>`;
   fn.bind(v);
+  if (trocou) KitFacil.movimento.entrar(v, { de: 'tela' }); // troca de tela com o movimento comum
   prepFields(v);
   renderSync();
   if (keep) {
@@ -1950,12 +1952,12 @@ async function saveFile(filename, blob) {
 }
 async function shareReceipt(r, b, calc, back) {
   loadJsPDF().catch(() => {});
-  openSheet({ title: `Cupom de ${r.person.name}`, onClose: back, body: `<div class="share-prev"><span class="hint">Gerando imagem…</span></div>` });
+  const dlg = openSheet({ title: `Cupom de ${r.person.name}`, onClose: back, body: `<div class="share-prev"><span class="hint">Gerando imagem…</span></div>` });
   const cv = await receiptCanvas(r, b, calc);
   const url = cv.toDataURL('image/png');
   const dl = await downloadsNS();
   const name = `cupom-${slug(r.person.name.replace(/ \+ /g, ' e '))}-${slug(b.place)}`;
-  const s = $('.kf-dlg-corpo'); if (!s) return;
+  const s = dlg.isConnected && $('.kf-dlg-corpo', dlg); if (!s) return;
   $('.share-prev', s).innerHTML = `<img src="${url}" alt="Cupom de ${esc(r.person.name)}">`;
   s.insertAdjacentHTML('beforeend', `
     <div class="share-actions">

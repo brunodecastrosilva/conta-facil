@@ -2,6 +2,11 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.9.0 · 2026-10-30
+
+- Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.
+- Kit Fácil 2.6.0: calendário do Kit em todo campo de data (`KitFacil.data`), movimento comum nas trocas de tela, guias dos Ajustes, listas, calendário, janelas e avisos.
+
 ## 1.8.0 · 2026-10-30
 
 - As listas de escolha (pessoa dos gastos, seu nome nos Ajustes) agora são do próprio app, iguais no iPhone, no
