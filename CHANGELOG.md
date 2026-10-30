@@ -2,6 +2,14 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.6.0 · 2026-10-29
+
+- Todas as telas principais têm título e uma linha dizendo para que servem.
+- Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.
+- Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.
+- Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.
+- Kit Fácil 2.3.0: cabeçalho de tela, botão de criar, estado vazio, aviso com ação e janela com subtítulo, altura e largura, comuns aos três apps.
+
 ## 1.5.0 · 2026-10-29
 
 - Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.

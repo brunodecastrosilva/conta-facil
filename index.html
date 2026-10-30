@@ -118,7 +118,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .item-actions{display:flex;gap:6px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .item-actions .grp{display:flex;gap:6px;align-items:center}
 .share{font-size:12.5px;color:var(--muted)}
-.empty{border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
 
 /* summary */
 .sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
@@ -193,19 +192,9 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .cat-row input{width:110px;min-height:40px;padding:6px 10px;text-align:right;font-family:var(--f-mono)}
 
 /* overlay */
-.overlay{position:fixed;inset:0;background:rgba(8,16,12,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-@media (min-width:640px){.overlay{align-items:center}}
-.sheet{background:var(--bg);border-radius:18px;width:100%;max-width:760px;max-height:88vh;max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
-.sheet > .card-head:first-child{position:sticky;top:-18px;z-index:3;margin:-18px -16px 0;padding:14px 16px 12px;background:var(--bg);border-bottom:1px solid var(--line);flex-wrap:nowrap;align-items:center}
-.sheet > .card-head:first-child > :first-child{min-width:0}
-.sheet .close-x{width:44px;height:44px;border-radius:12px;flex:none;background:var(--surface);color:var(--ink)}
-.sheet .close-x svg{width:22px;height:22px}
-.overlay{overscroll-behavior:contain;touch-action:none}
-.overlay .sheet{touch-action:pan-y}
-.sheet h3{font-family:var(--f-display);font-weight:800;font-size:21px;margin:0}
+.kf-dlg-corpo h3{font-family:var(--f-display);font-weight:800;font-size:19px;margin:0}
 .sheet-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;z-index:60;max-width:calc(100% - 32px);box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .actions-bar{display:flex;gap:8px;flex-wrap:wrap}
 .actions-bar .btn{flex:1 1 160px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -306,9 +295,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .share-btn:hover{box-shadow:inset 0 0 0 1.5px var(--green)}
 .share-btn:disabled{opacity:.5}
 [hidden]{display:none!important}
-.toast{display:flex;align-items:center;gap:12px;pointer-events:none}
-.toast-act{pointer-events:auto}
-.toast-act{border:0;background:none;color:var(--mustard);font-weight:700;font-size:14px;padding:4px 2px;min-height:32px}
 .recover{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .recover > span{flex:1 1 220px;min-width:0}
 .rec-list{display:flex;flex-direction:column}
@@ -324,7 +310,7 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .rc-sub{font-weight:600;font-size:13px;line-height:20px}
 .who-row.covered .who-total{color:var(--muted)}
 .paid-tag{color:var(--green);font-weight:700}
-.sheet .settle{box-shadow:none;border:1px solid var(--line)}
+.kf-dlg .settle{box-shadow:none;border:1px solid var(--line)}
 .hist-total{display:flex;flex-direction:column;align-items:flex-end}
 .gboard{display:flex;flex-direction:column;gap:10px}
 .pay-t{border:0;border-radius:99px;font-size:11.5px;font-weight:700;padding:4px 8px;min-height:28px;background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
@@ -555,9 +541,15 @@ body.is-dragging.drag-out .drop-out{display:flex}
 .kf-nav-it .badge,.kf-trilho-it .badge{font-family:var(--f-mono);font-size:11px;font-weight:700;background:var(--mustard);color:#2a1d02;border-radius:99px;padding:0 6px;line-height:17px}
 .kf-nav-it .badge{position:absolute;top:2px;left:calc(50% + 6px)}
 .kf-trilho-it .badge{margin-left:auto}
-.toast{z-index:95;bottom:calc(var(--kf-nav-h) + 16px + env(safe-area-inset-bottom,0px))}
 .tour-card.dock{bottom:calc(var(--kf-nav-h) + 16px + env(safe-area-inset-bottom,0px))}
-@media (min-width:1024px){.toast{bottom:24px;left:calc(50% + var(--kf-trilho-w) / 2)}.tour-card.dock{bottom:16px}.tour-card{left:calc(var(--kf-trilho-w) + 16px)}}
+@media (min-width:1024px){.tour-card.dock{bottom:16px}.tour-card{left:calc(var(--kf-trilho-w) + 16px)}}
+/* lei 7: alvos de toque de pelo menos 44 px (revisão de 29/10) */
+.btn.small{min-height:44px}
+.chip{min-height:44px}
+.seg button{min-height:44px}
+button.minus,button.plus{min-height:44px}
+/* rótulos em caixa alta com no mínimo 12 px (eram 11–11,5) */
+.eyebrow,.kpi-l,.tot-l{font-size:12px}
 </style>
 
 <header class="kf-barra" id="barra"><div class="kf-barra-in"><div class="kf-marca"><span class="kf-marca-ic marca-conta" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span><span class="kf-marca-nome">Conta Fácil</span></div><div id="topo"></div></div></header>
@@ -567,11 +559,11 @@ body.is-dragging.drag-out .drop-out{display:flex}
 </aside>
 <div class="wrap"><main id="view"></main></div>
 <nav class="kf-nav" aria-label="Seções"><div class="kf-nav-in" role="tablist" id="tabs"><button role="tab" class="kf-nav-it" data-tab="inicio" id="tab-inicio"></button><button role="tab" class="kf-nav-it" data-tab="comanda" id="tab-comanda"></button><button role="tab" class="kf-nav-it" data-tab="fechar" id="tab-fechar"></button><button role="tab" class="kf-nav-it" data-tab="historico" id="tab-historico"></button><button role="tab" class="kf-nav-it" data-tab="cadastros" id="tab-cadastros" data-kf-mais></button><span id="tab-ajustes-lugar" hidden></span></div></nav>
-<div id="overlay-root"></div>
+
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.5.0';
+const VERSAO = '1.6.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -1204,10 +1196,10 @@ function aplicarSync(R) {
 KitFacil.iniciar({
   app: 'conta-facil', nome: 'Conta Fácil', versao: VERSAO, icone: 'icons/icon-192.png',
   resumo: 'Divide a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.',
-  tela: () => tab, toast: (m, a) => toast(m, a), exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
+  tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
+  novidades: [{ versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
     'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
@@ -1234,7 +1226,7 @@ SY = KitFacil.sync.criar({
   carimbar: carimbarSync, aplicar: aplicarSync, pacote: () => pacoteSync(false),
   mesmo: (a, r) => KitFacil.canon(a) === KitFacil.canon({ v: r.v, bills: r.bills, people: r.people, products: r.products, me: r.me ?? '', st: r.st, del: r.del }),
   redesenhar: () => render({ preserve: true }),
-  ocupado: () => !!$('#overlay-root').innerHTML || isField(document.activeElement) || (typeof tour !== 'undefined' && tour.active()),
+  ocupado: () => KitFacil.dialogo.aberto() || isField(document.activeElement) || (typeof tour !== 'undefined' && tour.active()),
   textoLigada: () => `Sincronização ligada. ${plural(bills.length, 'comanda salva', 'comandas salvas')} neste aparelho.`,
 });
 SNAP_SYNC = registrosSync();
@@ -1375,48 +1367,37 @@ function attachSuggest(input, getItems, onPick) {
 }
 
 /* ---------- toast & overlay ---------- */
-let toastTimer;
-function toast(msg, action) {
-  let el = $('.toast'); if (!el) { el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
-  el.textContent = msg; el.hidden = false; clearTimeout(toastTimer);
-  if (action) {
-    const b = document.createElement('button'); b.className = 'toast-act'; b.textContent = action.label;
-    b.onclick = () => { el.hidden = true; clearTimeout(toastTimer); action.run(); };
-    el.appendChild(b);
-  }
-  toastTimer = setTimeout(() => el.hidden = true, action ? 6000 : 3000);
-}
-// com uma janela aberta, a página de fundo fica parada; só a janela rola
-let lockedY = null;
-function lockScroll() {
-  if (lockedY !== null) return;
-  lockedY = window.scrollY;
-  Object.assign(document.body.style, { position: 'fixed', top: -lockedY + 'px', left: '0', right: '0', width: '100%' });
-}
-function unlockScroll() {
-  if (lockedY === null) return;
-  const y = lockedY; lockedY = null;
-  Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
-  window.scrollTo(0, y);
-}
+/* avisos e janelas são os do Kit Fácil (iguais nos três apps); estas funções só traduzem o jeito antigo do app:
+   o título (h3) e a linha de apoio (.hint) do começo do HTML vão para o cabeçalho da janela do Kit; o X próprio da janela,
+   quando existe, fica escondido e o X do Kit passa a acioná-lo (assim "voltar para a janela anterior" continua valendo). */
+function toast(msg, action) { KitFacil.avisar(msg, action); }
 function openSheet(html, onMount) {
-  const root = $('#overlay-root');
-  lockScroll();
-  root.innerHTML = `<div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
-  const ov = $('#ov');
-  ov.addEventListener('click', e => { if (e.target.id === 'ov') closeSheet(); });
-  // arrastar no fundo escuro não rola nada
-  ov.addEventListener('touchmove', e => { if (!e.target.closest('.sheet')) e.preventDefault(); }, { passive: false });
-  prepFields(root);
-  onMount && onMount($('.sheet', root));
+  const t = document.createElement('template'); t.innerHTML = html.trim();
+  const f = t.content, ini = f.firstElementChild;
+  let titulo = '', sub = '', xProprio = null;
+  if (ini && ini.classList.contains('card-head')) {
+    titulo = (ini.querySelector('h3')?.textContent || '').trim();
+    sub = (ini.querySelector('.hint')?.textContent || '').trim();
+    xProprio = ini.querySelector('.close-x');
+    ini.remove();
+  } else if (ini && ini.tagName === 'H3') { titulo = ini.textContent.trim(); ini.remove(); }
+  const corpo = document.createElement('div'); corpo.appendChild(f);
+  if (xProprio) { xProprio.hidden = true; corpo.appendChild(xProprio); }
+  return KitFacil.dialogo.abrir({ titulo, sub, corpo: corpo.innerHTML, aoMontar: dlg => {
+    if (xProprio) {
+      const x = $('.kf-dlg-cab [data-kf-fechar]', dlg), alvo = $('#' + xProprio.id, dlg);
+      if (x && alvo) x.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); alvo.click(); });
+    }
+    prepFields(dlg);
+    onMount && onMount(dlg);
+  } });
 }
-function closeSheet() { $('#overlay-root').innerHTML = ''; unlockScroll(); }
+function closeSheet() { KitFacil.dialogo.fechar(); }
 function confirmSheet(title, text, okLabel, onOk, danger) {
   openSheet(`<h3>${esc(title)}</h3><p class="hint" style="font-size:14.5px">${esc(text)}</p>
     <div class="sheet-actions"><button class="btn ghost" id="cf-no">Cancelar</button><button class="btn ${danger ? 'danger' : ''}" id="cf-ok">${esc(okLabel)}</button></div>`,
     s => { $('#cf-no', s).onclick = closeSheet; $('#cf-ok', s).onclick = () => { closeSheet(); onOk(); }; $('#cf-ok', s).focus(); });
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 
 /* ---------- cupom ---------- */
 function serviceLabel(b) { return b.service.mode === 'fixed' ? 'Serviço' : `Serviço (${pctStr(b.service.pct)}%)`; }
@@ -1685,7 +1666,9 @@ function render(opts = {}) {
   const v = $('#view');
   const fn = { inicio: viewInicio, comanda: viewComanda, fechar: viewFechar, historico: viewHistorico, cadastros: viewCadastros, ajustes: viewAjustes }[tab];
   $('.wrap').classList.toggle('largo', tab === 'ajustes');
-  v.innerHTML = `<section class="view">${fn.html()}</section>`;
+  // telas principais (menos o Início) abrem com o cabeçalho comum do Kit: título e uma linha do que a tela faz
+  const CAB = { comanda: 'Quem está na mesa e o que foi pedido.', fechar: 'Quanto cada pessoa paga, com serviço e desconto.', historico: 'Suas comandas salvas, o gasto por mês e os lugares mais frequentes.', cadastros: 'Pessoas, chaves Pix e o preço de cada produto em cada lugar.' };
+  v.innerHTML = `<section class="view">${CAB[tab] ? KitFacil.ui.cabecalho({ titulo: TABS[tab][1], sub: CAB[tab] }) : ''}${fn.html()}</section>`;
   fn.bind(v);
   prepFields(v);
   renderSync();
@@ -1996,7 +1979,7 @@ async function shareReceipt(r, b, calc, back) {
   const url = cv.toDataURL('image/png');
   const dl = await downloadsNS();
   const name = `cupom-${slug(r.person.name.replace(/ \+ /g, ' e '))}-${slug(b.place)}`;
-  const s = $('.sheet'); if (!s) return;
+  const s = $('.kf-dlg-corpo'); if (!s) return;
   $('.share-prev', s).innerHTML = `<img src="${url}" alt="Cupom de ${esc(r.person.name)}">`;
   s.insertAdjacentHTML('beforeend', `
     <div class="share-actions">
@@ -2321,7 +2304,7 @@ const viewComanda = {
     const d = draft, calc = compute(d);
     const allIds = d.people.map(p => p.id);
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
-    const itemsHTML = d.items.length ? d.items.map(it => itemCardHTML(it, d, me)).join('') : `<div class="empty">Nenhum item ainda.</div>`;
+    const itemsHTML = d.items.length ? d.items.map(it => itemCardHTML(it, d, me)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item ainda', texto: 'Adicione o que foi pedido e marque quem consumiu.' });
 
     return `
     ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small mustard" id="clear-example">Sair</button></span></div>` : ''}
@@ -2794,7 +2777,7 @@ function paymentHTML(d, c) {
 const viewFechar = {
   html() {
     const d = draft, c = compute(d), s = d.service, ds = d.discount;
-    if (!d.people.length || !d.items.length) return `<div class="empty">Comanda sem pessoas ou itens.</div>`;
+    if (!d.people.length || !d.items.length) return KitFacil.ui.vazio({ titulo: 'Comanda sem pessoas ou itens', texto: 'Adicione as pessoas e o que foi pedido na aba <b>Comanda</b>.' });
     const names = ids => ids.map(id => c.per[id].person.name).join(', ');
     let note = '';
     if (s.enabled && c.skipped.length) {
@@ -3061,7 +3044,7 @@ function statsHTML() {
 }
 const viewHistorico = {
   html() {
-    if (!bills.length) return `<div class="empty">Nenhuma comanda salva ainda.</div>`;
+    if (!bills.length) return KitFacil.ui.vazio({ titulo: 'Nenhuma comanda salva ainda', texto: 'Ao fechar uma comanda, ela fica guardada aqui, com o gasto do mês e os lugares mais frequentes.' });
     return `${statsHTML()}
       <div class="card-head" style="padding-inline:4px"><h2 style="font-family:var(--f-display);font-size:19px;margin:0">Comandas salvas</h2><span class="hint">${plural(bills.length, 'comanda', 'comandas')}</span></div>
       <div class="hist">${bills.map(histRowHTML).join('')}</div>`;
@@ -3124,7 +3107,7 @@ const viewCadastros = {
     <div class="card">
       <div class="card-head"><h2>Pessoas</h2><span class="hint">${ppl.length}</span></div>
       ${ppl.length ? `<div class="cat-list">${ppl.map(p => `<div class="cat-row"><span class="nm" style="display:flex;gap:8px;align-items:center">${avatar(p.name)}<span style="min-width:0">${esc(p.name)}<small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(p.pix) : ''}</small></span></span><button class="btn small ghost" data-pix-edit="${esc(p.name)}">Pix</button>
-        <button class="icon-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>` : '<div class="empty">Nenhuma pessoa cadastrada ainda.</div>'}
+        <button class="icon-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhuma pessoa cadastrada ainda', texto: 'Cadastre quem costuma dividir a conta com você, com a chave Pix de cada pessoa.' })}
     </div>
     <div class="card">
       <div class="card-head"><h2>Produtos e preços por local</h2><span class="hint">${prods.length}</span></div>
@@ -3137,7 +3120,7 @@ const viewCadastros = {
             <input type="text" inputmode="numeric" data-money value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Preço de ${esc(p.name)} em ${esc(e.place)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">
             <button class="icon-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar preço de ${esc(e.place)}">${I.x}</button></div>`).join('')
           : `<div class="price-row"><span class="pl hint">Sem local</span><input type="text" inputmode="numeric" data-money value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" aria-label="Preço de ${esc(p.name)}" id="pp-${i}-x"><span></span></div>`}
-        </div>`; }).join('')}</div>` : '<div class="empty">Nenhum produto cadastrado ainda.</div>'}
+        </div>`; }).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhum produto cadastrado ainda', texto: 'Cadastre o que você costuma pedir e o preço em cada lugar.' })}
     </div>
 
     ${bills.length ? `<div class="live-offer"><span>${I.refresh}<span><b>Recuperar do histórico</b><span class="hint">${nMiss
