@@ -192,6 +192,7 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .cat-row input{width:110px;min-height:40px;padding:6px 10px;text-align:right;font-family:var(--f-mono)}
 
 /* overlay */
+.kf-dlg-pe .btn{flex:1 1 140px}
 .kf-dlg-corpo h3{font-family:var(--f-display);font-weight:800;font-size:19px;margin:0}
 .sheet-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
@@ -563,7 +564,7 @@ button.minus,button.plus{min-height:44px}
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.6.0';
+const VERSAO = '1.7.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -1016,16 +1017,13 @@ const codeHTML = code => `<b class="code-val" aria-label="${esc(code.split('').j
 const codeShort = code => code.length === 10 ? code.slice(0, 5) + ' ' + code.slice(5) : code;
 // no iPhone, um link sempre abre no Safari, nunca no app da tela de início: a ponte é o código
 function openInAppSheet(code) {
-  openSheet(`<div class="card-head"><h3>Comanda ao vivo</h3><button class="icon-btn close-x" id="oa-x" aria-label="Fechar">${I.x}</button></div>
-    <p class="hint" style="font-size:14.5px">Tem o Conta Fácil na tela de início? Copie o código, abra o app e cole em <b>Comanda ao vivo</b>, na tela inicial.</p>
+  openSheet({ title: 'Comanda ao vivo', body: `<p class="hint" style="font-size:15px">Tem o Conta Fácil na tela de início? Copie o código, abra o app e cole em <b>Comanda ao vivo</b>, na tela inicial.</p>
     <div class="code-box"><span class="eyebrow">Código</span>${codeHTML(code)}</div>
-    <button class="btn" id="oa-copy">${I.copy}Copiar código</button>
-    <button class="btn ghost" id="oa-here">Continuar no navegador</button>
-    <details class="oa-install"><summary>Ainda não tenho o app</summary><p class="hint">Toque em <b>Compartilhar</b> no Safari e em <b>Adicionar à Tela de Início</b>. Depois, abra o app pelo ícone e entre com o código.</p></details>`, s => {
-    $('#oa-x', s).onclick = closeSheet;
+    <details class="oa-install"><summary>Ainda não tenho o app</summary><p class="hint">Toque em <b>Compartilhar</b> no Safari e em <b>Adicionar à Tela de Início</b>. Depois, abra o app pelo ícone e entre com o código.</p></details>`,
+    foot: `<button class="btn ghost" id="oa-here">Continuar no navegador</button><button class="btn" id="oa-copy">${I.copy}Copiar código</button>`, onMount: s => {
     $('#oa-copy', s).onclick = () => copyText(code, 'Código copiado. Agora abra o app.');
-    $('#oa-here', s).onclick = () => { closeSheet(); live.browserOk = true; live.boot(); };
-  });
+    $('#oa-here', s).onclick = () => { closeSheet(true); live.browserOk = true; live.boot(); };
+  } });
 }
 // convite: QR code para quem está na mesa, link e código para mandar no grupo
 function inviteText() {
@@ -1034,12 +1032,10 @@ function inviteText() {
 function inviteSheet() {
   if (!draft.live || draft.isExample) return;
   const code = draft.live.code, link = live.link();
-  openSheet(`<div class="card-head"><div><h3>Convidar a turma</h3>${draft.place ? `<span class="hint">${esc(draft.place)}</span>` : ''}</div><button class="icon-btn close-x" id="iv-x" aria-label="Fechar">${I.x}</button></div>
-    <div class="qr-wrap sm"><canvas id="iv-qr" width="400" height="400" aria-label="QR code do convite"></canvas><span class="hint" id="iv-qr-msg">Gerando QR code…</span></div>
+  openSheet({ title: 'Convidar a turma', sub: draft.place || '', body: `<div class="qr-wrap sm"><canvas id="iv-qr" width="400" height="400" aria-label="QR code do convite"></canvas><span class="hint" id="iv-qr-msg">Gerando QR code…</span></div>
     <div class="code-box"><span class="eyebrow">Código</span>${codeHTML(code)}</div>
     ${navigator.share ? `<button class="btn mustard" id="iv-share">${I.share}Enviar convite</button>` : ''}
-    <div class="btn-row"><button class="btn ghost" id="iv-link">${I.copy}Copiar link</button><button class="btn ghost" id="iv-code">${I.copy}Copiar código</button></div>`, async s => {
-    $('#iv-x', s).onclick = closeSheet;
+    <div class="btn-row"><button class="btn ghost" id="iv-link">${I.copy}Copiar link</button><button class="btn ghost" id="iv-code">${I.copy}Copiar código</button></div>`, onMount: async s => {
     $('#iv-link', s).onclick = () => copyText(link, 'Link copiado.');
     $('#iv-code', s).onclick = () => copyText(code, 'Código copiado.');
     $('#iv-share', s)?.addEventListener('click', async () => {
@@ -1048,7 +1044,7 @@ function inviteSheet() {
     });
     try { const m = await qrMatrix(link); const cv = $('#iv-qr'); if (cv) { drawQR(cv.getContext('2d'), m, 0, 0, 400); $('#iv-qr-msg').hidden = true; } }
     catch { const msg = $('#iv-qr-msg'); if (msg) msg.textContent = 'Não deu para gerar o QR code agora.'; const cv = $('#iv-qr'); if (cv) cv.hidden = true; }
-  });
+  } });
 }
 // quem está online, atualizado sem redesenhar a tela
 const joinNames = a => a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1];
@@ -1199,7 +1195,7 @@ KitFacil.iniciar({
   tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
+  novidades: [{ versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
     'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
@@ -1367,36 +1363,18 @@ function attachSuggest(input, getItems, onPick) {
 }
 
 /* ---------- toast & overlay ---------- */
-/* avisos e janelas são os do Kit Fácil (iguais nos três apps); estas funções só traduzem o jeito antigo do app:
-   o título (h3) e a linha de apoio (.hint) do começo do HTML vão para o cabeçalho da janela do Kit; o X próprio da janela,
-   quando existe, fica escondido e o X do Kit passa a acioná-lo (assim "voltar para a janela anterior" continua valendo). */
+/* avisos e janelas são os do Kit Fácil (iguais nos três apps); mesmos nomes e parâmetros do Elétrica e do Estudo.
+   Os botões de ação ficam no pé da janela (foot). onClose roda quando a pessoa fecha (X, Esc, toque fora). */
 function toast(msg, action) { KitFacil.avisar(msg, action); }
-function openSheet(html, onMount) {
-  const t = document.createElement('template'); t.innerHTML = html.trim();
-  const f = t.content, ini = f.firstElementChild;
-  let titulo = '', sub = '', xProprio = null;
-  if (ini && ini.classList.contains('card-head')) {
-    titulo = (ini.querySelector('h3')?.textContent || '').trim();
-    sub = (ini.querySelector('.hint')?.textContent || '').trim();
-    xProprio = ini.querySelector('.close-x');
-    ini.remove();
-  } else if (ini && ini.tagName === 'H3') { titulo = ini.textContent.trim(); ini.remove(); }
-  const corpo = document.createElement('div'); corpo.appendChild(f);
-  if (xProprio) { xProprio.hidden = true; corpo.appendChild(xProprio); }
-  return KitFacil.dialogo.abrir({ titulo, sub, corpo: corpo.innerHTML, aoMontar: dlg => {
-    if (xProprio) {
-      const x = $('.kf-dlg-cab [data-kf-fechar]', dlg), alvo = $('#' + xProprio.id, dlg);
-      if (x && alvo) x.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); alvo.click(); });
-    }
-    prepFields(dlg);
-    onMount && onMount(dlg);
-  } });
+function openSheet({ title, sub = '', body, foot = '', tall = false, wide = false, onMount, onClose }) {
+  return KitFacil.dialogo.abrir({ titulo: title, sub, corpo: body, pe: foot, classe: [tall && 'kf-alto', wide && 'kf-largo'].filter(Boolean).join(' '),
+    aoFechar: onClose, aoMontar: dlg => { prepFields(dlg); onMount && onMount(dlg); } });
 }
-function closeSheet() { KitFacil.dialogo.fechar(); }
+function closeSheet(silent) { KitFacil.dialogo.fechar(silent); }
 function confirmSheet(title, text, okLabel, onOk, danger) {
-  openSheet(`<h3>${esc(title)}</h3><p class="hint" style="font-size:14.5px">${esc(text)}</p>
-    <div class="sheet-actions"><button class="btn ghost" id="cf-no">Cancelar</button><button class="btn ${danger ? 'danger' : ''}" id="cf-ok">${esc(okLabel)}</button></div>`,
-    s => { $('#cf-no', s).onclick = closeSheet; $('#cf-ok', s).onclick = () => { closeSheet(); onOk(); }; $('#cf-ok', s).focus(); });
+  openSheet({ title, body: `<p class="hint" style="font-size:15px">${esc(text)}</p>`,
+    foot: `<button class="btn ghost" id="cf-no">Cancelar</button><button class="btn ${danger ? 'danger' : ''}" id="cf-ok">${esc(okLabel)}</button>`,
+    onMount: s => { $('#cf-no', s).onclick = () => closeSheet(); $('#cf-ok', s).onclick = () => { closeSheet(true); onOk(); }; $('#cf-ok', s).focus(); } });
 }
 
 /* ---------- cupom ---------- */
@@ -1454,11 +1432,11 @@ function savePixKey(name, key, done) {
   const finish = k => { setPix(name, k); done && done(k); };
   if (!pixAmbiguous(key)) return finish(key ? normPixKey(key) : '');
   const dig = key.replace(/\D/g, '');
-  openSheet(`<h3>Essa chave é CPF ou celular?</h3><p class="hint" style="font-size:14.5px">O número ${esc(dig)} pode ser as duas coisas. Escolha o tipo da chave Pix de ${esc(name)}.</p>
-    <div class="sheet-actions"><button class="btn ghost" id="pk-cpf">CPF</button><button class="btn" id="pk-tel">Celular</button></div>`, s => {
-    $('#pk-cpf', s).onclick = () => { closeSheet(); finish(dig); };
-    $('#pk-tel', s).onclick = () => { closeSheet(); finish('+55' + dig); };
-  });
+  openSheet({ title: 'Essa chave é CPF ou celular?', body: `<p class="hint" style="font-size:15px">O número ${esc(dig)} pode ser as duas coisas. Escolha o tipo da chave Pix de ${esc(name)}.</p>`,
+    foot: `<button class="btn ghost" id="pk-cpf">CPF</button><button class="btn" id="pk-tel">Celular</button>`, onMount: s => {
+    $('#pk-cpf', s).onclick = () => { closeSheet(true); finish(dig); };
+    $('#pk-tel', s).onclick = () => { closeSheet(true); finish('+55' + dig); };
+  } });
 }
 function setPix(name, key) {
   let p = catalog.people.find(x => norm(x.name) === norm(name));
@@ -1528,15 +1506,14 @@ function drawQR(ctx, m, x, y, size, bg = '#FFFFFF', ink = '#000000') {
 }
 function pixSheet(debt, back) {
   const code = pixPayload(debt.key, debt.toName, debt.value);
-  openSheet(`<div class="card-head"><div><h3>Pix para ${esc(debt.toName)}</h3><span class="hint num">${BRL(debt.value)}</span></div><button class="icon-btn close-x" id="px-x" aria-label="Fechar">${I.x}</button></div>
-    <div class="qr-wrap"><canvas id="px-qr" width="480" height="480" aria-label="QR code do Pix"></canvas><span class="hint" id="px-qr-msg">Gerando QR code…</span></div>
+  // back: fechar volta para a janela de onde veio (cupom ou comanda do histórico)
+  openSheet({ title: `Pix para ${debt.toName}`, sub: BRL(debt.value), onClose: back, body: `<div class="qr-wrap"><canvas id="px-qr" width="480" height="480" aria-label="QR code do Pix"></canvas><span class="hint" id="px-qr-msg">Gerando QR code…</span></div>
     <div class="field"><span class="eyebrow">Pix copia e cola</span><textarea class="pix-code" readonly rows="4">${esc(code)}</textarea></div>
-    <button class="btn" id="px-copy">${I.copy}Copiar Pix copia e cola</button>`, async s => {
-    $('#px-x', s).onclick = back || closeSheet;
+`, foot: `<button class="btn" id="px-copy">${I.copy}Copiar Pix copia e cola</button>`, onMount: async s => {
     $('#px-copy', s).onclick = () => copyText(code, 'Pix copia e cola copiado.');
     try { const m = await qrMatrix(code); const cv = $('#px-qr'); if (cv) { drawQR(cv.getContext('2d'), m, 0, 0, 480); $('#px-qr-msg').hidden = true; } }
     catch { const msg = $('#px-qr-msg'); if (msg) msg.textContent = 'Não deu para gerar o QR code agora. Use o Pix copia e cola.'; const cv = $('#px-qr'); if (cv) cv.hidden = true; }
-  });
+  } });
 }
 const couvertLabel = r => 'Couvert artístico' + (r.cvPayers > 1 ? ` (${r.cvPayers}×)` : '');
 // o cupom é montado uma vez e desenhado igual na tela, na imagem, no PDF e no texto
@@ -1623,9 +1600,8 @@ function receiptText(r, b, calc) {
 }
 async function copyText(text, okMsg) {
   try { await navigator.clipboard.writeText(text); toast(okMsg); return; } catch {}
-  openSheet(`<h3>Copiar</h3>
-    <textarea id="cp" readonly style="width:100%;min-height:220px;font-family:var(--f-mono);font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px">${esc(text)}</textarea>
-    <div class="sheet-actions"><button class="btn" id="cp-x">Fechar</button></div>`, s => { const t = $('#cp', s); t.focus(); t.select(); $('#cp-x', s).onclick = closeSheet; });
+  openSheet({ title: 'Copiar', body: `<textarea id="cp" readonly style="width:100%;min-height:220px;font-family:var(--f-mono);font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px">${esc(text)}</textarea><p class="hint">Toque e segure no texto e escolha Copiar.</p>`,
+    foot: `<button class="btn" id="cp-x">Fechar</button>`, onMount: s => { const t = $('#cp', s); t.focus(); t.select(); $('#cp-x', s).onclick = () => closeSheet(); } });
 }
 
 /* ---------- render ---------- */
@@ -1800,13 +1776,13 @@ function historyCatalog() {
 function recoverSheet() {
   const { missingProducts: mp, missingPeople: mu } = historyCatalog();
   const priceList = p => Object.values(p.prices).sort((a, b) => b.last - a.last).map(e => `${e.place} ${BRL(e.price)}`).join(' · ') || BRL(p.price);
-  openSheet(`<div class="card-head"><h3>Recuperar do histórico</h3><button class="icon-btn close-x" id="rc-x" aria-label="Fechar">${I.x}</button></div>
-    ${mp.length ? `<div class="card-head"><span class="eyebrow">Produtos (${mp.length})</span><button class="btn small ghost" data-all="rp">Marcar todos</button></div>
+  openSheet({ title: 'Recuperar do histórico', body: `${mp.length ? `<div class="card-head"><span class="eyebrow">Produtos (${mp.length})</span><button class="btn small ghost" data-all="rp">Marcar todos</button></div>
       <div class="rec-list">${mp.map((p, i) => `<label class="rec-row"><input type="checkbox" data-rp="${i}" checked><span><b>${esc(p.name)}</b><small>${esc(priceList(p))}</small></span></label>`).join('')}</div>` : ''}
     ${mu.length ? `<div class="card-head"><span class="eyebrow">Pessoas (${mu.length})</span><button class="btn small ghost" data-all="ru">Marcar todos</button></div>
       <div class="rec-list">${mu.map((p, i) => `<label class="rec-row"><input type="checkbox" data-ru="${i}" checked><span><b>${esc(p.name)}</b></span></label>`).join('')}</div>` : ''}
-    <div class="sheet-actions"><button class="btn ghost" id="rc-no">Cancelar</button><button class="btn" id="rc-ok">Recuperar selecionados</button></div>`, s => {
-    $('#rc-x', s).onclick = closeSheet; $('#rc-no', s).onclick = closeSheet;
+`,
+    foot: `<button class="btn ghost" id="rc-no">Cancelar</button><button class="btn" id="rc-ok">Recuperar selecionados</button>`, onMount: s => {
+    $('#rc-no', s).onclick = () => closeSheet();
     $$('[data-all]', s).forEach(b => b.onclick = () => { const boxes = $$(`[data-${b.dataset.all}]`, s); const on = !boxes.every(x => x.checked); boxes.forEach(x => x.checked = on); });
     $('#rc-ok', s).onclick = () => {
       const pick = $$('[data-rp]', s).filter(x => x.checked).map(x => mp[+x.dataset.rp]);
@@ -1814,10 +1790,10 @@ function recoverSheet() {
       if (!pick.length && !pickU.length) { toast('Marque ao menos um item para recuperar.'); return; }
       pick.forEach(p => catalog.products.push(clone(p)));
       pickU.forEach(p => catalog.people.push({ name: p.name, last: p.last }));
-      store.saveCatalog(); closeSheet(); render();
+      store.saveCatalog(); closeSheet(true); render();
       toast(`Recuperado: ${[pick.length ? plural(pick.length, 'produto', 'produtos') : '', pickU.length ? plural(pickU.length, 'pessoa', 'pessoas') : ''].filter(Boolean).join(' e ')}.`);
     };
-  });
+  } });
 }
 
 /* ---------- cupom como imagem e PDF ---------- */
@@ -1974,7 +1950,7 @@ async function saveFile(filename, blob) {
 }
 async function shareReceipt(r, b, calc, back) {
   loadJsPDF().catch(() => {});
-  openSheet(`<div class="card-head"><h3>Cupom de ${esc(r.person.name)}</h3><button class="icon-btn close-x" id="sr-x" aria-label="Fechar">${I.x}</button></div><div class="share-prev"><span class="hint">Gerando imagem…</span></div>`, s => { $('#sr-x', s).onclick = back || closeSheet; });
+  openSheet({ title: `Cupom de ${r.person.name}`, onClose: back, body: `<div class="share-prev"><span class="hint">Gerando imagem…</span></div>` });
   const cv = await receiptCanvas(r, b, calc);
   const url = cv.toDataURL('image/png');
   const dl = await downloadsNS();
@@ -2011,28 +1987,26 @@ async function shareAllPDF(b, calc, btn) {
 function resetSheet() {
   const d = draft;
   const inHistory = bills.some(b => b.id === d.id);
-  openSheet(`<h3>Limpar ou excluir comanda</h3>
-    <p class="hint" style="font-size:14.5px">${d.savedAt ? 'Esta comanda já está no histórico, que não será alterado.' : 'Esta comanda ainda não foi salva no histórico.'}${d.live ? ' A mudança também aparece para quem está na comanda ao vivo.' : ''}</p>
+  openSheet({ title: 'Limpar ou excluir comanda', body: `<p class="hint" style="font-size:15px">${d.savedAt ? 'Esta comanda já está no histórico, que não será alterado.' : 'Esta comanda ainda não foi salva no histórico.'}${d.live ? ' A mudança também aparece para quem está na comanda ao vivo.' : ''}</p>
     <div class="reset-opts">
       <button class="reset-opt" id="rs-items"><b>Limpar os itens</b><span>Mantém o local e as pessoas da comanda. Bom para começar uma nova rodada.</span></button>
       <button class="reset-opt" id="rs-all"><b>Recomeçar do zero</b><span>Apaga o local, as pessoas e os itens, mas mantém a comanda aberta.</span></button>
       <button class="reset-opt danger" id="rs-del"><b>Excluir comanda</b><span>${inHistory ? 'Encerra a comanda e apaga ela também do histórico.' : 'Encerra e descarta a comanda. Você volta para a tela inicial.'}</span></button>
-    </div>
-    <div class="sheet-actions"><button class="btn ghost" id="rs-no">Cancelar</button></div>`, s => {
-    $('#rs-no', s).onclick = closeSheet;
+    </div>`, foot: `<button class="btn ghost" id="rs-no">Cancelar</button>`, onMount: s => {
+    $('#rs-no', s).onclick = () => closeSheet();
     $('#rs-items', s).onclick = () => {
-      closeSheet(); pending = {};
+      closeSheet(true); pending = {};
       const keep = { place: d.place, people: d.people.map(p => ({ ...p, payService: true, payCouvert: true })), live: d.live };
       draft = { ...blankDraft(), ...keep, active: true, id: d.live ? d.id : newId() };
       commit(); toast('Itens apagados. As pessoas continuam na comanda.');
     };
     $('#rs-all', s).onclick = () => {
-      closeSheet(); pending = {};
+      closeSheet(true); pending = {};
       if (draft.live) live.end();
       draft = blankDraft(); draft.active = true; commit(); toast('Comanda zerada.');
     };
     $('#rs-del', s).onclick = () => deleteCurrent(false);
-  });
+  } });
 }
 // toda vez que uma comanda aberta vai ser substituída, o app pergunta antes
 function confirmReplace(go) {
@@ -2277,13 +2251,11 @@ function itemCardHTML(it, d, me) {
 }
 
 function renameSheet(it) {
-  openSheet(`<h3>Alterar ${esc(it.name)}</h3>
-    <form id="rn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
+  openSheet({ title: `Alterar ${it.name}`, body: `<form id="rn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
       <div class="field"><label for="rn-name">Nome do produto</label><input id="rn-name" type="text" value="${esc(it.name)}"></div>
       <div class="field"><label for="rn-price">Valor unitário (R$)</label><input id="rn-price" type="text" inputmode="numeric" data-money value="${moneyInput(it.price)}"></div>
-      <div class="sheet-actions"><button type="button" class="btn ghost" id="rn-no">Cancelar</button><button type="submit" class="btn">${I.save}Salvar alteração</button></div>
-    </form>`, s => {
-    $('#rn-no', s).onclick = closeSheet;
+    </form>`, foot: `<button type="button" class="btn ghost" id="rn-no">Cancelar</button><button type="submit" form="rn-form" class="btn">${I.save}Salvar alteração</button>`, onMount: s => {
+    $('#rn-no', s).onclick = () => closeSheet();
     $('#rn-name', s).focus();
     $('#rn-form', s).addEventListener('submit', e => {
       e.preventDefault();
@@ -2291,12 +2263,12 @@ function renameSheet(it) {
       const price = parseMoney($('#rn-price', s).value);
       if (!name) { toast('Informe o nome do produto.'); return; }
       if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); return; }
-      const cur = draft.items.find(x => x.id === it.id); if (!cur) { closeSheet(); return; }
+      const cur = draft.items.find(x => x.id === it.id); if (!cur) { closeSheet(true); return; }
       const changed = cur.name !== name || cur.price !== price;
-      cur.name = name; cur.price = price; closeSheet();
+      cur.name = name; cur.price = price; closeSheet(true);
       if (changed) { commit(); toast('Item alterado.'); }
     });
-  });
+  } });
 }
 
 const viewComanda = {
@@ -3057,28 +3029,23 @@ const viewHistorico = {
 function openBill(id) {
   const b = bills.find(x => x.id === id); if (!b) return;
   const c = compute(b);
-  openSheet(`<div class="card-head"><div><h3>${esc(b.place || 'Comanda sem nome')}</h3><span class="hint">${fmtDateTime(b.closedAt)} · ${plural(b.people.length, 'pessoa', 'pessoas')} · total ${BRL(c.total)}</span></div><button class="icon-btn close-x" id="sh-x" aria-label="Fechar">${I.x}</button></div>
-    ${settleHTML(c)}
+  openSheet({ title: b.place || 'Comanda sem nome', sub: `${fmtDateTime(b.closedAt)} · ${plural(b.people.length, 'pessoa', 'pessoas')} · total ${BRL(c.total)}`, tall: true, body: `${settleHTML(c)}
     <div class="receipts">${c.units.map(u => `<div class="receipt-wrap">${receiptHTML(u, b, c)}<button class="btn small" data-share="${u.id}">${I.share}Compartilhar</button></div>`).join('')}</div>
     <div class="sheet-actions">
       <button class="btn ghost" id="sh-pdf">${I.file}Todos em PDF</button>
       <button class="btn ghost" id="sh-del" style="color:var(--danger)">${I.trash}Excluir</button>
-      <button class="btn ghost" id="sh-edit">Abrir para editar</button>
-      <button class="btn" id="sh-reuse">Repetir comanda</button>
-    </div>
-    <button class="btn ghost" id="sh-close">Fechar</button>`, s => {
-    $('#sh-x', s).onclick = closeSheet;
-    $('#sh-close', s).onclick = closeSheet;
+    </div>`,
+    foot: `<button class="btn ghost" id="sh-edit">Abrir para editar</button><button class="btn" id="sh-reuse">Repetir comanda</button>`, onMount: s => {
     $$('[data-share]', s).forEach(x => x.onclick = () => shareReceipt(c.U[x.dataset.share], b, c, () => openBill(id)));
     $$('[data-pixpay]', s).forEach(x => x.onclick = () => { const dbt = pixDebts(c).find(z => z.pid === x.dataset.pixpay); if (dbt) pixSheet(dbt, () => openBill(id)); });
     $('#sh-pdf', s).onclick = e => shareAllPDF(b, c, e.currentTarget);
     $('#sh-del', s).onclick = () => confirmSheet('Excluir esta comanda?', 'Ela sai do histórico e das estatísticas. Pessoas e produtos cadastrados continuam, e dá para desfazer logo em seguida.', 'Excluir', () => {
       const gone = bills.find(x => x.id === id);
-      bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(); if (draft.id === id) draft.savedAt = null; saveDraft(); render();
+      bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(true); if (draft.id === id) draft.savedAt = null; saveDraft(); render();
       toast('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
     }, true);
     const replace = fn => {
-      const go = () => { if (draft.live) live.end(); pending = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(); commit(); window.scrollTo({ top: 0 }); };
+      const go = () => { if (draft.live) live.end(); pending = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(true); commit(); window.scrollTo({ top: 0 }); };
       confirmReplace(go);
     };
     $('#sh-edit', s).onclick = () => replace(() => migrate({ ...clone(b), savedAt: b.closedAt, isExample: false, live: null }));
@@ -3089,7 +3056,7 @@ function openBill(id) {
       d.service = { ...b.service }; d.couvert = { ...b.couvert }; d.discount = { ...b.discount, enabled: false };
       return d;
     });
-  });
+  } });
 }
 
 /* ---------- aba Cadastros ---------- */
@@ -3132,12 +3099,11 @@ const viewCadastros = {
     $('#recover', v)?.addEventListener('click', recoverSheet);
     $$('[data-pix-edit]', v).forEach(b => b.addEventListener('click', () => {
       const name = b.dataset.pixEdit;
-      openSheet(`<h3>Chave Pix de ${esc(name)}</h3>
-        <form id="px-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off"><div class="field"><label for="px-in">Chave Pix</label><input id="px-in" type="text" value="${esc(pixOf(name))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocapitalize="off" spellcheck="false"></div>
-        <div class="sheet-actions"><button type="button" class="btn ghost" id="px-no">Cancelar</button><button type="submit" class="btn">${I.save}Salvar</button></div></form>`, s => {
-        $('#px-no', s).onclick = closeSheet;
-        $('#px-form', s).addEventListener('submit', e => { e.preventDefault(); const val = $('#px-in', s).value; closeSheet(); savePixKey(name, val, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); }); });
-      });
+      openSheet({ title: `Chave Pix de ${name}`, body: `<form id="px-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off"><div class="field"><label for="px-in">Chave Pix</label><input id="px-in" type="text" value="${esc(pixOf(name))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocapitalize="off" spellcheck="false"></div>
+        </form>`, foot: `<button type="button" class="btn ghost" id="px-no">Cancelar</button><button type="submit" form="px-form" class="btn">${I.save}Salvar</button>`, onMount: s => {
+        $('#px-no', s).onclick = () => closeSheet();
+        $('#px-form', s).addEventListener('submit', e => { e.preventDefault(); const val = $('#px-in', s).value; closeSheet(true); savePixKey(name, val, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); }); });
+      } });
     }));
     $$('[data-del-person]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delPerson} do cadastro?`, 'A pessoa deixa de aparecer nas sugestões. As comandas do histórico não mudam.', 'Excluir', () => {
       const idx = catalog.people.findIndex(p => p.name === b.dataset.delPerson); if (idx < 0) return;

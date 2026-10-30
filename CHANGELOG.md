@@ -2,6 +2,12 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.7.0 · 2026-10-30
+
+- Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.
+- Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.
+- Kit Fácil 2.4.0: tira partes antigas que nenhum app usava mais (`ajudaHTML`, `kf-marca-compacta`, a opção `topo.html({ ajustes })`).
+
 ## 1.6.0 · 2026-10-29
 
 - Todas as telas principais têm título e uma linha dizendo para que servem.
