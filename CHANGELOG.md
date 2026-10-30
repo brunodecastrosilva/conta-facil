@@ -2,6 +2,10 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.3.4 · 2026-10-29
+
+- **Privacidade:** comandas ao vivo ficam guardadas 30 dias depois de encerradas e são apagadas na limpeza mensal seguinte (o plano gratuito do Firebase não permite exclusão automática).
+
 ## 1.3.3 · 2026-10-29
 
 - No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.
