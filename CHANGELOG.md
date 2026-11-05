@@ -2,6 +2,12 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.11.0 · 2026-11-04
+
+- **Mesmas medidas da família (Kit Fácil 2.10, lei 6):** botões com 48 px (40 px os pequenos) e canto de 12, cartões e
+  avisos com canto de 16, resumo com 22, escolhas (segmentos) com 40 px e a mesma letra dos outros apps.
+- Confirmações do Kit com Cancelar, como as outras janelas.
+
 ## 1.10.0 · 2026-11-03
 
 - **Restaurar padrões de fábrica** (Ajustes › Privacidade e segurança, Kit Fácil 2.9.0): o app volta como novo neste

@@ -28,7 +28,7 @@
   --f-body:var(--kf-font);
   --f-mono:var(--kf-font-mono);
   --f-cupom:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
-  --r:14px;
+  --r:var(--kf-r-cartao);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0D1712; --surface:#15221B; --surface-2:#1B2B22; --line:#2A3E32;
@@ -57,13 +57,13 @@ button{cursor:pointer}
 
 
 section.view{display:flex;flex-direction:column;gap:16px;padding-top:8px}
-.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border-radius:var(--kf-r-cartao);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px}
 .card h2{font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:-.01em;margin:0;text-wrap:balance}
 .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .hint{color:var(--muted);font-size:13px;margin:0}
 .eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 
-.banner{background:var(--mustard-soft);color:var(--mustard-ink);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px}
+.banner{background:var(--mustard-soft);color:var(--mustard-ink);border-radius:var(--kf-r-cartao);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px}
 .banner.warn{background:var(--danger-soft);color:var(--danger)}
 
 /* fields */
@@ -76,11 +76,11 @@ input:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 3px var(--gr
 .row > .grow{flex:1 1 180px}
 .place-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
 
-.btn{border:0;border-radius:10px;padding:10px 16px;min-height:44px;font-weight:700;background:var(--green);color:var(--green-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn{border:0;border-radius:var(--kf-r-btn);padding:10px 16px;min-height:var(--kf-btn-h);font-weight:700;background:var(--green);color:var(--green-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 .btn.mustard{background:var(--mustard);color:#2a1d02}
 .btn.danger{background:var(--danger);color:#fff}
-.btn.small{min-height:34px;padding:6px 12px;font-size:13.5px}
+.btn.small{min-height:var(--kf-btn-h-p);padding:6px 12px;font-size:13.5px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .icon-btn{border:0;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--muted);flex:none}
 .icon-btn:hover{color:var(--ink)}
@@ -127,9 +127,9 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .sum.total{background:var(--green);color:var(--green-ink)}
 .sum.total .eyebrow{color:inherit;opacity:.8}
 
-.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;box-shadow:inset 0 0 0 1px var(--line);flex-wrap:wrap;gap:2px}
-.seg button{border:0;background:none;border-radius:8px;padding:7px 12px;font-weight:600;font-size:13.5px;color:var(--muted);min-height:34px}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:var(--kf-r-btn);padding:3px;box-shadow:inset 0 0 0 1px var(--line);flex-wrap:wrap;gap:2px}
+.seg button{border:0;background:none;border-radius:calc(var(--kf-r-btn) - 3px);padding:7px 12px;font-weight:600;font-size:14.5px;color:var(--muted);min-height:var(--kf-seg-h)}
+.seg button[aria-pressed="true"]{background:var(--kf-seg-on);color:var(--ink);box-shadow:var(--shadow)}
 
 .switch{position:relative;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;font-weight:600;user-select:none}
 .switch input{position:absolute;opacity:0;width:1px;height:1px}
@@ -254,7 +254,7 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .free-row{grid-template-columns:minmax(0,1fr) auto}
 .fq-count{min-width:48px;text-align:center;font-weight:700;font-size:16px}
 .fq-count small{color:var(--muted);font-weight:400;font-size:12px}
-.hero{background:var(--green);color:var(--green-ink);border-radius:18px;padding:20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.hero{background:var(--green);color:var(--green-ink);border-radius:var(--kf-r-lg);padding:20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
 .hero-greet{margin:0;font-size:14px;opacity:.85}
 .hero-title{font-family:var(--f-display);font-weight:800;font-size:28px;line-height:1.05;letter-spacing:-.02em;margin:0;text-wrap:balance}
 .start-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
@@ -545,7 +545,7 @@ body.is-dragging.drag-out .drop-out{display:flex}
 .tour-card.dock{bottom:calc(var(--kf-nav-h) + 16px + env(safe-area-inset-bottom,0px))}
 @media (min-width:1024px){.tour-card.dock{bottom:16px}.tour-card{left:calc(var(--kf-trilho-w) + 16px)}}
 /* lei 7: alvos de toque de pelo menos 44 px (revisão de 29/10) */
-.btn.small{min-height:44px}
+.btn.small{min-height:var(--kf-alvo)}
 .chip{min-height:44px}
 .seg button{min-height:44px}
 button.minus,button.plus{min-height:44px}
@@ -564,7 +564,7 @@ button.minus,button.plus{min-height:44px}
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.10.0';
+const VERSAO = '1.11.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -1195,7 +1195,7 @@ KitFacil.iniciar({
   tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '1.10.0', itens: ['Novo em Ajustes › Privacidade e segurança: Restaurar padrões de fábrica. O app volta como novo neste aparelho, sem dados nem ajustes.'] }, { versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
+  novidades: [{ versao: '1.11.0', itens: ['Botões, cartões e escolhas com as mesmas medidas dos outros apps da família.'] }, { versao: '1.10.0', itens: ['Novo em Ajustes › Privacidade e segurança: Restaurar padrões de fábrica. O app volta como novo neste aparelho, sem dados nem ajustes.'] }, { versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
     'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
