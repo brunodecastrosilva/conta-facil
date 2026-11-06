@@ -2,6 +2,14 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.15.0 · 2026-11-06
+
+- **Guia em dois níveis (Kit Fácil 2.12):** Simplificado (seis passos, na comanda de exemplo) e Completo, que faz cada ação ao vivo numa comanda de demonstração que começa vazia: digita o lugar e os nomes, lança itens nas duas categorias, corrige quem consumiu, abre Alterar, fecha a comanda, muda o serviço, tira o serviço de alguém, dá desconto e mostra "Uma pessoa paga a conta de todos". Um dedo mostra onde toca. Nada da demonstração é salvo.
+- **Destaque do guia no celular:** acompanha a rolagem sem atraso, fica acima das janelas abertas pelo guia e aponta partes pequenas (campo, botão, cabeçalho do cartão) em vez de cartões inteiros, que ficavam cortados.
+- **Botões sem descrição:** saíram os textos de apoio de dentro dos botões (janela de lançar, quem não paga o serviço, atalho do Pagamento, níveis do guia).
+- **"Uma pessoa paga a conta de todos"** fica no fim da seção Pagamento.
+- **Textos (R1 a R7 e revisão):** "Veja uma comanda pronta e faça o guia"; "Adicione quem está na mesa."; "O Histórico passa a mostrar só o seu gasto."; "Não estou na comanda"; "Cole o código que recebeu e marque o que consumiu."; "cupom compartilhado" no lugar de "grupo"; "Confirmar"; quem não paga o serviço: "Ninguém paga essa parte" ou "Os outros dividem essa parte"; textos do guia reescritos, mais curtos.
+
 ## 1.14.0 · 2026-11-06
 
 - **Duas categorias de consumo:** compartilhado (entre todos ou entre alguns, em partes iguais) e individual (cada um paga as unidades que consumiu). Consumo individual já entra por unidade; com mais de uma unidade, a janela de lançar distribui as unidades na hora. Uma pessoa só marcada em "entre alguns" vira consumo individual.

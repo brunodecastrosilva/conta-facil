@@ -218,26 +218,42 @@ test('cópia de segurança: baixa e restaura o histórico e os cadastros', async
   await a.fechar();
 });
 
-test('comanda de exemplo e guia continuam funcionando', async () => {
-  const a = await aparelho(amb);
+test('guia em dois níveis: simplificado na comanda de exemplo e completo ao vivo, sem tocar nos dados reais', async () => {
+  const a = await aparelho(amb, { toque: true });
   const p = a.page;
   await p.click('#go-example');
-  // a comanda de exemplo oferece o guia em 3 níveis do Kit (Kit 2.11)
-  await p.locator('[data-kf="guia-3"]').click();
+  // a comanda de exemplo oferece o guia do app: dois níveis, em lista (Kit 2.12)
+  await p.locator('.kf-guia-linha').first().waitFor();
+  assert.deepEqual(await p.locator('.kf-guia-linha b').allInnerTexts(), ['Simplificado', 'Completo']);
+  assert.equal(await p.locator('.kf-guia-nivel').count(), 0, 'ainda há cartões de nível lado a lado');
+  await p.locator('[data-kf="guia-1"]').click();
   await p.locator('.kf-guia-cartao').waitFor();
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     const antes = await p.locator('.kf-guia-rot').innerText();
     await p.click('.kf-guia-cartao [data-kf-guia="1"]');
     await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes);
   }
-  assert.match(await p.locator('.kf-guia-rot').innerText(), /7 de \d+/i);
+  assert.match(await p.locator('.kf-guia-rot').innerText(), /simplificado · 6 de 6/i);
+  // no último passo, o convite para o completo
+  await p.click('.kf-guia-cartao [data-kf="guia-2"]');
+  await p.locator('.kf-guia-ao-vivo').waitFor();
+  // o completo faz as ações na tela: abre a demonstração e põe as pessoas
+  const fimDaAcao = () => esperar(() => p.evaluate(() => !document.querySelector('.kf-guia-ao-vivo') && !document.querySelector('.kf-guia-cartao [data-kf-guia="1"]:disabled')), 60000);
+  const proximo = async () => { await fimDaAcao(); const antes = await p.locator('.kf-guia-rot').innerText(); await p.click('.kf-guia-cartao [data-kf-guia="1"]'); await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes); await p.waitForTimeout(300); };
+  await proximo(); await proximo(); await proximo();
+  await fimDaAcao();
+  const demo = await p.evaluate(() => ({ ex: draft.isExample, lugar: draft.place, pessoas: draft.people.map(x => x.name).join(), itens: draft.items.map(x => x.name + ':' + x.mode).join() }));
+  assert.deepEqual(demo, { ex: true, lugar: 'Bar do Zé', pessoas: 'Ana,Bruno,Carla,Diego', itens: 'Porção de fritas:equal,Chopp:units' });
+  assert.equal(await p.evaluate(() => KitFacil.guia.alvoAtual() !== null), true);
   await p.click('.kf-guia-x');
   await p.click('#tab-inicio');
   await p.click('#end-example');
   assert.equal(await p.evaluate(() => draft.isExample), false);
+  assert.equal(await p.evaluate(() => bills.length), 0, 'a demonstração salvou algo');
   assert.deepEqual(a.erros, []);
   await a.fechar();
 });
+
 
 test('comanda ao vivo: guarda quem criou, vence 30 dias depois de criada e é apagada ao encerrar; recusa do banco não trava', async () => {
   const a = await aparelho(amb);
