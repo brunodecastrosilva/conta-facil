@@ -2,6 +2,15 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.14.0 · 2026-11-06
+
+- **Duas categorias de consumo:** compartilhado (entre todos ou entre alguns, em partes iguais) e individual (cada um paga as unidades que consumiu). Consumo individual já entra por unidade; com mais de uma unidade, a janela de lançar distribui as unidades na hora. Uma pessoa só marcada em "entre alguns" vira consumo individual.
+- **Alterar:** o tipo de consumo aparece como Compartilhado ou Individual (antes, Igual ou Por unidade).
+- **Item sem linha repetida:** o resumo (compartilhado entre N, valor de cada um; consumo individual; só de fulano) aparece uma vez, no rodapé.
+- **Sem "Quem vai pagar a conta?":** para uma pessoa pagar por todos, o botão "Uma pessoa paga a conta de todos" junta todos num cupom compartilhado com quem foi escolhido pagando ("Separar todos" desfaz). Comanda aberta no modo antigo vira esse cupom ao abrir; as comandas salvas no histórico não mudam.
+- **Desconto:** "No valor total da comanda" ou "Apenas no valor do consumo".
+- **Exemplo:** Ana paga por ela e por Bruno num cupom compartilhado.
+
 ## 1.13.0 · 2026-11-05
 
 - **Corrigido: arrastar no Pagamento.** Segurar um nome para formar um cupom compartilhado fazia a página subir sem parar: a rolagem automática ainda via a barra de seções no alto, mas ela fica no pé. Agora a página só rola quando o dedo chega perto da barra do topo ou da barra de baixo.

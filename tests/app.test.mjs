@@ -225,7 +225,11 @@ test('comanda de exemplo e guia continuam funcionando', async () => {
   // a comanda de exemplo oferece o guia em 3 níveis do Kit (Kit 2.11)
   await p.locator('[data-kf="guia-3"]').click();
   await p.locator('.kf-guia-cartao').waitFor();
-  for (let i = 0; i < 6; i++) await p.click('.kf-guia-cartao [data-kf-guia="1"]');
+  for (let i = 0; i < 6; i++) {
+    const antes = await p.locator('.kf-guia-rot').innerText();
+    await p.click('.kf-guia-cartao [data-kf-guia="1"]');
+    await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes);
+  }
   assert.match(await p.locator('.kf-guia-rot').innerText(), /7 de \d+/i);
   await p.click('.kf-guia-x');
   await p.click('#tab-inicio');
@@ -292,7 +296,17 @@ test('lançar pergunta como dividir; item novo no topo; Alterar troca o modo; tu
   assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Água'); return it && it.lk && Object.keys(it.a).length === 1; })), 'o consumo individual não ficou só com Bia');
   // o mais recente fica no topo, e o rodapé diz de quem é
   assert.equal(await p.locator('.items .item .item-name').first().innerText(), 'Água');
-  assert.match(await p.locator('.items .item').first().locator('.share').last().innerText(), /Só de Bia/);
+  assert.match(await p.locator('.items .item').first().locator('.share').last().innerText(), /Consumo individual/);
+  assert.equal(await p.evaluate(() => draft.items.find(x => x.name === 'Água').mode), 'units', 'consumo individual não ficou por unidade');
+  // consumo individual com 3 unidades: distribui na própria janela
+  await lancar('Chopp preto', 3, '1500');
+  await p.click('[data-lc="um"]');
+  assert.ok(await p.locator('#lc-ok').isDisabled());
+  await p.locator('[data-lc-un][data-dir="1"]').nth(0).click(); await p.locator('[data-lc-un][data-dir="1"]').nth(0).click(); await p.locator('[data-lc-un][data-dir="1"]').nth(2).click();
+  await p.click('#lc-ok');
+  assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Chopp preto'); return it && it.mode === 'units' && it.lk && Object.values(it.a).join() === '2,1'; })), 'as unidades não ficaram 2 e 1');
+  // o resumo aparece uma vez só no item compartilhado
+  assert.equal(await p.evaluate(() => (document.querySelector(`[data-item="${draft.items.find(x => x.name === 'Chopp').id}"]`).innerText.match(/ cada/g) || []).length), 1, 'o resumo do item aparece repetido');
   // entre alguns: marca na lista e lança
   await lancar('Porção', 1, '4200');
   await p.click('[data-lc="alguns"]'); await p.click('[data-lc-ck]:has-text("Ana")'); await p.click('[data-lc-ck]:has-text("Caio")'); await p.click('#lc-ok');
@@ -304,9 +318,10 @@ test('lançar pergunta como dividir; item novo no topo; Alterar troca o modo; tu
   assert.equal(await p.locator('.items .chip').count(), 0, 'ainda há chips nos itens');
   assert.ok(await p.locator('.items .ck-row').count() >= 4);
   // Alterar troca o modo de divisão: Por unidade pede a distribuição
-  await p.click('.item:has-text("Chopp") .item-name'); await p.click('.item:has-text("Chopp") [data-rename]');
+  await p.click('.item:has(.item-name:text-is("Chopp")) .item-name'); await p.click('.item:has(.item-name:text-is("Chopp")) [data-rename]');
+  assert.deepEqual(await p.locator('[data-rn-modo]').allInnerTexts(), ['Compartilhado', 'Individual']);
   await p.click('[data-rn-modo="units"]'); await p.click('button[form="rn-form"]');
-  assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Chopp'); return it.mode === 'units' && !it.lk; })), 'Alterar não passou para Por unidade');
+  assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Chopp'); return it.mode === 'units' && !it.lk; })), 'Alterar não passou para consumo individual');
   assert.equal(await p.locator('#tab-comanda .badge').innerText(), '1');
   // quem é você, em lista suspensa
   await escolher(p, '#sou-sel', 'Bia');
@@ -355,6 +370,15 @@ test('Fechar: serviço com % ou R$; desligar o serviço de alguém abre a janela
   await p.locator('[data-pol="redistribute"]').waitFor();
   await p.click('[data-pol="redistribute"]');
   assert.equal(await p.evaluate(() => draft.service.policy), 'redistribute');
+  // sem "Quem vai pagar a conta?"; o atalho junta todos num cupom com quem paga
+  assert.equal(await p.locator('[data-paymode]').count(), 0);
+  await p.click('#pay-todos'); await p.click('[data-pt]:has-text("Carla")');
+  assert.ok(await esperar(() => p.evaluate(() => draft.groups.length === 1 && draft.groups[0].members.length === draft.people.length && draft.groups[0].payers.length === 1)), 'o atalho não montou o cupom de todos');
+  assert.equal(await p.locator('#groups-card [data-unit]').count(), 1);
+  await p.click('#pay-separar');
+  assert.ok(await esperar(() => p.evaluate(() => draft.groups.length === 0)));
+  // desconto com os rótulos novos
+  assert.equal(await p.evaluate(() => [...document.querySelectorAll('[data-dsat]')].map(b => b.textContent).join(' | ') || 'sem desconto'), await p.evaluate(() => [...document.querySelectorAll('[data-dsat]')].length ? 'No valor total da comanda | Apenas no valor do consumo' : 'sem desconto'));
   assert.deepEqual(a.erros, []);
   await a.fechar();
 });
