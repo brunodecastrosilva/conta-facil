@@ -2,6 +2,12 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.16.0 · 2026-11-06
+
+- **Guia completo, depois do toque (Kit Fácil 2.12.1):** cada passo aparece primeiro para leitura; a ação só começa quando a pessoa toca em Mostrar. Depois, o resultado fica destacado e o botão vira Próximo.
+- **Mais devagar:** o dedo leva quase um segundo para chegar, a digitação é letra por letra num ritmo de leitura e há pausas depois de cada toque.
+- **Ações em todos os passos:** conferir o total (valor por valor), arrastar Bruno até Carla para o cupom compartilhado, abrir o Compartilhar, salvar (sem salvar, na demonstração), ir ao Histórico, aos Cadastros e aos Ajustes. Toda troca de tela é feita tocando na barra (ou no Mais), como a pessoa faria, com o movimento comum de troca de tela.
+
 ## 1.15.0 · 2026-11-06
 
 - **Guia em dois níveis (Kit Fácil 2.12):** Simplificado (seis passos, na comanda de exemplo) e Completo, que faz cada ação ao vivo numa comanda de demonstração que começa vazia: digita o lugar e os nomes, lança itens nas duas categorias, corrige quem consumiu, abre Alterar, fecha a comanda, muda o serviço, tira o serviço de alguém, dá desconto e mostra "Uma pessoa paga a conta de todos". Um dedo mostra onde toca. Nada da demonstração é salvo.

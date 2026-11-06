@@ -236,12 +236,16 @@ test('guia em dois níveis: simplificado na comanda de exemplo e completo ao viv
   assert.match(await p.locator('.kf-guia-rot').innerText(), /simplificado · 6 de 6/i);
   // no último passo, o convite para o completo
   await p.click('.kf-guia-cartao [data-kf="guia-2"]');
-  await p.locator('.kf-guia-ao-vivo').waitFor();
+  // no guia ao vivo, a pessoa lê primeiro: nada acontece antes de tocar em Mostrar
+  await p.locator('[data-kf-guia-mostrar]').waitFor();
+  await p.waitForTimeout(1500);
+  assert.equal(await p.evaluate(() => document.querySelector('#start-place').value), '', 'a ação começou antes do toque em Mostrar');
   // o completo faz as ações na tela: abre a demonstração e põe as pessoas
   const fimDaAcao = () => esperar(() => p.evaluate(() => !document.querySelector('.kf-guia-ao-vivo') && !document.querySelector('.kf-guia-cartao [data-kf-guia="1"]:disabled')), 60000);
-  const proximo = async () => { await fimDaAcao(); const antes = await p.locator('.kf-guia-rot').innerText(); await p.click('.kf-guia-cartao [data-kf-guia="1"]'); await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes); await p.waitForTimeout(300); };
+  const mostrar = async () => { if (await p.locator('[data-kf-guia-mostrar]').count()) { await p.click('[data-kf-guia-mostrar]'); await p.locator('.kf-guia-ao-vivo').waitFor(); } };
+  const proximo = async () => { await mostrar(); await fimDaAcao(); const antes = await p.locator('.kf-guia-rot').innerText(); await p.click('.kf-guia-cartao [data-kf-guia="1"]'); await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes); await p.waitForTimeout(300); };
   await proximo(); await proximo(); await proximo();
-  await fimDaAcao();
+  await mostrar(); await fimDaAcao();
   const demo = await p.evaluate(() => ({ ex: draft.isExample, lugar: draft.place, pessoas: draft.people.map(x => x.name).join(), itens: draft.items.map(x => x.name + ':' + x.mode).join() }));
   assert.deepEqual(demo, { ex: true, lugar: 'Bar do Zé', pessoas: 'Ana,Bruno,Carla,Diego', itens: 'Porção de fritas:equal,Chopp:units' });
   assert.equal(await p.evaluate(() => KitFacil.guia.alvoAtual() !== null), true);
