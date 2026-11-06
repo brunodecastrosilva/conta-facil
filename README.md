@@ -2,13 +2,16 @@
 
 Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-**Fase de testes** · versão 1.11.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+**Fase de testes** · versão 1.12.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
-Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil e Estudo Fácil) e segue o padrão comum descrito em
+Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil) e segue o padrão comum descrito em
 [`comum/PADRAO.md`](comum/PADRAO.md).
 
 ## O que o app faz
 
+- Cada item entra dividido igual entre todos; só o item que você mexe pede confirmação
+- Turmas: quem sai junto entra na mesa com um toque; pessoas e chaves Pix podem ser cadastradas antes da comanda
+- Apresentação curta ao abrir (desligável em Ajustes) e guia em 3 níveis: essencial, exploração e completo
 - Abra uma comanda com o nome do local; os lugares onde você já foi viram atalhos
 - Lance os pedidos e divida cada item igualmente ou por unidade, com cortesias, couvert, desconto e taxa de serviço (percentual ou valor fixo)
 - Feche a conta: quanto cada um paga, quem paga por quem, cupons em imagem, PDF ou texto e Pix copia e cola com QR code
@@ -63,7 +66,7 @@ O modo sem internet (service worker) só funciona em `https`, ou seja, no endere
 
 Segue o padrão comum da família (veja [`comum/PADRAO.md`](comum/PADRAO.md)):
 
-- **Alto da tela, à direita:** Ajustes, nuvem da sincronização e balão de avaliação, nessa ordem
+- **Alto da tela, à direita:** nuvem da sincronização, chopp para o criador e balão de avaliação, nessa ordem; Ajustes fica na barra de baixo (no computador, no pé do menu lateral).
 - **Navegação:** barra embaixo no celular e no tablet; menu lateral no computador (a partir de 1024 px)
 - **Ajustes:** as oito guias comuns (Conta e perfil, Sincronização e armazenamento, Aparência, Preferências gerais,
   Notificações, Privacidade e segurança, Avaliação e feedback, Sobre o aplicativo) e a guia própria **Comandas**

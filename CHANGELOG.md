@@ -2,6 +2,16 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.12.0 · 2026-11-05
+
+- **Divisão sem confirmar à toa (U3):** item novo entra dividido igual entre todos e já confirmado; só o item mexido (Dividir por unidade, ou um nome tirado) pede confirmação. Quem chega depois entra nos itens ainda não mexidos, com Desfazer.
+- **Número na aba Comanda (U7, E5):** só aparece quando há item esperando a divisão, com rótulo para leitor de tela.
+- **Fechar mais simples (U4):** 10% vem marcado com Mudar para outro percentual ou valor fixo; Quem não paga o serviço só aparece quando alguém tira o serviço.
+- **Quem é você (U5, E4):** a comanda pergunta qual das pessoas é você; a tela inicial mostra quanto você gastou no mês (sem isso, diz que é o total das mesas).
+- **Cadastros (F1, F2, E2):** + Pessoa com chave Pix, Turmas que entram juntas na mesa (sincronizam entre aparelhos) e o cartão Recuperar do histórico refeito.
+- **Guia em 3 níveis e apresentação ao abrir (Kit Fácil 2.11, U2, U6, E3):** o guia antigo de 20 passos virou Essencial (5), Exploração (12) e Completo (16), com textos revistos; o passo de Cadastros não aponta mais para o vazio no celular.
+- **Alvo de toque (E1):** o X de remover pessoa tem área de 44 px sem mudar o desenho.
+
 ## 1.11.0 · 2026-11-04
 
 - **Mesmas medidas da família (Kit Fácil 2.10, lei 6):** botões com 48 px (40 px os pequenos) e canto de 12, cartões e

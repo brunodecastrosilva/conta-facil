@@ -222,9 +222,12 @@ test('comanda de exemplo e guia continuam funcionando', async () => {
   const a = await aparelho(amb);
   const p = a.page;
   await p.click('#go-example');
-  await p.locator('.tour-card').waitFor();
-  for (let i = 0; i < 6; i++) await p.click('.tour-card [data-tour="1"]');
-  await p.click('.tour-x');
+  // a comanda de exemplo oferece o guia em 3 níveis do Kit (Kit 2.11)
+  await p.locator('[data-kf="guia-3"]').click();
+  await p.locator('.kf-guia-cartao').waitFor();
+  for (let i = 0; i < 6; i++) await p.click('.kf-guia-cartao [data-kf-guia="1"]');
+  assert.match(await p.locator('.kf-guia-rot').innerText(), /7 de \d+/i);
+  await p.click('.kf-guia-x');
   await p.click('#tab-inicio');
   await p.click('#end-example');
   assert.equal(await p.evaluate(() => draft.isExample), false);
@@ -268,6 +271,33 @@ test('comanda ao vivo: guarda quem criou, vence 30 dias depois de criada e é ap
   assert.equal(recusado.fechou, true);
   assert.equal(recusado.apagou, false);
   assert.equal(recusado.saiu, true, 'o anfitrião não saiu da comanda ao vivo');
+  assert.deepEqual(a.erros, []);
+  await a.fechar();
+});
+
+test('item novo entra dividido igual e confirmado; só pede confirmação quem mexeu; turma e "quem é você"', async () => {
+  const a = await aparelho(amb);
+  const p = a.page;
+  await p.fill('input[placeholder="Nome do local"]', 'Bar do Teste'); await p.keyboard.press('Enter');
+  for (const n of ['Ana', 'Bia', 'Caio']) { await p.fill('#person-name', n); await p.keyboard.press('Enter'); }
+  await p.fill('#item-name', 'Chopp'); await p.fill('#item-qty', '3'); await p.click('#item-price'); await p.keyboard.type('1290');
+  await p.locator('#item-form button[type=submit]').click();
+  assert.ok(await esperar(() => p.evaluate(() => draft.items.length === 1 && draft.items[0].lk && draft.items[0].auto)), 'o item não entrou confirmado');
+  assert.equal(await p.locator('#tab-comanda .badge').count(), 0, 'número na aba Comanda sem item esperando');
+  // quem chega depois entra no item ainda não mexido
+  await p.fill('#person-name', 'Duda'); await p.keyboard.press('Enter');
+  assert.ok(await esperar(() => p.evaluate(() => Object.keys(draft.items[0].a).length === 4)), 'Duda não entrou no item automático');
+  // mexer: dividir por unidade pede confirmação
+  await p.click('.item.locked [data-reopen]');
+  assert.ok(await esperar(() => p.evaluate(() => !draft.items[0].lk && !draft.items[0].auto)));
+  assert.equal(await p.locator('#tab-comanda .badge').innerText(), '1');
+  // quem é você
+  await p.click('[data-sou="Bia"]');
+  assert.equal(await p.evaluate(() => catalog.me), 'Bia');
+  // turma no cadastro entra inteira na mesa
+  await p.evaluate(() => { catalog.people = [{ name: 'Edu', pix: '' }, { name: 'Fê', pix: '' }]; catalog.groups = [{ id: 'g1', name: 'Futebol', members: ['Edu', 'Fê'] }]; store.saveCatalog(); render(); });
+  await p.click('[data-turma="g1"]');
+  assert.ok(await esperar(() => p.evaluate(() => ['Edu', 'Fê'].every(n => draft.people.some(x => x.name === n)))), 'a turma não entrou na mesa');
   assert.deepEqual(a.erros, []);
   await a.fechar();
 });
