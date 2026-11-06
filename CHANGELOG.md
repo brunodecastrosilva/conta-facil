@@ -2,6 +2,19 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.13.0 · 2026-11-05
+
+- **Corrigido: arrastar no Pagamento.** Segurar um nome para formar um cupom compartilhado fazia a página subir sem parar: a rolagem automática ainda via a barra de seções no alto, mas ela fica no pé. Agora a página só rola quando o dedo chega perto da barra do topo ou da barra de baixo.
+- **Lançar com escolha:** com duas ou mais pessoas, a janela pergunta como dividir (entre todos, entre alguns ou consumo individual). O item novo entra no topo da lista, e a tela desliza até ele, que pisca uma vez.
+- **Nada lado a lado (lei nova):** quem consumiu e quem faz parte da turma em lista de marcar; turmas, quem paga a conta, quem é você e quem cobre a diferença em lista suspensa; resumo do Fechar e do Histórico em lista vertical; rankings do Histórico em seções que abrem; cupons um embaixo do outro; o início sem os atalhos de locais (eles ficam na lista do campo).
+- **Alterar inclui o modo de divisão** (Igual ou Por unidade); saiu o botão solto do cartão do item.
+- **Taxa de serviço:** em Mudar, só % (com 10) ou R$, como no Desconto, sem quebrar o layout. Ao desligar o serviço de alguém, uma janela pergunta se a parte sai da comanda ou é redistribuída.
+- **Rodapé do item (N2):** "Só de Marina", "Dividido igual entre todos" ou "entre 3", em vez de sempre "Dividido igualmente".
+- **Histórico (N3):** com "você" definido, os locais mais frequentes contam só as comandas em que você consumiu.
+- **Textos (N4, N5):** frase de privacidade da comanda ao vivo reescrita; a guia própria Comandas saiu dos Ajustes (não havia nada a ajustar).
+- **Cadastros:** Alterar e a lixeira das turmas com a mesma altura.
+- **Kit Fácil 2.11.1:** o cartão do guia nunca cobre o destaque (N6); quem abre o app pela primeira vez não recebe Novidades (N7).
+
 ## 1.12.0 · 2026-11-05
 
 - **Divisão sem confirmar à toa (U3):** item novo entra dividido igual entre todos e já confirmado; só o item mexido (Dividir por unidade, ou um nome tirado) pede confirmação. Quem chega depois entra nos itens ainda não mexidos, com Desfazer.

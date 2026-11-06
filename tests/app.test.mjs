@@ -40,8 +40,8 @@ test('abre sem erros em celular, tablet e computador, sem rolagem lateral', asyn
     await abrirAjustesPelaNav(a.page);
     await a.page.locator('.kf-aj-h').waitFor();
     assert.ok(await semRolagemLateral(a.page), `rolagem lateral nos Ajustes no ${nome}`);
-    await guia(a.page, 'comandas');
-    assert.ok(await semRolagemLateral(a.page), `rolagem lateral na guia Comandas no ${nome}`);
+    await guia(a.page, 'preferencias');
+    assert.ok(await semRolagemLateral(a.page), `rolagem lateral em Preferências no ${nome}`);
     assert.deepEqual(a.erros, [], `erros no ${nome}`);
     await a.fechar();
   }
@@ -55,12 +55,12 @@ test('zoom liberado para quem precisa ampliar a tela', async () => {
   await a.fechar();
 });
 
-test('Ajustes: guias comuns na ordem do padrão, guia Comandas, e o Voltar do navegador', async () => {
+test('Ajustes: só as guias comuns, na ordem do padrão, e o Voltar do navegador', async () => {
   const a = await aparelho(amb);
   const p = a.page;
   await p.click('#tab-historico');
   await abrirAjustesPelaNav(p);
-  assert.deepEqual(await guiasAjustes(p), { comuns: GUIAS_COMUNS, produto: ['Comandas'] });
+  assert.deepEqual(await guiasAjustes(p), { comuns: GUIAS_COMUNS, produto: [] });
   assert.ok((await p.textContent('#view')).includes(`Conta Fácil ${versao}`), 'falta a versão nos Ajustes');
   assert.equal(await p.locator('.kf-nav [data-kf=\"ajustes\"]').getAttribute('aria-current'), 'page');
   // guia aberta e Voltar (no celular, volta para a lista; de novo, sai dos Ajustes)
@@ -99,8 +99,8 @@ test('computador: Ajustes em duas colunas, com o trilho lateral', async () => {
   await abrirAjustesPelaNav(p);
   const lado = await p.evaluate(() => { const l = document.querySelector('.kf-aj-lista').getBoundingClientRect(), s = document.querySelector('.kf-aj-sec.kf-aberta, .kf-aj-sec:first-child').getBoundingClientRect(); return l.right <= s.left && Math.abs(l.top - s.top) < 60; });
   assert.ok(lado, 'lista e guia não estão lado a lado');
-  await p.click('.kf-aj-lista [data-kf-aj-ir="comandas"]');
-  assert.ok(await p.locator('#kf-aj-comandas').isVisible());
+  await p.click('.kf-aj-lista [data-kf-aj-ir="preferencias"]');
+  assert.ok(await p.locator('#kf-aj-preferencias').isVisible());
   await p.click('#trilho-historico');
   assert.equal(await p.getAttribute('#trilho-historico', 'aria-selected'), 'true');
   assert.deepEqual(a.erros, []);
@@ -275,29 +275,87 @@ test('comanda ao vivo: guarda quem criou, vence 30 dias depois de criada e é ap
   await a.fechar();
 });
 
-test('item novo entra dividido igual e confirmado; só pede confirmação quem mexeu; turma e "quem é você"', async () => {
+test('lançar pergunta como dividir; item novo no topo; Alterar troca o modo; turma e "quem é você" em lista', async () => {
   const a = await aparelho(amb);
   const p = a.page;
   await p.fill('input[placeholder="Nome do local"]', 'Bar do Teste'); await p.keyboard.press('Enter');
   for (const n of ['Ana', 'Bia', 'Caio']) { await p.fill('#person-name', n); await p.keyboard.press('Enter'); }
-  await p.fill('#item-name', 'Chopp'); await p.fill('#item-qty', '3'); await p.click('#item-price'); await p.keyboard.type('1290');
-  await p.locator('#item-form button[type=submit]').click();
+  const lancar = async (nome, qtd, preco) => { await p.fill('#item-name', nome); await p.fill('#item-qty', String(qtd)); await p.click('#item-price'); await p.keyboard.type(preco); await p.locator('#item-form button[type=submit]').click(); await p.locator('.lanc-ops').waitFor(); };
+  // entre todos: confirmado e automático
+  await lancar('Chopp', 3, '1290');
+  await p.click('[data-lc="todos"]');
   assert.ok(await esperar(() => p.evaluate(() => draft.items.length === 1 && draft.items[0].lk && draft.items[0].auto)), 'o item não entrou confirmado');
   assert.equal(await p.locator('#tab-comanda .badge').count(), 0, 'número na aba Comanda sem item esperando');
-  // quem chega depois entra no item ainda não mexido
+  // consumo individual: escolhe a pessoa na lista
+  await lancar('Água', 1, '500');
+  await p.click('[data-lc="um"]'); await p.click('[data-lc-um]:has-text("Bia")');
+  assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Água'); return it && it.lk && Object.keys(it.a).length === 1; })), 'o consumo individual não ficou só com Bia');
+  // o mais recente fica no topo, e o rodapé diz de quem é
+  assert.equal(await p.locator('.items .item .item-name').first().innerText(), 'Água');
+  assert.match(await p.locator('.items .item').first().locator('.share').last().innerText(), /Só de Bia/);
+  // entre alguns: marca na lista e lança
+  await lancar('Porção', 1, '4200');
+  await p.click('[data-lc="alguns"]'); await p.click('[data-lc-ck]:has-text("Ana")'); await p.click('[data-lc-ck]:has-text("Caio")'); await p.click('#lc-ok');
+  assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Porção'); return it && Object.keys(it.a).length === 2 && !it.auto; })), 'entre alguns não marcou Ana e Caio');
+  // quem chega depois entra só no item "entre todos"
   await p.fill('#person-name', 'Duda'); await p.keyboard.press('Enter');
-  assert.ok(await esperar(() => p.evaluate(() => Object.keys(draft.items[0].a).length === 4)), 'Duda não entrou no item automático');
-  // mexer: dividir por unidade pede confirmação
-  await p.click('.item.locked [data-reopen]');
-  assert.ok(await esperar(() => p.evaluate(() => !draft.items[0].lk && !draft.items[0].auto)));
+  assert.ok(await esperar(() => p.evaluate(() => Object.keys(draft.items.find(x => x.name === 'Chopp').a).length === 4 && Object.keys(draft.items.find(x => x.name === 'Porção').a).length === 2)), 'Duda entrou no item errado');
+  // quem consumiu em lista vertical, sem chips lado a lado
+  assert.equal(await p.locator('.items .chip').count(), 0, 'ainda há chips nos itens');
+  assert.ok(await p.locator('.items .ck-row').count() >= 4);
+  // Alterar troca o modo de divisão: Por unidade pede a distribuição
+  await p.click('.item:has-text("Chopp") .item-name'); await p.click('.item:has-text("Chopp") [data-rename]');
+  await p.click('[data-rn-modo="units"]'); await p.click('button[form="rn-form"]');
+  assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Chopp'); return it.mode === 'units' && !it.lk; })), 'Alterar não passou para Por unidade');
   assert.equal(await p.locator('#tab-comanda .badge').innerText(), '1');
-  // quem é você
-  await p.click('[data-sou="Bia"]');
+  // quem é você, em lista suspensa
+  await escolher(p, '#sou-sel', 'Bia');
   assert.equal(await p.evaluate(() => catalog.me), 'Bia');
-  // turma no cadastro entra inteira na mesa
+  // turma no cadastro entra inteira na mesa, pela lista suspensa
   await p.evaluate(() => { catalog.people = [{ name: 'Edu', pix: '' }, { name: 'Fê', pix: '' }]; catalog.groups = [{ id: 'g1', name: 'Futebol', members: ['Edu', 'Fê'] }]; store.saveCatalog(); render(); });
-  await p.click('[data-turma="g1"]');
+  await escolher(p, '#turma-sel', 'Futebol · 2 pessoas a pôr');
   assert.ok(await esperar(() => p.evaluate(() => ['Edu', 'Fê'].every(n => draft.people.some(x => x.name === n)))), 'a turma não entrou na mesa');
   assert.deepEqual(a.erros, []);
   await a.fechar();
 });
+
+test('Pagamento: segurar um nome não rola a tela sozinho; arrastar junta no mesmo cupom', async () => {
+  const a = await aparelho(amb, { viewport: { width: 390, height: 844 }, toque: true });
+  const p = a.page;
+  await p.evaluate(() => enterExample(true)); await p.waitForTimeout(300);
+  await p.evaluate(() => document.querySelector('#tab-fechar').click()); await p.waitForTimeout(400);
+  const pos = await p.evaluate(() => { const bs = [...document.querySelectorAll('#groups-card [data-unit]')]; bs[0].scrollIntoView({ block: 'center' }); const r = i => { const q = bs[i].getBoundingClientRect(); return { x: q.left + 40, y: q.top + 18 }; }; return { a: r(0), b: r(1), n: bs.length }; });
+  const cdp = await p.context().newCDPSession(p);
+  const y0 = await p.evaluate(() => scrollY);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: pos.a.x, y: pos.a.y }] });
+  await p.waitForTimeout(900);
+  assert.equal(await p.evaluate(() => scrollY), y0, 'a tela rolou só de segurar o nome');
+  for (let i = 1; i <= 10; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: pos.a.x + (pos.b.x - pos.a.x) * i / 10, y: pos.a.y + (pos.b.y - pos.a.y) * i / 10 }] }); await p.waitForTimeout(25); }
+  await p.waitForTimeout(200);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  assert.ok(await esperar(() => p.evaluate(n => document.querySelectorAll('#groups-card [data-unit]').length === n - 1, pos.n)), 'arrastar não juntou no mesmo cupom');
+  assert.deepEqual(a.erros, []);
+  await a.fechar();
+});
+
+test('Fechar: serviço com % ou R$; desligar o serviço de alguém abre a janela; resumo em lista', async () => {
+  const a = await aparelho(amb);
+  const p = a.page;
+  await p.evaluate(() => enterExample(true)); await p.waitForTimeout(300);
+  await p.evaluate(() => document.querySelector('#tab-fechar').click()); await p.waitForTimeout(300);
+  assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('.sum-grid')).flexDirection), 'column', 'resumo ainda lado a lado');
+  if (await p.locator('#svc-mudar').count()) await p.click('#svc-mudar');
+  assert.deepEqual(await p.locator('[data-svcmode]').allInnerTexts(), ['%', 'R$']);
+  assert.match(await p.inputValue('#svc-pct'), /^10/);
+  await p.click('[data-svcmode="fixed"]');
+  assert.ok(await p.locator('#svc-fixed').isVisible());
+  assert.equal(await p.locator('[data-policy]').count(), 0, 'a escolha de quem não paga ainda está em Taxa de serviço');
+  const sw = p.locator('[data-pay-svc]:checked').first();
+  await sw.evaluate(el => el.click());
+  await p.locator('[data-pol="redistribute"]').waitFor();
+  await p.click('[data-pol="redistribute"]');
+  assert.equal(await p.evaluate(() => draft.service.policy), 'redistribute');
+  assert.deepEqual(a.erros, []);
+  await a.fechar();
+});
+

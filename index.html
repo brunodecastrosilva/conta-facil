@@ -108,8 +108,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .person button::before{content:'';position:absolute;inset:-9px;border-radius:50%} /* alvo de toque de 44 px sem mudar o desenho (lei 7) */
 .quem-voce{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px;padding:10px 12px;border-radius:12px;background:var(--surface-2);font-size:14px}
 .quem-voce .chips{gap:6px}
-.turmas-atalho{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.turmas-atalho .chip svg{width:14px;height:14px;margin-right:2px;vertical-align:-2px}
 .person button:hover{color:var(--danger);background:var(--danger-soft)}
 
 /* items */
@@ -266,7 +264,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .start-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
 .start-row input{flex:1 1 200px;background:var(--surface);color:var(--ink);border:0;border-radius:10px;padding:10px 12px;min-height:46px}
 .start-row .btn{flex:none;min-height:46px}
-.hero-chips .chip{background:rgba(255,255,255,.14);color:var(--green-ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
 .hero-link{border:0;background:none;color:var(--green-ink);text-align:left;padding:0;font-weight:600;font-size:13.5px;text-decoration:underline;text-underline-offset:3px;opacity:.9}
 .card.current{box-shadow:inset 0 0 0 2px var(--mustard),var(--shadow)}
 .cur-total{font-family:var(--f-mono);font-weight:600;font-size:20px}
@@ -311,7 +308,6 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .rec-row b{display:block;overflow-wrap:anywhere}
 .rec-row small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
 .btn.danger-text{color:var(--danger)}
-.hero-chips .chip[aria-pressed="true"]{background:var(--mustard);color:#2a1d02;box-shadow:none}
 .sum.total{grid-column:1 / -1;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .sum.total b{font-size:20px}
 .rc-sub{font-weight:600;font-size:13px;line-height:20px}
@@ -409,7 +405,8 @@ body.is-dragging.drag-out .drop-out{display:flex}
 .item-actions{flex-direction:column;align-items:stretch}
 .pending-bar{flex-direction:column;align-items:stretch}
 .del-btn{color:var(--danger)}
-.cat-row > .btn,.cat-row > .icon-btn{width:52px;height:40px;min-height:40px;padding:0}
+.cat-row > .btn,.cat-row > .icon-btn{width:52px;height:var(--kf-alvo,44px);min-height:var(--kf-alvo,44px);padding:0}
+.cat-row > .btn[data-turma-ed]{width:auto;padding:0 12px}
 .cover-row{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
 .sg-wrap > .sg-clear{position:absolute;right:6px;top:7px;width:34px;height:34px;border:0;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;padding:0}
 .sg-wrap > .sg-clear svg{width:16px;height:16px}
@@ -542,6 +539,65 @@ body.is-dragging.drag-out .drop-out{display:flex}
 button.minus,button.plus{min-height:44px}
 /* rótulos em caixa alta com no mínimo 12 px (eram 11–11,5) */
 .eyebrow,.kpi-l,.tot-l{font-size:12px}
+
+/* 1.13: nada lado a lado. Resumos em lista vertical, escolhas em lista (de marcar ou suspensa), grupos em seções que abrem */
+.sum-grid,.stats-tiles{display:flex;flex-direction:column;gap:0;background:var(--surface-2);border-radius:12px;overflow:hidden}
+.sum-grid .sum,.stats-tiles .sum{display:flex;align-items:baseline;justify-content:space-between;gap:12px;background:none;border-radius:0;padding:11px 14px;border-bottom:1px solid var(--line)}
+.sum-grid .sum:last-child,.stats-tiles .sum:last-child{border-bottom:0}
+.sum-grid .sum .eyebrow,.stats-tiles .sum .eyebrow{font-size:13.5px;letter-spacing:0;text-transform:none;font-weight:600;color:var(--muted)}
+.sum-grid .sum b,.stats-tiles .sum b{margin:0;font-size:16px}
+.sum-grid .sum.total{background:var(--green);color:var(--green-ink);grid-column:auto}
+.sum-grid .sum.total .eyebrow{color:inherit;opacity:.9}
+.sum-grid .sum.total b{font-size:20px}
+.mini-stats{flex-direction:column;gap:4px}
+.adj-btns{display:flex!important;flex-direction:column;gap:8px}
+.adj-btns .adj-btn{width:100%;justify-content:flex-start}
+.receipts{display:flex;flex-direction:column;gap:22px;align-items:stretch;max-width:520px}
+.two-col{display:flex;flex-direction:column;gap:12px}
+/* lista de marcar (quem consumiu, quem faz parte da turma) */
+.ck-list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.ck-row{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:6px 4px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer}
+.ck-row .ck-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ck-row .ck-box{width:24px;height:24px;border-radius:7px;flex:none;display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--line);color:transparent;transition:background .15s,box-shadow .15s}
+.ck-row .ck-box svg{width:16px;height:16px}
+.ck-row[aria-pressed="true"] .ck-box,.ck-row[aria-checked="true"] .ck-box{background:var(--green);box-shadow:none;color:var(--green-ink)}
+.ck-row.changed .ck-nome::after{content:" · alterado";font-weight:500;color:var(--mustard-ink,var(--muted));font-size:12.5px}
+.ck-row.me .ck-nome{box-shadow:inset 0 -2px 0 var(--mustard)}
+.ck-row.ck-todos{color:var(--green);font-weight:700}
+.ck-row:disabled{opacity:.5;cursor:default}
+@media (hover:hover){.ck-row:not(:disabled):hover{background:var(--surface-2)}}
+.ck-row:focus-visible{outline:2.5px solid var(--green);outline-offset:-2px;border-radius:8px}
+/* janela ao lançar: três escolhas, uma embaixo da outra */
+.lanc-ops{display:flex;flex-direction:column;gap:8px}
+.lanc-op{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 14px;border:0;border-radius:14px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.lanc-op svg{width:22px;height:22px;flex:none;color:var(--green)}
+.lanc-op b{display:block;font-size:15px}
+.lanc-op small{display:block;color:var(--muted);font-size:13px;margin-top:1px}
+.lanc-op .lanc-seta{margin-left:auto;color:var(--muted)}
+@media (hover:hover){.lanc-op:hover{box-shadow:inset 0 0 0 2px var(--green)}}
+.lanc-op:focus-visible{outline:2.5px solid var(--green);outline-offset:2px}
+/* item recém-lançado: entra no topo e pisca para o olho achar */
+@keyframes itemNovo{0%{transform:translateY(-10px);opacity:0;box-shadow:0 0 0 3px var(--mustard)}25%{transform:none;opacity:1}70%{box-shadow:0 0 0 3px var(--mustard)}100%{box-shadow:var(--shadow)}}
+.item.novo{animation:itemNovo 1.6s var(--ease) both}
+@media (prefers-reduced-motion:reduce){.item.novo{animation:none;box-shadow:0 0 0 3px var(--mustard)}}
+/* seções que abrem e fecham (Histórico) */
+details.fold{padding:0}
+details.fold>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;min-height:52px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary h2{margin:0;flex:1;min-width:0}
+details.fold>summary .fold-res{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
+details.fold>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0;transition:transform .2s}
+details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+details.fold>.fold-in{padding:0 16px 16px}
+.field-sel{display:flex;flex-direction:column;gap:6px}
+/* pessoas na comanda: uma por linha (antes eram pílulas lado a lado) */
+.people{flex-direction:column;flex-wrap:nowrap;gap:0;border-top:1px solid var(--line)}
+.people .person{display:flex;width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:6px 0 6px 4px;min-height:46px}
+.people .person span.n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.people .person button{width:44px;height:44px;border-radius:10px}
+.people .person button::before{display:none}
+.people > .hint{padding:10px 4px}
+.pol-row{display:flex;align-items:center;gap:10px}.pol-row>span{flex:1;min-width:0}.pol-row .btn{flex:none}
 </style>
 
 <header class="kf-barra" id="barra"><div class="kf-barra-in"><div class="kf-marca"><span class="kf-marca-ic marca-conta" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span><span class="kf-marca-nome">Conta Fácil</span></div><div id="topo"></div></div></header>
@@ -555,7 +611,7 @@ button.minus,button.plus{min-height:44px}
 
 <script src="comum/kit-facil.js"></script>
 <script>
-const VERSAO = '1.12.0';
+const VERSAO = '1.13.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -611,7 +667,13 @@ const I = {
   download: '<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>',
   upload: '<svg class="i" viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 9 12 4.5 16.5 9M5 19.5h14"/></svg>',
   back: '<svg class="i" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>',
+  check: '<svg class="i" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  user: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>',
+  listCheck: '<svg class="i" viewBox="0 0 24 24"><path d="m3.5 6 1.5 1.5 3-3M3.5 12.5l1.5 1.5 3-3M3.5 19l1.5 1.5 3-3M11 6h10M11 12.5h10M11 19h10"/></svg>',
+  next: '<svg class="i" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg>',
 };
+/* 1.13: linha de uma lista de marcar (no lugar dos chips lado a lado) */
+const ckRow = (attrs, nome, on, extra = '') => `<button type="button" class="ck-row ${extra}" ${attrs} aria-pressed="${!!on}"><span class="ck-box">${I.check}</span>${avatar(nome)}<span class="ck-nome">${esc(nome)}</span></button>`;
 
 /* ---------- divisão em centavos (sem erro de arredondamento) ---------- */
 function allocate(total, weights) {
@@ -1189,7 +1251,7 @@ KitFacil.iniciar({
   tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '1.12.0', itens: ['Cada item novo já entra dividido igual entre todos. Só pede confirmação o item em que você mexer.', 'Apresentação curta ao abrir o app e guia em 3 níveis: essencial, exploração e completo. Dá para desligar a apresentação em Ajustes.', 'Turmas: cadastre quem sai junto e ponha todos na mesa com um toque. Também dá para cadastrar pessoas e chaves Pix antes da comanda.', 'A comanda pergunta quem é você, e a tela inicial mostra quanto você gastou no mês, não o total da mesa.', 'Taxa de serviço mais simples: 10% já vem marcado e o resto aparece em Mudar.'] }, { versao: '1.11.0', itens: ['Botões, cartões e escolhas com as mesmas medidas dos outros apps da família.'] }, { versao: '1.10.0', itens: ['Novo em Ajustes › Privacidade e segurança: Restaurar padrões de fábrica. O app volta como novo neste aparelho, sem dados nem ajustes.'] }, { versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
+  novidades: [{ versao: '1.13.0', itens: ['Ao lançar um item, uma janela pergunta como dividir: entre todos, entre alguns ou consumo individual. O item novo entra no topo da lista.', 'Quem consumiu aparece em lista, um nome embaixo do outro; para dividir por unidade, toque no item e em Alterar.', 'Turmas, quem paga a conta e quem é você agora são escolhidos numa lista.', 'Taxa de serviço: em Mudar, escolha % ou R$. Ao desligar o serviço de alguém, o app pergunta o que fazer com essa parte.', 'Corrigido: segurar um nome no Pagamento fazia a tela subir sem parar.'] }, { versao: '1.12.0', itens: ['Cada item novo já entra dividido igual entre todos. Só pede confirmação o item em que você mexer.', 'Apresentação curta ao abrir o app e guia em 3 níveis: essencial, exploração e completo. Dá para desligar a apresentação em Ajustes.', 'Turmas: cadastre quem sai junto e ponha todos na mesa com um toque. Também dá para cadastrar pessoas e chaves Pix antes da comanda.', 'A comanda pergunta quem é você, e a tela inicial mostra quanto você gastou no mês, não o total da mesa.', 'Taxa de serviço mais simples: 10% já vem marcado e o resto aparece em Mudar.'] }, { versao: '1.11.0', itens: ['Botões, cartões e escolhas com as mesmas medidas dos outros apps da família.'] }, { versao: '1.10.0', itens: ['Novo em Ajustes › Privacidade e segurança: Restaurar padrões de fábrica. O app volta como novo neste aparelho, sem dados nem ajustes.'] }, { versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
     'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
@@ -1210,7 +1272,7 @@ KitFacil.iniciar({
   copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
     'As comandas, o histórico e os cadastros (nomes, chaves Pix e preços por local) ficam guardados neste aparelho.',
-    'Comanda ao vivo (opcional): o local, os nomes, os pedidos e os valores da comanda vão para o Firebase (Google), para todos da mesa verem as mudanças na hora, são apagados do Firebase assim que o anfitrião encerra a comanda (se ela nunca for encerrada, sai na limpeza mensal depois de 30 dias). Quem tem o código ou o link entra na comanda: compartilhe só com quem está na mesa.',
+    'Comanda ao vivo (opcional): o local, os nomes, os pedidos e os valores da comanda vão para o Firebase (Google), para todos da mesa verem as mudanças na hora. Esses dados são apagados do Firebase assim que o anfitrião encerra a comanda; se ela nunca for encerrada, saem na limpeza mensal, depois de 30 dias. Quem tem o código ou o link entra na comanda: compartilhe só com quem está na mesa.',
   ],
 });
 KitFacil.tema.iniciar({ chave: 'contafacil.pref', cores: { claro: '#EAF0EA', escuro: '#0D1712' } });
@@ -1242,7 +1304,21 @@ const isTouch = (() => { try { return matchMedia('(pointer: coarse)').matches; }
 // no celular o teclado fecha depois de lançar; no computador o cursor volta para o campo
 function afterSubmit(sel) {
   if (isTouch) { document.activeElement?.blur?.(); return; }
-  setTimeout(() => $(sel)?.focus(), 0);
+  setTimeout(() => $(sel)?.focus({ preventScroll: true }), 0);
+}
+/* 1.13: o item recém-lançado entra no topo da lista; a tela desliza até ele e ele pisca uma vez */
+let itemNovo = null;
+function mostrarItemNovo() {
+  if (!itemNovo || tab !== 'comanda') return;
+  const id = itemNovo; itemNovo = null;
+  const el = $(`#view [data-item="${CSS.escape(id)}"]`); if (!el) return;
+  el.classList.add('novo'); setTimeout(() => el.classList.remove('novo'), 1700);
+  const suave = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setTimeout(() => {
+    const r = el.getBoundingClientRect(), barra = $('#barra')?.getBoundingClientRect().bottom || 0;
+    const nav = $('.kf-nav'), fundo = nav && nav.getClientRects().length && nav.getBoundingClientRect().top > innerHeight / 2 ? nav.getBoundingClientRect().top : innerHeight;
+    if (r.top < barra + 8 || r.bottom > fundo - 8) window.scrollTo({ top: Math.max(0, scrollY + r.top - barra - Math.max(16, (fundo - barra - r.height) / 3)), behavior: suave ? 'smooth' : 'auto' });
+  }, 60);
 }
 const isField = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]), textarea, select');
 // tocar no fundo recolhe o teclado e não deixa o iPhone pular para outro campo
@@ -1655,9 +1731,10 @@ function render(opts = {}) {
     if (focusId) { const f = document.getElementById(focusId); if (f) { f.focus({ preventScroll: true }); try { sel && f.setSelectionRange(sel[0], sel[1]); } catch {} } }
   }
   if (anc) { const el = $(anc.to); if (el) { const dy = el.getBoundingClientRect().top - anc.y; if (Math.abs(dy) > 1) window.scrollBy(0, dy); } }
+  mostrarItemNovo();
   if (KitFacil.guia.ativo()) { if (!draft.isExample) KitFacil.guia.parar(); else requestAnimationFrame(() => KitFacil.guia.posicionar()); }
 }
-const aoTocarAba = e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { sairDosAjustes(); tab = 'inicio'; render(); } return; } if (b) { sairDosAjustes(); tab = b.dataset.tab; pickSel = null; selItem = null; selPay = null; render(); window.scrollTo({ top: 0 }); } };
+const aoTocarAba = e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { sairDosAjustes(); tab = 'inicio'; render(); } return; } if (b) { sairDosAjustes(); tab = b.dataset.tab; pickSel = null; selItem = null; selPay = null; svcMais = false; render(); window.scrollTo({ top: 0 }); } };
 $('#tabs').addEventListener('click', aoTocarAba);
 $('#trilho').addEventListener('click', aoTocarAba);
 /* ---------- Ajustes: abre pelo botão do topo; o Voltar do navegador fecha ---------- */
@@ -1694,7 +1771,7 @@ function liveCardHTML() {
     who = mePerson && !liveWho
       ? `<div class="lp-me">${avatar(mePerson.name)}<span>Você é <b>${esc(mePerson.name)}</b></span><button class="lp-link" id="live-who">Trocar</button></div>`
       : `<div class="lp-who"><span class="lp-label">Quem é você?</span>
-        <div class="chips">${draft.people.map(p => `<button class="chip" data-me="${p.id}" aria-pressed="${me === p.id}">${esc(p.name)}</button>`).join('')}</div></div>`;
+        <div class="ck-list">${draft.people.map(p => ckRow(`data-me="${p.id}"`, p.name, me === p.id)).join('')}</div></div>`;
   }
   const main = closed ? '' : connected ? `<button class="btn mustard" id="live-invite">${I.share}Convidar</button>`
     : store.ready ? `<button class="btn mustard" id="live-reconnect">${I.refresh}Reconectar</button>` : '';
@@ -2055,10 +2132,9 @@ function newBillAt(place, people) {
 /* ---------- aba Início ---------- */
 const viewInicio = {
   html() {
-    const ex = draft.isExample, d = ex ? loadRealDraft() : draft, U = usage();
+    const ex = draft.isExample, d = ex ? loadRealDraft() : draft;
     const inProgress = d.active;
     const c = inProgress ? compute(d) : null;
-    const places = recentPlaces(U).slice(0, 6);
     const now = new Date();
     const doMes = bills.filter(b => { const t = new Date(b.closedAt); return t.getMonth() === now.getMonth() && t.getFullYear() === now.getFullYear(); });
     // com "Você nas comandas" definido, mostra o que a pessoa gastou; sem isso, o total das mesas (e diz que é das mesas)
@@ -2075,7 +2151,6 @@ const viewInicio = {
         <input id="start-place" autocomplete="off" autocapitalize="words" type="text" placeholder="Nome do local" aria-label="Nome do local" data-keep>
         <button class="btn mustard" type="submit">Abrir comanda</button>
       </form>
-      ${places.length ? `<div class="chips hero-chips">${places.map(p => `<button type="button" class="chip" data-start="${esc(p.name)}">${esc(p.name)}</button>`).join('')}</div>` : ''}
     </div>
 
     ${inProgress ? `<div class="card current">
@@ -2106,21 +2181,14 @@ const viewInicio = {
   },
   bind(v) {
     const startEl = $('#start-place', v);
-    attachSuggest(startEl, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })), () => {
-      $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', norm(x.dataset.start) === norm(startEl.value)));
-    });
+    // 1.13: os lugares já visitados aparecem só na lista que abre ao tocar no campo
+    attachSuggest(startEl, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })));
     $('#start-form', v).addEventListener('submit', e => {
       e.preventDefault();
       const place = startEl.value.trim().replace(/\s+/g, ' ');
-      if (!place) { toast('Digite o nome do local ou toque numa sugestão.'); if (!isTouch) startEl.focus(); return; }
+      if (!place) { toast('Digite o nome do local ou escolha um da lista.'); if (!isTouch) startEl.focus(); return; }
       document.activeElement?.blur?.(); newBillAt(place);
     });
-    // a sugestão só preenche o nome; a comanda abre ao tocar em Abrir comanda
-    $$('[data-start]', v).forEach(b => b.addEventListener('click', () => {
-      startEl.value = b.dataset.start;
-      $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', x === b));
-    }));
-    startEl.addEventListener('input', () => $$('[data-start]', v).forEach(x => x.setAttribute('aria-pressed', norm(x.dataset.start) === norm(startEl.value))));
     const jCard = $('#join-card', v), jIn = $('#join-code', v);
     if (jCard) {
       const sync = () => jCard.classList.toggle('open', document.activeElement === jIn || !!jIn.value.trim());
@@ -2177,7 +2245,9 @@ function itemCardHTML(it, d, me) {
   const head = (qty) => `<div class="item-top"><div style="min-width:0"><div class="item-name">${esc(it.name)}${it.fq ? `<span class="tag">${it.fq >= qty ? 'cortesia' : it.fq + ' cortesia'}</span>` : ''}</div><div class="item-meta num">${qty} × ${BRL(it.price)}</div></div>
     <div class="item-total">${BRL(qty * it.price)}</div></div>`;
   const sel = selItem === it.id;
-  const footer = `<div class="item-actions"><span class="share">${it.lk ? (it.mode === 'units' ? 'Por unidade' : 'Dividido igualmente') : 'Escolha como dividir e confirme'}</span>
+  const quem = ids.filter(id => (it.a[id] || 0) > 0);
+  const resumoDiv = it.mode === 'units' ? 'Por unidade' : quem.length === 1 ? `Só de ${nm(quem[0])}` : quem.length && quem.length === ids.length ? 'Dividido igual entre todos' : `Dividido igual entre ${quem.length}`;
+  const footer = `<div class="item-actions"><span class="share">${it.lk ? resumoDiv : 'Escolha como dividir e confirme'}</span>
     ${sel ? `<span class="grp"><button class="btn small ghost" data-rename>${I.edit}Alterar</button><button class="btn small ghost del-btn" data-del>${I.trash}Remover</button></span>` : ''}</div>`;
   const sec = t => `<span class="sec">${t}</span>`;
 
@@ -2196,9 +2266,9 @@ function itemCardHTML(it, d, me) {
         </div>`; }).join('')}</div>`;
     } else {
       const who = ids.filter(id => (cur.a[id] || 0) > 0);
-      body = `<div class="chips" role="group" aria-label="Quem divide ${esc(it.name)}">${d.people.map(pp => {
+      body = `<div class="ck-list" role="group" aria-label="Quem consumiu ${esc(it.name)}">${d.people.map(pp => {
           const on = (cur.a[pp.id] || 0) > 0, was = (it.a[pp.id] || 0) > 0;
-          return `<button class="chip ${pp.id === me ? 'me' : ''} ${on !== was ? 'changed' : ''}" data-toggle="${pp.id}" aria-pressed="${on}">${esc(pp.name)}</button>`; }).join('')}</div>
+          return ckRow(`data-toggle="${pp.id}"`, pp.name, on, `${pp.id === me ? 'me' : ''} ${on !== was ? 'changed' : ''}`); }).join('')}</div>
         <div class="row" style="align-items:center;justify-content:space-between">
           <span class="share">${who.length > 1 ? `Dividido por ${who.length}: <span class="num">${BRL(Math.round((cur.qty - Math.min(it.fq || 0, cur.qty)) * it.price / who.length))}</span> cada` : who.length ? 'Item individual' : '<b style="color:var(--danger)">Ninguém marcado</b>'}</span>
           <span class="unit-btns"><span class="hint">Qtd.</span><span class="num" style="min-width:22px;text-align:center;font-weight:600">${cur.qty}</span>${cur.qty !== it.qty ? `<span class="delta ${cur.qty > it.qty ? 'up' : 'down'}">${cur.qty > it.qty ? '+' : ''}${cur.qty - it.qty}</span>` : ''}
@@ -2214,18 +2284,14 @@ function itemCardHTML(it, d, me) {
         <span class="grp"><button class="btn small ghost" data-discard>Descartar</button><button class="btn small" data-save ${valid ? '' : 'disabled'}>${I.save}Salvar</button></span>
       </div>`;
     }
-    const reabrir = !dirty && d.people.length > 1 ? `<button class="btn small ghost reopen" data-reopen>${it.mode === 'units' ? 'Mudar a divisão' : 'Dividir por unidade'}</button>` : '';
     return `<div class="item locked ${dirty ? 'dirty' : ''} ${sel ? 'sel' : ''}" data-item="${it.id}">
-      ${head(cur.qty)}${sec(it.mode === 'units' ? 'Unidades de cada um' : 'Quem consumiu')}${body}${save}${reabrir}${footer}</div>`;
+      ${head(cur.qty)}${sec(it.mode === 'units' ? 'Unidades de cada um' : 'Quem consumiu')}${body}${save}${footer}</div>`;
   }
 
   /* ----- item novo: primeira divisão ----- */
   const who = ids.filter(id => (it.a[id] || 0) > 0); const n = who.length;
   const units = who.reduce((s, id) => s + (it.a[id] || 0), 0);
   const ok = it.mode === 'units' ? (n > 0 && units === it.qty) : n > 0;
-  const seg = `<div class="seg" role="group" aria-label="Como dividir ${esc(it.name)}">
-    <button data-mode="equal" aria-pressed="${it.mode === 'equal'}">Igual</button>
-    <button data-mode="units" aria-pressed="${it.mode === 'units'}">Por unidade</button></div>`;
   let body = '';
   if (it.mode === 'units') {
     const left = it.qty - units;
@@ -2240,15 +2306,14 @@ function itemCardHTML(it, d, me) {
         : `<div class="status bad">${I.warn}<span><b>${plural(-left, 'unidade', 'unidades')} a mais</b> (${units} de ${it.qty}).</span></div>`}`;
   } else {
     const all = n === ids.length && n > 0;
-    body = `${d.people.length ? `<div class="chips" role="group" aria-label="Quem consumiu ${esc(it.name)}">
-        ${d.people.map(p => `<button class="chip ${p.id === me ? 'me' : ''}" data-toggle="${p.id}" aria-pressed="${(it.a[p.id] || 0) > 0}">${esc(p.name)}</button>`).join('')}
-        ${d.people.length > 1 ? `<button class="chip all" data-all="${all ? 'none' : 'all'}">${all ? 'Ninguém' : 'Todos'}</button>` : ''}
+    body = `${d.people.length ? `<div class="ck-list" role="group" aria-label="Quem consumiu ${esc(it.name)}">
+        ${d.people.map(p => ckRow(`data-toggle="${p.id}"`, p.name, (it.a[p.id] || 0) > 0, p.id === me ? 'me' : '')).join('')}
+        ${d.people.length > 1 ? `<button type="button" class="ck-row ck-todos" data-all="${all ? 'none' : 'all'}">${all ? 'Desmarcar todos' : 'Marcar todos'}</button>` : ''}
       </div>` : ''}
       <span class="share">${!n ? '<b style="color:var(--danger)">Toque em quem consumiu.</b>' : n === 1 ? 'Item individual' : `Dividido por ${n}: <span class="num">${BRL(Math.round((it.qty - Math.min(it.fq || 0, it.qty)) * it.price / n))}</span> cada`}</span>`;
   }
   return `<div class="item open ${sel ? 'sel' : ''}" data-item="${it.id}">
     ${head(it.qty)}
-    ${d.people.length > 1 ? sec('Como dividir') + seg : ''}
     ${d.people.length ? sec(it.mode === 'units' ? 'Unidades de cada um' : 'Quem consumiu') : ''}
     ${body}
     <div class="row" style="align-items:center;gap:10px"><span class="hint">Quantidade</span>
@@ -2259,12 +2324,21 @@ function itemCardHTML(it, d, me) {
 }
 
 function renameSheet(it) {
+  // 1.13: Alterar também troca o modo de divisão (antes era um botão solto no cartão)
+  const d = draft, varios = d.people.length > 1;
+  let modo = it.mode;
+  const segModo = () => `<div class="seg" role="group" aria-label="Como dividir ${esc(it.name)}">
+      <button type="button" data-rn-modo="equal" aria-pressed="${modo === 'equal'}">Igual</button>
+      <button type="button" data-rn-modo="units" aria-pressed="${modo === 'units'}">Por unidade</button></div>`;
+  const ajudaModo = () => modo === 'units' ? 'Cada pessoa fica com as unidades que pediu. Depois de salvar, distribua as unidades no item e confirme.' : 'O valor do item é dividido em partes iguais entre quem consumiu.';
   openSheet({ title: `Alterar ${it.name}`, body: `<form id="rn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
       <div class="field"><label for="rn-name">Nome do produto</label><input id="rn-name" type="text" value="${esc(it.name)}"></div>
       <div class="field"><label for="rn-price">Valor unitário (R$)</label><input id="rn-price" type="text" inputmode="numeric" data-money value="${moneyInput(it.price)}"></div>
+      ${varios ? `<div class="field"><span class="eyebrow">Como dividir</span><span id="rn-modo">${segModo()}</span><p class="hint" id="rn-modo-ajuda">${ajudaModo()}</p></div>` : ''}
     </form>`, foot: `<button type="button" class="btn ghost" id="rn-no">Cancelar</button><button type="submit" form="rn-form" class="btn">${I.save}Salvar alteração</button>`, onMount: s => {
     $('#rn-no', s).onclick = () => closeSheet();
-    $('#rn-name', s).focus();
+    if (!isTouch) $('#rn-name', s).focus();
+    $('#rn-modo', s)?.addEventListener('click', e => { const b = e.target.closest('[data-rn-modo]'); if (!b) return; modo = b.dataset.rnModo; $('#rn-modo', s).innerHTML = segModo(); $('#rn-modo-ajuda', s).textContent = ajudaModo(); });
     $('#rn-form', s).addEventListener('submit', e => {
       e.preventDefault();
       const name = $('#rn-name', s).value.trim().replace(/\s+/g, ' ');
@@ -2272,10 +2346,57 @@ function renameSheet(it) {
       if (!name) { toast('Informe o nome do produto.'); return; }
       if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); return; }
       const cur = draft.items.find(x => x.id === it.id); if (!cur) { closeSheet(true); return; }
-      const changed = cur.name !== name || cur.price !== price;
-      cur.name = name; cur.price = price; closeSheet(true);
-      if (changed) { commit(); toast('Item alterado.'); }
+      const trocouModo = modo !== cur.mode;
+      const changed = cur.name !== name || cur.price !== price || trocouModo;
+      cur.name = name; cur.price = price;
+      if (trocouModo) {
+        const who = d.people.map(p => p.id).filter(id => (cur.a[id] || 0) > 0);
+        const base = who.length ? who : d.people.map(p => p.id);
+        delete pending[cur.id];
+        if (modo === 'units') {
+          // ponto de partida: parte inteira igual para cada um; o que sobrar a pessoa distribui no item e confirma
+          const each = Math.floor(cur.qty / base.length);
+          cur.a = each ? Object.fromEntries(base.map(id => [id, each])) : {};
+          cur.lk = false;
+        } else { cur.a = Object.fromEntries(base.map(id => [id, 1])); cur.lk = true; }
+        cur.mode = modo; cur.auto = false;
+      }
+      closeSheet(true); selItem = null;
+      if (changed) { commit(); toast(trocouModo && modo === 'units' ? `${cur.name}: distribua as unidades e confirme.` : 'Item alterado.'); }
     });
+  } });
+}
+
+/* 1.13: ao lançar, a janela pergunta como dividir: entre todos, entre alguns ou consumo individual */
+function lancarSheet(it, d, lancar) {
+  const total = it.qty * it.price, cada = Math.round(total / d.people.length);
+  const ops = () => `<div class="lanc-ops">
+      <button type="button" class="lanc-op" data-lc="todos">${I.users}<span><b>Dividir entre todos</b><small>${BRL(cada)} para cada um dos ${d.people.length}</small></span></button>
+      <button type="button" class="lanc-op" data-lc="alguns">${I.listCheck}<span><b>Dividir entre alguns</b><small>Você marca quem consumiu</small></span><span class="lanc-seta">${I.next}</span></button>
+      <button type="button" class="lanc-op" data-lc="um">${I.user}<span><b>Consumo individual</b><small>Só uma pessoa paga</small></span><span class="lanc-seta">${I.next}</span></button>
+    </div>`;
+  let passo = 'ops', marcados = new Set();
+  const corpo = () => passo === 'ops' ? ops()
+    : passo === 'um' ? `<p class="hint" style="margin:0 0 6px">Quem consumiu?</p><div class="ck-list" role="list">${d.people.map(p => `<button type="button" class="ck-row" data-lc-um="${p.id}">${avatar(p.name)}<span class="ck-nome">${esc(p.name)}</span>${I.next}</button>`).join('')}</div>`
+    : `<p class="hint" style="margin:0 0 6px">Marque quem vai dividir.</p><div class="ck-list" role="group" aria-label="Quem divide ${esc(it.name)}">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"`, p.name, marcados.has(p.id))).join('')}</div>
+       <p class="share" id="lc-conta" style="margin-top:8px">${marcados.size > 1 ? `${BRL(Math.round(total / marcados.size))} para cada um dos ${marcados.size}` : marcados.size ? 'Uma pessoa marcada: vira consumo individual.' : 'Ninguém marcado ainda.'}</p>`;
+  const pe = () => passo === 'ops' ? `<button type="button" class="btn ghost" id="lc-no">Cancelar</button>`
+    : `<button type="button" class="btn ghost" id="lc-volta">${I.back}Voltar</button>${passo === 'alguns' ? `<button type="button" class="btn" id="lc-ok" ${marcados.size ? '' : 'disabled'}>${I.plus}Lançar</button>` : ''}`;
+  openSheet({ title: 'Como dividir?', sub: `${it.qty > 1 ? it.qty + ' × ' : ''}${it.name} · ${BRL(total)}`, body: `<div id="lc-corpo">${corpo()}</div>`, foot: `<div id="lc-pe" class="sheet-actions">${pe()}</div>`, onMount: s => {
+    const pinta = (focar = true, manter) => { $('#lc-corpo', s).innerHTML = corpo(); $('#lc-pe', s).innerHTML = pe(); ligar(); const f = manter ? $(`[data-lc-ck="${manter}"]`, s) : focar && !isTouch && $('#lc-corpo button', s); if (f) f.focus(); };
+    const fim = (a, todos) => { closeSheet(true); lancar(a, todos); };
+    const ligar = () => {
+      $('#lc-no', s)?.addEventListener('click', () => closeSheet());
+      $('#lc-volta', s)?.addEventListener('click', () => { passo = 'ops'; pinta(); });
+      $('#lc-ok', s)?.addEventListener('click', () => { if (marcados.size) fim(Object.fromEntries([...marcados].map(id => [id, 1]))); });
+      $$('[data-lc]', s).forEach(b => b.addEventListener('click', () => {
+        if (b.dataset.lc === 'todos') return fim(Object.fromEntries(d.people.map(p => [p.id, 1])), true);
+        passo = b.dataset.lc; pinta();
+      }));
+      $$('[data-lc-um]', s).forEach(b => b.addEventListener('click', () => fim({ [b.dataset.lcUm]: 1 })));
+      $$('[data-lc-ck]', s).forEach(b => b.addEventListener('click', () => { const id = b.dataset.lcCk; marcados.has(id) ? marcados.delete(id) : marcados.add(id); pinta(false, id); }));
+    };
+    ligar();
   } });
 }
 
@@ -2284,7 +2405,7 @@ const viewComanda = {
     const d = draft, calc = compute(d);
     const allIds = d.people.map(p => p.id);
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
-    const itemsHTML = d.items.length ? d.items.map(it => itemCardHTML(it, d, me)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item ainda', texto: 'Adicione o que foi pedido e marque quem consumiu.' });
+    const itemsHTML = d.items.length ? [...d.items].sort((x, y) => (y.o || 0) - (x.o || 0)).map(it => itemCardHTML(it, d, me)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item ainda', texto: 'Adicione o que foi pedido e marque quem consumiu.' });
 
     return `
     ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small mustard" id="clear-example">Sair</button></span></div>` : ''}
@@ -2299,13 +2420,13 @@ const viewComanda = {
 
     <div class="card" id="people-card">
       <div class="card-head"><h2>Pessoas na comanda</h2><span class="hint">${plural(d.people.length, 'pessoa', 'pessoas')}</span></div>
-      ${!d.isExample && (catalog.groups || []).length ? `<div class="turmas-atalho"><span class="eyebrow">Turmas</span><span class="chips">${[...catalog.groups].sort(ordemNome).map(g => { const falta = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n))).length; return `<button class="chip" data-turma="${esc(g.id)}" ${falta ? '' : 'disabled'} aria-label="Pôr a turma ${esc(g.name)} na mesa">${I.plus}${esc(g.name)}</button>`; }).join('')}</span></div>` : ''}
+      ${!d.isExample && (catalog.groups || []).length ? `<div class="field field-sel turmas-sel"><label for="turma-sel">Pôr uma turma na mesa</label><select id="turma-sel"><option value="">Escolher turma</option>${[...catalog.groups].sort(ordemNome).map(g => { const falta = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n))).length; return `<option value="${esc(g.id)}" ${falta ? '' : 'disabled'}>${esc(g.name)} · ${falta ? plural(falta, 'pessoa', 'pessoas') + ' a pôr' : 'todos já na mesa'}</option>`; }).join('')}</select></div>` : ''}
       <form class="row" id="person-form" autocomplete="off">
         <div class="field grow"><label for="person-name">Nome</label><input id="person-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Nome" data-keep></div>
         <button class="btn" type="submit">${I.plus}Adicionar</button>
       </form>
       <div class="people">${d.people.map(p => `<span class="person">${avatar(p.name)}<span class="n">${esc(p.name)}</span><span class="num hint">${BRL(calc.per[p.id].gross)}</span><button data-rm-person="${p.id}" aria-label="Remover ${esc(p.name)}">${I.x}</button></span>`).join('') || '<span class="hint">Adicione quem está dividindo a comanda.</span>'}</div>
-      ${!d.isExample && !d.live && d.people.length && !catalog.me && !catalog.meNao ? `<div class="quem-voce" id="quem-voce"><b>Qual destes é você?</b><span class="chips">${d.people.map(p => `<button class="chip" data-sou="${esc(p.name)}">${esc(p.name)}</button>`).join('')}</span><button class="btn small ghost" data-sou-nao>Não estou na conta</button><span class="hint" style="flex-basis:100%">Assim o Histórico mostra quanto você gastou, e não o total da mesa.</span></div>` : ''}
+      ${!d.isExample && !d.live && d.people.length && !catalog.me && !catalog.meNao ? `<div class="quem-voce" id="quem-voce"><div class="field field-sel" style="flex:1 1 100%"><label for="sou-sel">Qual destes é você?</label><select id="sou-sel"><option value="">Escolher meu nome</option>${d.people.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('')}</select></div><button class="btn small ghost" data-sou-nao>Não estou na conta</button><span class="hint" style="flex-basis:100%">Assim o Histórico mostra quanto você gastou, e não o total da mesa.</span></div>` : ''}
     </div>
 
     <div class="card" id="item-card">
@@ -2432,19 +2553,26 @@ const viewComanda = {
       const price = parseMoney(priceEl.value);
       if (!name) { toast('Informe o nome do produto.'); nameEl.focus(); return; }
       if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); priceEl.focus(); return; }
-      d.items.push({ id: newId(), o: nextOrder(), name, qty, price, fq: 0, mode: 'equal', lk: d.people.length > 0, auto: d.people.length > 0, a: Object.fromEntries(d.people.map(p => [p.id, 1])) });
-      nameEl.value = ''; priceEl.value = ''; qtyEl.value = 1; hintEl.hidden = true; dupEl.hidden = true;
-      commit(); afterSubmit('#item-name');
+      // "entre todos" fica automático: quem chega depois também entra no item (decisão da 1.12, opção B)
+      const lancar = (a, todos) => {
+        const id = newId();
+        d.items.push({ id, o: nextOrder(), name, qty, price, fq: 0, mode: 'equal', lk: d.people.length > 0, auto: !!todos && d.people.length > 0, a });
+        nameEl.value = ''; priceEl.value = ''; qtyEl.value = 1; hintEl.hidden = true; dupEl.hidden = true;
+        itemNovo = id; commit(); afterSubmit('#item-name');
+      };
+      // 1.13: com duas ou mais pessoas, uma janela pergunta como dividir antes de lançar
+      if (d.people.length < 2) return lancar(Object.fromEntries(d.people.map(p => [p.id, 1])), true);
+      lancarSheet({ name, qty, price }, d, lancar);
     });
 
     // cartões de item
-    $$('[data-turma]', v).forEach(b => b.addEventListener('click', () => {
-      const g = (catalog.groups || []).find(x => x.id === b.dataset.turma); if (!g) return;
+    $('#turma-sel', v)?.addEventListener('change', e => {
+      const g = (catalog.groups || []).find(x => x.id === e.target.value); if (!g) return;
       const novos = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n)));
       novos.forEach(n => addPerson(n));
       toast(`${plural(novos.length, 'pessoa entrou', 'pessoas entraram')} na mesa: ${novos.join(', ')}.`);
-    }));
-    $$('[data-sou]', v).forEach(b => b.addEventListener('click', () => { catalog.me = b.dataset.sou; store.saveCatalog(); toast(`Pronto: você é ${catalog.me}. Dá para mudar em Ajustes → Conta e perfil.`); render({ preserve: true }); }));
+    });
+    $('#sou-sel', v)?.addEventListener('change', e => { if (!e.target.value) return; catalog.me = e.target.value; store.saveCatalog(); toast(`Pronto: você é ${catalog.me}. Dá para mudar em Ajustes → Conta e perfil.`); render({ preserve: true }); });
     $('[data-sou-nao]', v)?.addEventListener('click', () => { catalog.meNao = true; store.saveCatalog(); render({ preserve: true }); });
     $$('[data-item]', v).forEach(card => {
       const it = d.items.find(i => i.id === card.dataset.item);
@@ -2458,7 +2586,6 @@ const viewComanda = {
 
       if (it.lk) {
         const touch = () => { if (!pendingDirty(it)) delete pending[it.id]; render(); };
-        $('[data-reopen]', card)?.addEventListener('click', () => { delete pending[it.id]; it.lk = false; it.auto = false; selItem = null; commit(); });
         $$('[data-inc]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it); p.a[b.dataset.inc] = (p.a[b.dataset.inc] || 0) + 1; p.qty++; touch(); }));
         $$('[data-dec]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it), id = b.dataset.dec; if (!(p.a[id] > 0)) return; p.a[id]--; if (!p.a[id]) delete p.a[id]; p.qty--; touch(); }));
         $$('[data-toggle]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it), id = b.dataset.toggle; if ((p.a[id] || 0) > 0) delete p.a[id]; else p.a[id] = 1; touch(); }));
@@ -2652,7 +2779,12 @@ function dragMove(x, y) {
 // perto do topo ou do pé da tela, a página rola sozinha para alcançar os outros cartões
 function dragScroll() {
   if (!drag.on) return;
-  const top = ($('#tabs')?.getBoundingClientRect().bottom || 0) + 70, bot = window.innerHeight - 90;
+  // 1.13: as bordas vêm da barra do topo e da barra de seções do pé (que mudou de lugar no Kit); antes a conta
+  // usava a barra de seções como se estivesse no alto e a página subia sem parar só de segurar um nome
+  const vis = el => el && el.getClientRects().length ? el.getBoundingClientRect() : null;
+  const barra = vis($('#barra')), nav = vis($('.kf-nav'));
+  const top = (barra ? barra.bottom : 0) + 56;
+  const bot = (nav && nav.top > window.innerHeight / 2 ? nav.top : window.innerHeight) - 56;
   const v = drag.y < top ? -Math.min(16, (top - drag.y) / 3) : drag.y > bot ? Math.min(16, (drag.y - bot) / 3) : 0;
   if (v) { window.scrollBy(0, v); dragMove(drag.x, drag.y); }
   drag.raf = requestAnimationFrame(dragScroll);
@@ -2696,7 +2828,7 @@ function paymentHTML(d, c) {
   // quem vai pagar a conta
   let who = '';
   if (d.payMode === 'single') {
-    who = `<div class="chips">${d.people.map(p => `<button class="chip" data-payer="${p.id}" aria-pressed="${d.payer === p.id}">${esc(p.name)}</button>`).join('')}</div>`;
+    who = `<div class="field field-sel"><label for="payer-sel">Quem paga a conta</label><select id="payer-sel">${d.payer ? '' : '<option value="">Escolher</option>'}${d.people.map(p => `<option value="${p.id}" ${d.payer === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>`;
   }
   let warn = '';
   if (!c.missingPayer && c.payDiff < 0) warn = `<div class="status warn">${I.warn}<span>Faltam <b>${BRL(-c.payDiff)}</b> para cobrir o total de ${BRL(c.total)}. Ajuste os valores personalizados.</span></div>`;
@@ -2729,9 +2861,9 @@ function paymentHTML(d, c) {
     const gap = p.custom && d.payMode !== 'single' ? p.share - (d.custom[pid] || 0) : 0;
     if (gap > 0) {
       const opts = c.ids.filter(id => id !== pid && !c.per[id].custom && c.per[id].share > 0);
-      if (opts.length) h += `<div class="cover-row"><span class="eyebrow">Quem cobre os ${BRL(gap)} que faltam?</span><div class="chips">
-        <button class="chip" data-cover="${pid}" data-to="" aria-pressed="${!c.coverOf[pid]}">Todos</button>
-        ${opts.map(id => `<button class="chip" data-cover="${pid}" data-to="${id}" aria-pressed="${c.coverOf[pid] === id}">${esc(nm(id).split(' ')[0])}</button>`).join('')}</div></div>`;
+      if (opts.length) h += `<div class="cover-row field field-sel"><label for="cover-${pid}">Quem cobre os ${BRL(gap)} que faltam?</label><select id="cover-${pid}" data-cover="${pid}">
+        <option value="" ${!c.coverOf[pid] ? 'selected' : ''}>Todos, dividido</option>
+        ${opts.map(id => `<option value="${id}" ${c.coverOf[pid] === id ? 'selected' : ''}>${esc(nm(id))}</option>`).join('')}</select></div>`;
     }
     // "paga ao local" só aparece quando diz algo novo: quem paga só a própria parte já está no valor do topo
     const plain = d.payMode !== 'single' && !p.custom && u.payers.length === 1;
@@ -2767,7 +2899,22 @@ function paymentHTML(d, c) {
     ${c.transfers.length ? `<button class="btn small ghost" id="copy-transfers" style="align-self:flex-start">${I.copy}Copiar acertos</button>` : ''}
   </div>`;
 }
-let svcMais = false; // "Mudar" na taxa de serviço: mostra Outro % e Valor fixo
+let svcMais = false; // "Mudar" na taxa de serviço: mostra % ou R$
+/* 1.13: quem não paga o serviço. A pergunta aparece numa janela na hora em que o serviço é desligado na pessoa
+   (antes surgia lá no alto, em Taxa de serviço, sem aviso) */
+function politicaSheet(d, p) {
+  const s = d.service, c = compute(d);
+  const quem = p ? p.name : c.skipped.map(id => c.per[id].person.name).join(', ');
+  const valor = p ? (c.per[p.id]?.serviceNominal || 0) : c.skippedValue;
+  const op = (k, t, sub) => `<button type="button" class="lanc-op" data-pol="${k}" aria-pressed="${s.policy === k}">${s.policy === k ? I.check : '<span style="width:22px;flex:none"></span>'}<span><b>${t}</b><small>${sub}</small></span></button>`;
+  openSheet({ title: `${quem} não paga o serviço`, sub: valor ? `O que fazer com ${BRL(valor)} de serviço?` : 'O que fazer com essa parte do serviço?',
+    body: `<div class="lanc-ops">${op('discount', 'Descontar da comanda', 'A taxa total fica menor; ninguém paga essa parte.')}${op('redistribute', 'Redistribuir entre os demais', 'Quem paga o serviço cobre essa parte, proporcional ao consumo.')}</div>`,
+    foot: `<button type="button" class="btn ghost" id="pol-desfaz">${p ? `${esc(p.name.split(' ')[0])} paga o serviço` : 'Fechar'}</button>`,
+    onMount: dl => {
+      $$('[data-pol]', dl).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.pol; closeSheet(true); commit(); toast(s.policy === 'discount' ? 'Essa parte sai da taxa de serviço.' : 'Essa parte foi dividida entre os demais.'); }));
+      $('#pol-desfaz', dl).addEventListener('click', () => { if (p) { p.payService = true; closeSheet(true); commit(); } else closeSheet(); });
+    } });
+}
 const viewFechar = {
   html() {
     const d = draft, c = compute(d), s = d.service, ds = d.discount;
@@ -2840,21 +2987,11 @@ const viewFechar = {
         <label class="switch"><input type="checkbox" id="svc-on" ${s.enabled ? 'checked' : ''}><span class="track"></span>Cobrar</label></div>
       ${s.enabled ? (s.mode === 'pct' && s.pct === 10 && !svcMais ? `
       <div class="row svc-simples" style="align-items:center;justify-content:space-between"><span><b>10%</b> sobre o consumo</span><button class="btn small ghost" id="svc-mudar">Mudar</button></div>` : `
-      <div class="row" style="align-items:center">
-        <div class="seg" role="group" aria-label="Tipo de taxa">
-          <button data-mode="p10" aria-pressed="${s.mode === 'pct' && s.pct === 10}">10%</button>
-          <button data-mode="pct" aria-pressed="${s.mode === 'pct' && s.pct !== 10}">Outro %</button>
-          <button data-mode="fixed" aria-pressed="${s.mode === 'fixed'}">Valor fixo</button>
-        </div>
-        ${s.mode === 'pct' && s.pct !== 10 ? `<div class="field" style="width:140px"><input id="svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa" data-keep></div>` : ''}
-        ${s.mode === 'fixed' ? `<div class="field" style="width:140px"><input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep></div>` : ''}
-      </div>`) + (c.skipped.length ? `
-      <div class="field"><span class="eyebrow">Quem não paga o serviço</span>
-        <div class="seg" role="group" aria-label="O que fazer com o serviço de quem não paga">
-          <button data-policy="discount" aria-pressed="${s.policy === 'discount'}">Descontar da comanda</button>
-          <button data-policy="redistribute" aria-pressed="${s.policy === 'redistribute'}">Redistribuir entre os demais</button>
-        </div></div>` : `<p class="hint">Alguém não paga o serviço? Desligue <b>Serviço</b> no cartão da pessoa, em Quanto cada um paga.</p>`) + `
-      ${note ? `<div class="policy-note">${note}</div>` : ''}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
+      <div class="ds-row">
+        <div class="seg" role="group" aria-label="Tipo de taxa"><button data-svcmode="pct" aria-pressed="${s.mode === 'pct'}">%</button><button data-svcmode="fixed" aria-pressed="${s.mode === 'fixed'}">R$</button></div>
+        ${s.mode === 'fixed' ? `<input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep>` : `<input id="svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa" data-keep>`}
+      </div>`) + (c.skipped.length ? '' : `<p class="hint">Alguém não paga o serviço? Desligue <b>Serviço</b> no cartão da pessoa, em Quanto cada um paga.</p>`) + `
+      ${note ? `<div class="policy-note pol-row"><span>${note}</span><button class="btn small ghost" id="svc-politica">Mudar</button></div>` : ''}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
     </div>
 
     ${adj.ord.map(k => adjCard[k]()).join('')}
@@ -2886,16 +3023,15 @@ const viewFechar = {
     // serviço
     $('#svc-on', v)?.addEventListener('change', e => { s.enabled = e.target.checked; commit(); });
     $('#svc-mudar', v)?.addEventListener('click', () => { svcMais = true; render({ preserve: true }); });
-    $$('[data-mode]', v).forEach(b => b.addEventListener('click', () => {
-      const m = b.dataset.mode;
-      if (m === 'p10') { s.mode = 'pct'; s.pct = 10; }
-      else if (m === 'pct') { s.mode = 'pct'; if (s.pct === 10) s.pct = 12; }
+    $$('[data-svcmode]', v).forEach(b => b.addEventListener('click', () => {
+      const m = b.dataset.svcmode; if (m === s.mode) return;
+      if (m === 'pct') { s.mode = 'pct'; if (!s.pct) s.pct = 10; }
       else { s.mode = 'fixed'; if (!s.fixed) s.fixed = Math.round(compute(d).consumo * 0.1); }
       commit();
     }));
+    $('#svc-politica', v)?.addEventListener('click', () => politicaSheet(d));
     $('#svc-pct', v)?.addEventListener('change', e => { s.pct = parsePct(e.target.value) ?? 0; commit(); });
     $('#svc-fixed', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) s.fixed = c; commit(); });
-    $$('[data-policy]', v).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.policy; commit(); }));
     // desconto
     const adjOff = (k, off) => { off(); d.adjOrder = (d.adjOrder || []).filter(x => x !== k); commit({ anchor: { from: '#' + k + '-card', to: '#adj-area' } }); };
     $('#ds-on', v)?.addEventListener('change', () => adjOff('ds', () => { ds.enabled = false; }));
@@ -2933,14 +3069,17 @@ const viewFechar = {
     // couvert
     $('#cv-on', v)?.addEventListener('change', () => adjOff('cv', () => { d.couvert.enabled = false; }));
     $('#cv-val', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) d.couvert.value = c; commit(); });
-    $$('[data-pay-svc]', v).forEach(i => i.addEventListener('change', () => { d.people.find(p => p.id === i.dataset.paySvc).payService = i.checked; commit(); }));
+    $$('[data-pay-svc]', v).forEach(i => i.addEventListener('change', () => {
+      const p = d.people.find(x => x.id === i.dataset.paySvc); p.payService = i.checked; commit();
+      if (!i.checked) politicaSheet(d, p);
+    }));
     $$('[data-pay-cv]', v).forEach(i => i.addEventListener('change', () => { d.people.find(p => p.id === i.dataset.payCv).payCouvert = i.checked; commit(); }));
     bindGroups(v, d);
     $$('[data-pixpay]', v).forEach(b => b.addEventListener('click', () => { const x = pixDebts(compute(d)).find(z => z.pid === b.dataset.pixpay); if (x) pixSheet(x); }));
     $$('[data-pix]', v).forEach(i => i.addEventListener('change', () => savePixKey(i.dataset.pix, i.value, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); })));
     // quem pagou
     $$('[data-paymode]', v).forEach(b => b.addEventListener('click', () => { d.payMode = b.dataset.paymode; commit(); }));
-    $$('[data-payer]', v).forEach(b => b.addEventListener('click', () => { d.payer = b.dataset.payer; commit(); }));
+    $('#payer-sel', v)?.addEventListener('change', e => { if (e.target.value) { d.payer = e.target.value; commit(); } });
     $$('[data-cv]', v).forEach(b => b.addEventListener('click', e => {
       e.stopPropagation(); const pid = b.dataset.cv; d.custom = d.custom || {};
       if (pid in d.custom) { delete d.custom[pid]; commit(); return; }
@@ -2948,7 +3087,7 @@ const viewFechar = {
       // o campo recebe o foco no mesmo toque, para o teclado do iPhone abrir
       const i = document.getElementById('cv-' + pid); if (i) i.focus();
     }));
-    $$('[data-cover]', v).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); d.cover = d.cover || {}; if (b.dataset.to) d.cover[b.dataset.cover] = b.dataset.to; else delete d.cover[b.dataset.cover]; commit(); }));
+    $$('select[data-cover]', v).forEach(b => b.addEventListener('change', () => { d.cover = d.cover || {}; if (b.value) d.cover[b.dataset.cover] = b.value; else delete d.cover[b.dataset.cover]; commit(); }));
     $$('[data-custom]', v).forEach(i => i.addEventListener('change', () => { d.custom[i.dataset.custom] = parseMoney(i.value) || 0; commit(); }));
     const c = compute(d);
     $('#copy-transfers', v)?.addEventListener('click', () => copyText(['Acertos — ' + (d.place || 'Comanda'), ...c.transfers.map(t => { const to = c.per[t.to].person.name, k = pixOf(to); return `${c.per[t.from].person.name} paga ${BRL(t.value)} para ${to}${k ? ' (Pix: ' + k + ')' : ''}`; })].join('\n'), 'Acertos copiados.'));
@@ -3004,13 +3143,15 @@ function statsHTML() {
   const max = Math.max(...months.map(m => m.v), 1);
   const maxIdx = months.reduce((bi, m, i, arr) => m.v > arr[bi].v ? i : bi, 0);
   // rankings
-  const places = {}; rows.forEach(r => { const k = (r.b.place || 'Sem nome').trim(); const key = norm(k); places[key] = places[key] || { name: k, n: 0, v: 0 }; places[key].n++; places[key].v += useMine ? (r.mine || 0) : r.c.total; });
+  const places = {}; (useMine ? mineRows.filter(r => r.mine > 0) : rows).forEach(r => { const k = (r.b.place || 'Sem nome').trim(); const key = norm(k); places[key] = places[key] || { name: k, n: 0, v: 0 }; places[key].n++; places[key].v += useMine ? (r.mine || 0) : r.c.total; });
   const topPlaces = Object.values(places).sort((a, b) => b.n - a.n || b.v - a.v).slice(0, 5);
   const friends = {}; (useMine ? mineRows : rows).forEach(r => r.b.people.forEach(p => { if (norm(p.name) === norm(meName)) return; const key = norm(p.name); friends[key] = friends[key] || { name: p.name, n: 0 }; friends[key].n++; }));
   const topFriends = Object.values(friends).sort((a, b) => b.n - a.n).slice(0, 5);
   const prods = {}; rows.forEach(r => r.b.items.forEach(it => { const key = norm(it.name); prods[key] = prods[key] || { name: it.name, q: 0 }; prods[key].q += it.qty; }));
   const topProds = Object.values(prods).sort((a, b) => b.q - a.q).slice(0, 5);
   const rank = (list, val, fmt, avatars) => { const mx = Math.max(...list.map(val), 1); return list.length ? `<div class="rank">${list.map(x => `<div class="rank-row"><span class="nm">${avatars ? avatar(x.name) : ''}<span>${esc(x.name)}</span></span><span class="vl">${fmt(x)}</span><div class="track2"><div class="fill" style="width:${Math.round(val(x) / mx * 100)}%"></div></div></div>`).join('')}</div>` : '<p class="hint">Sem dados ainda.</p>'; };
+  // 1.13: os rankings ficam em seções que abrem e fecham, uma embaixo da outra (antes eram cartões lado a lado)
+  const secao = (titulo, primeiro, corpo) => `<details class="card fold" data-kf-secao><summary><h2>${titulo}</h2>${primeiro ? `<span class="fold-res" data-kf-secao-resumo>${esc(primeiro)}</span>` : ''}</summary><div class="fold-in">${corpo}</div></details>`;
   const avg = useMine ? (mineRows.length ? Math.round(mineTotal / mineRows.length) : 0) : Math.round(total / rows.length);
   return `<div class="card">
     <div class="card-head"><h2>Resumo</h2>
@@ -3033,9 +3174,9 @@ function statsHTML() {
     </div>
   </div>
   <div class="two-col">
-    <div class="card"><h2>Locais mais frequentes</h2>${rank(topPlaces, x => x.n, x => `${plural(x.n, 'vez', 'vezes')} · ${BRL(x.v)}`)}</div>
-    <div class="card"><h2>${useMine ? 'Com quem ' + esc(meName.split(' ')[0]) + ' mais sai' : 'Quem mais aparece'}</h2>${rank(topFriends, x => x.n, x => plural(x.n, 'comanda', 'comandas'), true)}</div>
-    <div class="card"><h2>Mais pedidos</h2>${rank(topProds, x => x.q, x => plural(x.q, 'unidade', 'unidades'))}</div>
+    ${secao('Locais mais frequentes', topPlaces[0]?.name, rank(topPlaces, x => x.n, x => `${plural(x.n, 'vez', 'vezes')} · ${BRL(x.v)}`))}
+    ${secao(useMine ? 'Com quem ' + esc(meName.split(' ')[0]) + ' mais sai' : 'Quem mais aparece', topFriends[0]?.name, rank(topFriends, x => x.n, x => plural(x.n, 'comanda', 'comandas'), true))}
+    ${secao('Mais pedidos', topProds[0]?.name, rank(topProds, x => x.q, x => plural(x.q, 'unidade', 'unidades')))}
   </div>`;
 }
 const viewHistorico = {
@@ -3109,7 +3250,7 @@ function turmaSheet(g) {
   const nomes = [...catalog.people].sort(ordemNome).map(p => p.name), sel = new Set(g ? g.members : []);
   openSheet({ title: g ? `Turma ${g.name}` : 'Nova turma', body: `<form id="tg-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
       <div class="field"><label for="tg-nome">Nome da turma</label><input id="tg-nome" type="text" maxlength="40" placeholder="Turma do futebol" value="${esc(g ? g.name : '')}"></div>
-      <div class="field"><span class="eyebrow">Quem faz parte</span><div class="chips" role="group" aria-label="Quem faz parte da turma">${nomes.map(n => `<button type="button" class="chip" data-tg="${esc(n)}" aria-pressed="${sel.has(n)}">${esc(n)}</button>`).join('')}</div></div>
+      <div class="field"><span class="eyebrow">Quem faz parte</span><div class="ck-list" role="group" aria-label="Quem faz parte da turma">${nomes.map(n => ckRow(`data-tg="${esc(n)}"`, n, sel.has(n))).join('')}</div></div>
     </form>`, foot: `<button type="button" class="btn ghost" id="tg-no">Cancelar</button><button type="submit" form="tg-form" class="btn">${I.save}Salvar turma</button>`, onMount: s => {
     $('#tg-no', s).onclick = () => closeSheet();
     $$('[data-tg]', s).forEach(b => b.addEventListener('click', () => { const n = b.dataset.tg; if (sel.has(n)) sel.delete(n); else sel.add(n); b.setAttribute('aria-pressed', sel.has(n)); }));
@@ -3143,7 +3284,7 @@ const viewCadastros = {
     </div>
     <div class="card" id="turmas-card">
       <div class="card-head"><h2>Turmas</h2><button class="btn small" id="cad-turma" ${catalog.people.length > 1 ? '' : 'disabled'}>${I.plus}Turma</button></div>
-      ${(catalog.groups || []).length ? `<div class="cat-list">${[...catalog.groups].sort(ordemNome).map(g => `<div class="cat-row"><span class="nm" style="min-width:0">${esc(g.name)}<small>${esc(g.members.join(', '))}</small></span><span class="grp" style="display:flex;gap:6px"><button class="btn small ghost" data-turma-ed="${esc(g.id)}">Alterar</button><button class="icon-btn del" data-turma-del="${esc(g.id)}" aria-label="Excluir a turma ${esc(g.name)}">${I.trash}</button></span></div>`).join('')}</div>`
+      ${(catalog.groups || []).length ? `<div class="cat-list">${[...catalog.groups].sort(ordemNome).map(g => `<div class="cat-row"><span class="nm" style="min-width:0">${esc(g.name)}<small>${esc(g.members.join(', '))}</small></span><button class="btn small ghost" data-turma-ed="${esc(g.id)}">Alterar</button><button class="icon-btn del" data-turma-del="${esc(g.id)}" aria-label="Excluir a turma ${esc(g.name)}">${I.trash}</button></div>`).join('')}</div>`
         : `<p class="hint">${catalog.people.length > 1 ? 'Junte quem costuma sair junto, como a turma do futebol: na comanda, um toque põe todos na mesa.' : 'Cadastre ao menos duas pessoas para montar uma turma.'}</p>`}
     </div>
     <div class="card">
@@ -3211,7 +3352,7 @@ const viewCadastros = {
 };
 
 
-/* ---------- aba Ajustes: guias comuns do Kit Fácil + a guia própria "Comandas" ---------- */
+/* ---------- aba Ajustes: só as guias comuns do Kit Fácil ---------- */
 function baixarCopiaConta() {
   const real = draft.isExample ? loadRealDraft() : draft;
   KitFacil.copia.baixar({ bills, catalog, draft: real.active ? real : null }, 1);
@@ -3234,11 +3375,9 @@ async function restaurarCopiaConta(f) {
       render(); toast('Cópia restaurada.' + extra);
     } });
 }
-const ICONE_COMANDA = '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>';
 const viewAjustes = {
   html() {
     const pessoas = [...catalog.people].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-    const vivo = store.db ? 'Disponível: conectado ao servidor da comanda ao vivo.' : store.ready ? 'Indisponível agora: sem conexão com o servidor. Confira a internet.' : 'Conectando ao servidor…';
     return KitFacil.ajustes.html({
       extras: {
         conta: `<div class="kf-bloco"><h3>Você nas comandas</h3>
@@ -3247,41 +3386,35 @@ const viewAjustes = {
             : '<p class="kf-ajuda">Ainda não há pessoas cadastradas. Elas entram nos Cadastros quando você salva a primeira comanda.</p>'}</div>`,
       },
       resumos: { conta: catalog.me ? `Você é ${catalog.me}` : undefined },
-      produto: [{ id: 'comandas', titulo: 'Comandas', icone: ICONE_COMANDA, resumo: 'Comanda ao vivo, guia e cadastros',
-        html: `<div class="kf-bloco"><h3>Comanda ao vivo</h3><p class="kf-texto">${esc(vivo)}</p>
-            <p class="kf-ajuda">Na comanda ao vivo, cada pessoa marca o que consumiu pelo próprio celular. O local, os nomes, os pedidos e os valores ficam no Firebase (Google) enquanto a comanda existe. Para começar, abra uma comanda e toque em Compartilhar com a turma.</p></div>
-          <div class="kf-bloco"><h3>Guia do app</h3><p class="kf-ajuda">Uma comanda de exemplo mostra cada função, passo a passo. Nada do exemplo é salvo.</p><button type="button" class="kf-btn kf-sec" id="aj-exemplo">Ver a comanda de exemplo</button></div>
-          <div class="kf-bloco"><h3>Cadastros</h3><p class="kf-ajuda">Pessoas, chaves Pix e o preço de cada produto em cada local ficam na aba Cadastros.</p><button type="button" class="kf-btn kf-sec" id="aj-cadastros">Abrir Cadastros</button></div>` }],
+      // 1.13: sem a guia própria "Comandas": não havia nada para ajustar ali (o exemplo fica no Início; os Cadastros, em Mais)
     });
   },
   bind(v) {
     KitFacil.ajustes.ligar(v);
     $('#aj-me', v)?.addEventListener('change', e => { catalog.me = e.target.value; store.saveCatalog(); KitFacil.ajustes.resumo('conta', catalog.me ? `Você é ${catalog.me}` : 'Sem cadastro · dados neste aparelho'); toast(catalog.me ? `Pronto: você é ${catalog.me}.` : 'Nome desmarcado.'); });
-    $('#aj-exemplo', v)?.addEventListener('click', () => { sairDosAjustes(); exitExample(); enterExample(); });
-    $('#aj-cadastros', v)?.addEventListener('click', () => { sairDosAjustes(); tab = 'cadastros'; render(); window.scrollTo({ top: 0 }); });
   },
 };
 
 /* ---------- guia do app em 3 níveis (Kit 2.11): roda na comanda de exemplo ---------- */
 function irAba(t) { if (tab !== t) { tab = t; closeSheet(); render(); } }
 const GUIA = [
-  { nivel: 1, ir: () => irAba('inicio'), sel: '#start-form', t: 'Abrir uma comanda', d: 'Digite o nome do bar ou restaurante e toque em Abrir comanda. Os lugares onde você já foi aparecem como atalhos.' },
+  { nivel: 1, ir: () => irAba('inicio'), sel: '#start-form', t: 'Abrir uma comanda', d: 'Digite o nome do bar ou restaurante e toque em Abrir comanda. Os lugares onde você já foi aparecem na lista que abre ao tocar no campo.' },
   { nivel: 3, se: () => !!store.db, ir: () => irAba('inicio'), sel: '#join-card', t: 'Entrar numa comanda ao vivo', d: 'Se um amigo compartilhar a comanda ao vivo, cole aqui o código ou o link que ele mandou e marque pelo seu celular o que você consumiu.' },
-  { nivel: 1, ir: () => irAba('comanda'), sel: '#people-card', t: 'Pessoas na mesa', d: 'Escreva o nome de cada um e toque em Adicionar. Se você cadastrou uma turma, um toque põe todos na mesa.' },
-  { nivel: 1, ir: () => irAba('comanda'), sel: '#item-card', t: 'Lançar um pedido', d: 'Produto, quantidade e preço da unidade. No preço, digite só os números: 1290 vira R$ 12,90. O item já entra dividido igual entre todos.' },
-  { nivel: 2, ir: () => irAba('comanda'), sel: '.item.locked', t: 'Quem consumiu', d: 'Toque num nome para tirar ou incluir a pessoa e depois em Salvar. Se cada um pediu uma quantidade diferente, toque em Dividir por unidade.' },
+  { nivel: 1, ir: () => irAba('comanda'), sel: '#people-card', t: 'Pessoas na mesa', d: 'Escreva o nome de cada um e toque em Adicionar. Se você cadastrou uma turma, escolha-a em Pôr uma turma na mesa e todos entram de uma vez.' },
+  { nivel: 1, ir: () => irAba('comanda'), sel: '#item-card', t: 'Lançar um pedido', d: 'Produto, quantidade e preço da unidade. No preço, digite só os números: 1290 vira R$ 12,90. Ao tocar em Lançar, o app pergunta como dividir: entre todos, entre alguns ou consumo individual. O item novo aparece no topo da lista.' },
+  { nivel: 2, ir: () => irAba('comanda'), sel: '.item.locked', t: 'Quem consumiu', d: 'Marque ou desmarque quem consumiu e toque em Salvar. Se cada um pediu uma quantidade diferente, toque no item, depois em Alterar, e escolha Por unidade.' },
   { nivel: 2, ir: () => irAba('comanda'), sel: '.item.open', t: 'Dividir por unidade', d: 'Use +1 e −1 para dar a cada um as unidades que pediu. Quando todas estiverem distribuídas, toque em Confirmar divisão. Só o item que você mexeu precisa de confirmação.' },
   { nivel: 3, se: () => !!store.db, ir: () => irAba('comanda'), sel: '#live-offer', alt: '#live-card', t: 'Comanda ao vivo', d: 'Compartilhe a comanda com a turma: cada um marca o que consumiu no próprio celular e todos veem as mudanças na hora.' },
   { nivel: 2, ir: () => irAba('comanda'), sel: '#go-close', t: 'Hora de pagar', d: 'Toque em Fechar a comanda para ver quanto cada um deve.' },
   { nivel: 3, ir: () => irAba('fechar'), sel: '.sum-grid', t: 'Resumo da conta', d: 'Consumo, serviço, ajustes e o total. Confira se o total bate com a conta do lugar.' },
-  { nivel: 2, ir: () => irAba('fechar'), sel: '#svc-card', t: 'Taxa de serviço', d: '10% já vem marcado. Toque em Mudar para outro percentual ou um valor fixo, ou desligue Cobrar se o lugar não cobra.' },
+  { nivel: 2, ir: () => irAba('fechar'), sel: '#svc-card', t: 'Taxa de serviço', d: '10% já vem marcado. Toque em Mudar para outro percentual (%) ou um valor fixo (R$), ou desligue Cobrar se o lugar não cobra.' },
   { nivel: 2, ir: () => irAba('fechar'), sel: '#adj-area', alt: '#cv-card', t: 'Couvert, desconto e cortesia', d: 'Inclua couvert artístico por pessoa, um desconto em reais ou porcentagem, ou as unidades que o lugar não cobrou.' },
   { nivel: 3, ir: () => irAba('fechar'), sel: '#groups-card .seg', alt: '#groups-card', t: 'Quem paga a conta', d: 'Cada um paga a sua parte, ou uma pessoa paga tudo e os outros acertam com ela depois.' },
-  { nivel: 1, ir: () => irAba('fechar'), sel: '.ubox', t: 'Quanto cada um paga', d: 'O valor de cada pessoa, já com serviço e ajustes. Toque numa pessoa para juntar com alguém ou para tirar o serviço dela.' },
+  { nivel: 1, ir: () => irAba('fechar'), sel: '.ubox', t: 'Quanto cada um paga', d: 'O valor de cada pessoa, já com serviço e ajustes. Segure e arraste uma pessoa até outra para juntar no mesmo cupom. Ao desligar o Serviço de alguém, o app pergunta o que fazer com essa parte.' },
   { nivel: 2, ir: () => irAba('fechar'), sel: '.pix-btn', t: 'Pagar com Pix', d: 'O app gera o Pix copia e cola e o QR code com o valor certo. A chave de quem recebe fica salva no cadastro da pessoa.' },
   { nivel: 3, ir: () => irAba('fechar'), sel: '.receipt-wrap', t: 'Cupons', d: 'Cada pessoa recebe um cupom com o que consumiu. Compartilhe como imagem, PDF ou texto.' },
   { nivel: 1, ir: () => irAba('fechar'), sel: '#save-bill', t: 'Salvar e encerrar', d: 'Guarda a comanda no histórico e deixa o app pronto para a próxima. No exemplo, nada é salvo.' },
-  { nivel: 2, ir: () => irAba('historico'), sel: '#view .card', t: 'Histórico', d: 'As comandas salvas, quanto você gastou por mês, os lugares mais frequentes e com quem você mais sai. Dá para reabrir ou repetir uma comanda.' },
+  { nivel: 2, ir: () => irAba('historico'), sel: '#view .card', alt: '#view .kf-vazio', t: 'Histórico', d: 'As comandas salvas, quanto você gastou por mês, os lugares mais frequentes e com quem você mais sai. Dá para reabrir ou repetir uma comanda.' },
   { nivel: 3, ir: () => irAba('cadastros'), sel: '#turmas-card', t: 'Cadastros e turmas', d: 'Pessoas com a chave Pix, turmas que entram juntas na mesa e o preço de cada produto em cada lugar.' },
 ];
 /* ---------- início ---------- */
