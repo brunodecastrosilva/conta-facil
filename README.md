@@ -4,8 +4,8 @@ Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que co
 
 **Fase de testes** · versão 1.16.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
-Faz parte do **Projeto Integrador** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil) e segue o padrão comum descrito em
-[`comum/PADRAO.md`](comum/PADRAO.md).
+Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil) e segue o
+[Código do Projeto Fácil](comum/CODIGO.md).
 
 ## O que o app faz
 
@@ -56,7 +56,7 @@ npm start                         # abre em http://localhost:8080/conta-facil/
 npm install                       # primeira vez: instala o Playwright, usado nos testes
 npx playwright install chromium   # primeira vez: baixa o navegador dos testes
 npm test                          # testes do Kit Fácil e do app, sem internet
-npm run verificar                 # padrão do Projeto Integrador, segredos e versão
+npm run verificar                 # Código do Projeto Fácil, segredos e versão
 ```
 
 Os testes simulam o GitHub (sincronização) e o Firebase (avaliações); nada toca nos dados reais.
@@ -64,7 +64,7 @@ O modo sem internet (service worker) só funciona em `https`, ou seja, no endere
 
 ## Interface
 
-Segue o padrão comum da família (veja [`comum/PADRAO.md`](comum/PADRAO.md)):
+Segue o Código do Projeto Fácil (veja [`comum/CODIGO.md`](comum/CODIGO.md)):
 
 - **Alto da tela, à direita:** nuvem da sincronização, chopp para o criador e balão de avaliação, nessa ordem; Ajustes fica na barra de baixo (no computador, no pé do menu lateral).
 - **Navegação:** barra embaixo no celular e no tablet; menu lateral no computador (a partir de 1024 px)
@@ -91,7 +91,7 @@ Segue o padrão comum da família (veja [`comum/PADRAO.md`](comum/PADRAO.md)):
 | Google Fonts, cdnjs, gstatic | fontes, QR code, PDF e biblioteca do Firebase | gratuito | nada |
 
 A configuração web do Firebase em `config.js` é pública por natureza (não é senha); quem protege o banco são as regras do Firestore.
-Recomendado restringir a chave por referenciador no Google Cloud (veja o `PADRAO.md`, item 9).
+Recomendado restringir a chave por referenciador no Google Cloud (veja o `CODIGO.md`, Art. 19).
 
 ## Publicação
 

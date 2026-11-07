@@ -2,6 +2,10 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.16.1 · 2026-11-07
+
+- **Kit Fácil 2.13.0 e Código do Projeto Fácil:** as Leis Globais e o Padrão viraram um só código, com artigos e anexos técnicos (`comum/CODIGO.md`, no lugar do `PADRAO.md`). Nenhum app tem tela de primeiro uso; a janela de boas-vindas do Kit abre ao abrir o app (desligável). No Conta Fácil nada muda para quem usa.
+
 ## 1.16.0 · 2026-11-06
 
 - **Guia completo, depois do toque (Kit Fácil 2.12.1):** cada passo aparece primeiro para leitura; a ação só começa quando a pessoa toca em Mostrar. Depois, o resultado fica destacado e o botão vira Próximo.
