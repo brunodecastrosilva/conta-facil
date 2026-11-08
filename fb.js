@@ -1,6 +1,9 @@
 // Conexão com o Firebase para a comanda ao vivo.
 // Expõe a mesma interface que o app já usava: db.doc(caminho).get/set/update/onSnapshot.
-import { firebaseConfig, appCheckSiteKey } from './config.js';
+import * as cfg from './config.js';
+
+const { firebaseConfig } = cfg;
+const appCheckSiteKey = cfg.appCheckSiteKey || '';
 
 const V = '10.12.2';
 const CDN = `https://www.gstatic.com/firebasejs/${V}`;
