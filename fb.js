@@ -20,7 +20,7 @@ export async function connect() {
   if (appCheckSiteKey) {
     try {
       const ac = await import(`${CDN}/firebase-app-check.js`);
-      ac.initializeAppCheck(app, { provider: new ac.ReCaptchaV3Provider(appCheckSiteKey), isTokenAutoRefreshEnabled: true });
+      ac.initializeAppCheck(app, { provider: new ac.ReCaptchaEnterpriseProvider(appCheckSiteKey), isTokenAutoRefreshEnabled: true });
     } catch (e) { console.warn('App Check', e); }
   }
   const auth = getAuth(app);
