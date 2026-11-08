@@ -8,3 +8,5 @@ export const firebaseConfig = {
   messagingSenderId: '862201011516',
   appId: '1:862201011516:web:ce36fbe3494eabff045239',
 };
+// Chave do site do reCAPTCHA v3 usada pelo App Check (pública por natureza). Vazia: a comanda ao vivo segue sem crachá.
+export const appCheckSiteKey = '';

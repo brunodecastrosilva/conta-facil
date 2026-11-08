@@ -2,6 +2,12 @@
 
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`.
 
+## 1.17.0 · 2026-11-08
+
+- **Segurança (Código do Projeto Fácil 3.1, Título IV, capítulo Da segurança; Kit Fácil 2.14.0):** avaliações com limite de uma por minuto e dez por dia em cada aparelho; *Sobre o aplicativo* mostra o endereço oficial e o final da chave Pix do apoio; política de segurança de conteúdo (CSP) no `index.html`; impressão digital (SRI) nas bibliotecas do cdnjs; suporte ao App Check (reCAPTCHA v3), ligado quando a chave do site for configurada.
+- **Código 3.1:** artigos renumerados e anexos em arquivo à parte (`comum/ANEXOS.md`); regras do Firestore mais fechadas (`comum/regras-firestore-feedback.txt`).
+- **Comanda ao vivo:** pronta para o App Check (`appCheckSiteKey` em `config.js`); a regra nova só aceita os campos da comanda e não deixa reabrir comanda encerrada.
+
 ## 1.16.1 · 2026-11-07
 
 - **Kit Fácil 2.13.0 e Código do Projeto Fácil:** as Leis Globais e o Padrão viraram um só código, com artigos e anexos técnicos (`comum/CODIGO.md`, no lugar do `PADRAO.md`). Nenhum app tem tela de primeiro uso; a janela de boas-vindas do Kit abre ao abrir o app (desligável). No Conta Fácil nada muda para quem usa.

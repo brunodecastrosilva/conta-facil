@@ -1,6 +1,6 @@
 // Conexão com o Firebase para a comanda ao vivo.
 // Expõe a mesma interface que o app já usava: db.doc(caminho).get/set/update/onSnapshot.
-import { firebaseConfig } from './config.js';
+import { firebaseConfig, appCheckSiteKey } from './config.js';
 
 const V = '10.12.2';
 const CDN = `https://www.gstatic.com/firebasejs/${V}`;
@@ -13,6 +13,13 @@ export async function connect() {
     import(`${CDN}/firebase-firestore.js`),
   ]);
   const app = initializeApp(firebaseConfig);
+  // App Check (Código, Título IV, capítulo Da segurança): o crachá que prova que o pedido saiu do app de verdade
+  if (appCheckSiteKey) {
+    try {
+      const ac = await import(`${CDN}/firebase-app-check.js`);
+      ac.initializeAppCheck(app, { provider: new ac.ReCaptchaV3Provider(appCheckSiteKey), isTokenAutoRefreshEnabled: true });
+    } catch (e) { console.warn('App Check', e); }
+  }
   const auth = getAuth(app);
   if (!auth.currentUser) await signInAnonymously(auth);
   const db = fs.getFirestore(app);
