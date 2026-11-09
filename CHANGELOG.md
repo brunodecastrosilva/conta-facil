@@ -3,6 +3,11 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 0.2.1 · 2026-11-09
+
+- **Início:** a comanda de exemplo é o último cartão da tela.
+- **Comanda:** o botão Fechar a comanda fica fora da seção Itens da comanda, logo abaixo dela.
+
 ## 0.2.0 · 2026-11-08
 
 - **Lançar item:** a janela tem o mesmo desenho da janela de Alterar. Em "Tipo de consumo", escolha Compartilhado (todos já vêm marcados; desmarque quem não consumiu) ou Individual (toque em +1 para dar as unidades de cada um) e toque em Lançar.
