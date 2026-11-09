@@ -220,55 +220,61 @@ test('cópia de segurança: baixa e restaura o histórico e os cadastros', async
   await a.fechar();
 });
 
-test('guia em dois níveis: simplificado na comanda de exemplo e completo ao vivo, sem tocar nos dados reais', async () => {
+test('guia em vídeo: um só, só com o ponteiro, avança sozinho, pausa, volta e avança, sem tocar nos dados reais', async () => {
   const a = await aparelho(amb, { toque: true });
   const p = a.page;
+  // o exemplo não abre o guia sozinho; o guia começa pelo botão Guia do exemplo
   await p.click('#go-example');
-  // a comanda de exemplo oferece o guia do app: dois níveis, em lista (Kit 2.12)
-  await p.locator('.kf-guia-linha').first().waitFor();
-  assert.deepEqual(await p.locator('.kf-guia-linha b').allInnerTexts(), ['Simplificado', 'Completo']);
-  assert.equal(await p.locator('.kf-guia-nivel').count(), 0, 'ainda há cartões de nível lado a lado');
-  await p.locator('[data-kf="guia-1"]').click();
-  await p.locator('.kf-guia-cartao').waitFor();
-  const total = await p.evaluate(() => KitFacil.guia.passos(1).length);
-  assert.ok(total >= 10, `o simplificado tem só ${total} passos`);
-  for (let i = 1; i < total; i++) {
-    const antes = await p.locator('.kf-guia-rot').innerText();
-    await p.click('.kf-guia-cartao [data-kf-guia="1"]');
-    await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes);
-  }
-  assert.match(await p.locator('.kf-guia-rot').innerText(), new RegExp(`simplificado · ${total} de ${total}`, 'i'));
-  // os textos dos dois níveis são instruções no imperativo, sem narrar o que o app faz
-  const textos = await p.evaluate(() => [1, 2].flatMap(n => KitFacil.guia.passos(n).map(x => x.d)));
-  for (const t of textos) assert.doesNotMatch(t, /\bo app (vai|faz|toca|digita|mostra|abre|junta|desliga|desmarca|marca)/i, t);
-  // no último passo, o convite para o completo
-  await p.click('.kf-guia-cartao [data-kf="guia-2"]');
-  // no guia ao vivo, a pessoa lê primeiro: nada acontece antes de tocar em Mostrar
-  await p.locator('[data-kf-guia-mostrar]').waitFor();
-  await p.waitForTimeout(1500);
-  assert.equal(await p.evaluate(() => document.querySelector('#start-place').value), '', 'a ação começou antes do toque em Mostrar');
-  // o completo faz as ações na tela: abre a demonstração e põe as pessoas
-  const fimDaAcao = () => esperar(() => p.evaluate(() => !document.querySelector('.kf-guia-ao-vivo') && !document.querySelector('.kf-guia-cartao [data-kf-guia="1"]:disabled')), 60000);
-  const mostrar = async () => { if (await p.locator('[data-kf-guia-mostrar]').count()) { await p.click('[data-kf-guia-mostrar]'); await p.locator('.kf-guia-ao-vivo').waitFor(); } };
-  const proximo = async () => { await mostrar(); await fimDaAcao(); const antes = await p.locator('.kf-guia-rot').innerText(); await p.click('.kf-guia-cartao [data-kf-guia="1"]'); await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes); await p.waitForTimeout(300); };
-  await proximo(); await proximo();
-  // todos os lançamentos num passo só; enquanto a ação roda, o cartão fica compacto e o dedo não cobre o que é digitado
-  await mostrar();
-  await esperar(() => p.evaluate(() => document.querySelector('#item-name').value.length > 2), 20000);
-  const vivo = await p.evaluate(() => { const c = document.querySelector('.kf-guia-cartao'), d = document.querySelector('.kf-guia-dedo'), f = document.querySelector('#item-name').getBoundingClientRect(), r = d.getBoundingClientRect(); return { compacto: c.classList.contains('kf-guia-compacto'), dedoNaPonta: r.left > f.left + f.width / 2 }; });
-  assert.deepEqual(vivo, { compacto: true, dedoNaPonta: true });
-  // com a janela de lançar aberta, o cartão do guia não cobre a janela
-  await p.locator('.kf-ov [data-lc-modo]').first().waitFor({ timeout: 20000 });
-  await p.waitForTimeout(400);
-  const cobre = await p.evaluate(() => { const c = document.querySelector('.kf-guia-cartao').getBoundingClientRect(), d = document.querySelector('.kf-ov .kf-dlg').getBoundingClientRect(); return c.bottom > d.top + 1 && c.top < d.bottom - 1; });
-  assert.equal(cobre, false, 'o cartão do guia cobre a janela de lançar');
-  await fimDaAcao();
-  await proximo();
-  const demo = await p.evaluate(() => ({ ex: draft.isExample, lugar: draft.place, pessoas: draft.people.map(x => x.name).join(), itens: draft.items.map(x => x.name + ':' + x.mode).join() }));
-  assert.deepEqual(demo, { ex: true, lugar: 'Bar do Zé', pessoas: 'Ana,Bruno,Carla,Diego', itens: 'Porção de fritas:equal,Chopp:units,Caipirinha:equal' });
+  await p.waitForTimeout(600);
+  assert.equal(await p.locator('.kf-gv').count(), 0, 'o exemplo abriu o guia sozinho');
+  await p.click('#ex-guide');
+  await p.locator('.kf-gv-player').waitFor();
+  // sem destaque e sem escurecer: só o ponteiro e o player, com o título da etapa e nenhum texto a mais
+  assert.equal(await p.locator('.kf-guia-furo, .kf-guia-cartao').count(), 0);
+  assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('.kf-gv')).backgroundColor), 'rgba(0, 0, 0, 0)');
+  assert.equal(await p.locator('.kf-gv-player p').count(), 0, 'o player tem texto além do título');
+  assert.deepEqual(await p.locator('.kf-gv-ctl button').evaluateAll(bs => bs.map(b => b.getAttribute('aria-label'))), ['Voltar uma etapa', 'Pausar', 'Avançar uma etapa', 'Fechar guia']);
+  const titulo = () => p.locator('.kf-gv-titulo').innerText();
+  const etapa = () => p.locator('.kf-gv-n').innerText();
+  assert.equal(await etapa(), '1/' + await p.evaluate(() => KitFacil.guia.passos(1).length));
+  // os títulos dizem o que fazer, sem texto de apoio
+  const passos = await p.evaluate(() => KitFacil.guia.passos(1).map(x => ({ t: x.t, d: x.d || '' })));
+  for (const x of passos) { assert.equal(x.d, ''); assert.ok(x.t.length <= 50, x.t); }
+  // avança sozinho: a etapa 1 abre a comanda e a 2 começa sem ninguém tocar
+  await esperar(async () => (await etapa()).startsWith('2/'), 30000);
+  assert.equal(await p.evaluate(() => draft.place), 'Bar do Zé');
+  // o ponteiro não cobre o texto que está sendo digitado
+  await esperar(() => p.evaluate(() => document.querySelector('#person-name')?.value.length > 0), 15000);
+  const ponta = await p.evaluate(() => { const f = document.querySelector('#person-name').getBoundingClientRect(), m = document.querySelector('.kf-gv-ponteiro').getBoundingClientRect(); return m.left > f.left + f.width / 2; });
+  assert.ok(ponta, 'o ponteiro cobre o texto digitado');
+  // pausar: tocar na tela pausa e nada anda; tocar de novo continua
+  await p.mouse.click(5, 300);
+  assert.equal(await p.locator('.kf-gv-pp').getAttribute('aria-label'), 'Continuar');
+  const antes = await p.evaluate(() => draft.people.length + '|' + document.querySelector('#person-name').value);
+  await p.waitForTimeout(2500);
+  assert.equal(await p.evaluate(() => draft.people.length + '|' + document.querySelector('#person-name').value), antes, 'o guia andou pausado');
+  await p.click('.kf-gv-pp');
+  assert.equal(await p.locator('.kf-gv-pp').getAttribute('aria-label'), 'Pausar');
+  // avançar para uma etapa ainda não vista faz as do meio na hora: na 4, os três pedidos já estão lançados
+  await p.click('[data-gv="avancar"]'); await p.click('[data-gv="avancar"]');
+  await esperar(async () => (await etapa()).startsWith('4/'), 20000);
+  await esperar(() => p.evaluate(() => draft.items.length === 3), 20000);
+  const demo = await p.evaluate(() => ({ ex: draft.isExample, pessoas: draft.people.map(x => x.name).join(), itens: draft.items.map(x => x.name + ':' + x.mode).sort().join() }));
+  assert.deepEqual(demo, { ex: true, pessoas: 'Ana,Bruno,Carla,Diego', itens: 'Caipirinha:equal,Chopp:units,Porção de fritas:equal' });
   assert.equal(await p.evaluate(() => Object.keys(draft.items.find(x => x.name === 'Caipirinha').a).length), 2, 'a caipirinha não ficou só com Carla e Diego');
-  assert.equal(await p.evaluate(() => KitFacil.guia.alvoAtual() !== null), true);
-  await p.click('.kf-guia-x');
+  // voltar: a etapa 3 recomeça do estado em que começou (sem pedidos)
+  await p.click('[data-gv="voltar"]');
+  await esperar(async () => (await etapa()).startsWith('3/'), 10000);
+  assert.equal(await p.evaluate(() => draft.items.length), 0);
+  assert.match(await titulo(), /pedido/i);
+  // com a janela de lançar aberta, o player não cobre a janela
+  await p.locator('.kf-ov [data-lc-modo]').first().waitFor({ timeout: 40000 });
+  await p.waitForTimeout(700);
+  const cobre = await p.evaluate(() => { const c = document.querySelector('.kf-gv-player').getBoundingClientRect(), d = document.querySelector('.kf-ov .kf-dlg').getBoundingClientRect(); return Math.max(0, Math.min(c.bottom, d.bottom) - Math.max(c.top, d.top)); });
+  assert.ok(cobre < 60, `o player cobre ${Math.round(cobre)} px da janela de lançar`);
+  // Esc fecha o guia (e a janela que ele abriu)
+  await p.keyboard.press('Escape');
+  await esperar(() => p.evaluate(() => !document.querySelector('.kf-gv') && !KitFacil.dialogo.aberto()), 5000);
   await p.click('#tab-inicio');
   await p.click('#end-example');
   assert.equal(await p.evaluate(() => draft.isExample), false);
@@ -434,8 +440,6 @@ test('tablet deitado e computador: a janela fica no centro da área do app, à d
   const a = await aparelho(amb, { viewport: { width: 1152, height: 720 } });
   const p = a.page;
   await p.click('#go-example');
-  await p.locator('.kf-ov').first().waitFor();
-  await p.evaluate(() => KitFacil.dialogo.fechar(true));
   await p.waitForTimeout(400);
   await p.click('#trilho-comanda');
   await p.fill('#item-name', 'Chopp'); await p.click('#item-price'); await p.keyboard.type('1290');

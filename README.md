@@ -2,7 +2,7 @@
 
 Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-**Fase de testes** · versão 0.2.0 · Kit Fácil 0.2.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+**Fase de testes** · versão 0.3.0 · Kit Fácil 0.3.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil) e segue o
 [Código do Projeto Fácil](comum/CODIGO.md).
@@ -11,7 +11,7 @@ Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e
 
 - Ao lançar um item, escolha o tipo de consumo (Compartilhado ou Individual) e marque quem consumiu na mesma janela
 - Turmas: quem sai junto entra na mesa com um toque; pessoas e chaves Pix podem ser cadastradas antes da comanda
-- Apresentação curta ao abrir (desligável em Ajustes) e guia em dois níveis: simplificado, na comanda de exemplo, e completo, ao vivo, numa demonstração que não salva nada
+- Apresentação curta ao abrir (desligável em Ajustes) e guia em vídeo: o ponteiro faz cada ação na tela, numa demonstração que não salva nada, e as etapas avançam sozinhas
 - Abra uma comanda com o nome do local; os lugares onde você já foi viram atalhos
 - Lance os pedidos e divida cada item igualmente ou por unidade, com cortesias, couvert, desconto e taxa de serviço (percentual ou valor fixo)
 - Feche a conta: quanto cada um paga, quem paga por quem, cupons em imagem, PDF ou texto e Pix copia e cola com QR code
@@ -107,6 +107,8 @@ Aprovadas pelo Bruno e registradas também no CHANGELOG e na lista de exceções
 |---|---|---|---|
 | Art. 55 (fonte da família) | cupom com a fonte IBM Plex Mono | o cupom imita a comanda impressa de verdade (Regras do Conta Fácil, Art. 8º) | antes de 08/11/2026 |
 | Art. 67 (nada lado a lado) | em tela larga, os cupons ficam dois por linha | os cupons são papéis para comparar e enviar; um por linha deixava a tela larga vazia e a lista longa | 08/11/2026 |
+| Art. 64, I e III (título, linha de apoio e lista vazia que explica) | telas principais sem título visível (só para o leitor de tela) e sem linha de apoio; sem dicas nas telas e janelas; lista vazia com uma frase curta, sem instrução | app mais limpo e autoexplicativo; as dúvidas ficam com o guia | 09/11/2026 |
+| Arts. 77, 78 e 79 (guia em dois níveis, botão Mostrar e destaque) | um guia só, em vídeo (Kit 0.3.0, `modo: 'video'`): só o ponteiro, sem destaque; as etapas avançam sozinhas; voltar, pausar e avançar livres; só o título em cada etapa | guia fluido, sem saltos na tela, que basta para tirar todas as dúvidas | 09/11/2026 |
 
 ## Uso do código
 

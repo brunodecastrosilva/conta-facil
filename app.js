@@ -1,5 +1,5 @@
 /* conta-facil · código do app (saiu de dentro do index.html para a política de segurança barrar script injetado: Código, Art. 48) */
-const VERSAO = '0.2.1';
+const VERSAO = '0.3.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -539,7 +539,7 @@ function enterExample(semGuia = false) {
   semGuia = semGuia === true;
   if (draft.live) { toast('Saia da comanda ao vivo antes de abrir o exemplo.'); return; }
   pending = {}; draft = exampleDraft(); tab = 'comanda'; render(); window.scrollTo({ top: 0 });
-  if (!semGuia) setTimeout(() => KitFacil.guia.escolher(), 120);
+  // 0.3.0: o exemplo não abre mais o guia sozinho; o guia em vídeo tem a própria demonstração
 }
 function exitExample() {
   if (!draft.isExample) return;
@@ -639,7 +639,7 @@ KitFacil.iniciar({
   tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '0.2.1', itens: ['Na tela inicial, a comanda de exemplo é o último cartão.', 'Na Comanda, o botão Fechar a comanda fica fora da seção Itens da comanda.'] }, { versao: '0.2.0', itens: ['Lançar item com o mesmo desenho de Alterar: escolha o tipo de consumo (Compartilhado ou Individual) e marque quem consumiu na mesma janela.', 'Guia simplificado mais completo, e guia completo com instruções claras e todos os pedidos lançados num passo só.', 'No guia, o dedo não cobre mais o que está sendo digitado, e o cartão não cobre a parte que você está conhecendo.', 'No tablet deitado e no computador, as janelas ficam no centro da área do app.', 'Cupons centralizados, no tamanho de um cupom de papel; em tela larga, dois por linha.'] }, { versao: '0.1.0', itens: ['Recomeço: o app está em fase de testes, e a numeração das versões recomeçou em 0.1.0.', 'Por dentro: o código do app saiu de dentro da página, e a proteção contra código injetado ficou mais forte.'] }, { versao: '1.17.2', itens: ['Avaliações protegidas contra robôs pelo App Check do Firebase, com o reCAPTCHA do Google. A comanda ao vivo também.'] }, { versao: '1.17.1', itens: ['Por dentro: depois de uma atualização, o app nunca mistura arquivos novos com antigos, e as bibliotecas de fora são sempre conferidas.'] }, { versao: '1.17.0', itens: ['Avaliações mais protegidas: no máximo uma mensagem por minuto e dez por dia em cada aparelho, contra envios automáticos.', 'Sobre o aplicativo mostra o endereço oficial e o final da chave Pix do apoio, para você reconhecer cópias falsas.', 'Por dentro: o app só carrega código dos endereços conhecidos e confere a impressão digital das bibliotecas de fora.'] }, { versao: '1.16.1', itens: ['Por dentro: o Kit Fácil 2.13.0 segue o novo Código do Projeto Fácil.'] }, { versao: '1.16.0', itens: ['Guia completo mais calmo: você lê cada passo e toca em Mostrar; só então o app faz a ação, devagar.', 'Todos os passos do guia completo são feitos na tela, inclusive a troca de telas pela barra, o arrastar para o cupom compartilhado, o Compartilhar, o Histórico, os Cadastros e os Ajustes.'] }, { versao: '1.15.0', itens: ['Guia em dois níveis: o simplificado mostra o essencial em seis passos; o completo faz cada ação na tela, ao vivo, numa comanda de demonstração.', 'No celular, o destaque do guia acompanha a tela sem atraso e aponta só o que importa.', 'Botões mais limpos, sem texto de apoio dentro, e textos revistos.', '"Uma pessoa paga a conta de todos" fica no fim do Pagamento.'] }, { versao: '1.14.0', itens: ['Duas categorias claras: consumo compartilhado (entre todos ou entre alguns) e consumo individual, em que cada um paga as unidades que consumiu. Já na janela de lançar dá para distribuir as unidades.', 'Em Alterar, o tipo de consumo: Compartilhado ou Individual.', 'Saiu "Quem vai pagar a conta?". Para uma pessoa pagar por todos, use "Uma pessoa paga a conta de todos", no Pagamento.', 'Desconto: no valor total da comanda ou apenas no valor do consumo.'] }, { versao: '1.13.0', itens: ['Ao lançar um item, uma janela pergunta como dividir: entre todos, entre alguns ou consumo individual. O item novo entra no topo da lista.', 'Quem consumiu aparece em lista, um nome embaixo do outro; para dividir por unidade, toque no item e em Alterar.', 'Turmas, quem paga a conta e quem é você agora são escolhidos numa lista.', 'Taxa de serviço: em Mudar, escolha % ou R$. Ao desligar o serviço de alguém, o app pergunta o que fazer com essa parte.', 'Corrigido: segurar um nome no Pagamento fazia a tela subir sem parar.'] }, { versao: '1.12.0', itens: ['Cada item novo já entra dividido igual entre todos. Só pede confirmação o item em que você mexer.', 'Apresentação curta ao abrir o app e guia em 3 níveis: essencial, exploração e completo. Dá para desligar a apresentação em Ajustes.', 'Turmas: cadastre quem sai junto e ponha todos na mesa com um toque. Também dá para cadastrar pessoas e chaves Pix antes da comanda.', 'A comanda pergunta quem é você, e a tela inicial mostra quanto você gastou no mês, não o total da mesa.', 'Taxa de serviço mais simples: 10% já vem marcado e o resto aparece em Mudar.'] }, { versao: '1.11.0', itens: ['Botões, cartões e escolhas com as mesmas medidas dos outros apps da família.'] }, { versao: '1.10.0', itens: ['Novo em Ajustes › Privacidade e segurança: Restaurar padrões de fábrica. O app volta como novo neste aparelho, sem dados nem ajustes.'] }, { versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
+  novidades: [{ versao: '0.3.0', itens: ['Telas mais limpas: sem título, sem linha de apoio e sem dicas. As listas vazias dizem só o essencial.', 'Guia novo, como um vídeo: o ponteiro mostra cada ação na tela e as etapas avançam sozinhas. Pause, volte e avance quando quiser; tocar na tela também pausa.', 'A comanda de exemplo não abre mais o guia sozinha.'] }, { versao: '0.2.1', itens: ['Na tela inicial, a comanda de exemplo é o último cartão.', 'Na Comanda, o botão Fechar a comanda fica fora da seção Itens da comanda.'] }, { versao: '0.2.0', itens: ['Lançar item com o mesmo desenho de Alterar: escolha o tipo de consumo (Compartilhado ou Individual) e marque quem consumiu na mesma janela.', 'Guia simplificado mais completo, e guia completo com instruções claras e todos os pedidos lançados num passo só.', 'No guia, o dedo não cobre mais o que está sendo digitado, e o cartão não cobre a parte que você está conhecendo.', 'No tablet deitado e no computador, as janelas ficam no centro da área do app.', 'Cupons centralizados, no tamanho de um cupom de papel; em tela larga, dois por linha.'] }, { versao: '0.1.0', itens: ['Recomeço: o app está em fase de testes, e a numeração das versões recomeçou em 0.1.0.', 'Por dentro: o código do app saiu de dentro da página, e a proteção contra código injetado ficou mais forte.'] }, { versao: '1.17.2', itens: ['Avaliações protegidas contra robôs pelo App Check do Firebase, com o reCAPTCHA do Google. A comanda ao vivo também.'] }, { versao: '1.17.1', itens: ['Por dentro: depois de uma atualização, o app nunca mistura arquivos novos com antigos, e as bibliotecas de fora são sempre conferidas.'] }, { versao: '1.17.0', itens: ['Avaliações mais protegidas: no máximo uma mensagem por minuto e dez por dia em cada aparelho, contra envios automáticos.', 'Sobre o aplicativo mostra o endereço oficial e o final da chave Pix do apoio, para você reconhecer cópias falsas.', 'Por dentro: o app só carrega código dos endereços conhecidos e confere a impressão digital das bibliotecas de fora.'] }, { versao: '1.16.1', itens: ['Por dentro: o Kit Fácil 2.13.0 segue o novo Código do Projeto Fácil.'] }, { versao: '1.16.0', itens: ['Guia completo mais calmo: você lê cada passo e toca em Mostrar; só então o app faz a ação, devagar.', 'Todos os passos do guia completo são feitos na tela, inclusive a troca de telas pela barra, o arrastar para o cupom compartilhado, o Compartilhar, o Histórico, os Cadastros e os Ajustes.'] }, { versao: '1.15.0', itens: ['Guia em dois níveis: o simplificado mostra o essencial em seis passos; o completo faz cada ação na tela, ao vivo, numa comanda de demonstração.', 'No celular, o destaque do guia acompanha a tela sem atraso e aponta só o que importa.', 'Botões mais limpos, sem texto de apoio dentro, e textos revistos.', '"Uma pessoa paga a conta de todos" fica no fim do Pagamento.'] }, { versao: '1.14.0', itens: ['Duas categorias claras: consumo compartilhado (entre todos ou entre alguns) e consumo individual, em que cada um paga as unidades que consumiu. Já na janela de lançar dá para distribuir as unidades.', 'Em Alterar, o tipo de consumo: Compartilhado ou Individual.', 'Saiu "Quem vai pagar a conta?". Para uma pessoa pagar por todos, use "Uma pessoa paga a conta de todos", no Pagamento.', 'Desconto: no valor total da comanda ou apenas no valor do consumo.'] }, { versao: '1.13.0', itens: ['Ao lançar um item, uma janela pergunta como dividir: entre todos, entre alguns ou consumo individual. O item novo entra no topo da lista.', 'Quem consumiu aparece em lista, um nome embaixo do outro; para dividir por unidade, toque no item e em Alterar.', 'Turmas, quem paga a conta e quem é você agora são escolhidos numa lista.', 'Taxa de serviço: em Mudar, escolha % ou R$. Ao desligar o serviço de alguém, o app pergunta o que fazer com essa parte.', 'Corrigido: segurar um nome no Pagamento fazia a tela subir sem parar.'] }, { versao: '1.12.0', itens: ['Cada item novo já entra dividido igual entre todos. Só pede confirmação o item em que você mexer.', 'Apresentação curta ao abrir o app e guia em 3 níveis: essencial, exploração e completo. Dá para desligar a apresentação em Ajustes.', 'Turmas: cadastre quem sai junto e ponha todos na mesa com um toque. Também dá para cadastrar pessoas e chaves Pix antes da comanda.', 'A comanda pergunta quem é você, e a tela inicial mostra quanto você gastou no mês, não o total da mesa.', 'Taxa de serviço mais simples: 10% já vem marcado e o resto aparece em Mudar.'] }, { versao: '1.11.0', itens: ['Botões, cartões e escolhas com as mesmas medidas dos outros apps da família.'] }, { versao: '1.10.0', itens: ['Novo em Ajustes › Privacidade e segurança: Restaurar padrões de fábrica. O app volta como novo neste aparelho, sem dados nem ajustes.'] }, { versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
     'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
     'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
     'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
@@ -651,16 +651,17 @@ KitFacil.iniciar({
     ['Abra a comanda', 'Dê o nome do bar e toque em Abrir comanda.'],
     ['Lance o que foi pedido', 'Ao lançar, escolha o tipo de consumo: Compartilhado ou Individual.'],
     ['Feche a conta', 'O app soma serviço, couvert e desconto e gera o Pix de cada um.'] ] },
-  guia: { get passos() { return GUIA; },
-    niveis: [{ nome: 'Simplificado' }, { nome: 'Completo' }],
-    explicacao: 'O simplificado aponta o essencial na comanda de exemplo. O completo faz cada ação na tela, ao vivo, numa comanda de demonstração que não salva nada.',
-    // simplificado: comanda de exemplo pronta; completo: demonstração que começa do zero (nada é salvo)
-    preparar: n => { if (n === 2) { if (draft.live) return; pending = {}; draft = { ...blankDraft(), isExample: true, active: false }; tab = 'inicio'; render(); window.scrollTo({ top: 0 }); } else if (!draft.isExample) enterExample(true); },
+  // 0.3.0: guia único em vídeo (exceção aos Arts. 77 a 79 do Código; veja o README), numa demonstração que não salva nada
+  guia: { modo: 'video', get passos() { return GUIA; },
+    preparar: () => { if (draft.live) return; pending = {}; draft = { ...blankDraft(), isExample: true, active: false }; tab = 'inicio'; render(); window.scrollTo({ top: 0 }); },
+    // estado da demonstração no começo de cada etapa, para voltar e avançar no guia
+    foto: () => JSON.stringify({ draft, pending, tab }),
+    restaurar: f => { const o = JSON.parse(f); closeSheet(true); if (tab === 'ajustes') sairDosAjustes(); pickSel = null; selItem = null; selPay = null; svcMais = false; draft = o.draft; pending = o.pending; tab = o.tab; render(); window.scrollTo({ top: 0 }); },
     ocupado: () => draft.isExample && !!draft.live },
   boasVindas: {
     novo: () => !bills.length && !(catalog.people || []).length && !draft.active,
     passos: [['Abra uma comanda', 'Na tela inicial, dê o nome do local e toque em Abrir comanda.'], ['Marque o que cada um pediu', 'Na aba Comanda, adicione os itens e diga quem consumiu.'], ['Feche a conta', 'Na aba Fechar, o app soma serviço, couvert e desconto e diz quanto cada um paga, com Pix.']],
-    exemplo: () => enterExample(), rotuloExemplo: 'Ver exemplo guiado',
+    exemplo: () => enterExample(), rotuloExemplo: 'Ver exemplo',
   },
   copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
@@ -1112,9 +1113,10 @@ function render(opts = {}) {
   const fn = { inicio: viewInicio, comanda: viewComanda, fechar: viewFechar, historico: viewHistorico, cadastros: viewCadastros, ajustes: viewAjustes }[tab];
   $('.wrap').classList.toggle('largo', tab === 'ajustes');
   // telas principais (menos o Início) abrem com o cabeçalho comum do Kit: título e uma linha do que a tela faz
-  const CAB = { comanda: 'Quem está na mesa e o que foi pedido.', fechar: 'Quanto cada pessoa paga, com serviço e desconto.', historico: 'Suas comandas salvas, o gasto por mês e os lugares mais frequentes.', cadastros: 'Pessoas, chaves Pix e o preço de cada produto em cada lugar.' };
+  const CAB = { comanda: 1, fechar: 1, historico: 1, cadastros: 1 };
   const trocou = v.dataset.telaAtual !== tab; v.dataset.telaAtual = tab;
-  v.innerHTML = `<section class="view">${CAB[tab] ? KitFacil.ui.cabecalho({ titulo: TABS[tab][1], sub: CAB[tab] }) : ''}${fn.html()}</section>`;
+  // 0.3.0: telas sem título visível e sem linha de apoio (exceção ao Art. 64, I); o título fica para o leitor de tela
+  v.innerHTML = `<section class="view">${CAB[tab] ? `<h1 class="so-leitor">${esc(TABS[tab][1])}</h1>` : ''}${fn.html()}</section>`;
   fn.bind(v);
   if (trocou) KitFacil.movimento.entrar(v, { de: 'tela' }); // troca de tela com o movimento comum
   prepFields(v);
@@ -1153,7 +1155,7 @@ function liveCardHTML() {
   if (!draft.live) {
     if (!store.db && !draft.isExample) return '';
     return `<div class="card ex-card" id="live-offer">
-      <div class="ex-head"><span class="ex-icon lo-icon">${I.live}</span><span><b>Comanda ao vivo</b><span class="hint">Cada um marca o que consumiu pelo próprio celular</span></span></div>
+      <div class="ex-head"><span class="ex-icon lo-icon">${I.live}</span><span><b>Comanda ao vivo</b></span></div>
       <button class="btn small" id="live-start">${I.share}Compartilhar com a turma</button></div>`;
   }
   const me = live.me(), mePerson = draft.people.find(p => p.id === me);
@@ -1555,7 +1557,7 @@ const viewInicio = {
     </div>` : ''}
 
     ${store.db && !(d.live && inProgress) ? `<div class="card ex-card join" id="join-card">
-      <div class="ex-head"><span class="ex-icon join-icon">${I.live}</span><span><b>Comanda ao vivo</b><span class="hint">Cole o código que recebeu e marque o que consumiu.</span></span></div>
+      <div class="ex-head"><span class="ex-icon join-icon">${I.live}</span><span><b>Comanda ao vivo</b></span></div>
       <form id="join-form" autocomplete="off">
         <span class="join-field"><input id="join-code" type="text" placeholder="Código ou link" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link da comanda ao vivo" data-keep>${navigator.clipboard?.readText ? `<button class="join-paste" type="button" id="join-paste" aria-label="Colar">${I.paste}</button>` : ''}</span>
         <button class="btn join-go" type="submit">Entrar</button></form>
@@ -1568,7 +1570,7 @@ const viewInicio = {
     </div>` : ''}
 
     <div class="card ex-card" id="ex-card">
-      <div class="ex-head"><span class="ex-icon">${I.receipt}</span><span><b>Comanda de exemplo</b><span class="hint">Veja uma comanda pronta e faça o guia</span></span></div>
+      <div class="ex-head"><span class="ex-icon">${I.receipt}</span><span><b>Comanda de exemplo</b></span></div>
       ${ex ? `<div class="btn-row"><button class="btn small" id="ex-continue">Continuar</button><button class="btn small ghost" id="end-example">Sair do exemplo</button></div>`
         : `<button class="btn small mustard" id="go-example">Ver exemplo</button>`}
     </div>`;
@@ -1728,15 +1730,14 @@ function renameSheet(it) {
   const segModo = () => `<div class="seg" role="group" aria-label="Como dividir ${esc(it.name)}">
       <button type="button" data-rn-modo="equal" aria-pressed="${modo === 'equal'}">Compartilhado</button>
       <button type="button" data-rn-modo="units" aria-pressed="${modo === 'units'}">Individual</button></div>`;
-  const ajudaModo = () => modo === 'units' ? 'Consumo individual: cada pessoa paga as unidades que consumiu. Depois de salvar, distribua as unidades no item e confirme.' : 'Consumo compartilhado: o valor é dividido em partes iguais entre quem consumiu.';
   openSheet({ title: `Alterar ${it.name}`, body: `<form id="rn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
       <div class="field"><label for="rn-name">Nome do produto</label><input id="rn-name" type="text" value="${esc(it.name)}"></div>
       <div class="field"><label for="rn-price">Valor unitário (R$)</label><input id="rn-price" type="text" inputmode="numeric" data-money value="${moneyInput(it.price)}"></div>
-      ${varios ? `<div class="field"><span class="eyebrow">Tipo de consumo</span><span id="rn-modo">${segModo()}</span><p class="hint" id="rn-modo-ajuda">${ajudaModo()}</p></div>` : ''}
+      ${varios ? `<div class="field"><span class="eyebrow">Tipo de consumo</span><span id="rn-modo">${segModo()}</span></div>` : ''}
     </form>`, foot: `<button type="button" class="btn ghost" id="rn-no">Cancelar</button><button type="submit" form="rn-form" class="btn">${I.save}Salvar alteração</button>`, onMount: s => {
     $('#rn-no', s).onclick = () => closeSheet();
     if (!isTouch) $('#rn-name', s).focus();
-    $('#rn-modo', s)?.addEventListener('click', e => { const b = e.target.closest('[data-rn-modo]'); if (!b) return; modo = b.dataset.rnModo; $('#rn-modo', s).innerHTML = segModo(); $('#rn-modo-ajuda', s).textContent = ajudaModo(); });
+    $('#rn-modo', s)?.addEventListener('click', e => { const b = e.target.closest('[data-rn-modo]'); if (!b) return; modo = b.dataset.rnModo; $('#rn-modo', s).innerHTML = segModo(); });
     $('#rn-form', s).addEventListener('submit', e => {
       e.preventDefault();
       const name = $('#rn-name', s).value.trim().replace(/\s+/g, ' ');
@@ -1778,7 +1779,6 @@ function lancarSheet(it, d, lancar) {
   const segModo = () => `<div class="seg" role="group" aria-label="Tipo de consumo de ${esc(it.name)}">
       <button type="button" data-lc-modo="equal" aria-pressed="${modo === 'equal'}">Compartilhado</button>
       <button type="button" data-lc-modo="units" aria-pressed="${modo === 'units'}">Individual</button></div>`;
-  const ajudaModo = () => modo === 'units' ? 'Consumo individual: cada pessoa paga as unidades que consumiu.' : 'Consumo compartilhado: o valor é dividido em partes iguais entre quem consumiu. Com todos marcados, quem chegar depois também entra.';
   const listaComp = () => `<div class="ck-list" role="group" aria-label="Quem dividiu ${esc(it.name)}">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"`, p.name, marcados.has(p.id))).join('')}
       <button type="button" class="ck-row ck-todos" data-lc-todos></button></div>`;
   const listaInd = () => `<div class="units">${d.people.map(p => `
@@ -1795,7 +1795,7 @@ function lancarSheet(it, d, lancar) {
   };
   const sub = `${it.qty > 1 ? `${it.qty} × ${BRL(it.price)} · ` : ''}${BRL(total)}`;
   openSheet({ title: `Lançar ${it.name}`, sub, body: `<div style="display:flex;flex-direction:column;gap:12px">
-      <div class="field"><span class="eyebrow">Tipo de consumo</span><span id="lc-modo">${segModo()}</span><p class="hint" id="lc-ajuda">${ajudaModo()}</p></div>
+      <div class="field"><span class="eyebrow">Tipo de consumo</span><span id="lc-modo">${segModo()}</span></div>
       <div id="lc-lista">${listaComp()}</div>
       <p class="share" id="lc-resumo" role="status" style="margin:0"></p></div>`,
     foot: `<button type="button" class="btn ghost" id="lc-no">Cancelar</button><button type="button" class="btn" id="lc-ok">${I.plus}Lançar</button>`, onMount: s => {
@@ -1819,7 +1819,7 @@ function lancarSheet(it, d, lancar) {
     };
     const trocarModo = m => {
       if (m === modo) return;
-      modo = m; $('#lc-modo', s).innerHTML = segModo(); $('#lc-ajuda', s).textContent = ajudaModo();
+      modo = m; $('#lc-modo', s).innerHTML = segModo();
       $('#lc-lista', s).innerHTML = modo === 'units' ? listaInd() : listaComp();
       // uma unidade só: no individual, já começa em quem estava marcado sozinho
       if (modo === 'units' && it.qty === 1 && marcados.size === 1) un[[...marcados][0]] = 1;
@@ -1853,7 +1853,7 @@ const viewComanda = {
     const d = draft, calc = compute(d);
     const allIds = d.people.map(p => p.id);
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
-    const itemsHTML = d.items.length ? [...d.items].sort((x, y) => (y.o || 0) - (x.o || 0)).map(it => itemCardHTML(it, d, me)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item ainda', texto: 'Adicione o que foi pedido e marque quem consumiu.' });
+    const itemsHTML = d.items.length ? [...d.items].sort((x, y) => (y.o || 0) - (x.o || 0)).map(it => itemCardHTML(it, d, me)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item lançado' });
 
     return `
     ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small mustard" id="clear-example">Sair</button></span></div>` : ''}
@@ -1873,7 +1873,7 @@ const viewComanda = {
         <div class="field grow"><label for="person-name">Nome</label><input id="person-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Nome" data-keep></div>
         <button class="btn" type="submit">${I.plus}Adicionar</button>
       </form>
-      <div class="people">${d.people.map(p => `<span class="person">${avatar(p.name)}<span class="n">${esc(p.name)}</span><span class="num hint">${BRL(calc.per[p.id].gross)}</span><button data-rm-person="${p.id}" aria-label="Remover ${esc(p.name)}">${I.x}</button></span>`).join('') || '<span class="hint">Adicione quem está na mesa.</span>'}</div>
+      <div class="people">${d.people.map(p => `<span class="person">${avatar(p.name)}<span class="n">${esc(p.name)}</span><span class="num hint">${BRL(calc.per[p.id].gross)}</span><button data-rm-person="${p.id}" aria-label="Remover ${esc(p.name)}">${I.x}</button></span>`).join('') || '<span class="hint">Ninguém na mesa</span>'}</div>
       ${!d.isExample && !d.live && d.people.length && !catalog.me && !catalog.meNao ? `<div class="quem-voce" id="quem-voce"><div class="field field-sel" style="flex:1 1 100%"><label for="sou-sel">Qual destes é você?</label><select id="sou-sel"><option value="">Escolher meu nome</option>${d.people.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('')}</select></div><button class="btn small ghost" data-sou-nao>Não estou na comanda</button><span class="hint" style="flex-basis:100%">O Histórico passa a mostrar só o seu gasto.</span></div>` : ''}
     </div>
 
@@ -2387,7 +2387,7 @@ function politicaSheet(d, p) {
 const viewFechar = {
   html() {
     const d = draft, c = compute(d), s = d.service, ds = d.discount;
-    if (!d.people.length || !d.items.length) return KitFacil.ui.vazio({ titulo: 'Comanda sem pessoas ou itens', texto: 'Adicione as pessoas e o que foi pedido na aba <b>Comanda</b>.' });
+    if (!d.people.length || !d.items.length) return KitFacil.ui.vazio({ titulo: 'Comanda vazia' });
     const names = ids => ids.map(id => c.per[id].person.name).join(', ');
     let note = '';
     if (s.enabled && c.skipped.length) {
@@ -2459,7 +2459,7 @@ const viewFechar = {
       <div class="ds-row">
         <div class="seg" role="group" aria-label="Tipo de taxa"><button data-svcmode="pct" aria-pressed="${s.mode === 'pct'}">%</button><button data-svcmode="fixed" aria-pressed="${s.mode === 'fixed'}">R$</button></div>
         ${s.mode === 'fixed' ? `<input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep>` : `<input id="svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa" data-keep>`}
-      </div>`) + (c.skipped.length ? '' : `<p class="hint">Alguém não paga o serviço? Desligue <b>Serviço</b> no cartão da pessoa, em Pagamento.</p>`) + `
+      </div>`) + `
       ${note ? `<div class="policy-note pol-row"><span>${note}</span><button class="btn small ghost" id="svc-politica">Mudar</button></div>` : ''}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
     </div>
 
@@ -2650,7 +2650,7 @@ function statsHTML() {
 }
 const viewHistorico = {
   html() {
-    if (!bills.length) return KitFacil.ui.vazio({ titulo: 'Nenhuma comanda salva ainda', texto: 'Ao fechar uma comanda, ela fica guardada aqui, com o gasto do mês e os lugares mais frequentes.' });
+    if (!bills.length) return KitFacil.ui.vazio({ titulo: 'Nenhuma comanda salva' });
     return `${statsHTML()}
       <div class="card-head" style="padding-inline:4px"><h2 style="font-family:var(--f-display);font-size:19px;margin:0">Comandas salvas</h2><span class="hint">${plural(bills.length, 'comanda', 'comandas')}</span></div>
       <div class="hist">${bills.map(histRowHTML).join('')}</div>`;
@@ -2749,12 +2749,12 @@ const viewCadastros = {
     <div class="card">
       <div class="card-head"><h2>Pessoas</h2><button class="btn small" id="cad-pessoa">${I.plus}Pessoa</button></div>
       ${ppl.length ? `<div class="cat-list">${ppl.map(p => `<div class="cat-row"><span class="nm" style="display:flex;gap:8px;align-items:center">${avatar(p.name)}<span style="min-width:0">${esc(p.name)}<small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(p.pix) : ''}</small></span></span><button class="btn small ghost" data-pix-edit="${esc(p.name)}">Pix</button>
-        <button class="icon-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhuma pessoa cadastrada ainda', texto: 'Cadastre quem costuma dividir a conta com você, com a chave Pix de cada pessoa.' })}
+        <button class="icon-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhuma pessoa cadastrada' })}
     </div>
     <div class="card" id="turmas-card">
       <div class="card-head"><h2>Turmas</h2><button class="btn small" id="cad-turma" ${catalog.people.length > 1 ? '' : 'disabled'}>${I.plus}Turma</button></div>
       ${(catalog.groups || []).length ? `<div class="cat-list">${[...catalog.groups].sort(ordemNome).map(g => `<div class="cat-row"><span class="nm" style="min-width:0">${esc(g.name)}<small>${esc(g.members.join(', '))}</small></span><button class="btn small ghost" data-turma-ed="${esc(g.id)}">Alterar</button><button class="icon-btn del" data-turma-del="${esc(g.id)}" aria-label="Excluir a turma ${esc(g.name)}">${I.trash}</button></div>`).join('')}</div>`
-        : `<p class="hint">${catalog.people.length > 1 ? 'Junte quem costuma sair junto, como a turma do futebol: na comanda, um toque põe todos na mesa.' : 'Cadastre ao menos duas pessoas para montar uma turma.'}</p>`}
+        : `<p class="hint">Nenhuma turma</p>`}
     </div>
     <div class="card">
       <div class="card-head"><h2>Produtos e preços por local</h2><span class="hint">${prods.length}</span></div>
@@ -2767,7 +2767,7 @@ const viewCadastros = {
             <input type="text" inputmode="numeric" data-money value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Preço de ${esc(p.name)} em ${esc(e.place)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">
             <button class="icon-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar preço de ${esc(e.place)}">${I.x}</button></div>`).join('')
           : `<div class="price-row"><span class="pl hint">Sem local</span><input type="text" inputmode="numeric" data-money value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" aria-label="Preço de ${esc(p.name)}" id="pp-${i}-x"><span></span></div>`}
-        </div>`; }).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhum produto cadastrado ainda', texto: 'Cadastre o que você costuma pedir e o preço em cada lugar.' })}
+        </div>`; }).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhum produto cadastrado' })}
     </div>
 
     ${bills.length ? `<div class="card ex-card" id="recover-card">
@@ -2882,63 +2882,49 @@ async function demoLancar(m, { nome, qtd = 1, preco, individual, so }) {
   }
   await m.tocar('#lc-ok'); await m.esperar(900);
 }
+/* 0.3.0: guia único em vídeo (Kit 0.3.0, modo 'video'). O título de cada etapa já diz o que fazer; o app faz a ação na
+   tela, com o ponteiro, numa comanda de demonstração que não salva nada. Toda troca de tela é feita tocando na barra. */
 const GUIA = [
-  /* ----- Simplificado: o essencial, só com destaque, na comanda de exemplo ----- */
-  { niveis: [1], ir: () => irAba('inicio'), sel: '#start-form', alt: '#ex-card', t: 'Abra a comanda', d: 'Na tela inicial, digite o nome do lugar e toque em Abrir comanda.' },
-  { niveis: [1], ir: () => irAba('comanda'), sel: '#person-form', t: 'Ponha as pessoas', d: 'Digite o nome de cada pessoa da mesa e toque em Adicionar.' },
-  { niveis: [1], ir: () => irAba('comanda'), sel: '#item-form', t: 'Lance os pedidos', d: 'Preencha produto, quantidade e valor e toque em Lançar. Na janela, escolha o tipo de consumo: Compartilhado ou Individual.' },
-  { niveis: [1], ir: () => irAba('comanda'), sel: '.items .item .item-top', t: 'Confira quem consumiu', d: 'Toque num item para ver quem consumiu. Desmarque quem não consumiu ou toque em Alterar para mudar o item.' },
-  { niveis: [1], ir: () => irAba('comanda'), sel: '#live-offer', t: 'Divida pelo celular de cada um', d: 'Toque em Compartilhar com a turma para cada pessoa marcar o que consumiu no próprio celular.' },
-  { niveis: [1], ir: () => irAba('comanda'), sel: '#go-close', t: 'Feche a comanda', d: 'Com tudo lançado, toque em Fechar a comanda.' },
-  { niveis: [1], ir: () => irAba('fechar'), sel: '.sum-grid', t: 'Confira o total', d: 'Confira o consumo, o serviço e o total da comanda antes de pagar.' },
-  { niveis: [1], ir: () => irAba('fechar'), sel: '#svc-card', t: 'Ajuste o serviço', d: 'Toque em Mudar para trocar o percentual ou cobrar um valor fixo em reais.' },
-  { niveis: [1], ir: () => irAba('fechar'), sel: '#adj-area', alt: '#ds-card', t: 'Couvert, desconto e cortesia', d: 'Toque em Couvert, Desconto ou Cortesia para incluir na conta. Depois, ligue ou desligue pela chave.' },
-  { niveis: [1], ir: () => irAba('fechar'), sel: '.ubox .mhead', alt: '.ubox', t: 'Veja quanto cada um paga', d: 'Confira o valor de cada pessoa. Para duas pessoas pagarem juntas, segure um nome e arraste até o outro.' },
-  { niveis: [1], ir: () => irAba('fechar'), sel: '.receipt-wrap [data-share]', alt: '.receipt-wrap', t: 'Envie os cupons', d: 'Toque em Compartilhar no cupom de cada um e mande em imagem, PDF ou texto, com o Pix.' },
-  { niveis: [1], ir: () => irAba('fechar'), sel: '#save-bill', t: 'Salve a comanda', d: 'Toque em Salvar e encerrar para guardar no Histórico. No exemplo, nada é salvo.' },
-  { niveis: [1], sel: () => [$('#tab-historico'), $('#trilho-historico')].find(e => e && e.getClientRects().length), t: 'Reveja no Histórico', d: 'Toque em Histórico para ver as comandas salvas, o gasto do mês e os lugares mais frequentes.' },
-
-  /* ----- Completo: a pessoa lê o passo e toca em Mostrar; o app faz a ação na tela, devagar, numa comanda de
-     demonstração. Toda troca de tela é feita tocando na barra, como a pessoa faria ----- */
-  { niveis: [2], sel: '#start-form', t: 'Abra a comanda', d: 'Digite o nome do lugar e toque em Abrir comanda.',
-    acao: async m => { await m.digitar('#start-place', 'Bar do Zé'); await m.tocar('#start-form button[type=submit]', { semClique: true }); demoAbrir('Bar do Zé'); await m.esperar(1200); }, fim: '#place' },
-  { niveis: [2], sel: '#person-form', t: 'Ponha as pessoas', d: 'Digite o nome de cada pessoa da mesa e toque em Adicionar. Repita até pôr todos.',
-    acao: async m => { for (const n of ['Ana', 'Bruno', 'Carla', 'Diego']) { await m.digitar('#person-name', n); await m.tocar('#person-form button[type=submit]'); } }, fim: '.people .person:last-child' },
-  { niveis: [2], sel: '#item-form', t: 'Lance os pedidos', d: 'Preencha produto, quantidade e valor e toque em Lançar. Na janela, escolha o tipo de consumo: em Compartilhado, marque quem dividiu; em Individual, toque em +1 para dar as unidades de cada um.',
+  { t: 'Abra a comanda com o nome do bar',
+    acao: async m => { await m.digitar('#start-place', 'Bar do Zé'); await m.tocar('#start-form button[type=submit]', { semClique: true }); demoAbrir('Bar do Zé'); await m.esperar(900); } },
+  { t: 'Adicione cada pessoa da mesa',
+    acao: async m => { for (const n of ['Ana', 'Bruno', 'Carla', 'Diego']) { await m.digitar('#person-name', n); await m.tocar('#person-form button[type=submit]'); } } },
+  { t: 'Lance cada pedido e escolha o tipo de consumo',
     acao: async m => {
       await demoLancar(m, { nome: 'Porção de fritas', preco: '4200' });
       await demoLancar(m, { nome: 'Chopp', qtd: 3, preco: '1290', individual: [['Ana', 2], ['Bruno', 1]] });
       await demoLancar(m, { nome: 'Caipirinha', preco: '2200', so: ['Carla', 'Diego'] });
-    }, fim: '.items' },
-  { niveis: [2], sel: () => $(`[data-item="${demoItem('Porção de fritas')}"] .item-top`), t: 'Corrija quem consumiu', d: 'Toque no item, desmarque quem não consumiu e toque em Salvar.',
-    acao: async m => { const it = demoItem('Porção de fritas'); await m.tocar(`[data-item="${it}"] [data-toggle="${demoId('Diego')}"]`); await m.tocar(`[data-item="${it}"] [data-save]`); }, fim: () => $(`[data-item="${demoItem('Porção de fritas')}"] .item-actions`) },
-  { niveis: [2], sel: () => $(`[data-item="${demoItem('Caipirinha')}"] .item-top`), t: 'Altere um item', d: 'Toque no item e em Alterar para mudar o nome, o valor ou o tipo de consumo. Toque em Cancelar para sair sem mudar.',
-    acao: async m => { const it = demoItem('Caipirinha'); await m.tocar(`[data-item="${it}"] .item-name`); await m.tocar(`[data-item="${it}"] [data-rename]`); await m.apontar('#rn-name'); await m.apontar('#rn-price'); await m.apontar('#rn-modo'); await m.tocar('#rn-no'); }, fim: () => $(`[data-item="${demoItem('Caipirinha')}"] .item-top`) },
-  { niveis: [2], sel: '#go-close', t: 'Feche a comanda', d: 'Com tudo lançado, toque em Fechar a comanda.',
-    acao: async m => { await m.tocar('#go-close'); await m.esperar(1200); }, fim: '.sum-grid' },
-  { niveis: [2], sel: '.sum-grid', t: 'Confira o total', d: 'Confira o consumo, o serviço e o total da comanda antes de pagar.',
-    acao: async m => { for (const r of $$('.sum-grid .sum')) await m.apontar(r); }, fim: '.sum-grid' },
-  { niveis: [2], sel: '#svc-card', t: 'Ajuste o serviço', d: 'O serviço já vem em 10%. Toque em Mudar para escolher outro percentual ou um valor fixo em reais.',
-    acao: async m => { await m.tocar('#svc-mudar'); await m.apontar('[data-svcmode="pct"]'); await m.apontar('[data-svcmode="fixed"]'); await m.apontar('#svc-pct'); }, fim: '#svc-card' },
-  { niveis: [2], sel: () => $(`[data-pay-svc="${demoId('Diego')}"]`)?.closest('.prows'), alt: '#groups-card', t: 'Tire o serviço de alguém', d: 'No cartão de quem não paga o serviço, desligue a chave do serviço e escolha quem fica com essa parte.',
-    acao: async m => { await m.tocar(`[data-pay-svc="${demoId('Diego')}"]`); await m.tocar('[data-pol="redistribute"]'); await m.esperar(1200); }, fim: () => $(`[data-pay-svc="${demoId('Diego')}"]`)?.closest('.prows') },
-  { niveis: [2], sel: '[data-adj="ds"]', alt: '#adj-area', t: 'Dê o desconto', d: 'Toque em Desconto, digite o valor e escolha se ele vale para o total da comanda ou só para o consumo.',
-    acao: async m => { await m.tocar('[data-adj="ds"]'); await m.digitar('#ds-val', '1000'); await m.apontar('[data-dsat="after"]'); await m.apontar('[data-dsat="before"]'); }, fim: '#ds-card' },
-  { niveis: [2], sel: '#pay-todos', t: 'Uma pessoa paga por todos', d: 'Se alguém vai pagar a conta de todos, toque em Uma pessoa paga a conta de todos e escolha quem paga. Para desfazer, toque em Separar todos.',
-    acao: async m => { await m.tocar('#pay-todos'); await m.tocar(`[data-pt="${demoId('Ana')}"]`); await m.esperar(1600); await m.tocar('#pay-separar'); await m.esperar(1000); }, fim: '#pay-todos' },
-  { niveis: [2], sel: () => $(`[data-unit="${demoId('Bruno')}"] .mhead`), alt: '.ubox', t: 'Junte quem paga junto', d: 'Para duas pessoas pagarem num cupom só, segure o nome de uma e arraste até a outra.',
-    acao: async m => { await m.arrastar(`[data-unit="${demoId('Bruno')}"] .mhead`, `[data-unit="${demoId('Carla')}"]`, () => { if (joinGroup(draft, demoId('Bruno'), 'p:' + demoId('Carla'))) { selPay = null; commit(); toast('Agora estão no mesmo cupom.'); } }); },
-    fim: '#groups-card .ubox.group .ghead' },
-  { niveis: [2], sel: '.receipt-wrap [data-share]', alt: '.receipt-wrap', t: 'Envie os cupons', d: 'Toque em Compartilhar no cupom de cada um e escolha imagem, PDF ou texto.',
-    acao: async m => { await m.tocar('.receipt-wrap [data-share]'); for (const b of $$('.kf-ov .share-actions button')) await m.apontar(b); await m.tocar('.kf-ov [data-kf-fechar]'); }, fim: '.receipt-wrap [data-share]' },
-  { niveis: [2], sel: '#save-bill', t: 'Salve a comanda', d: 'Toque em Salvar e encerrar para guardar a comanda no Histórico. Na demonstração, nada é salvo.',
-    acao: async m => { await m.tocar('#save-bill', { semClique: true }); toast('Na demonstração, nada é salvo.'); await m.esperar(1200); }, fim: '#save-bill' },
-  { niveis: [2], sel: () => [$('#tab-historico'), $('#trilho-historico')].find(e => e && e.getClientRects().length), t: 'Reveja no Histórico', d: 'Toque em Histórico para ver as comandas salvas, o gasto do mês e os lugares mais frequentes.',
-    acao: async m => { await m.tocar(visivel('#tab-historico, #trilho-historico')); await m.esperar(1000); const a = $$('#view details.fold, #view .card, #view .kf-vazio').filter(e => e.getClientRects().length).slice(0, 3); for (const e of a) await m.apontar(e); }, fim: () => $$('#view .card, #view .kf-vazio').find(e => e.getClientRects().length) },
-  { niveis: [2], sel: () => [$('#tab-cadastros'), $('#trilho-cadastros'), $('[data-kf-nav-mais]')].find(e => e && e.getClientRects().length), t: 'Cadastre a turma', d: 'Em Cadastros, guarde as pessoas com a chave Pix e monte turmas que entram juntas na mesa.',
-    acao: async m => { await irVia(m, 'Cadastros', '#tab-cadastros, #trilho-cadastros'); await m.esperar(1000); await m.apontar('#cad-pessoa'); await m.apontar('#turmas-card'); }, fim: '#cad-pessoa' },
-  { niveis: [2], sel: () => [...$$('[data-kf="ajustes"]'), $('[data-kf-nav-mais]')].find(e => e && e.getClientRects().length), t: 'Refaça este guia', d: 'Em Ajustes → Preferências gerais, ligue a apresentação ao abrir e refaça este guia quando quiser.',
-    acao: async m => { await irVia(m, 'Ajustes', '[data-kf="ajustes"]'); await m.esperar(1000); await m.tocar('[data-kf-aj-ir="preferencias"]'); await m.esperar(800); await m.apontar('.kf-guia-lista'); }, fim: '.kf-guia-lista' },
+    } },
+  { t: 'Toque no item e desmarque quem não consumiu',
+    acao: async m => { const it = demoItem('Porção de fritas'); await m.tocar(`[data-item="${it}"] [data-toggle="${demoId('Diego')}"]`); await m.tocar(`[data-item="${it}"] [data-save]`); } },
+  { t: 'Em Alterar, mude nome, valor ou tipo de consumo',
+    acao: async m => { const it = demoItem('Caipirinha'); await m.tocar(`[data-item="${it}"] .item-name`); await m.tocar(`[data-item="${it}"] [data-rename]`); await m.apontar('#rn-name'); await m.apontar('#rn-price'); await m.apontar('#rn-modo'); await m.tocar('#rn-no'); } },
+  { t: 'Divida a comanda ao vivo com a turma', se: () => !!store.db,
+    acao: async m => { await m.apontar('#live-start'); } },
+  { t: 'Toque em Fechar a comanda',
+    acao: async m => { await m.tocar('#go-close'); await m.esperar(700); } },
+  { t: 'Confira consumo, serviço e total',
+    acao: async m => { for (const r of $$('.sum-grid .sum')) await m.apontar(r); } },
+  { t: 'Mude o serviço para outro % ou um valor em R$',
+    acao: async m => { await m.tocar('#svc-mudar'); await m.apontar('[data-svcmode="pct"]'); await m.apontar('[data-svcmode="fixed"]'); await m.apontar('#svc-pct'); } },
+  { t: 'Desligue o serviço de quem não paga',
+    acao: async m => { await m.tocar(`[data-pay-svc="${demoId('Diego')}"]`); await m.tocar('[data-pol="redistribute"]'); await m.esperar(700); } },
+  { t: 'Dê desconto no total ou só no consumo',
+    acao: async m => { await m.tocar('[data-adj="ds"]'); await m.digitar('#ds-val', '1000'); await m.apontar('[data-dsat="after"]'); await m.apontar('[data-dsat="before"]'); } },
+  { t: 'Uma pessoa pode pagar a conta de todos',
+    acao: async m => { await m.tocar('#pay-todos'); await m.tocar(`[data-pt="${demoId('Ana')}"]`); await m.esperar(1200); await m.tocar('#pay-separar'); await m.esperar(600); } },
+  { t: 'Arraste um nome até outro para pagarem juntos',
+    acao: async m => { await m.arrastar(`[data-unit="${demoId('Bruno')}"] .mhead`, `[data-unit="${demoId('Carla')}"]`, () => { if (joinGroup(draft, demoId('Bruno'), 'p:' + demoId('Carla'))) { selPay = null; commit(); toast('Agora estão no mesmo cupom.'); } }); } },
+  { t: 'Envie o cupom de cada um',
+    acao: async m => { await m.tocar('.receipt-wrap [data-share]'); for (const b of $$('.kf-ov .share-actions button')) await m.apontar(b); await m.tocar('.kf-ov [data-kf-fechar]'); } },
+  { t: 'Salve e encerre a comanda',
+    acao: async m => { await m.tocar('#save-bill', { semClique: true }); toast('Na demonstração, nada é salvo.'); await m.esperar(900); } },
+  { t: 'Reveja suas comandas no Histórico',
+    acao: async m => { await m.tocar(visivel('#tab-historico, #trilho-historico')); await m.esperar(700); const a = $$('#view details.fold, #view .card, #view .kf-vazio').filter(e => e.getClientRects().length).slice(0, 3); for (const e of a) await m.apontar(e); } },
+  { t: 'Cadastre pessoas, chaves Pix e turmas',
+    acao: async m => { await irVia(m, 'Cadastros', '#tab-cadastros, #trilho-cadastros'); await m.esperar(700); await m.apontar('#cad-pessoa'); await m.apontar('#turmas-card'); } },
+  { t: 'Reveja este guia em Ajustes',
+    acao: async m => { await irVia(m, 'Ajustes', '[data-kf="ajustes"]'); await m.esperar(700); await m.tocar('[data-kf-aj-ir="preferencias"]'); await m.esperar(600); await m.apontar('.kf-guia-lista'); } },
 ];
 /* 1.15: demonstração do guia completo, numa comanda de exemplo que começa vazia */
 function demoAbrir(lugar) { pending = {}; draft = { ...blankDraft(), place: lugar, isExample: true, active: true, createdAt: Date.now() }; tab = 'comanda'; render(); window.scrollTo({ top: 0 }); }
