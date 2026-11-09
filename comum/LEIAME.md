@@ -149,3 +149,10 @@ pelo app em `aplicar`.
 - `conferirTopo(page, { comAjustes })` — confere Ajustes, nuvem e balão: um de cada, ordem, alinhamento, 44 px,
   distância da borda direita e nomes acessíveis;
 - `guiasAjustes(page)` e `GUIAS_COMUNS` — os nomes das guias, na ordem.
+
+## Mudanças do kit
+
+- **0.2.0 · 08/11/2026** (feita no Conta Fácil; copiar para os outros três apps pelo Art. 30):
+  guia ao vivo com o dedo na ponta direita do campo de texto, sem cobrir o que é digitado; o cartão do guia protege a
+  área inteira do passo (ou a janela aberta) e encolhe para o título enquanto o app faz o passo; com o trilho, as
+  janelas se centram na área do app, à direita dele.

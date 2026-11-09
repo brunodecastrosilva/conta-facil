@@ -120,6 +120,8 @@ test('balão: avaliar o app e relatar um problema saem com o nome do app, a vers
   await p.click('[data-kf-enviar]');
   await p.locator('text=Recebemos sua mensagem').waitFor();
   await p.keyboard.press('Escape');
+  // o Kit aceita uma mensagem por minuto em cada aparelho: o teste apaga essa marca para mandar a segunda agora
+  await p.evaluate(() => localStorage.removeItem('kitfacil.conta-facil.envios'));
   await p.click('.kf-topo [data-kf="feedback"]');
   await p.click('.kf-dlg [data-kf="problema"]');
   await p.click('.kf-opcao:has-text("Dados ou sincronização")');
@@ -228,12 +230,17 @@ test('guia em dois níveis: simplificado na comanda de exemplo e completo ao viv
   assert.equal(await p.locator('.kf-guia-nivel').count(), 0, 'ainda há cartões de nível lado a lado');
   await p.locator('[data-kf="guia-1"]').click();
   await p.locator('.kf-guia-cartao').waitFor();
-  for (let i = 0; i < 5; i++) {
+  const total = await p.evaluate(() => KitFacil.guia.passos(1).length);
+  assert.ok(total >= 10, `o simplificado tem só ${total} passos`);
+  for (let i = 1; i < total; i++) {
     const antes = await p.locator('.kf-guia-rot').innerText();
     await p.click('.kf-guia-cartao [data-kf-guia="1"]');
     await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes);
   }
-  assert.match(await p.locator('.kf-guia-rot').innerText(), /simplificado · 6 de 6/i);
+  assert.match(await p.locator('.kf-guia-rot').innerText(), new RegExp(`simplificado · ${total} de ${total}`, 'i'));
+  // os textos dos dois níveis são instruções no imperativo, sem narrar o que o app faz
+  const textos = await p.evaluate(() => [1, 2].flatMap(n => KitFacil.guia.passos(n).map(x => x.d)));
+  for (const t of textos) assert.doesNotMatch(t, /\bo app (vai|faz|toca|digita|mostra|abre|junta|desliga|desmarca|marca)/i, t);
   // no último passo, o convite para o completo
   await p.click('.kf-guia-cartao [data-kf="guia-2"]');
   // no guia ao vivo, a pessoa lê primeiro: nada acontece antes de tocar em Mostrar
@@ -244,10 +251,22 @@ test('guia em dois níveis: simplificado na comanda de exemplo e completo ao viv
   const fimDaAcao = () => esperar(() => p.evaluate(() => !document.querySelector('.kf-guia-ao-vivo') && !document.querySelector('.kf-guia-cartao [data-kf-guia="1"]:disabled')), 60000);
   const mostrar = async () => { if (await p.locator('[data-kf-guia-mostrar]').count()) { await p.click('[data-kf-guia-mostrar]'); await p.locator('.kf-guia-ao-vivo').waitFor(); } };
   const proximo = async () => { await mostrar(); await fimDaAcao(); const antes = await p.locator('.kf-guia-rot').innerText(); await p.click('.kf-guia-cartao [data-kf-guia="1"]'); await esperar(async () => (await p.locator('.kf-guia-rot').innerText()) !== antes); await p.waitForTimeout(300); };
-  await proximo(); await proximo(); await proximo();
-  await mostrar(); await fimDaAcao();
+  await proximo(); await proximo();
+  // todos os lançamentos num passo só; enquanto a ação roda, o cartão fica compacto e o dedo não cobre o que é digitado
+  await mostrar();
+  await esperar(() => p.evaluate(() => document.querySelector('#item-name').value.length > 2), 20000);
+  const vivo = await p.evaluate(() => { const c = document.querySelector('.kf-guia-cartao'), d = document.querySelector('.kf-guia-dedo'), f = document.querySelector('#item-name').getBoundingClientRect(), r = d.getBoundingClientRect(); return { compacto: c.classList.contains('kf-guia-compacto'), dedoNaPonta: r.left > f.left + f.width / 2 }; });
+  assert.deepEqual(vivo, { compacto: true, dedoNaPonta: true });
+  // com a janela de lançar aberta, o cartão do guia não cobre a janela
+  await p.locator('.kf-ov [data-lc-modo]').first().waitFor({ timeout: 20000 });
+  await p.waitForTimeout(400);
+  const cobre = await p.evaluate(() => { const c = document.querySelector('.kf-guia-cartao').getBoundingClientRect(), d = document.querySelector('.kf-ov .kf-dlg').getBoundingClientRect(); return c.bottom > d.top + 1 && c.top < d.bottom - 1; });
+  assert.equal(cobre, false, 'o cartão do guia cobre a janela de lançar');
+  await fimDaAcao();
+  await proximo();
   const demo = await p.evaluate(() => ({ ex: draft.isExample, lugar: draft.place, pessoas: draft.people.map(x => x.name).join(), itens: draft.items.map(x => x.name + ':' + x.mode).join() }));
-  assert.deepEqual(demo, { ex: true, lugar: 'Bar do Zé', pessoas: 'Ana,Bruno,Carla,Diego', itens: 'Porção de fritas:equal,Chopp:units' });
+  assert.deepEqual(demo, { ex: true, lugar: 'Bar do Zé', pessoas: 'Ana,Bruno,Carla,Diego', itens: 'Porção de fritas:equal,Chopp:units,Caipirinha:equal' });
+  assert.equal(await p.evaluate(() => Object.keys(draft.items.find(x => x.name === 'Caipirinha').a).length), 2, 'a caipirinha não ficou só com Carla e Diego');
   assert.equal(await p.evaluate(() => KitFacil.guia.alvoAtual() !== null), true);
   await p.click('.kf-guia-x');
   await p.click('#tab-inicio');
@@ -304,15 +323,19 @@ test('lançar pergunta como dividir; item novo no topo; Alterar troca o modo; tu
   const p = a.page;
   await p.fill('input[placeholder="Nome do local"]', 'Bar do Teste'); await p.keyboard.press('Enter');
   for (const n of ['Ana', 'Bia', 'Caio']) { await p.fill('#person-name', n); await p.keyboard.press('Enter'); }
-  const lancar = async (nome, qtd, preco) => { await p.fill('#item-name', nome); await p.fill('#item-qty', String(qtd)); await p.click('#item-price'); await p.keyboard.type(preco); await p.locator('#item-form button[type=submit]').click(); await p.locator('.lanc-ops').waitFor(); };
+  const lancar = async (nome, qtd, preco) => { await p.fill('#item-name', nome); await p.fill('#item-qty', String(qtd)); await p.click('#item-price'); await p.keyboard.type(preco); await p.locator('#item-form button[type=submit]').click(); await p.locator('[data-lc-modo]').first().waitFor(); };
   // entre todos: confirmado e automático
   await lancar('Chopp', 3, '1290');
-  await p.click('[data-lc="todos"]');
+  // mesmo desenho do Alterar: "Tipo de consumo", Compartilhado ou Individual, com todos já marcados
+  assert.deepEqual(await p.locator('[data-lc-modo]').allInnerTexts(), ['Compartilhado', 'Individual']);
+  assert.match(await p.locator('.kf-dlg, .sheet').last().innerText(), /Tipo de consumo/i);
+  assert.equal(await p.locator('[data-lc-ck][aria-pressed="true"]').count(), 3);
+  await p.click('#lc-ok');
   assert.ok(await esperar(() => p.evaluate(() => draft.items.length === 1 && draft.items[0].lk && draft.items[0].auto)), 'o item não entrou confirmado');
   assert.equal(await p.locator('#tab-comanda .badge').count(), 0, 'número na aba Comanda sem item esperando');
   // consumo individual: escolhe a pessoa na lista
   await lancar('Água', 1, '500');
-  await p.click('[data-lc="um"]'); await p.click('[data-lc-um]:has-text("Bia")');
+  await p.click('[data-lc-modo="units"]'); await p.click('[data-lc-un][data-dir="1"][aria-label$="Bia"]'); await p.click('#lc-ok');
   assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Água'); return it && it.lk && Object.keys(it.a).length === 1; })), 'o consumo individual não ficou só com Bia');
   // o mais recente fica no topo, e o rodapé diz de quem é
   assert.equal(await p.locator('.items .item .item-name').first().innerText(), 'Água');
@@ -320,16 +343,19 @@ test('lançar pergunta como dividir; item novo no topo; Alterar troca o modo; tu
   assert.equal(await p.evaluate(() => draft.items.find(x => x.name === 'Água').mode), 'units', 'consumo individual não ficou por unidade');
   // consumo individual com 3 unidades: distribui na própria janela
   await lancar('Chopp preto', 3, '1500');
-  await p.click('[data-lc="um"]');
+  await p.click('[data-lc-modo="units"]');
   assert.ok(await p.locator('#lc-ok').isDisabled());
-  await p.locator('[data-lc-un][data-dir="1"]').nth(0).click(); await p.locator('[data-lc-un][data-dir="1"]').nth(0).click(); await p.locator('[data-lc-un][data-dir="1"]').nth(2).click();
+  // o botão +1 continua o mesmo elemento depois do toque (o destaque do guia não se perde)
+  const mais = p.locator('[data-lc-un][data-dir="1"]').nth(0), antes = await mais.elementHandle();
+  await mais.click(); assert.ok(await antes.evaluate(e => e.isConnected), 'o +1 foi redesenhado');
+  await mais.click(); await p.locator('[data-lc-un][data-dir="1"]').nth(2).click();
   await p.click('#lc-ok');
   assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Chopp preto'); return it && it.mode === 'units' && it.lk && Object.values(it.a).join() === '2,1'; })), 'as unidades não ficaram 2 e 1');
   // o resumo aparece uma vez só no item compartilhado
   assert.equal(await p.evaluate(() => (document.querySelector(`[data-item="${draft.items.find(x => x.name === 'Chopp').id}"]`).innerText.match(/ cada/g) || []).length), 1, 'o resumo do item aparece repetido');
   // entre alguns: marca na lista e lança
   await lancar('Porção', 1, '4200');
-  await p.click('[data-lc="alguns"]'); await p.click('[data-lc-ck]:has-text("Ana")'); await p.click('[data-lc-ck]:has-text("Caio")'); await p.click('#lc-ok');
+  await p.click('[data-lc-ck]:has-text("Bia")'); await p.click('#lc-ok');
   assert.ok(await esperar(() => p.evaluate(() => { const it = draft.items.find(x => x.name === 'Porção'); return it && Object.keys(it.a).length === 2 && !it.auto; })), 'entre alguns não marcou Ana e Caio');
   // quem chega depois entra só no item "entre todos"
   await p.fill('#person-name', 'Duda'); await p.keyboard.press('Enter');
@@ -403,3 +429,26 @@ test('Fechar: serviço com % ou R$; desligar o serviço de alguém abre a janela
   await a.fechar();
 });
 
+
+test('tablet deitado e computador: a janela fica no centro da área do app, à direita do trilho; cupons centralizados', async () => {
+  const a = await aparelho(amb, { viewport: { width: 1152, height: 720 } });
+  const p = a.page;
+  await p.click('#go-example');
+  await p.locator('.kf-ov').first().waitFor();
+  await p.evaluate(() => KitFacil.dialogo.fechar(true));
+  await p.waitForTimeout(400);
+  await p.click('#trilho-comanda');
+  await p.fill('#item-name', 'Chopp'); await p.click('#item-price'); await p.keyboard.type('1290');
+  await p.locator('#item-form button[type=submit]').click();
+  await p.locator('.kf-ov .kf-dlg').waitFor();
+  const centro = await p.evaluate(() => { const d = document.querySelector('.kf-ov .kf-dlg').getBoundingClientRect(), v = document.querySelector('#view').getBoundingClientRect(); return Math.abs((d.left + d.right) / 2 - (v.left + v.right) / 2); });
+  assert.ok(centro < 4, `janela fora do centro da área do app (${Math.round(centro)} px)`);
+  await p.evaluate(() => KitFacil.dialogo.fechar(true)); await p.waitForTimeout(400);
+  await p.click('#trilho-fechar');
+  const cup = await p.evaluate(() => { const w = [...document.querySelectorAll('.receipt-wrap')].map(e => e.getBoundingClientRect()), r = document.querySelector('.receipts').getBoundingClientRect(); return { largura: Math.max(...w.map(x => x.width)), lado: w.length > 1 && Math.abs(w[0].top - w[1].top) < 2, folgaEsq: w[0].left - r.left, folgaDir: r.right - Math.max(...w.map(x => x.right)) }; });
+  assert.ok(cup.largura <= 360, `cupom largo demais (${cup.largura} px)`);
+  assert.ok(cup.lado, 'em tela larga, os cupons deviam ficar dois por linha');
+  assert.ok(Math.abs(cup.folgaEsq - cup.folgaDir) < 4, 'cupons fora do centro');
+  assert.deepEqual(a.erros, []);
+  await a.fechar();
+});

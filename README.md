@@ -2,16 +2,16 @@
 
 Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-**Fase de testes** · versão 1.16.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+**Fase de testes** · versão 0.2.0 · Kit Fácil 0.2.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil) e segue o
 [Código do Projeto Fácil](comum/CODIGO.md).
 
 ## O que o app faz
 
-- Cada item entra dividido igual entre todos; só o item que você mexe pede confirmação
+- Ao lançar um item, escolha o tipo de consumo (Compartilhado ou Individual) e marque quem consumiu na mesma janela
 - Turmas: quem sai junto entra na mesa com um toque; pessoas e chaves Pix podem ser cadastradas antes da comanda
-- Apresentação curta ao abrir (desligável em Ajustes) e guia em 3 níveis: essencial, exploração e completo
+- Apresentação curta ao abrir (desligável em Ajustes) e guia em dois níveis: simplificado, na comanda de exemplo, e completo, ao vivo, numa demonstração que não salva nada
 - Abra uma comanda com o nome do local; os lugares onde você já foi viram atalhos
 - Lance os pedidos e divida cada item igualmente ou por unidade, com cortesias, couvert, desconto e taxa de serviço (percentual ou valor fixo)
 - Feche a conta: quanto cada um paga, quem paga por quem, cupons em imagem, PDF ou texto e Pix copia e cola com QR code
@@ -76,9 +76,10 @@ Segue o Código do Projeto Fácil (veja [`comum/CODIGO.md`](comum/CODIGO.md)):
 
 | Arquivo | Conteúdo |
 |---|---|
-| `index.html` | o app inteiro: estrutura, estilo e código |
+| `index.html` | estrutura e estilo do app |
+| `app.js` | código do app (fora da página, por causa da CSP) |
 | `fb.js`, `config.js` | conexão com o Firebase da comanda ao vivo |
-| `comum/` | **Kit Fácil**: sistema de design comum, barra superior, Ajustes, avaliação, sincronização e o padrão do projeto. Igual nos três apps: não edite só aqui |
+| `comum/` | **Kit Fácil**: sistema de design comum, barra superior, Ajustes, avaliação, sincronização e o padrão do projeto. Igual nos quatro apps: não edite só aqui |
 | `sw.js`, `manifest.webmanifest`, `icons/` | instalação e uso sem internet |
 | `tests/` | testes do app |
 
@@ -97,6 +98,15 @@ Recomendado restringir a chave por referenciador no Google Cloud (veja o `CODIGO
 
 GitHub Pages a partir da branch `main`, pasta raiz. Antes de publicar: `npm run verificar` e `npm test`, e confira o app
 no celular e no computador. O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
+
+## Exceções ao padrão
+
+Aprovadas pelo Bruno e registradas também no CHANGELOG e na lista de exceções do Painel (Código, Art. 5º).
+
+| Regra do Código | Exceção | Por quê | Aprovada |
+|---|---|---|---|
+| Art. 55 (fonte da família) | cupom com a fonte IBM Plex Mono | o cupom imita a comanda impressa de verdade (Regras do Conta Fácil, Art. 8º) | antes de 08/11/2026 |
+| Art. 67 (nada lado a lado) | em tela larga, os cupons ficam dois por linha | os cupons são papéis para comparar e enviar; um por linha deixava a tela larga vazia e a lista longa | 08/11/2026 |
 
 ## Uso do código
 

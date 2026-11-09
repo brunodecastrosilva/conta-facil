@@ -17,7 +17,7 @@
    - componentes comuns de tela (Kit 2.10): guias, faixa de aviso, cartão e as medidas de botão, cartão e segmento */
 (function (global) {
   'use strict';
-  const VERSAO = '0.1.0';
+  const VERSAO = '0.2.0';
 
   /* ================= família de apps (mesmo endereço no GitHub Pages) ================= */
   const FAMILIA = [
@@ -1076,6 +1076,7 @@
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       if (!this.el || vez !== this.vez) return;
       const c = $('.kf-guia-cartao', this.el), acao = typeof p.acao === 'function';
+      c.classList.remove('kf-guia-compacto');
       // Kit 2.12.1: no passo ao vivo a pessoa lê primeiro; a ação só começa quando ela toca em Mostrar.
       // estado: 'ler' (antes), 'rodando' (o app faz o passo) ou 'feito' (depois, com o resultado destacado)
       const pinta = estado => {
@@ -1094,11 +1095,11 @@
       };
       const rodar = async () => {
         if (!this.el || vez !== this.vez) return;
-        pinta('rodando'); this.posicionar();
+        pinta('rodando'); c.classList.add('kf-guia-compacto'); this.posicionar();
         this.el.classList.add('kf-guia-vivo');
         try { await this.esperar(500, vez); await p.acao(this.maos(vez)); } catch (x) { if (x !== PARADO) console.warn(x); }
         if (!this.el || vez !== this.vez) return;
-        this.dedo(null); this.el.classList.remove('kf-guia-vivo');
+        this.dedo(null); this.el.classList.remove('kf-guia-vivo'); c.classList.remove('kf-guia-compacto');
         // depois da ação, o destaque vai para o resultado (p.fim: seletor ou função), ou volta ao alvo do passo
         let fim = null; try { fim = typeof p.fim === 'function' ? p.fim() : p.fim ? $$(p.fim).find(el => el.getClientRects().length) : null; } catch {}
         this.alvoVivo = fim || null;
@@ -1127,9 +1128,14 @@
       if (!this.el) return;
       if (!alvo) { if (d) d.hidden = true; return; }
       if (!d) { d = document.createElement('div'); d.className = 'kf-guia-dedo'; d.setAttribute('aria-hidden', 'true'); this.el.appendChild(d); }
+      d.hidden = false; this.porDedo(d, alvo);
+    },
+    // Kit 0.2.0: num campo de texto o dedo fica na ponta direita, para não cobrir o que está sendo digitado
+    porDedo(d, alvo) {
       const r = alvo.getBoundingClientRect();
-      d.hidden = false;
-      d.style.left = Math.round(r.left + Math.min(r.width / 2, 60)) + 'px'; d.style.top = Math.round(r.top + r.height / 2) + 'px';
+      const texto = alvo.matches && alvo.matches('textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="range"])');
+      const x = texto && r.width > 120 ? r.right - 30 : r.left + Math.min(r.width / 2, 60);
+      d.style.left = Math.round(x) + 'px'; d.style.top = Math.round(r.top + r.height / 2) + 'px';
     },
     // as "mãos" do guia ao vivo: o app usa estas funções para mostrar cada ação como se alguém tocasse na tela
     maos(vez) {
@@ -1187,13 +1193,30 @@
       const barra = $$('.kf-barra').find(b => b.getClientRects().length), baixo = $$('.kf-nav').find(b => b.getClientRects().length);
       const topoLivre = barra ? Math.max(4, barra.getBoundingClientRect().bottom + 2) : 4;
       let top, lado = 'baixo';
+      // Kit 0.2.0: área que o cartão não pode cobrir. Com janela aberta, a janela inteira; sem janela, o ponto destacado
+      // somado à área do passo (ex.: o formulário inteiro enquanto o app digita num campo dele)
+      const dlgR = dialogoAberto() && atual.dlg ? atual.dlg.getBoundingClientRect() : null;
+      let zona = null;
+      if (t) {
+        const rt = t.getBoundingClientRect(); zona = { top: rt.top, bottom: rt.bottom, left: rt.left, right: rt.right };
+        const base = !dlgR && this.alvoVivo ? (() => { const v = this.alvoVivo; this.alvoVivo = null; const b = this.alvo(p); this.alvoVivo = v; return b; })() : null;
+        if (base && base !== t && !(base.closest && base.closest('.kf-ov'))) {
+          const rb = base.getBoundingClientRect();
+          const u = { top: Math.min(rt.top, rb.top), bottom: Math.max(rt.bottom, rb.bottom), left: Math.min(rt.left, rb.left), right: Math.max(rt.right, rb.right) };
+          if (u.bottom - u.top <= vh * .55) zona = u;
+        }
+      }
+      if (dlgR) zona = { top: dlgR.top, bottom: dlgR.bottom, left: dlgR.left, right: dlgR.right };
       if (t) {
         const r = t.getBoundingClientRect(), naNav = !!(baixo && baixo.contains(t)), naBarra = !!(barra && barra.contains(t));
         const fundo = baixo && !naNav ? baixo.getBoundingClientRect().top - 2 : vh - 4;
         let y1 = Math.max(r.top - pad, naBarra || naNav ? 2 : topoLivre), y2 = Math.min(r.bottom + pad, fundo);
         const MIN = 44; // o destaque nunca fica menor que um alvo de toque
+        const z1 = zona ? Math.min(y1, zona.top - pad) : y1, z2 = zona ? Math.max(y2, zona.bottom + pad) : y2;
         if (y2 - y1 >= 8) {
-          if (y2 + gap + ch <= fundo - gap) top = y2 + gap;
+          if (z2 + gap + ch <= fundo - gap) top = z2 + gap;
+          else if (z1 - gap - ch >= topoLivre) top = z1 - gap - ch;
+          else if (y2 + gap + ch <= fundo - gap) top = y2 + gap;
           else if (y1 - gap - ch >= topoLivre) top = y1 - gap - ch;
           else {
             // Kit 2.11.1: destaque alto demais para caber com o cartão. O cartão fica na ponta com mais destaque
@@ -1209,18 +1232,32 @@
         Object.assign(furo.style, { left: (r.left - pad) + 'px', top: y1 + 'px', width: (r.width + pad * 2) + 'px', height: Math.max(0, y2 - y1) + 'px' });
       } else furo.hidden = true;
       // janela aberta (guia ao vivo): o cartão fica acima da janela, sem cobrir o que ela mostra
-      if (dialogoAberto() && atual.dlg) {
-        const dt = atual.dlg.getBoundingClientRect().top;
-        if (dt - gap - ch >= topoLivre) top = Math.min(dt - gap - ch, top === undefined ? Infinity : Math.max(top, topoLivre + gap)) ;
-        if (top === undefined || top + ch > dt - gap) top = Math.max(topoLivre + gap, dt - gap - ch);
+      // janela aberta: o cartão fica acima, abaixo ou ao lado da janela (tela larga); sem espaço, no alto ou no pé da
+      // tela, onde cobre menos da janela, e nunca sobre o ponto destacado
+      let lateral = null;
+      if (dlgR) {
+        const fundoTela = vh - 4, livreEsq = dlgR.left - gap * 2, livreDir = innerWidth - dlgR.right - gap * 2;
+        if (dlgR.top - gap - ch >= topoLivre) top = dlgR.top - gap - ch;
+        else if (dlgR.bottom + gap + ch <= fundoTela - gap) top = dlgR.bottom + gap;
+        else if (Math.max(livreEsq, livreDir) >= 260) {
+          const esq = livreEsq >= livreDir, w = Math.min(440, esq ? livreEsq : livreDir);
+          lateral = { left: esq ? gap : dlgR.right + gap, width: w };
+          top = Math.max(topoLivre + gap, Math.min(dlgR.top, fundoTela - gap - ch));
+        } else {
+          const r = t ? t.getBoundingClientRect() : null;
+          const opcoes = [topoLivre + gap, fundoTela - gap - ch].filter(y => !r || y + ch <= r.top - pad || y >= r.bottom + pad);
+          const cobre = y => Math.max(0, Math.min(y + ch, dlgR.bottom) - Math.max(y, dlgR.top));
+          if (opcoes.length) top = opcoes.sort((x, y) => cobre(x) - cobre(y))[0];
+        }
       }
+      Object.assign(c.style, lateral ? { left: lateral.left + 'px', right: 'auto', width: lateral.width + 'px', marginInline: '0' } : { left: '', right: '', width: '', marginInline: '' });
       c.classList.toggle('kf-guia-solto', top === undefined && lado === 'baixo');
       c.classList.toggle('kf-guia-alto', false);
       c.style.top = top === undefined ? '' : top + 'px';
       this.el.classList.toggle('kf-guia-escuro', !t || furo.hidden);
       // com uma janela aberta (o guia ao vivo abre janelas), o guia fica por cima dela e não escurece de novo
       this.el.classList.toggle('kf-guia-sobre', dialogoAberto());
-      const dd = $('.kf-guia-dedo', this.el); if (dd && !dd.hidden && this.alvoVivo && this.alvoVivo.isConnected) { const r = this.alvoVivo.getBoundingClientRect(); dd.style.left = Math.round(r.left + Math.min(r.width / 2, 60)) + 'px'; dd.style.top = Math.round(r.top + r.height / 2) + 'px'; }
+      const dd = $('.kf-guia-dedo', this.el); if (dd && !dd.hidden && this.alvoVivo && this.alvoVivo.isConnected) this.porDedo(dd, this.alvoVivo);
     },
   };
 

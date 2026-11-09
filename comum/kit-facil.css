@@ -102,6 +102,8 @@
 .kf-nav-it[aria-disabled="true"]{opacity:.42}
 .kf-nav-it:focus-visible{outline:2.5px solid var(--kf-focus,var(--kf-accent));outline-offset:-3px;border-radius:12px}
 @media (min-width:1024px){.kf-nav{display:none!important}}
+/* Kit 0.2.0: com o trilho à esquerda, a janela se centra na área do app, alinhada ao conteúdo (o fundo escuro cobre a tela toda) */
+@media (min-width:1024px){body.kf-casca .kf-ov{padding-left:calc(var(--kf-trilho-w) + 24px)}}
 
 /* trilho lateral (computador) */
 .kf-trilho{display:none}
@@ -509,6 +511,10 @@ details.kf-secao-anim{overflow:hidden}
 .kf-guia-cartao .kf-link{align-self:center}
 @media (max-width:1023.98px){.kf-com-nav .kf-guia-cartao.kf-guia-solto,body:has(.kf-nav) .kf-guia-cartao.kf-guia-solto{bottom:calc(var(--kf-nav-h) + 16px + env(safe-area-inset-bottom,0px))}}
 @media (min-width:1024px){.kf-guia-cartao{left:calc(var(--kf-trilho-w) + 16px)}}
+/* Kit 0.2.0: enquanto o app faz o passo, o cartão encolhe para o título e o "Acompanhe na tela", e cobre menos da tela */
+.kf-guia-cartao.kf-guia-compacto{gap:2px;padding:8px 14px}
+.kf-guia-cartao.kf-guia-compacto > p:not(.kf-guia-ao-vivo),.kf-guia-cartao.kf-guia-compacto .kf-guia-acoes,.kf-guia-cartao.kf-guia-compacto .kf-guia-barra{display:none}
+.kf-guia-cartao.kf-guia-compacto h3{font-size:16px}
 @media (prefers-reduced-motion:reduce){.kf-guia-furo,.kf-guia.kf-guia-passo .kf-guia-furo,.kf-guia-cartao,.kf-guia-barra i,.kf-guia-dedo{transition:none}.kf-guia-dedo.kf-toque::after,.kf-guia-ao-vivo span{animation:none}}
 
 /* Kit 2.14: o selo do reCAPTCHA (App Check) fica escondido; o aviso do Google vai no formulário de avaliação e em Privacidade */
