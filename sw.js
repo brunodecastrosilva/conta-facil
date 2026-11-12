@@ -3,7 +3,7 @@
 // Bibliotecas (QR code, PDF, fontes, Firebase) têm versão fixa: usa a guardada.
 // O cache leva a versão do app (package.json); cada app só apaga as próprias cópias antigas,
 // porque os apps do projeto dividem o mesmo endereço (github.io).
-const CACHE = 'conta-facil-0.4.0';
+const CACHE = 'conta-facil-0.4.1';
 const APP = ['./', './index.html', './app.js', './fb.js', './config.js', './comum/kit-facil.js', './comum/kit-facil.css', './manifest.webmanifest', './icons/apple-touch-icon.png', './icons/icon-192.png'];
 const LIBS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
