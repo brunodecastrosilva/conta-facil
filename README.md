@@ -2,7 +2,7 @@
 
 Divida a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-**Fase de testes** · versão 0.4.1 · Kit Fácil 0.5.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+**Fase de testes** · versão 0.5.0 · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil) e segue o
 [Código do Projeto Fácil](comum/CODIGO.md).
@@ -21,7 +21,7 @@ Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e
 - **Avalie o app e relate problemas** pelo balão no alto da tela (ou em Ajustes → Avaliação e feedback)
 - **Nuvem no alto da tela:** mostra se os dados estão sincronizados, sincronizando, pendentes, com erro ou sem internet
 - **Barra de baixo com no máximo 5 posições:** as seções principais e "Mais", com o resto e os Ajustes (no computador, tudo no menu lateral)
-- **Pague um chopp para o criador!** O app é gratuito; o chopp no alto da tela, entre a nuvem e o balão, abre o Pix (QR code e copia e cola), se você quiser apoiar
+- **Mande um presente para o criador!** O app é gratuito; o presente no alto da tela, entre a nuvem e o balão, abre o Pix (QR code e copia e cola), se você quiser apoiar
 - **Novidades:** depois de cada atualização, o app mostra uma vez o que mudou
 - Tema claro, escuro ou automático; funciona sem internet depois da primeira visita
 - Comanda de exemplo com um guia que mostra cada função
@@ -66,7 +66,7 @@ O modo sem internet (service worker) só funciona em `https`, ou seja, no endere
 
 Segue o Código do Projeto Fácil (veja [`comum/CODIGO.md`](comum/CODIGO.md)):
 
-- **Alto da tela, à direita:** nuvem da sincronização, chopp para o criador e balão de avaliação, nessa ordem; Ajustes fica na barra de baixo (no computador, no pé do menu lateral).
+- **Alto da tela, à direita:** nuvem da sincronização, presente para o criador e balão de avaliação, nessa ordem; Ajustes fica na barra de baixo (no computador, no pé do menu lateral).
 - **Navegação:** barra embaixo no celular e no tablet; menu lateral no computador (a partir de 1024 px)
 - **Ajustes:** as oito guias comuns (Conta e perfil, Sincronização e armazenamento, Aparência, Preferências gerais,
   Notificações, Privacidade e segurança, Avaliação e feedback, Sobre o aplicativo) e a guia própria **Comandas**
