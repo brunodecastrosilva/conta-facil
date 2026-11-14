@@ -513,7 +513,7 @@ html.com-ok .kf-toast{bottom:auto;top:calc(var(--kf-vv-top,0px) + 70px)}
 .kf-dlg-pe{flex-wrap:nowrap}
 .kf-dlg-pe .btn,.kf-dlg-pe .kf-btn{flex:1 1 0;min-width:0;padding-inline:12px;line-height:1.15;white-space:normal}
 .kf-dlg-pe .btn[aria-label]:not(:has(span)){flex:0 0 52px}
-.fc-seta .i{width:22px;height:22px}
+.fc-seta .i{width:30px;height:30px;stroke-width:2.4}
 .selo-pago{top:auto;bottom:64px;left:44%;font-size:26px;padding:1px 12px;border-width:3px;transform:translate(-50%,0) rotate(-9deg)}
 /* comanda ao vivo: painel verde, textos claros */
 .live-panel{border-radius:var(--r)}

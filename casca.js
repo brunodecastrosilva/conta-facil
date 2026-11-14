@@ -301,4 +301,4 @@ if (LS.get('abertura', '') !== '1' && !/^#m[a-z0-9]{6,16}$/.test(location.hash |
 else jogoConferir({ silencioso: !jogo.pronto });
 // atalho "Nova comanda" do ícone do app (manifesto)
 if (/[?&]nova=1/.test(location.search)) { try { history.replaceState(null, '', location.pathname + location.hash); } catch {} if (!draft.active && !aberturaAtiva()) setTimeout(novaComandaSheet, 300); }
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('sw', e));
+try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('sw', e)); } catch (e) { console.warn('sw', e); }
