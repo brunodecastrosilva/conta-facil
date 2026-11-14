@@ -1,24 +1,65 @@
 /* Conta Fácil · telas de apoio: Início, Histórico, Cadastros e Mais. A comanda fica em app.js; as tampinhas, em jogo.js. */
 
-/* ---------- ícones e ilustrações ---------- */
+/* ---------- ícones: um desenho só (grade de 24, traço de 2, pontas e cantos redondos, sem preenchimento) ---------- */
+const ic = d => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const IC_TAMPA = '<path d="M4.500 12.500c0-3.700 3.300-6.200 7.500-6.200s7.500 2.500 7.500 6.200"/><path d="m4.500 12.500 1.400 4.300 2.100-2.800 2 3.200 2-3.200 2 3.200 2-3.200 2.100 2.800 1.400-4.300"/>';
 Object.assign(I, {
-  tampa: '<svg class="i" viewBox="0 0 24 24"><path d="M12 2.8l1.7 1.3 2.1-.4 1 1.900 2 .8-.1 2.100 1.500 1.500-1 1.900.7 2-1.700 1.300-.2 2.100-2.100.5-1.100 1.800-2.100-.4-1.700 1.300-1.700-1.300-2.100.4-1.100-1.800-2.100-.5-.2-2.100-1.700-1.300.7-2-1-1.900L4.200 8.500l-.1-2.100 2-.8 1-1.900 2.100.4z"/><circle cx="12" cy="12" r="4.200"/></svg>',
-  mais: '<svg class="i" viewBox="0 0 24 24"><circle cx="5.500" cy="12" r="1.300"/><circle cx="12" cy="12" r="1.300"/><circle cx="18.500" cy="12" r="1.300"/></svg>',
-  livro: '<svg class="i" viewBox="0 0 24 24"><path d="M4 5.500c2.800-1 5.500-.8 8 .7 2.500-1.500 5.200-1.700 8-.7V19c-2.800-1-5.500-.8-8 .700-2.500-1.500-5.200-1.700-8-.7zM12 6.200V19.700"/></svg>',
-  estrela: '<svg class="i" viewBox="0 0 24 24"><path d="m12 3.500 2.600 5.400 5.900.8-4.300 4.100 1.100 5.900L12 16.900l-5.300 2.800 1.100-5.900-4.300-4.100 5.900-.8z"/></svg>',
-  presente: '<svg class="i" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="1.500"/><path d="M3 7.500h18V11H3zM12 7.500V20M12 7.500C10.500 3.500 6 4.200 7 6.500c.700 1.400 3 1.300 5 1zm0 0c1.500-4 6-3.300 5-1-.700 1.400-3 1.300-5 1z"/></svg>',
-  pino: '<svg class="i" viewBox="0 0 24 24"><path d="M12 21s-6.500-5.700-6.500-10.800a6.500 6.500 0 0 1 13 0C18.500 15.300 12 21 12 21z"/><circle cx="12" cy="10" r="2.300"/></svg>',
-  sparkle: '<svg class="i" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.500 2.500M15.500 15.500 18 18M18 6l-2.500 2.500M8.500 15.500 6 18"/></svg>',
-  garrafa: '<svg class="i" viewBox="0 0 24 24"><path d="M10 3h4v4l2.500 3.500V20a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9.500L10 7z"/><path d="M7.500 14h9"/></svg>',
-  exemplo: '<svg class="i" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="m10 9.500 4.500 2.700-4.500 2.800z"/></svg>',
+  home: ic('<path d="M4 11.500 12 4l8 7.500"/><path d="M6 10v9.500h12V10"/><path d="M10 19.500v-5h4v5"/>'),
+  receipt: ic('<path d="M6 3.500h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9.500 8.500h5M9.500 12.500h5"/>'),
+  clock: ic('<circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/>'),
+  tampa: ic(IC_TAMPA),
+  mais: ic('<circle cx="5.500" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="18.500" cy="12" r="1" fill="currentColor"/>'),
+  users: ic('<circle cx="9" cy="8.500" r="3.500"/><path d="M2.500 19.500c.600-3.700 3.200-5.500 6.500-5.500s5.900 1.800 6.500 5.500"/><path d="M16 5.300a3.500 3.500 0 0 1 0 6.400M18.500 14.600c1.700.800 2.700 2.400 3 4.900"/>'),
+  user: ic('<circle cx="12" cy="8" r="4"/><path d="M4.500 20c.700-4 3.600-6 7.500-6s6.800 2 7.500 6"/>'),
+  plus: ic('<path d="M12 5v14M5 12h14"/>'),
+  x: ic('<path d="M6 6l12 12M18 6 6 18"/>'),
+  check: ic('<path d="m5 12.500 4.500 4.500L19 7.500"/>'),
+  back: ic('<path d="m14.500 6-6 6 6 6"/>'),
+  next: ic('<path d="m9.500 6 6 6-6 6"/>'),
+  edit: ic('<path d="M4 20l1-4.500L16 4.500a2.100 2.100 0 0 1 3 3L8 18.500z"/><path d="m14 6.500 3 3"/>'),
+  trash: ic('<path d="M4.500 6.500h15M9.500 6.500v-2h5v2M6.500 6.500l.800 13h9.400l.800-13"/>'),
+  copy: ic('<rect x="8.500" y="8.500" width="11" height="11" rx="2.500"/><path d="M5.500 15.500H5A1.500 1.500 0 0 1 3.500 14V5A1.500 1.500 0 0 1 5 3.500h9A1.500 1.500 0 0 1 15.500 5v.500"/>'),
+  save: ic('<path d="M5 4.500h11.500L19 7v12.500H5z"/><path d="M8.500 4.500V9H15V4.500M8.500 19.500v-6h7v6"/>'),
+  ok: ic('<circle cx="12" cy="12" r="8.500"/><path d="m8.500 12.200 2.500 2.500 4.500-5"/>'),
+  warn: ic('<path d="M12 4 3 19.500h18z"/><path d="M12 10v4.500M12 17h.01"/>'),
+  image: ic('<rect x="3.500" y="4.500" width="17" height="15" rx="2.500"/><circle cx="9" cy="10" r="1.800"/><path d="m20.500 15.500-4.500-4.500-8.500 8.500"/>'),
+  share: ic('<path d="M12 15V4M7.500 8.500 12 4l4.500 4.500"/><path d="M5 13v6.500h14V13"/>'),
+  file: ic('<path d="M13.500 3.500h-7v17h11v-13z"/><path d="M13.500 3.500v4h4M9.500 12.500h5M9.500 16h5"/>'),
+  refresh: ic('<path d="M19.500 12a7.500 7.500 0 0 1-13 5.100M4.500 12a7.500 7.500 0 0 1 13-5.100"/><path d="M17.500 3.500V7H14M6.500 20.500V17H10"/>'),
+  live: ic('<circle cx="12" cy="12" r="1.800"/><path d="M15.900 8.100a5.500 5.500 0 0 1 0 7.800M8.100 15.900a5.500 5.500 0 0 1 0-7.800M18.700 5.300a9.500 9.500 0 0 1 0 13.400M5.300 18.700a9.500 9.500 0 0 1 0-13.400"/>'),
+  paste: ic('<rect x="8.500" y="3" width="7" height="4" rx="1.500"/><path d="M15.500 5H17a2 2 0 0 1 2 2v11.500a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1.500"/>'),
+  qr: ic('<rect x="3.500" y="3.500" width="6.500" height="6.500" rx="1.500"/><rect x="14" y="3.500" width="6.500" height="6.500" rx="1.500"/><rect x="3.500" y="14" width="6.500" height="6.500" rx="1.500"/><path d="M14 14h2.500v2.500H14zM20.500 14v.01M14 20.500v.01M17.500 20.500h3v-3"/>'),
+  ajustes: ic('<path d="M4 7.500h8M17 7.500h3M4 16.500h3M12 16.500h8"/><circle cx="14.500" cy="7.500" r="2.500"/><circle cx="9.500" cy="16.500" r="2.500"/>'),
+  download: ic('<path d="M12 4v11M7.500 10.500 12 15l4.500-4.500M5 19.500h14"/>'),
+  upload: ic('<path d="M12 15.500v-11M7.500 9 12 4.500 16.500 9M5 19.500h14"/>'),
+  livro: ic('<path d="M4 5.500c2.800-1 5.500-.700 8 .800 2.500-1.500 5.200-1.800 8-.800v13c-2.800-1-5.500-.700-8 .800-2.500-1.500-5.200-1.800-8-.800z"/><path d="M12 6.300v13"/>'),
+  estrela: ic('<path d="m12 3.500 2.600 5.400 5.900.800-4.300 4.100 1.100 5.900L12 16.900l-5.300 2.800 1.100-5.900-4.300-4.100 5.900-.800z"/>'),
+  presente: ic('<rect x="4.500" y="10.500" width="15" height="9.500" rx="1.500"/><path d="M3.500 7h17v3.500h-17zM12 7v13"/><path d="M12 7c-1.200-3.200-5-3-4.500-.800.300 1.300 2.500 1 4.500.800zm0 0c1.200-3.200 5-3 4.500-.800-.300 1.300-2.500 1-4.500.800z"/>'),
+  pino: ic('<path d="M12 20.500s-6.500-5.500-6.500-10.300a6.500 6.500 0 0 1 13 0c0 4.800-6.500 10.300-6.500 10.300z"/><circle cx="12" cy="10" r="2.300"/>'),
+  apresentacao: ic('<rect x="3.500" y="4.500" width="17" height="11.500" rx="2"/><path d="M12 16v4M8.500 20h7"/>'),
+  exemplo: ic('<path d="M6 3.500h12v17l-3-2-3 2-3-2-3 2z"/><path d="m10.500 8.500 4 2.500-4 2.500z"/>'),
+  sorteio: ic('<circle cx="12" cy="12" r="8.500"/><path d="m12 12 3.300-4.800"/><circle cx="12" cy="12" r="1" fill="currentColor"/>'),
+  cardapio: ic('<rect x="5" y="3.500" width="14" height="17" rx="2"/><path d="M8.500 8h4M8.500 12h4M8.500 16h4M15.500 8h.01M15.500 12h.01M15.500 16h.01"/>'),
 });
+/* ---------- ilustrações: cada tela vazia mostra a coisa de que ela trata ---------- */
 const ILU = {
-  // mesa de bar vista de cima, com uma comanda e duas tampinhas
-  mesa: `<svg viewBox="0 0 160 110" aria-hidden="true"><ellipse cx="80" cy="62" rx="72" ry="40" fill="var(--green-soft)"/><ellipse cx="80" cy="58" rx="72" ry="40" fill="var(--surface)" stroke="var(--line-2)" stroke-width="2"/>
-    <g transform="rotate(-8 80 52)"><path d="M58 26h44v52l-5.500-4-5.500 4-5.500-4-5.500 4-5.500-4-5.500 4-5.500-4-5.500 4z" fill="#FFFDF5" stroke="var(--line-2)" stroke-width="1.500"/><path d="M66 38h28M66 47h28M66 56h16" stroke="#D3931A" stroke-width="3" stroke-linecap="round"/></g>
-    <circle cx="122" cy="72" r="9" fill="#D9483B"/><circle cx="122" cy="72" r="5.500" fill="none" stroke="#fff" stroke-opacity=".6" stroke-dasharray="1.500 2.500"/><circle cx="36" cy="46" r="7" fill="#2E8B5C"/><circle cx="36" cy="46" r="4" fill="none" stroke="#fff" stroke-opacity=".6" stroke-dasharray="1.500 2.500"/></svg>`,
-  // comanda em branco
-  papel: `<svg viewBox="0 0 160 110" aria-hidden="true"><g transform="rotate(5 80 55)"><path d="M48 10h64v88l-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6z" fill="#FFFDF5" stroke="var(--line-2)" stroke-width="1.500"/><path d="M60 28h40M60 42h40M60 56h40M60 70h22" stroke="var(--line-2)" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 7"/></g></svg>`,
+  // pessoas: duas fichas de pessoa, uma com a etiqueta da chave Pix
+  pessoas: `<svg viewBox="0 0 180 120" aria-hidden="true"><g transform="rotate(-5 62 62)"><rect x="18" y="24" width="88" height="74" rx="12" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="2"/><circle cx="62" cy="52" r="13" fill="#2E8B5C"/><path d="M38 90c2-13 11-19 24-19s22 6 24 19z" fill="#2E8B5C"/></g>
+    <g transform="rotate(4 118 64)"><rect x="76" y="20" width="88" height="80" rx="12" fill="var(--surface)" stroke="var(--line-2)" stroke-width="2"/><circle cx="120" cy="50" r="13" fill="#F2B33D"/><path d="M96 90c2-13 11-19 24-19s22 6 24 19z" fill="#F2B33D"/></g>
+    <g transform="translate(118 84)"><rect width="56" height="26" rx="13" fill="#123F2A"/><circle cx="13" cy="13" r="5" fill="none" stroke="#F2B33D" stroke-width="2.400"/><path d="M18 13h14M27 13v5M32 13v4" stroke="#F2B33D" stroke-width="2.400" stroke-linecap="round"/><text x="46" y="17.500" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="9" fill="#FFFDF5">Pix</text></g></svg>`,
+  // turmas: três pessoas em volta da mesma mesa
+  turmas: `<svg viewBox="0 0 180 120" aria-hidden="true"><ellipse cx="90" cy="82" rx="56" ry="22" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="2"/>
+    <g><circle cx="46" cy="46" r="12" fill="#2A8C99"/><path d="M26 82c1-14 9-20 20-20s19 6 20 20z" fill="#2A8C99"/></g><g><circle cx="134" cy="46" r="12" fill="#D9483B"/><path d="M114 82c1-14 9-20 20-20s19 6 20 20z" fill="#D9483B"/></g>
+    <g><circle cx="90" cy="34" r="13" fill="#2E8B5C"/><path d="M68 74c1-15 10-22 22-22s21 7 22 22z" fill="#2E8B5C"/></g>
+    <ellipse cx="90" cy="86" rx="46" ry="15" fill="var(--surface)" stroke="var(--line-2)" stroke-width="2"/><g transform="rotate(-8 90 86)"><rect x="78" y="76" width="24" height="20" rx="2" fill="#FFFDF5" stroke="var(--line-2)" stroke-width="1.500"/><path d="M83 82h14M83 87h14M83 92h8" stroke="#D3931A" stroke-width="2" stroke-linecap="round"/></g></svg>`,
+  // produtos: um cardápio com o preço de cada item e o alfinete do lugar
+  produtos: `<svg viewBox="0 0 180 120" aria-hidden="true"><g transform="rotate(-4 84 60)"><rect x="40" y="10" width="92" height="102" rx="8" fill="#FFFDF5" stroke="var(--line-2)" stroke-width="2"/><path d="M52 26h40" stroke="#24221C" stroke-width="4" stroke-linecap="round"/>
+    <g stroke-linecap="round" stroke-width="3"><path d="M52 46h34M52 64h28M52 82h36" stroke="var(--line-2)"/></g><g font-family="sans-serif" font-weight="700" font-size="9" fill="#FFFDF5"><rect x="96" y="38" width="28" height="15" rx="7.500" fill="#1D5A3B"/><text x="110" y="49" text-anchor="middle">12,00</text><rect x="96" y="56" width="28" height="15" rx="7.500" fill="#1D5A3B"/><text x="110" y="67" text-anchor="middle">8,50</text><rect x="96" y="74" width="28" height="15" rx="7.500" fill="#1D5A3B"/><text x="110" y="85" text-anchor="middle">42,00</text></g></g>
+    <g transform="translate(132 18)"><path d="M17 44S1 30 1 17a16 16 0 0 1 32 0c0 13-16 27-16 27z" fill="#F2B33D" stroke="#B97A0E" stroke-width="2"/><circle cx="17" cy="17" r="6" fill="#FFFDF5"/></g></svg>`,
+  // histórico: comandas guardadas, uma em cima da outra, com o relógio
+  historico: `<svg viewBox="0 0 180 120" aria-hidden="true"><g transform="rotate(-9 70 62)"><path d="M40 14h60v92l-7.500-6-7.500 6-7.500-6-7.500 6-7.500-6-7.500 6-7.500-6-7.500 6z" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="2"/></g>
+    <g transform="rotate(3 92 60)"><path d="M62 12h60v92l-7.500-6-7.500 6-7.500-6-7.500 6-7.500-6-7.500 6-7.500-6-7.500 6z" fill="#FFFDF5" stroke="var(--line-2)" stroke-width="2"/><path d="M72 28h40M72 42h40M72 56h40M72 70h22" stroke="#D3931A" stroke-width="3.400" stroke-linecap="round"/></g>
+    <g transform="translate(118 62)"><circle cx="22" cy="22" r="21" fill="#123F2A"/><circle cx="22" cy="22" r="14" fill="none" stroke="#FFFDF5" stroke-width="2.600"/><path d="M22 13v9l6 4" fill="none" stroke="#F2B33D" stroke-width="2.800" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`,
 };
 const primeiroNome = n => String(n || '').trim().split(/\s+/)[0] || '';
 const fmtDia = ts => new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
@@ -33,11 +74,11 @@ function novaComandaSheet() {
   const U = usage(), lugares = recentPlaces(U).slice(0, 5), turmas = [...(catalog.groups || [])].sort(ordemNome);
   let turma = '';
   openSheet({ title: 'Nova comanda', body: `<form id="nc-form" class="pilha" autocomplete="off">
-      <div class="field"><label for="nc-local">Onde vai ser?</label><input id="nc-local" type="text" autocapitalize="words" autocomplete="off" placeholder="Nome do bar ou restaurante" maxlength="80"></div>
+      <div class="field"><label for="nc-local">Onde vai ser?</label><input id="nc-local" type="text" autocapitalize="words" autocomplete="off" placeholder="Nome do restaurante ou do lugar" maxlength="80"></div>
       ${lugares.length ? `<div class="chips" role="group" aria-label="Lugares recentes">${lugares.map(l => `<button type="button" class="chip" data-nc-lugar="${esc(l.name)}">${I.pino}${esc(l.name)}</button>`).join('')}</div>` : ''}
       ${turmas.length ? `<div class="field"><span class="eyebrow" id="nc-t">Já pôr uma turma na mesa</span><div class="chips" role="group" aria-labelledby="nc-t">${turmas.map(g => `<button type="button" class="chip" data-nc-turma="${esc(g.id)}" aria-pressed="false">${I.users}${esc(g.name)} · ${g.members.length}</button>`).join('')}</div></div>` : ''}
     </form>`,
-    foot: `<button type="button" class="btn ghost" id="nc-no">Cancelar</button><button type="submit" form="nc-form" class="btn chopp">Abrir comanda</button>`,
+    foot: `<button type="button" class="btn ghost" id="nc-no">Cancelar</button><button type="submit" form="nc-form" class="btn ambar">Abrir comanda</button>`,
     onMount: s => {
       const inp = $('#nc-local', s);
       const abrir = lugar => { const g = (catalog.groups || []).find(x => x.id === turma); closeSheet(true); newBillAt(String(lugar || '').trim().replace(/\s+/g, ' '), g ? g.members : null); };
@@ -77,8 +118,8 @@ const viewInicio = {
     } else {
       papel = `<span class="mono ip-n">COMANDA Nº ${n}</span>
         <h1 class="ip-t"><label for="ini-local">Onde vai ser hoje?</label></h1>
-        <form id="ini-form" class="pilha" autocomplete="off"><input id="ini-local" type="text" autocapitalize="words" autocomplete="off" placeholder="Nome do bar" maxlength="80" data-keep>
-          <button type="submit" class="btn chopp bloco">Abrir comanda</button></form>
+        <form id="ini-form" class="pilha" autocomplete="off"><input id="ini-local" type="text" autocapitalize="words" autocomplete="off" placeholder="Nome do lugar" maxlength="80" data-keep>
+          <button type="submit" class="btn ambar bloco">Abrir comanda</button></form>
         ${lugares.length ? `<div class="chips ip-chips" role="group" aria-label="Voltar a um lugar">${lugares.map(l => `<button type="button" class="chip" data-ini-lugar="${esc(l.name)}">${I.pino}${esc(l.name)}</button>`).join('')}</div>` : ''}`;
     }
     const proxima = jogoLigado() ? TAMPINHAS.find(t => !s.ganhas.includes(t.id)) : null;
@@ -100,11 +141,11 @@ const viewInicio = {
         ${doMes.length ? `<p class="mes-linha">${usaEu ? 'Seu gasto' : 'Gasto'} neste mês: <b>${BRL(gastoMes)}</b> em ${plural(doMes.length, 'comanda', 'comandas')}.</p>` : ''}
         <ul class="tiras">${bills.slice(0, 6).map((b, i) => `<li>${tiraHTML(b, i)}</li>`).join('')}</ul>` : ''}
 
-      <div class="lista card lista-card">
-        ${d.isExample ? `<button type="button" class="lin" id="ini-ex-sair"><span class="lin-ic ambar">${I.exemplo}</span><span class="lin-tx"><b>Sair da comanda de exemplo</b><small>Nada do exemplo é salvo.</small></span>${I.next}</button>`
-          : `<button type="button" class="lin" id="ini-ex"><span class="lin-ic ambar">${I.exemplo}</span><span class="lin-tx"><b>Ver uma comanda de exemplo</b><small>Uma mesa pronta para mexer à vontade.</small></span>${I.next}</button>`}
-        <button type="button" class="lin" id="ini-guia"><span class="lin-ic">${I.livro}</span><span class="lin-tx"><b>Ver o guia</b><small>O app mostra cada passo na tela, como um vídeo.</small></span>${I.next}</button>
-      </div>`;
+      ${d.isExample ? `<div class="lista card lista-card"><button type="button" class="lin" id="ini-ex-sair"><span class="lin-ic ambar">${I.exemplo}</span><span class="lin-tx"><b>Sair da comanda de exemplo</b><small>Nada do exemplo é salvo.</small></span>${I.next}</button></div>`
+        : bills.length ? '' : `<div class="lista card lista-card">
+        <button type="button" class="lin" id="ini-ex"><span class="lin-ic ambar">${I.exemplo}</span><span class="lin-tx"><b>Ver uma comanda de exemplo</b><small>Uma mesa pronta para mexer à vontade.</small></span>${I.next}</button>
+        <button type="button" class="lin" id="ini-guia"><span class="lin-ic">${I.livro}</span><span class="lin-tx"><b>Ver o guia</b><small>O app faz cada passo na tela e explica.</small></span>${I.next}</button>
+      </div>`}`;
   },
   bind(v) {
     $('#ini-continuar', v)?.addEventListener('click', () => irPara('comanda'));
@@ -167,7 +208,7 @@ function retrospectivaHTML() {
 const viewHistorico = {
   html() {
     const cab = `<header class="tela-cab"><h1 class="tela-t">Histórico</h1><p class="tela-sub">As comandas que você salvou e para onde foi o dinheiro.</p></header>`;
-    if (!bills.length) return `${cab}<div class="card vazio">${ILU.papel}<b>Nenhuma comanda salva</b><p>Quando você fechar e salvar uma comanda, ela aparece aqui.</p><button type="button" class="btn chopp" id="hi-nova">Abrir uma comanda</button></div>`;
+    if (!bills.length) return `${cab}<div class="card vazio">${ILU.historico}<b>Nenhuma comanda salva</b><p>Quando você fechar e salvar uma comanda, ela aparece aqui.</p><button type="button" class="btn ambar" id="hi-nova">Abrir uma comanda</button></div>`;
     const grupos = []; bills.forEach(b => { const d = new Date(b.closedAt), k = d.getFullYear() * 12 + d.getMonth(); let g = grupos.find(x => x.k === k); if (!g) { g = { k, y: d.getFullYear(), m: d.getMonth(), L: [] }; grupos.push(g); } g.L.push(b); });
     return `${cab}${retrospectivaHTML()}
       <div class="sec-cab"><h2 class="sec-t">Comandas salvas</h2><span class="hint">${bills.length}</span></div>
@@ -275,12 +316,12 @@ const viewCadastros = {
       const ppl = [...catalog.people].sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name, 'pt-BR'));
       corpo = `${ppl.length ? `<div class="lista">${ppl.map(p => `<div class="lin">${avatar(p.name)}<span class="lin-tx"><b>${esc(p.name)}${norm(p.name) === norm(catalog.me) ? ' <span class="tag">você</span>' : ''}</b><small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(p.pix) : ''}</small></span>
           <button type="button" class="btn small ghost" data-pix-edit="${esc(p.name)}">${p.pix ? 'Pix' : '+ Pix'}</button><button type="button" class="ic-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>`
-        : `<div class="vazio">${ILU.mesa}<b>Nenhuma pessoa cadastrada</b><p>Quem entra numa comanda salva aparece aqui sozinho. Você também pode cadastrar antes, já com a chave Pix.</p></div>`}
+        : `<div class="vazio">${ILU.pessoas}<b>Nenhuma pessoa cadastrada</b><p>Quem entra numa comanda salva aparece aqui sozinho. Você também pode cadastrar antes, já com a chave Pix.</p></div>`}
         <button type="button" class="btn bloco" id="cad-pessoa">${I.plus}Nova pessoa</button>`;
     } else if (cadAba === 'turmas') {
       const gs = [...(catalog.groups || [])].sort(ordemNome);
       corpo = `${gs.length ? `<div class="lista">${gs.map(g => `<div class="lin"><span class="lin-ic">${I.users}</span><span class="lin-tx"><b>${esc(g.name)}</b><small>${esc(g.members.join(', '))}</small></span><button type="button" class="btn small ghost" data-turma-ed="${esc(g.id)}">Alterar</button><button type="button" class="ic-btn del" data-turma-del="${esc(g.id)}" aria-label="Excluir a turma ${esc(g.name)}">${I.trash}</button></div>`).join('')}</div>`
-        : `<div class="vazio">${ILU.mesa}<b>Nenhuma turma</b><p>Turma é quem sai junto: com um toque, todos entram na mesa.</p></div>`}
+        : `<div class="vazio">${ILU.turmas}<b>Nenhuma turma</b><p>Turma é quem sai junto: com um toque, todos entram na mesa.</p></div>`}
         <button type="button" class="btn bloco" id="cad-turma" ${catalog.people.length > 1 ? '' : 'disabled'}>${I.plus}Nova turma</button>${catalog.people.length > 1 ? '' : '<p class="hint centro">Cadastre ao menos duas pessoas para criar uma turma.</p>'}`;
     } else {
       const prods = [...catalog.products].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
@@ -289,7 +330,7 @@ const viewCadastros = {
         return `<div class="prod"><div class="prod-cab"><span class="lin-tx"><b>${esc(p.name)}</b><small>${used(pc(p))}</small></span><button type="button" class="ic-btn del" data-del-prod="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>
           ${entries.length ? entries.map(([k, e]) => `<div class="preco-lin"><label for="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">${esc(e.place)}</label><input type="text" inputmode="numeric" data-money value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}"><button type="button" class="ic-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar o preço de ${esc(p.name)} em ${esc(e.place)}">${I.x}</button></div>`).join('')
           : `<div class="preco-lin"><label for="pp-${i}-x" class="hint">Sem local</label><input type="text" inputmode="numeric" data-money value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" id="pp-${i}-x"><span></span></div>`}</div>`; }).join('')}</div>`
-        : `<div class="vazio">${ILU.papel}<b>Nenhum produto cadastrado</b><p>Os produtos e os preços de cada lugar entram aqui quando você salva uma comanda.</p></div>`;
+        : `<div class="vazio">${ILU.produtos}<b>Nenhum produto cadastrado</b><p>Os produtos e os preços de cada lugar entram aqui quando você salva uma comanda.</p></div>`;
     }
     return `<header class="tela-cab">${voltarMaisHTML()}<h1 class="tela-t">Cadastros</h1><p class="tela-sub">Pessoas, chaves Pix, turmas e o preço de cada produto em cada lugar.</p></header>
       <div class="seg cad-seg" role="group" aria-label="O que mostrar">${abas.map(([k, t, n]) => `<button type="button" data-cad="${k}" aria-pressed="${cadAba === k}">${t}${n ? ` <span class="seg-n">${n}</span>` : ''}</button>`).join('')}</div>
@@ -342,22 +383,17 @@ const viewMais = {
     return `<header class="tela-cab"><h1 class="tela-t">Mais</h1></header>
       <div class="card lista lista-card">
         ${lin('data-ir="cadastros"', I.users, 'Cadastros', `${plural(catalog.people.length, 'pessoa', 'pessoas')}, ${plural((catalog.groups || []).length, 'turma', 'turmas')} e ${plural(catalog.products.length, 'produto', 'produtos')}`)}
-        ${lin('data-kf="ajustes"', I.ajustes, 'Ajustes', 'Sincronização, aparência, privacidade e cópia de segurança')}
+        ${lin('id="ma-sorteio"', I.sorteio, 'Sortear alguém da mesa', 'Um ponteiro gira e para num nome')}
+        ${lin('data-kf="ajustes"', I.ajustes, 'Ajustes', 'Sincronização, aparência, privacidade e sobre o app')}
       </div>
       <div class="card lista lista-card">
-        ${lin('id="ma-guia"', I.livro, 'Ver o guia', 'O app mostra cada passo na tela')}
-        ${lin('id="ma-abertura"', I.sparkle, 'Rever a apresentação', 'As telas de boas-vindas')}
-        ${lin('id="ma-garrafa"', I.garrafa, 'Girar a garrafa', 'Sorteie alguém da mesa', 'ambar')}
-      </div>
-      <div class="card lista lista-card">
-        ${lin('data-kf="feedback"', I.estrela, 'Avaliar ou relatar um problema', 'Sua opinião chega direto ao criador')}
-        ${KitFacil.apoio.ativo() ? lin('data-kf="apoio"', I.presente, 'Mandar um presente para o criador', 'O app é gratuito. O presente é opcional, por Pix', 'ambar') : ''}
-        ${lin('data-kf="novidades"', I.receipt, 'Novidades', `Versão ${VERSAO}`)}
+        ${lin('id="ma-guia"', I.livro, 'Ver o guia', 'O app faz cada passo na tela e explica', 'ambar')}
+        ${lin('id="ma-exemplo"', I.exemplo, 'Abrir a comanda de exemplo', 'Uma mesa pronta para mexer à vontade', 'ambar')}
       </div>`;
   },
   bind(v) {
     $('#ma-guia', v).addEventListener('click', () => guiaIniciar());
-    $('#ma-abertura', v).addEventListener('click', () => aberturaAbrir({ rever: true }));
-    $('#ma-garrafa', v).addEventListener('click', () => garrafaSheet());
+    $('#ma-exemplo', v).addEventListener('click', () => enterExample());
+    $('#ma-sorteio', v).addEventListener('click', () => sorteioSheet());
   },
 };

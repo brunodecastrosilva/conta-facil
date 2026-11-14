@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.0.0';
+const VERSAO = '1.1.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -301,9 +301,11 @@ function diff(a, b) {
 }
 
 /* ---------- armazenamento ---------- */
+// durante o guia, a demonstração mexe em tudo à vontade e nada é gravado no aparelho
+let semSalvar = false;
 const LS = {
   get(k, def) { try { const v = localStorage.getItem('contafacil.' + k); return v ? JSON.parse(v) : def; } catch { return def; } },
-  set(k, v) { try { localStorage.setItem('contafacil.' + k, JSON.stringify(v)); } catch {} if (k === 'bills' || k === 'catalog') syncTocou(); },
+  set(k, v) { if (semSalvar) return; try { localStorage.setItem('contafacil.' + k, JSON.stringify(v)); } catch {} if (k === 'bills' || k === 'catalog') syncTocou(); },
 };
 // histórico, cadastros e comanda ficam neste aparelho; o Firebase só guarda as comandas ao vivo.
 // Com a sincronização ligada (Ajustes), histórico e cadastros também vão, criptografados, para um gist secreto do usuário.
@@ -515,15 +517,15 @@ window.addEventListener('pagehide', () => live.offline());
 
 /* ---------- estado ---------- */
 function exampleDraft() {
-  const d = blankDraft(); d.place = 'Boteco da Esquina'; d.isExample = true;
+  const d = blankDraft(); d.place = 'Cantina da Praça'; d.isExample = true;
   const [a, b, c, e] = ['Ana', 'Bruno', 'Carla', 'Diego'].map(newPerson);
   e.payService = false;
   d.people = [a, b, c, e];
   const all = Object.fromEntries(d.people.map(p => [p.id, 1]));
   d.items = [
-    { id: newId(), o: 1, name: 'Chopp 500 ml', qty: 11, price: 1290, fq: 1, mode: 'units', lk: true, a: { [a.id]: 4, [b.id]: 3, [c.id]: 2, [e.id]: 2 } },
+    { id: newId(), o: 1, name: 'Suco natural 500 ml', qty: 11, price: 1290, fq: 1, mode: 'units', lk: true, a: { [a.id]: 4, [b.id]: 3, [c.id]: 2, [e.id]: 2 } },
     { id: newId(), o: 2, name: 'Porção de batata com cheddar', qty: 1, price: 3800, fq: 0, mode: 'equal', lk: true, a: { [a.id]: 1, [b.id]: 1, [c.id]: 1 } },
-    { id: newId(), o: 3, name: 'Caipirinha de limão', qty: 2, price: 2200, fq: 0, mode: 'equal', lk: true, a: { [c.id]: 1 } },
+    { id: newId(), o: 3, name: 'Milk-shake', qty: 2, price: 2200, fq: 0, mode: 'equal', lk: true, a: { [c.id]: 1 } },
     { id: newId(), o: 4, name: 'Água com gás', qty: 1, price: 600, fq: 0, mode: 'equal', lk: true, a: { [e.id]: 1 } },
     { id: newId(), o: 5, name: 'Porção de calabresa', qty: 1, price: 4200, fq: 0, mode: 'equal', lk: false, a: { ...all } },
   ];
@@ -544,7 +546,7 @@ function enterExample(semGuia = false) {
 }
 function exitExample() {
   if (!draft.isExample) return;
-  KitFacil.guia.parar(); pending = {}; draft = loadRealDraft();
+  if (typeof guiaParar === 'function') guiaParar(); pending = {}; draft = loadRealDraft();
 }
 const fixCatalog = c => ({ me: '', people: [], products: [], groups: [], ...c, groups: Array.isArray(c?.groups) ? c.groups : [], products: (c?.products || []).map(p => ({ prices: {}, ...p })) });
 let catalog = fixCatalog(LS.get('catalog', {}));
@@ -581,6 +583,15 @@ function carimbarSync() {
   SNAP_SYNC = atual;
   if (mudou) SY.salvar();
   return mudou;
+}
+// Durante o guia, a tela mostra uma demonstração (dadosReais guarda o que é de verdade).
+// A sincronização continua trabalhando só com os dados reais: troca, faz o serviço e devolve a demonstração.
+let dadosReais = null;
+function comReais(fn) {
+  if (!dadosReais) return fn();
+  const demo = { bills, catalog }, era = semSalvar;
+  bills = dadosReais.bills; catalog = dadosReais.catalog; semSalvar = false;
+  try { return fn(); } finally { dadosReais.bills = bills; dadosReais.catalog = catalog; bills = demo.bills; catalog = demo.catalog; semSalvar = era; }
 }
 function syncTocou() { if (!SY || syncAplicando) return; if (carimbarSync() && SY.ligada()) SY.agendar(); }
 function pacoteSync(soDados) {
@@ -637,14 +648,22 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.1.0', itens: [
+    'Guia novo, do começo ao fim: segue a ordem de uso do app, numa janela fixa, com contagem antes de cada passo.',
+    'Tampinhas e presente em 3D: deslize o dedo para girar.',
+    'A comanda agora sai de dentro da impressora, e as animações ficaram mais naturais.',
+    'Ícones redesenhados no mesmo traço; os do alto da tela têm a mesma cor.',
+    'Barra de baixo mais baixa, colada ao pé da tela.',
+    'Mais enxuto: cada coisa num lugar só.',
+    'Ao lançar um item, quantidade e valor ficam lado a lado.',
+  ] },
   { versao: '1.0.0', itens: [
     'Conta Fácil de cara nova: a mesa é uma comanda só, de papel, montada em tempo real.',
     'Lançar um item cabe numa janela só: produto, quantidade, preço e quem consumiu.',
     'Fechar a comanda mostra os cupons um por vez, com a mesa primeiro, e salvar tem Desfazer.',
     'Marque quem já pagou: o total mostra quanto ainda falta.',
     'Tampinhas e níveis: uma coleção que cresce conforme você usa o app. Dá para desligar em Ajustes.',
-    'Girar a garrafa: sorteie alguém da mesa.',
-    'Nova apresentação na primeira abertura e guia refeito.',
+    'Nova apresentação na primeira abertura.',
   ] },
 ];
 // quem chega à 1.0 (novo ou vindo de outra versão) vê a abertura do app; as novidades do Kit ficam para as próximas versões
@@ -652,17 +671,12 @@ const ABERTURA_VISTA = LS.get('abertura', '');
 if (ABERTURA_VISTA !== '1') { try { localStorage.setItem('kitfacil.conta-facil.visto', JSON.stringify(VERSAO)); } catch {} }
 KitFacil.iniciar({
   app: 'conta-facil', nome: 'Conta Fácil', versao: VERSAO, icone: 'icons/icon-192.png',
-  resumo: 'Divide a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.',
+  resumo: 'Divide a comanda da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.',
   tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
   novidades: [...NOVIDADES],
-  ocupado: () => typeof aberturaAtiva === 'function' && aberturaAtiva(),
-  guia: { modo: 'video', nome: 'Ver o guia', get passos() { return typeof GUIA === 'undefined' ? [] : GUIA; },
-    preparar: () => { if (draft.live) return; pending = {}; itPend = {}; draft = { ...blankDraft(), isExample: true, active: false }; tab = 'inicio'; render(); window.scrollTo({ top: 0 }); },
-    foto: () => JSON.stringify({ draft, pending, tab }),
-    restaurar: f => { const o = JSON.parse(f); closeSheet(true); if (tab === 'ajustes') sairDosAjustes(); pickSel = null; selPay = null; itPend = {}; pesAberto = null; itemAberto = null; draft = o.draft; pending = o.pending; tab = o.tab; render(); window.scrollTo({ top: 0 }); },
-    ocupado: () => draft.isExample && !!draft.live, fim: () => guiaFim() },
+  ocupado: () => (typeof aberturaAtiva === 'function' && aberturaAtiva()) || (typeof guiaAtivo === 'function' && guiaAtivo()),
   copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
     'As comandas, o histórico, os cadastros (nomes, chaves Pix e preços por local) e as tampinhas ficam guardados neste aparelho.',
@@ -674,10 +688,10 @@ SY = KitFacil.sync.criar({
   app: 'conta-facil', nome: 'Conta Fácil', chave: 'contafacil.sync',
   dados: 'o histórico de comandas e os cadastros (pessoas, chaves Pix e preços)',
   observacao: 'A comanda aberta fica neste aparelho. Para dividir a mesma comanda entre celulares, use a comanda ao vivo.',
-  carimbar: carimbarSync, aplicar: aplicarSync, pacote: () => pacoteSync(false),
+  carimbar: () => comReais(carimbarSync), aplicar: R => comReais(() => aplicarSync(R)), pacote: () => comReais(() => pacoteSync(false)),
   mesmo: (a, r) => KitFacil.canon(a) === KitFacil.canon({ v: r.v, bills: r.bills, people: r.people, products: r.products, me: r.me ?? '', st: r.st, del: r.del }),
   redesenhar: () => render({ preserve: true }),
-  ocupado: () => KitFacil.dialogo.aberto() || isField(document.activeElement) || KitFacil.guia.ativo() || (typeof aberturaAtiva === 'function' && aberturaAtiva()),
+  ocupado: () => KitFacil.dialogo.aberto() || isField(document.activeElement) || (typeof guiaAtivo === 'function' && guiaAtivo()) || (typeof aberturaAtiva === 'function' && aberturaAtiva()),
   textoLigada: () => `Sincronização ligada. ${plural(bills.length, 'comanda salva', 'comandas salvas')} neste aparelho.`,
 });
 SNAP_SYNC = registrosSync();
@@ -1407,7 +1421,7 @@ function resetSheet() {
   const inHistory = bills.some(b => b.id === d.id);
   openSheet({ title: 'Limpar ou excluir comanda', body: `<p class="hint" style="font-size:15px">${d.savedAt ? 'Esta comanda já está no histórico, que não será alterado.' : 'Esta comanda ainda não foi salva no histórico.'}${d.live ? ' A mudança também aparece para quem está na comanda ao vivo.' : ''}</p>
     <div class="reset-opts">
-      <button class="reset-opt" id="rs-items"><b>Limpar os itens</b><span>Mantém o local e as pessoas da comanda. Bom para começar uma nova rodada.</span></button>
+      <button class="reset-opt" id="rs-items"><b>Limpar os itens</b><span>Mantém o local e as pessoas da comanda. Bom para recomeçar os pedidos.</span></button>
       <button class="reset-opt" id="rs-all"><b>Recomeçar do zero</b><span>Apaga o local, as pessoas e os itens, mas mantém a comanda aberta.</span></button>
       <button class="reset-opt danger" id="rs-del"><b>Excluir comanda</b><span>${inHistory ? 'Encerra a comanda e apaga ela também do histórico.' : 'Encerra e descarta a comanda. Você volta para a tela inicial.'}</span></button>
     </div>`, foot: `<button class="btn ghost" id="rs-no">Cancelar</button>`, onMount: s => {
@@ -1719,7 +1733,7 @@ function pessoaNovaSheet() {
 }
 function localSheet() {
   const d = draft;
-  openSheet({ title: 'Nome do local', body: `<form id="lo-form" autocomplete="off"><div class="field"><label for="lo-nome">Local</label><input id="lo-nome" type="text" autocapitalize="words" autocomplete="off" placeholder="Ex.: Boteco do Zé" value="${esc(d.place)}"></div></form>`,
+  openSheet({ title: 'Nome do local', body: `<form id="lo-form" autocomplete="off"><div class="field"><label for="lo-nome">Local</label><input id="lo-nome" type="text" autocapitalize="words" autocomplete="off" placeholder="Ex.: Cantina da Praça" value="${esc(d.place)}"></div></form>`,
     foot: `<button type="button" class="btn ghost" id="lo-no">Cancelar</button><button type="submit" form="lo-form" class="btn">${I.save}Salvar</button>`, onMount: s => {
       const inp = $('#lo-nome', s);
       const salvar = v => { d.place = String(v || '').trim().replace(/\s+/g, ' '); closeSheet(true); commit(); };
@@ -1733,9 +1747,9 @@ function localSheet() {
 function produtoSheet(paraId, ed) {
   const d = draft, Uu = usage(), para = !ed && paraId && d.people.find(p => p.id === paraId);
   openSheet({ title: ed ? `Alterar ${ed.name}` : para ? `Lançar para ${para.name}` : 'Lançar item', tall: !para && d.people.length > 1, body: `<form id="pr-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
-      <div class="field"><label for="pr-nome">Produto</label><input id="pr-nome" type="text" autocapitalize="words" autocomplete="off" placeholder="Ex.: Chopp 500 ml" value="${ed ? esc(ed.name) : ''}"></div>
-      <div class="row"><div class="field"><label for="pr-qtd">Quantidade</label><div class="stepper"><button type="button" data-pr-step="-1" aria-label="Menos">−</button><input id="pr-qtd" type="number" min="1" step="1" inputmode="numeric" value="${ed ? ed.qty : 1}"><button type="button" data-pr-step="1" aria-label="Mais">+</button></div></div>
-        <div class="field grow"><label for="pr-preco">Valor unitário (R$)</label><input id="pr-preco" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${ed ? moneyInput(ed.price) : ''}"></div></div>
+      <div class="field"><label for="pr-nome">Produto</label><input id="pr-nome" type="text" autocapitalize="words" autocomplete="off" placeholder="Ex.: Suco de laranja" value="${ed ? esc(ed.name) : ''}"></div>
+      <div class="row lado"><div class="field"><label for="pr-qtd">Quantidade</label><div class="stepper"><button type="button" data-pr-step="-1" aria-label="Menos">−</button><input id="pr-qtd" type="number" min="1" step="1" inputmode="numeric" value="${ed ? ed.qty : 1}"><button type="button" data-pr-step="1" aria-label="Mais">+</button></div></div>
+        <div class="field grow"><label for="pr-preco">Valor unitário</label><input id="pr-preco" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${ed ? moneyInput(ed.price) : ''}"></div></div>
       <p class="price-hint" id="pr-dica" hidden></p>${!para && d.people.length > 1 ? divisaoHTML(d) : ''}</form>`,
     foot: `<button type="button" class="btn ghost" id="pr-no">Cancelar</button><button type="submit" form="pr-form" class="btn" id="lc-ok">${ed ? `${I.save}Salvar alteração` : `${I.plus}Lançar`}</button>`, onMount: s => {
       const nomeEl = $('#pr-nome', s), precoEl = $('#pr-preco', s), qtdEl = $('#pr-qtd', s), dica = $('#pr-dica', s);
@@ -2105,7 +2119,7 @@ const viewComanda = {
     const nm = id => calc.per[id].person.name, falta = faltaReceber(d, calc);
     const num = pid => String(d.people.findIndex(p => p.id === pid) + 1).padStart(2, '0');
     const brl = v => BRL(v).replace('R$', '').trim();
-    // o que a pessoa consumiu, em linhas curtas de cupom: "3× Chopp", "1/3 Porção"
+    // o que a pessoa consumiu, em linhas curtas de cupom: "3× Suco", "1/3 Porção"
     const linhas = pid => calc.per[pid].lines.slice().sort((x, y) => y.value - x.value).map(l => ({
       q: l.mode === 'units' ? l.units + '×' : l.n > 1 ? (l.uneq ? l.parts + '/' + l.totalParts : '1/' + l.n) : l.qty + '×', t: l.name, v: l.value }));
     const lista = pid => { const L = linhas(pid); if (!L.length) return '<span class="mc-vazio">nada ainda</span>';

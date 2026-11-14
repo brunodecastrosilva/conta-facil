@@ -3,6 +3,22 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.1.0 · 2026-11-14
+
+Ajustes pedidos pelo Bruno depois de usar a 1.0.0 no iPhone.
+
+- **Guia refeito do zero:** é do próprio app e segue a ordem de uso, sem saltos: abrir a comanda, pôr as pessoas, lançar (entre todos, individual, entre alguns), conferir, atalhos da pessoa, juntar, marcar pago, conta da mesa, comanda ao vivo, fechar, cupons, salvar, tampinhas, histórico, cadastros, sorteio, ajustes, ícones do alto e presente. A janela do guia fica num espaço só dela, acima da barra de baixo: não cobre nada e não muda de lugar. Antes de cada passo ela pisca e a moldura se esvazia no sentido do relógio. Dá para pausar, voltar, pular e sair.
+- **A demonstração do guia não grava nada:** começa do zero na tela e, ao sair, os dados voltam como estavam; a sincronização continua trabalhando só com os dados reais.
+- **Tampinhas em 3D:** cada tampinha é um objeto com esmalte, gomos e avesso de metal. Deslize o dedo de lado para girar (ou use as setas do teclado).
+- **Presente novo:** caixa em 3D com laço, que também gira com o dedo. Na barra de cima, o presente é um ícone de traço.
+- **Ícones redesenhados:** todos no mesmo traço. Os três do alto da tela têm a mesma cor.
+- **Animações:** a comanda sai de dentro da fenda da impressora, aos trancos, e balança ao parar; a tampinha nova cai girando e para de frente.
+- **Barra de baixo:** colada ao pé da tela e mais baixa.
+- **Mais enxuto:** Cadastros, Sortear, Ajustes, Ver o guia e a comanda de exemplo. Avaliação, presente e novidades ficam no alto da tela e em Sobre o aplicativo; "Rever a apresentação" fica só nos Ajustes.
+- **Ilustrações:** as telas vazias de Pessoas, Turmas, Produtos e Histórico mostram a coisa de que tratam.
+- **Lançar item:** quantidade e valor lado a lado.
+- **Sem bebida alcoólica:** exemplos, textos e nomes trocados; "Girar a garrafa" virou "Sortear alguém da mesa", com um ponteiro. Um teste confere.
+
 ## 1.0.0 · 2026-11-14
 
 Conta Fácil refeito, pronto para a publicação oficial. O motor das contas, o Pix, a comanda ao vivo e a sincronização são os mesmos da 0.5.0; os dados de quem já usa o app continuam valendo.
