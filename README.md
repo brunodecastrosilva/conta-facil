@@ -123,7 +123,7 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 | Arts. 82, 84, 85 e 87 (perguntar antes, opções com desenho, textos só com "sim") | decisões de desenho e de texto tomadas sem perguntar | pedido de liberdade criativa total |
 | Anexo VII (testes comuns da moldura) | `npm test` roda os testes do Kit e os do app; a varredura de acessibilidade do Kit foi trocada por `tests/acessibilidade.test.mjs` | a varredura do Kit procura os Ajustes na barra do Kit, que mudou |
 | Regras, Art. 5º, parágrafo único (item novo no topo) | o item novo entra no fim da lista | fica ao lado do botão de lançar, como no Laboratório |
-| Regras, Arts. 6º e 7º (telas Fechar e Pagamento) | Fechar faz parte da comanda; o pagamento fica nos atalhos de cada pessoa e na conta da mesa | conceito do Laboratório: uma folha só |
+| Regras, Arts. 6º e 7º (telas Fechar e Pagamento) | Fechar faz parte da comanda (uma janela com os cupons); marcar como pago fica nessa janela, no cupom de cada pessoa, e só existe depois de fechar; quem paga por todos fica na conta da mesa | conceito do Laboratório: uma folha só; pago só depois de fechar foi pedido do Bruno em 14/11/2026 |
 
 Continuam valendo, sem exceção: gratuidade (Art. 12), convite de apoio (Art. 13), português do Brasil (Art. 14), acessibilidade
 (Art. 16), repositório sem segredos e sem build (Arts. 19 e 21), dados no aparelho e sincronização opcional (Arts. 32 a 37),
