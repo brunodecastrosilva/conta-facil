@@ -3,6 +3,13 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.5.0 · 2026-11-14
+
+- **Janelas num movimento só:** no iPhone, a janela nascia embaixo, saltava para cima do teclado num quadro, passava do ponto e voltava. Havia três coisas mexendo nela ao mesmo tempo, todas do Kit: a entrada (sobe 28 px), o reposicionamento quando o teclado abre e um deslize a cada mudança de altura. Agora o app cuida sozinho da posição da janela, numa conta só (pé da tela, menos o guia, menos o teclado), e toda mudança é uma transição: a janela nasce abaixo da tela e sobe; se o teclado abre no meio do caminho, ela continua até o novo lugar, sem saltar nem voltar. Fechar o teclado desce a janela do mesmo jeito.
+- **Uma janela no lugar de outra:** a tela não escurece de novo e a janela nova parte da altura da anterior.
+- **Teclado numérico:** a barra própria de OK foi retirada. Ela repetia a tecla de concluir que o teclado do aparelho já mostra, e obrigava a janela a mudar de tamanho mais uma vez.
+- **Limpeza:** as regras de janela, teclado e guia, que estavam espalhadas em seis trechos, viraram uma seção só no estilo e um módulo só no código; saíram funções, variáveis e estilos que sobraram de telas retiradas (Detalhes antigo, "paga tudo" antigo, limpar comanda).
+
 ## 1.4.0 · 2026-11-14
 
 - **Uma pessoa paga a conta de todos:** saiu da Conta da mesa e foi para **Fechar a comanda**, embaixo do cupom da mesa. Não junta mais ninguém: cada pessoa continua com o seu cupom, que passa a dizer "Paga para Fulano"; o cupom da mesa lista quem paga a conta e quanto cada um deve. "Cada um paga o seu" desfaz.

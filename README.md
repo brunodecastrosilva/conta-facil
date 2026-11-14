@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.4.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.5.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). A versão 1.0 foi refeita com liberdade
 para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porquê está em [Exceções ao padrão](#exceções-ao-padrão).
@@ -110,6 +110,7 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 | Art. 66 (uma cor de botão principal) | verde para a ação principal e âmbar para abrir comanda e sortear | o âmbar marca o começo da comanda e dá identidade; os dois têm contraste AA |
 | Art. 67 (nada lado a lado) | tiras das últimas comandas, grade de tampinhas e três pódios lado a lado no computador | são coleções para ver de relance, não dados para comparar linha a linha |
 | Art. 68 (janelas e avisos só do Kit) | a abertura e a festa de fechamento são telas cheias do app | momentos de marca, com animação própria; foco preso, Esc e leitor de tela tratados |
+| Arts. 68 e 72 e Art. 16, IX (janelas, movimento e teclado pelo Kit) | o app cuida sozinho da posição e do movimento das janelas (nascer, acompanhar o teclado, mudar de altura, trocar); o deslize do Kit e o que ele faz com o teclado ficam sem efeito no celular; a pasta `comum/` não foi alterada | pedido do Bruno em 14/11/2026: os três movimentos do Kit se somavam e a janela saltava no iPhone; quando houver conflito, o Kit não é prioridade |
 | Art. 72 (movimento só do Kit) | impressora, tampinha e presente em 3D, confete, carimbo e ponteiro do sorteio têm animação própria | pedido de app interativo e gamificado; movimento reduzido é respeitado em todas |
 | Arts. 75 e 76 (sem tela de primeiro uso; janela a cada abertura) | abertura de quatro telas, uma vez só, com Pular | pedido expresso de um onboarding; a janela a cada abertura cansava |
 | Arts. 77 a 79 (guia em dois níveis, do Kit) e Regras, Art. 13 | um guia só, do próprio app (não usa o guia do Kit): janela fixa num espaço só dela, acima da barra de baixo; antes de cada passo ela pisca e a moldura se esvazia como um relógio; 36 passos seguidos, na ordem de uso, cada um executando a função na demonstração | pedido do Bruno em 14/11/2026: a janela do Kit ficava sobre o conteúdo e mudava de lugar |

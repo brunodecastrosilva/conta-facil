@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.4.0';
+const VERSAO = '1.5.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -535,7 +535,7 @@ function exampleDraft() {
   return d;
 }
 // a comanda de exemplo nunca é gravada: a comanda real continua guardada e volta ao sair do exemplo
-const loadRealDraft = () => { const d = semPagadorUnico(migrate(LS.get('draft', null) || blankDraft())); return d.isExample ? blankDraft() : d; };
+const loadRealDraft = () => { const d = migrate(LS.get('draft', null) || blankDraft()); return d.isExample ? blankDraft() : d; };
 let draft = loadRealDraft();
 const saveDraft = () => { if (!draft.isExample) LS.set('draft', draft); };
 function enterExample(semGuia = false) {
@@ -648,6 +648,11 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.5.0', itens: [
+    'As janelas nascem do pé da tela e sobem num movimento só, mesmo quando o teclado abre junto: sem saltar nem voltar.',
+    'Ao abrir e fechar o teclado, a janela acompanha com suavidade.',
+    'Saiu a barra própria de OK do teclado numérico: o teclado do aparelho já tem a tecla de concluir.',
+  ] },
   { versao: '1.4.0', itens: [
     'Uma pessoa paga a conta de todos agora fica em Fechar a comanda, e cada um continua com o seu cupom.',
     'Pagar outro valor também foi para Fechar a comanda, no cupom de cada pessoa.',
@@ -748,11 +753,6 @@ function commit(opts = {}) {
 
 /* ---------- teclado no celular ---------- */
 const isTouch = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch { return false; } })();
-// no celular o teclado fecha depois de lançar; no computador o cursor volta para o campo
-function afterSubmit(sel) {
-  if (isTouch) { document.activeElement?.blur?.(); return; }
-  setTimeout(() => $(sel)?.focus({ preventScroll: true }), 0);
-}
 /* 1.0: o item recém-lançado entra no fim da lista; a tela rola até ele, no movimento do Kit, e ele pisca uma vez */
 let itemNovo = null;
 function mostrarItemNovo() {
@@ -1479,7 +1479,7 @@ function deleteCurrent(ask) {
     if (backup.bill) { bills = bills.filter(b => b.id !== d.id); store.deleteBill(d.id); }
     draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 });
     toast('Comanda excluída.', { label: 'Desfazer', run: () => {
-      draft = semPagadorUnico(migrate(backup.draft)); draft.active = true; draft.live = null;
+      draft = migrate(backup.draft); draft.active = true; draft.live = null;
       if (backup.bill) { bills = [backup.bill, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(backup.bill); }
       tab = 'comanda'; saveDraft(); render(); window.scrollTo({ top: 0 });
     } });
@@ -1501,8 +1501,6 @@ function newBillAt(place, people) {
 
 /* ---------- aba Início ---------- */
 let pending = {};
-function pendingFor(it) { return pending[it.id] || null; }
-function stage(it) { if (!pending[it.id]) pending[it.id] = { a: { ...it.a }, qty: it.qty }; return pending[it.id]; }
 function pendingDirty(it) { const p = pending[it.id]; if (!p) return false; return p.qty !== it.qty || JSON.stringify(Object.entries(p.a).filter(([, v]) => v > 0).sort()) !== JSON.stringify(Object.entries(it.a).filter(([, v]) => v > 0).sort()); }
 
 // item selecionado: mostra Alterar e Remover
@@ -1676,21 +1674,9 @@ function itemFechadoHTML(it, d) {
 }
 // movimento do Kit (Anexo V); quem pede movimento reduzido vê a troca direta
 const MV = () => { const m = window.KitFacil?.movimento; return { ms: m?.ms || 560, css: m?.css || 'cubic-bezier(.45,0,.2,1)', off: !!(m?.reduzido ? m.reduzido() : matchMedia('(prefers-reduced-motion: reduce)').matches) }; };
-// O Kit desliza a janela (240 ms) cada vez que ela muda de altura. Quando é o app que anima a altura, quadro a quadro,
-// o Kit somava um deslize novo a cada quadro e a janela tremia para cima e para baixo. Enquanto o app anima, o deslize
-// do Kit fica desligado nessa janela (ele mesmo pula quando a janela não tem `animate`).
-function semDeslizeDoKit(el, ms) {
-  const dlg = el && el.closest && el.closest('.kf-dlg'); if (!dlg) return;
-  dlg.animate = null; clearTimeout(dlg._cfDeslize); dlg._cfDeslize = setTimeout(() => { delete dlg.animate; }, ms + 140);
-}
-// abre ou fecha um painel animando a altura, como as seções do Kit
-function animarAltura(el, de, para, fim) {
-  const m = MV(); if (m.off || !el.animate) { fim?.(); return; }
-  semDeslizeDoKit(el, m.ms);
-  el.style.overflow = 'hidden';
-  const a = el.animate([{ height: de + 'px', opacity: de ? 1 : 0 }, { height: para + 'px', opacity: para ? 1 : 0 }], { duration: m.ms, easing: m.css });
-  a.onfinish = a.oncancel = () => { el.style.overflow = ''; fim?.(); };
-}
+// Enquanto o app anima a altura de um trecho de uma janela, avisa o mecanismo das janelas (casca.js) para não deslizar
+// a janela por cima: a altura já está mudando quadro a quadro.
+function alturaPorContaDoApp(el, ms) { if (el && el.closest && el.closest('.kf-dlg') && window.cfJanelaOcupada) window.cfJanelaOcupada(ms); }
 // atalhos de uma pessoa (ou de um cupom compartilhado), abertos ao tocar no nome
 function atalhosPessoaHTML(u, calc, d) {
   const aqui = pesAberto === u.id, juntando = aqui && pesJuntando, svcAberto = aqui && pesSvc, cvAberto = aqui && pesCv;
@@ -1857,7 +1843,6 @@ function produtoSheet(paraId, ed) {
    d.pagos[id da pessoa] = { v: centavos pagos, t: quando }. O valor pago fica guardado. Se a conta da pessoa mudar depois
    (item novo, desconto, serviço, alguém que entrou na divisão), o app mostra a diferença: falta receber ou há troco a devolver.
    (Até a 1.1 só se guardava "pago": esses registros valem pelo valor da conta e passam a guardar o valor na primeira tela.) */
-const pagoDe = (d, ids) => ids.length > 0 && ids.every(id => d.pagos && d.pagos[id]);
 const algumPago = d => !!d.pagos && Object.keys(d.pagos).length > 0;
 const valorPago = (d, id, c) => { const x = d.pagos && d.pagos[id]; return !x ? 0 : x === true ? (c.per[id] ? c.per[id].total : 0) : (x.v || 0); };
 function fixarPagos(d, c) { if (d.pagos) for (const id in d.pagos) { if (!c.per[id]) delete d.pagos[id]; else if (d.pagos[id] === true) d.pagos[id] = { v: c.per[id].total, t: 0 }; } }
@@ -1917,7 +1902,7 @@ function comMovimento(raiz, redesenhar) {
   if (!raiz || !raiz.animate || (typeof semMovimento === 'function' && semMovimento())) { redesenhar(); return; }
   const marca = el => el.id ? '#' + CSS.escape(el.id) : el.dataset.pa ? `[data-pa="${CSS.escape(el.dataset.pa)}"]` : el.dataset.item ? `[data-item="${CSS.escape(el.dataset.item)}"]` : el.dataset.pes ? `[data-pes="${CSS.escape(el.dataset.pes)}"]` : '';
   const caminho = el => { const seg = []; for (let p = el; p && p !== raiz; p = p.parentElement) { const m = marca(p); if (m) { seg.unshift(m); return seg.join(' > '); } seg.unshift(`:nth-child(${[...p.parentElement.children].indexOf(p) + 1})`); } return seg.length ? ':scope > ' + seg.join(' > ') : ''; };
-  semDeslizeDoKit(raiz, MOV_EXP.duration);
+  alturaPorContaDoApp(raiz, MOV_EXP.duration);
   const antes = new Map(), alturas = new Map();
   raiz.querySelectorAll('[data-exp]').forEach(e => { if (e.offsetHeight) antes.set(e.dataset.exp, { clone: e.cloneNode(true), pai: caminho(e.parentElement), i: [...e.parentElement.children].indexOf(e) }); });
   raiz.querySelectorAll('[data-morf]').forEach(e => alturas.set(e.dataset.morf, e.offsetHeight));
@@ -2149,7 +2134,7 @@ function fecharSheet(abrirEm = 0) {
       let i = 0, arr = null, cAt = c; // cAt: a conta mais recente (muda quando alguém é marcado como pago aqui dentro)
       const W = () => jan.clientWidth, n = slides.length;
       const pos = (x, anim) => { const m = MV(); tr.style.transition = anim && !m.off ? `transform ${Math.round(m.ms * .7)}ms ${m.css}` : 'none'; tr.style.transform = `translate3d(${x}px,0,0)`; };
-      const altura = anim => { const m = MV(), h = els[i].offsetHeight; if (Math.abs(h - jan.offsetHeight) < 1) return; if (anim && !m.off) semDeslizeDoKit(jan, m.ms); jan.style.transition = anim && !m.off ? `height ${m.ms}ms ${m.css}` : 'none'; jan.style.height = h + 'px'; };
+      const altura = anim => { const m = MV(), h = els[i].offsetHeight; if (Math.abs(h - jan.offsetHeight) < 1) return; if (anim && !m.off) alturaPorContaDoApp(jan, m.ms); jan.style.transition = anim && !m.off ? `height ${m.ms}ms ${m.css}` : 'none'; jan.style.height = h + 'px'; };
       const mostrar = anim => { cont.textContent = `${i + 1} de ${n} · ${slides[i].nome}`; pts.forEach((p, k) => p.classList.toggle('on', k === i)); $('#fc-ant', s).disabled = i === 0; $('#fc-prox', s).disabled = i === n - 1; els.forEach((e, k) => e.setAttribute('aria-hidden', k === i ? 'false' : 'true')); altura(anim); };
       const X = k => -(els[k]?.offsetLeft || 0);
       const ir = k => { i = Math.max(0, Math.min(n - 1, k)); pos(X(i), true); mostrar(true); };
@@ -2437,20 +2422,6 @@ const viewComanda = {
   },
 };
 
-// quadro de grupos: arraste uma pessoa sobre outra, ou toque no cartão e em Juntar com…
-let pickSel = null;
-// cartão de pagamento selecionado: mostra Pagar outro valor e Juntar com…
-let selPay = null;
-const openAdj = new Set();
-// ajustes ligados, na ordem em que foram ligados: cada novo entra logo acima dos botões, onde a pessoa tocou
-const ADJ = ['cv', 'ds', 'fq'];
-let adjFresh = null;
-function adjActive(d, c) {
-  const on = { cv: !!d.couvert.enabled, ds: !!d.discount.enabled, fq: !!(c.freeValue || openAdj.has('fq')) };
-  const ord = (d.adjOrder || []).filter(k => on[k]);
-  ADJ.forEach(k => { if (on[k] && !ord.includes(k)) ord.push(k); });
-  return { on, ord };
-}
 // quem passa a não pagar perde o valor personalizado e o "quem cobre a diferença"
 function dropCustom(d, pid) {
   if (d.custom) delete d.custom[pid];
@@ -2482,7 +2453,7 @@ const drag = { pend: null, timer: 0, on: null, x: 0, y: 0, ghost: null, over: nu
 function dragSource(el) {
   // as linhas com chave também levantam o cartão; só a chave e os botões ficam de fora
   if (!el.closest || el.closest('button, input, select, textarea, a, .switch, label:not(.prow)')) return null;
-  const box = el.closest('#groups-card [data-unit]'); if (!box || pickSel) return null;
+  const box = el.closest('#groups-card [data-unit]'); if (!box) return null;
   const c = compute(draft), u = c.U[box.dataset.unit]; if (!u) return null;
   const multi = u.members.length > 1;
   // num cupom compartilhado, segurar a parte de uma pessoa leva só ela; segurar o topo leva o grupo todo
@@ -2564,7 +2535,7 @@ function dragEnd(drop) {
   const aplicar = () => {
     $$('.drop-on').forEach(x => x.classList.remove('drop-on')); $$('.lifting').forEach(x => x.classList.remove('lifting'));
     if (!t) return;
-    const d = draft, to = t.dataset.drop; pickSel = null; selPay = null;
+    const d = draft, to = t.dataset.drop;
     if (to === 'out') { if (!p.group) return; p.pids.forEach(pid => leaveGroup(d, pid)); commit(); toast(p.whole ? 'Grupo desfeito.' : 'Saiu do grupo.'); return; }
     let dest = to, changed = false;
     p.pids.forEach(pid => { if (joinGroup(d, pid, dest)) { changed = true; const gid = c_groupOf(d, pid); if (gid) dest = 'g:' + gid; } });
@@ -2600,8 +2571,6 @@ window.addEventListener('blur', () => drag.on && dragEnd(false));
 /* 1.4: "Uma pessoa paga a conta de todos" fica em Fechar a comanda e não junta ninguém: cada um continua com o seu
    cupom, que passa a dizer quanto pagar a quem pagou a conta */
 function pagaTodos(d, pid) { d.payMode = pid ? 'single' : 'none'; d.payer = pid || ''; if (pid && d.custom) delete d.custom[pid]; }
-function semPagadorUnico(d) { return d; }
-let svcMais = false; // "Mudar" na taxa de serviço: mostra % ou R$
 /* 1.13: quem não paga o serviço. A pergunta aparece numa janela na hora em que o serviço é desligado na pessoa
    (antes surgia lá no alto, em Taxa de serviço, sem aviso) */
 function politicaSheet(d, p) {
@@ -2672,7 +2641,7 @@ async function restaurarCopiaConta(f) {
       store.saveBill(); store.saveCatalog();
       const real = draft.isExample ? loadRealDraft() : draft;
       let extra = '';
-      if (d.draft && !real.active && !draft.live && !draft.isExample) { draft = semPagadorUnico(migrate(d.draft)); saveDraft(); extra = ' A comanda que estava aberta também voltou.'; }
+      if (d.draft && !real.active && !draft.live && !draft.isExample) { draft = migrate(d.draft); saveDraft(); extra = ' A comanda que estava aberta também voltou.'; }
       render(); toast('Cópia restaurada.' + extra);
     } });
 }

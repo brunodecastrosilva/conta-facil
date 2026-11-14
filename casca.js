@@ -8,7 +8,7 @@ function irPara(t, { topo = true } = {}) {
   if (t === 'ajustes') { abrirAjustes(); return; }
   sairDosAjustes();
   closeSheet(true);
-  tab = t; pickSel = null; selPay = null;
+  tab = t;
   render({ anchor: false });
   if (topo) window.scrollTo({ top: 0 });
 }
@@ -115,76 +115,114 @@ const viewAjustes = {
   },
 };
 
-/* ---------- iPhone: tocar num campo dentro de uma janela não empurra a tela ----------
-   Ao focar um campo, o Safari desloca a tela inteira para "mostrar" o campo, mesmo quando ele já está à vista: a janela
-   subia para fora da tela, o Kit corrigia um instante depois e ela descia de novo (o tranco ao abrir o teclado).
-   A saída conhecida: o app mesmo dá o foco, com o campo deslocado para o alto só naquele instante; o Safari acha que
-   não há o que mostrar e não mexe na tela. Depois que o teclado sobe, o campo é trazido à vista dentro da janela. */
+/* ---------- janelas: um mecanismo só para nascer, acompanhar o teclado, mudar de altura e trocar ----------
+   O desenho está na seção 17 do estilo.css: a posição da janela é uma conta só (pé da tela − guia − teclado) e toda
+   mudança é uma transição. Aqui ficam as três coisas que o CSS não faz sozinho:
+   1. medir o teclado (--cf-tk), pela área visível que o navegador informa;
+   2. fazer a janela nascer abaixo da tela (e, quando uma janela troca de lugar com outra, partir da altura da anterior);
+   3. quando o conteúdo muda de altura de uma vez (uma linha que entra, um aviso), deslizar até o novo lugar.
+   O deslize do Kit fica desligado em todas as janelas: ele somava um movimento a cada quadro e a janela tremia. */
 (() => {
-  const ios = () => window.CF_TESTE_IOS || /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const campo = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]):not([type=file]), textarea') && !el.disabled && !el.readOnly && el.closest('.kf-ov');
-  const vv = window.visualViewport;
+  const html = document.documentElement, vv = window.visualViewport, anima = Element.prototype.animate;
+  const parado = () => (typeof semMovimento === 'function' && semMovimento()) || !anima;
+  const campo = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]):not([type=file]), textarea') && !el.disabled && !el.readOnly;
   // traz o campo para dentro da parte visível da janela, rolando só o corpo dela (nunca a página)
   const aVista = el => {
-    const cx = el.closest('.kf-dlg-corpo'); if (!cx || !el.isConnected) return;
+    const cx = el && el.closest && el.closest('.kf-dlg-corpo'); if (!cx || !el.isConnected) return;
     const r = el.getBoundingClientRect(), c = cx.getBoundingClientRect(), folga = 14;
     if (r.bottom > c.bottom - folga) cx.scrollTop += r.bottom - (c.bottom - folga);
     else if (r.top < c.top + folga) cx.scrollTop -= c.top + folga - r.top;
   };
-  const depoisDoTeclado = el => { let feito = false; const f = () => { if (feito) return; feito = true; requestAnimationFrame(() => aVista(el)); }; if (vv) vv.addEventListener('resize', f, { once: true }); setTimeout(f, 420); };
+
+  /* 1. o teclado */
+  let tk = 0, tkQuando = 0, tVista = 0;
+  const ms = () => parseFloat(getComputedStyle(html).getPropertyValue('--cf-jan-ms')) || 340;
+  const medir = () => {
+    if (!vv) return;
+    let v = Math.max(0, Math.round(html.clientHeight - vv.height - vv.offsetTop)); if (v < 80) v = 0; // barras do navegador não contam
+    if (v === tk) return;
+    tk = v; tkQuando = performance.now();
+    html.style.setProperty('--cf-tk', v + 'px'); html.classList.toggle('cf-tk', v > 0);
+    clearTimeout(tVista); tVista = setTimeout(() => { if (campo(document.activeElement)) aVista(document.activeElement); }, ms() + 30);
+  };
+  if (vv) { vv.addEventListener('resize', medir); vv.addEventListener('scroll', medir); }
+  window.cfTeclado = () => tk;
+
+  /* 2 e 3. as janelas */
+  let alturaAnterior = 0, ocupadaAte = 0;
+  // enquanto o app anima a altura de um trecho da janela (abrir e recolher, cupons), ninguém mais desliza a janela
+  window.cfJanelaOcupada = t => { ocupadaAte = Math.max(ocupadaAte, performance.now() + t + 140); };
+  const deslizar = (dlg, dy, dur = 260) => {
+    if (parado() || Math.abs(dy) < 2) return;
+    let resto = 0; if (dlg._cfDes) { try { resto = new DOMMatrix(getComputedStyle(dlg).transform).m42; } catch {} dlg._cfDes.cancel(); }
+    const a = dlg._cfDes = anima.call(dlg, [{ transform: `translateY(${dy + resto}px)` }, { transform: 'translateY(0)' }], { duration: dur, easing: 'cubic-bezier(.22,.9,.26,1)' });
+    a.onfinish = a.oncancel = () => { if (dlg._cfDes === a) dlg._cfDes = null; };
+  };
+  const nascer = (ov, troca) => {
+    const dlg = ov.querySelector('.kf-dlg'); if (!dlg || dlg._cfJanela) return; dlg._cfJanela = true;
+    dlg.animate = null; // o deslize do Kit pula a janela que não tem `animate`
+    const celular = matchMedia('(max-width:719px)').matches;
+    if (troca) {
+      // uma janela no lugar de outra: sem escurecer de novo; a borda de cima vai da altura antiga para a nova
+      ov.classList.add('cf-troca');
+      if (celular && alturaAnterior) deslizar(dlg, dlg.offsetHeight - alturaAnterior, 280);
+      if (!parado()) anima.call(dlg, [{ opacity: .55 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' });
+    } else if (!parado()) {
+      // nasce abaixo da tela (no computador, 28 px abaixo e apagada) e a transição do CSS leva ao lugar
+      dlg.style.transition = 'none'; dlg.style.translate = celular ? '0 100%' : '0 28px'; if (!celular) dlg.style.opacity = '.3';
+      void dlg.offsetHeight;
+      dlg.style.transition = ''; dlg.style.translate = ''; dlg.style.opacity = '';
+    }
+    let h = dlg.offsetHeight, ultima = 0; alturaAnterior = h;
+    if (!window.ResizeObserver) return;
+    const obs = new ResizeObserver(() => {
+      if (!dlg.isConnected) { obs.disconnect(); return; }
+      const agora = performance.now(), nova = dlg.offsetHeight, d = nova - h; h = nova; alturaAnterior = nova;
+      const seguido = agora - ultima < 130; ultima = agora;
+      // altura mudando quadro a quadro (o app ou o teclado estão animando): a janela já acompanha sozinha
+      if (!celular || seguido || agora < ocupadaAte || agora - tkQuando < ms() + 120) return;
+      deslizar(dlg, d);
+    });
+    obs.observe(dlg);
+  };
+  const abertas = () => [...document.querySelectorAll('.kf-ov')].filter(o => !o.closest('#kf-saidas'));
+  new MutationObserver(muts => {
+    let saiu = false; const novas = [];
+    for (const m of muts) {
+      for (const n of m.removedNodes) if (n.nodeType === 1 && n.classList.contains('kf-ov')) saiu = true;
+      for (const n of m.addedNodes) if (n.nodeType === 1 && n.classList.contains('kf-ov') && !n.closest('#kf-saidas')) novas.push(n);
+    }
+    novas.forEach(o => nascer(o, saiu));
+    if (!abertas().length) alturaAnterior = 0;
+  }).observe(document.body, { childList: true, subtree: true });
+
+  /* iPhone: tocar num campo de uma janela não empurra a tela.
+     Ao focar um campo, o Safari desloca a tela inteira para "mostrar" o campo, mesmo quando ele já está à vista.
+     A saída conhecida: o app mesmo dá o foco, com o campo deslocado para o alto só naquele instante; o Safari acha
+     que não há o que mostrar e não mexe na tela. Depois que o teclado sobe, o campo é trazido à vista (acima). */
+  const ios = () => window.CF_TESTE_IOS || /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const semEmpurrar = (el, focar) => {
     const antes = el.style.transform; el.style.transform = 'translateY(-2000px)';
     if (focar) { try { el.focus({ preventScroll: true }); } catch { el.focus(); } }
-    requestAnimationFrame(() => { el.style.transform = antes; depoisDoTeclado(el); });
+    requestAnimationFrame(() => { el.style.transform = antes; });
   };
   let ini = null;
   document.addEventListener('touchstart', e => { const t = e.touches[0]; ini = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY, t: Date.now(), el: e.target } : null; }, { passive: true, capture: true });
   document.addEventListener('touchend', e => {
     const i = ini; ini = null; if (!i || !ios() || guiaAtivo()) return;
-    const el = e.target.closest && e.target.closest('input, textarea'); if (!campo(el) || el !== (i.el.closest && i.el.closest('input, textarea'))) return;
+    const el = e.target.closest && e.target.closest('input, textarea'); if (!campo(el) || !el.closest('.kf-ov') || el !== (i.el.closest && i.el.closest('input, textarea'))) return;
     if (el === document.activeElement) return; // já está com o foco: o toque só move o cursor
     const t = e.changedTouches[0]; if (!t || Math.hypot(t.clientX - i.x, t.clientY - i.y) > 10 || Date.now() - i.t > 600) return; // foi um arrasto, não um toque
     e.preventDefault(); semEmpurrar(el, true);
   }, { passive: false, capture: true });
   // foco que chega por outro caminho (tecla "seguinte", rótulo, o próprio app)
-  document.addEventListener('focus', e => { if (ios() && !guiaAtivo() && campo(e.target) && !/translateY\(-2000px\)/.test(e.target.style.transform)) semEmpurrar(e.target, false); }, true);
-})();
+  document.addEventListener('focus', e => { const el = e.target; if (ios() && !guiaAtivo() && campo(el) && el.closest('.kf-ov') && !/translateY\(-2000px\)/.test(el.style.transform)) semEmpurrar(el, false); }, true);
 
-/* ---------- teclado numérico do iPhone: não tem tecla de confirmar; uma barra com OK fica colada em cima dele ---------- */
-(() => {
-  let toque = false; try { toque = matchMedia('(hover: none) and (pointer: coarse)').matches; } catch {}
-  if (!toque) return;
-  const html = document.documentElement, vv = window.visualViewport; let bar = null, campo = null;
-  const numerico = el => el && el.matches && el.matches('input[inputmode="numeric"], input[inputmode="decimal"], input[type="number"], input[data-money], input[data-pct]');
-  const pos = () => { if (!bar || bar.hidden) return; bar.style.top = Math.round(vv ? vv.offsetTop + vv.height - 48 : innerHeight - 48) + 'px'; };
-  const esconder = () => { if (bar) bar.hidden = true; html.classList.remove('com-ok'); campo = null; };
-  const mostrar = el => {
-    if (!bar) { bar = document.createElement('div'); bar.className = 'ok-teclado'; bar.innerHTML = '<button type="button" aria-label="OK, fechar o teclado">OK</button>'; document.body.appendChild(bar);
-      bar.addEventListener('pointerdown', e => e.preventDefault());
-      bar.firstChild.addEventListener('click', () => { if (campo) { campo.dispatchEvent(new Event('change', { bubbles: true })); campo.blur(); } esconder(); }); }
-    campo = el; bar.hidden = false; html.classList.add('com-ok'); pos();
-  };
-  // a barra só some depois que o dedo solta: se sumisse antes, o botão tocado sairia de baixo do dedo
-  let apertado = false;
-  document.addEventListener('pointerdown', () => { apertado = true; }, true);
-  ['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => { apertado = false; }, true));
-  const talvezEsconder = () => { if (apertado) return setTimeout(talvezEsconder, 80); if (!numerico(document.activeElement)) esconder(); };
-  document.addEventListener('focusin', e => { if (numerico(e.target)) mostrar(e.target); else talvezEsconder(); });
-  document.addEventListener('focusout', () => setTimeout(talvezEsconder, 60));
-  if (vv) { vv.addEventListener('resize', pos); vv.addEventListener('scroll', pos); }
-  window.cfOkConferir = () => { if (!numerico(document.activeElement)) esconder(); };
-})();
-
-/* ---------- rede de segurança do teclado ----------
-   Quando um campo some da tela com o foco (a janela foi redesenhada), o navegador não avisa que o foco saiu: o Kit
-   continuava com a janela no modo "teclado aberto" e a barra do OK ficava na tela. Depois de cada toque, tecla ou
-   mudança, o app confere: sem campo em foco, sem modo teclado. */
-(() => {
-  const html = document.documentElement; let t = 0;
-  const campo = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]), textarea');
-  const conferir = () => { if (campo(document.activeElement)) return; if (html.classList.contains('kf-teclado')) html.classList.remove('kf-teclado'); if (html.classList.contains('com-ok')) window.cfOkConferir && window.cfOkConferir(); };
-  const marcar = () => { clearTimeout(t); t = setTimeout(conferir, 260); };
-  ['pointerup', 'touchend', 'keyup', 'change', 'focusout'].forEach(ev => document.addEventListener(ev, marcar, true));
+  /* quando um campo some da tela com o foco (a janela foi redesenhada), o navegador não avisa que o foco saiu, e o Kit
+     ficava no modo "teclado" (que ainda vale no computador e no tablet). Depois de cada toque, tecla ou mudança, confere. */
+  let tConf = 0;
+  const conferir = () => { if (!campo(document.activeElement)) html.classList.remove('kf-teclado'); };
+  ['pointerup', 'touchend', 'keyup', 'change', 'focusout'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(tConf); tConf = setTimeout(conferir, 260); }, true));
 })();
 
 /* ---------- abertura (onboarding) ---------- */

@@ -249,7 +249,7 @@ function openBill(id) {
       toast('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
     }, true);
     const replace = fn => confirmReplace(() => { if (draft.live) live.end(); pending = {}; itPend = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(true); commit(); window.scrollTo({ top: 0 }); });
-    $('#sh-edit', s).onclick = () => replace(() => semPagadorUnico(migrate({ ...clone(b), savedAt: b.closedAt, isExample: false, live: null })));
+    $('#sh-edit', s).onclick = () => replace(() => migrate({ ...clone(b), savedAt: b.closedAt, isExample: false, live: null }));
     $('#sh-reuse', s).onclick = () => replace(() => {
       const d = blankDraft(); d.place = b.place;
       const map = {}; b.people.forEach(p => { const np = { ...newPerson(p.name) }; map[p.id] = np.id; d.people.push(np); });

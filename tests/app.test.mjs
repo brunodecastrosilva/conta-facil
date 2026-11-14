@@ -12,6 +12,11 @@ const esperar = async (cond, ms = 8000) => { const fim = Date.now() + ms; while 
 const TELAS = [[{ width: 320, height: 568 }, 'celular mínimo (zoom 400%)'], [{ width: 360, height: 740 }, 'celular pequeno'], [{ width: 390, height: 844 }, 'celular'], [{ width: 820, height: 1180 }, 'tablet'], [{ width: 1440, height: 900 }, 'computador']];
 const nav = (p, id) => p.locator(`#tab-${id}, #trilho-${id}`).locator('visible=true').first().click();
 const semErros = a => assert.deepEqual(a.erros, [], 'erros no console');
+// a janela nasce abaixo da tela e sobe: espera ela chegar ao lugar
+const assentar = p => p.waitForFunction(() => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); return d && d.getAnimations().length === 0; });
+// o teclado do celular: a área visível encolhe (é assim que o navegador avisa) sem a página mudar de tamanho
+const TECLADO = 336;
+const teclado = (p, on) => p.evaluate(([on, T]) => { const vv = window.visualViewport; if (!window.__kb) { window.__kb = { on: false }; Object.defineProperty(vv, 'height', { get: () => innerHeight - (window.__kb.on ? T : 0), configurable: true }); } window.__kb.on = on; vv.dispatchEvent(new Event('resize')); }, [on, TECLADO]);
 
 /* cria uma comanda salva usando as próprias funções do app */
 const salvarComanda = (p, local, nomes, item) => p.evaluate(([local, nomes, item]) => {
@@ -157,7 +162,7 @@ test('juntar e separar pelo atalho da pessoa; conta da mesa com serviço, couver
   await p.evaluate(() => KitFacil.avisar && document.querySelector('.kf-toast button')?.click()); // Desfazer
   assert.equal(await p.evaluate(() => compute(draft).units.length), 2);
   // conta da mesa
-  await p.click('#cm-pe');
+  await p.click('#cm-pe'); await assentar(p);
   await p.locator('[data-cm="svc"]').uncheck({ force: true });
   assert.equal(await p.evaluate(() => compute(draft).total), 10000);
   await p.locator('[data-cm="cv"]').check({ force: true });           // couvert de R$ 15,00 por pessoa
@@ -449,7 +454,7 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   await p.click(`summary[data-unit="${ana}"]`);
   assert.equal(await p.locator(`[data-pa="${ana}"] [data-pa-pago="desmarcar"]`).count(), 1, 'quem já está marcado pode ser desmarcado pela comanda');
   // 1) desconto depois do pagamento: a conta de Ana cai e o app manda devolver
-  await p.click('#cm-pe'); await p.locator('[data-cm="ds"]').click({ force: true });
+  await p.click('#cm-pe'); await assentar(p); await p.locator('[data-cm="ds"]').click({ force: true });
   const campo = p.locator('.kf-dlg [data-exp="cm-ds"] input[data-money]'); await campo.click(); await campo.pressSequentially('900'); await p.keyboard.press('Tab');
   assert.match(await p.textContent('.kf-dlg .aviso-pago'), /Ana pagou R\$\s20,00 e a conta agora é R\$\s17,00: devolver R\$\s3,00/);
   await p.click('#cm-ok');
@@ -517,37 +522,49 @@ test('objetos 3D voltam a girar sozinhos depois que a pessoa para de mexer', asy
   semErros(a); await a.fechar();
 });
 
-test('teclado e guia: a janela não salta, continua por trás do teclado e nunca sobe para fora da tela; tampinha da Início centrada', async () => {
+test('janelas: nascem e acompanham o teclado num movimento só, sem saltar nem voltar; no guia ficam paradas; tampinha da Início centrada', async () => {
   const a = await aparelho(amb, { toque: true });
   const p = a.page;
   // Início: a próxima tampinha fica centrada com o texto dela
   const [cy, ty] = await p.evaluate(() => { const r = x => { const b = document.querySelector(x).getBoundingClientRect(); return b.top + b.height / 2; }; return [r('.nivel-prox .tampa-svg'), r('.nivel-prox > span:last-child')]; });
   assert.ok(Math.abs(cy - ty) <= 1.5, `tampinha e texto com o mesmo centro (${cy} e ${ty})`);
   await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
-  const forcar = (lig, ok) => p.evaluate(([lig, ok]) => { const h = document.documentElement; h.style.setProperty('--kf-vv-top', '0px'); h.style.setProperty('--kf-vv-h', '430px'); h.classList.toggle('kf-teclado', lig); h.classList.toggle('com-ok', ok); }, [lig, ok]);
+  const H = await p.evaluate(() => innerHeight);
   const caixa = () => p.evaluate(() => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')), r = d.getBoundingClientRect(), f = getComputedStyle(d, '::after'); return { topo: Math.round(r.top), base: Math.round(r.bottom), pe: getComputedStyle(d).paddingBottom, cont: f.content !== 'none' && parseFloat(f.height) > 300 && f.backgroundColor === getComputedStyle(d).backgroundColor }; });
-  // fora do guia: com o teclado, a janela encosta nele, continua por trás e cabe inteira (também com a barra do OK)
-  await p.click('#add-pessoa'); await p.locator('#pn-nome').waitFor();
+  // filma o topo da janela quadro a quadro durante uma ação e conta as vezes em que ela foi e voltou
+  const filmar = async (acao, ms = 800) => {
+    await p.evaluate(() => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); if (d) __q.push(d.getBoundingClientRect().top); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); });
+    await acao(); await p.waitForTimeout(ms);
+    return p.evaluate(() => { __on = false; let inv = 0; for (let i = 2; i < __q.length; i++) { const x = __q[i - 1] - __q[i - 2], y = __q[i] - __q[i - 1]; if (x * y < -1) inv++; } return { inv, de: Math.round(__q[0]), n: __q.length }; });
+  };
+  // a janela de pôr pessoas nasce já com o campo em foco: o teclado sobe junto, e ela faz um caminho só até ficar em cima dele
+  let f = await filmar(async () => { await p.tap('#add-pessoa'); await p.waitForTimeout(40); await teclado(p, true); });
+  assert.equal(f.inv, 0, 'a janela nasce e sobe sem ir e voltar'); assert.ok(f.de >= H - 40, `a janela nasce abaixo da tela (${f.de})`);
+  let c = await caixa(); assert.equal(c.base, H - TECLADO, 'a janela termina encostada no teclado'); assert.ok(c.topo >= 0); assert.ok(c.cont, 'a cor da janela continua por trás do teclado'); assert.equal(c.pe, '0px');
+  assert.ok(await p.evaluate(() => document.documentElement.classList.contains('cf-tk')));
   for (const n of ['Ana', 'Bruno', 'Carla']) { await p.fill('#pn-nome', n); await p.press('#pn-nome', 'Enter'); }
+  f = await filmar(async () => { await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(30); await teclado(p, false); });
+  assert.equal(f.inv, 0, 'ao fechar o teclado, a janela desce de uma vez'); c = await caixa(); assert.equal(c.base, H);
   await p.click('#pn-ok');
-  await p.click('#it-novo'); await p.locator('.kf-dlg input[data-money]').first().waitFor(); await p.waitForTimeout(400);
-  await forcar(true, false); await p.waitForTimeout(400);
-  let c = await caixa(); assert.equal(c.base, 430, 'a janela encosta no teclado'); assert.ok(c.topo >= 0, 'a janela cabe acima do teclado'); assert.ok(c.cont, 'a cor da janela continua por trás do teclado');
-  await forcar(true, true); await p.waitForTimeout(400);
-  c = await caixa(); assert.equal(c.base, 430 - 48, 'com a barra do OK, a janela termina acima dela'); assert.ok(c.topo >= 0, `o título não sobe para fora da tela (topo ${c.topo})`);
-  await forcar(false, false); await p.evaluate(() => closeSheet(true));
-  // no guia: ligar e desligar o "teclado" não mexe na janela
+  // janela alta com o teclado: cabe inteira acima dele
+  await p.click('#it-novo'); await p.locator('.kf-dlg input[data-money]').first().waitFor(); await assentar(p);
+  f = await filmar(async () => { await p.tap('#pr-nome'); await p.waitForTimeout(40); await teclado(p, true); });
+  assert.equal(f.inv, 0, 'com o teclado, a janela alta encolhe e sobe sem ir e voltar');
+  c = await caixa(); assert.equal(c.base, H - TECLADO); assert.ok(c.topo >= 0, `o título não sobe para fora da tela (topo ${c.topo})`);
+  await p.evaluate(() => document.activeElement.blur()); await teclado(p, false); await p.waitForTimeout(500);
+  // uma janela no lugar de outra: sem nascer de novo lá de baixo
+  f = await filmar(async () => { await p.evaluate(() => confirmSheet('Trocar?', 'Uma janela no lugar da outra.', 'Sim', () => {})); }, 600);
+  assert.ok(f.de < H - 100, `a janela que troca de lugar com outra não nasce abaixo da tela (${f.de})`);
+  await p.evaluate(() => closeSheet(true));
+  // no guia: ligar e desligar o "teclado" não mexe na janela, que fica acima da janela do guia
   await p.evaluate(() => guiaIniciar());
   await esperar(() => p.evaluate(() => guia && guia.i === 1 && !!document.querySelector('#pn-nome')), 30000);
-  await p.evaluate(() => { guia.pausado = true; });
-  await p.waitForTimeout(700);
-  await forcar(false, false); await p.waitForTimeout(350); const livre = await caixa();
-  await forcar(true, false); await p.waitForTimeout(350); const comT = await caixa();
-  await forcar(true, true); await p.waitForTimeout(350); const comOk = await caixa();
-  await forcar(false, false);
-  assert.deepEqual([comT.topo, comT.base, comT.pe], [livre.topo, livre.base, livre.pe], 'a janela do guia fica no mesmo lugar com o campo em foco');
-  assert.deepEqual([comOk.topo, comOk.base, comOk.pe], [livre.topo, livre.base, livre.pe], 'e também com campo de número');
-  assert.equal(livre.pe, '0px', 'no guia a janela não muda de pé conforme o teclado');
+  await p.evaluate(() => { guia.pausado = true; }); await assentar(p);
+  const livre = await caixa();
+  await p.evaluate(() => document.documentElement.classList.add('kf-teclado')); await teclado(p, true); await p.waitForTimeout(500); const comT = await caixa();
+  await p.evaluate(() => document.documentElement.classList.remove('kf-teclado')); await teclado(p, false);
+  assert.deepEqual([comT.topo, comT.base, comT.pe], [livre.topo, livre.base, livre.pe], 'a janela do guia fica no mesmo lugar');
+  assert.equal(livre.base, await p.evaluate(() => Math.round(document.querySelector('#guia-doca').getBoundingClientRect().top)), 'e termina onde começa a janela do guia');
   await p.evaluate(() => guiaParar());
   semErros(a); await a.fechar();
 });
@@ -574,16 +591,16 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   };
   for (const k of ['cv', 'ds', 'ds', 'svc', 'svc', 'cv']) assert.equal(await tremor(`.kf-dlg label:has([data-cm="${k}"]) .switch`), 0, `a janela não vai e volta ao tocar na chave ${k}`);
   // valor digitado: ao sair do campo, o app não fica preso no modo "teclado aberto" nem com a barra do OK na tela
-  const modo = () => p.evaluate(() => [document.documentElement.classList.contains('kf-teclado'), document.documentElement.classList.contains('com-ok'), !!document.querySelector('.ok-teclado') && !document.querySelector('.ok-teclado').hidden, document.activeElement.id || document.activeElement.tagName]);
+  const modo = () => p.evaluate(() => [document.documentElement.classList.contains('kf-teclado'), document.querySelectorAll('.ok-teclado').length, document.activeElement.id || document.activeElement.tagName]);
   await p.tap('.kf-dlg label:has([data-cm="cv"]) .switch'); await p.waitForTimeout(500);
-  await p.tap('#cm-cv'); await p.waitForTimeout(250); assert.deepEqual(await modo(), [true, true, true, 'cm-cv']);
+  await p.tap('#cm-cv'); await p.waitForTimeout(250); assert.deepEqual(await modo(), [true, 0, 'cm-cv'], 'não há mais barra própria de OK: o teclado do aparelho já tem a tecla de concluir');
   await p.keyboard.type('700'); await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(500);
-  assert.deepEqual(await modo(), [false, false, false, 'BODY']); assert.equal(await p.evaluate(() => draft.couvert.value), 700);
-  await p.tap('#cm-cv'); await p.waitForTimeout(250); await p.keyboard.type('900'); await p.tap('.ok-teclado button'); await p.waitForTimeout(500);
-  assert.deepEqual(await modo(), [false, false, false, 'BODY']); assert.equal(await p.evaluate(() => draft.couvert.value), 900);
+  assert.deepEqual(await modo(), [false, 0, 'BODY']); assert.equal(await p.evaluate(() => draft.couvert.value), 700);
+  await p.tap('#cm-cv'); await p.waitForTimeout(250); await p.keyboard.type('900'); await p.keyboard.press('Enter'); await p.waitForTimeout(500);
+  assert.deepEqual(await modo(), [false, 0, 'BODY']); assert.equal(await p.evaluate(() => draft.couvert.value), 900);
   // de um campo direto para outro: o segundo continua com o foco depois que a janela é refeita
   await p.tap('#cm-cv'); await p.waitForTimeout(250); await p.keyboard.type('1100'); await p.tap('#cm-svc-pct'); await p.waitForTimeout(500);
-  assert.deepEqual(await modo(), [true, true, true, 'cm-svc-pct']); assert.equal(await p.evaluate(() => draft.couvert.value), 1100);
+  assert.deepEqual(await modo(), [true, 0, 'cm-svc-pct']); assert.equal(await p.evaluate(() => draft.couvert.value), 1100);
   await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(450);
   await p.tap('.kf-dlg label:has([data-cm="cv"]) .switch'); await p.waitForTimeout(400);
   await p.click('#cm-ok');

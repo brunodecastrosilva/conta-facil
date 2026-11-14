@@ -481,8 +481,6 @@ body.com-abertura{overflow:hidden}
 .ab-tampa .tampa-svg{width:100%;height:100%}
 
 /* ---------- 12. miudezas ---------- */
-.ok-teclado{position:fixed;left:0;right:0;z-index:96;height:48px;display:flex;justify-content:flex-end;align-items:center;padding:0 10px;background:var(--surface-2);border-top:1px solid var(--line)}
-.ok-teclado button{border:0;background:var(--green);color:var(--green-ink);font-weight:700;border-radius:10px;min-width:72px;height:36px}
 .kf-barra.topo.rolou{box-shadow:0 1px 0 var(--line)}
 .grecaptcha-badge{visibility:hidden}
 
@@ -490,9 +488,6 @@ body.com-abertura{overflow:hidden}
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
   .fp-carimbo{opacity:.92}
 }
-/* com a barra do OK, a janela termina acima dela */
-html.com-ok.kf-teclado .kf-ov{height:calc(var(--kf-vv-h,100dvh) - 48px)}
-html.com-ok .kf-toast{bottom:auto!important;top:calc(var(--kf-vv-top,0px) + 70px)}
 /* telas estreitas (320 px, ou zoom de 400%) */
 .marca{min-width:0;flex:0 1 auto}
 .marca-nome{overflow:hidden;text-overflow:ellipsis}
@@ -583,19 +578,7 @@ body.com-guia .wrap{padding-bottom:calc(var(--pe-h) + var(--guia-h) + 48px)}
 .guia-escreve{box-shadow:0 0 0 3px color-mix(in srgb,#D3931A 55%,transparent)!important}
 /* com o guia, janelas, avisos e a festa terminam acima da janela do guia: nada fica por baixo dela */
 body.com-guia .kf-nav.nav{z-index:94}
-body.com-guia .kf-ov{bottom:calc(var(--pe-h) + var(--guia-h));height:auto}
-body.com-guia .kf-dlg{max-height:calc(100dvh - var(--pe-h) - var(--guia-h) - 20px)}
-/* no guia nada é digitado de verdade: a janela não acompanha o "teclado" (a classe kf-teclado liga e desliga a cada campo
-   e, no iPhone, mexia na altura e no pé da janela — ela saltava a cada nome) */
-html body.com-guia .kf-ov{top:0!important;bottom:calc(var(--pe-h) + var(--guia-h))!important;height:auto!important}
-html body.com-guia .kf-dlg{max-height:calc(100dvh - var(--pe-h) - var(--guia-h) - 20px)!important}
-html body.com-guia .ok-teclado{display:none}
-html body.com-guia .kf-toast{top:auto;bottom:calc(var(--pe-h) + var(--guia-h) + 10px)}
-@media (max-width:719px){
-  html body.com-guia .kf-ov{padding:0!important;align-items:flex-end}
-  html body.com-guia .kf-dlg{padding-bottom:0!important;border-radius:var(--kf-r-lg) var(--kf-r-lg) 0 0}
-}
-body.com-guia .kf-toast{bottom:calc(var(--pe-h) + var(--guia-h) + 10px)}
+body.com-guia .kf-toast{top:auto;bottom:calc(var(--pe-h) + var(--guia-h) + 10px)}
 body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16px}
 @media (min-width:1024px){
   :root{--pe-h:0px}
@@ -617,7 +600,7 @@ body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16p
 
 /* ---------- 16. movimento: nada salta, nada aparece cortado ---------- */
 /* o escurecido atrás das janelas cobre sempre a tela toda, mesmo com o teclado abrindo ou fechando */
-.kf-ov{background:none}
+.kf-ov{background:none;animation:none}
 .kf-ov::before{content:"";position:fixed;left:0;right:0;top:-100vh;bottom:-100vh;z-index:-1;background:var(--kf-scrim)}
 .exp-fantasma{pointer-events:none}
 /* quem já pagou e a conta mudou */
@@ -640,21 +623,6 @@ body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16p
 .ip-excluir{align-self:center;margin-top:2px;color:var(--paper-muted,#6E6858)}
 .ip-excluir .i{width:16px;height:16px}
 
-/* com o teclado aberto, a janela continua por baixo dele: pela fresta e pelo teclado translúcido do iPhone aparece
-   a cor da janela, e não um pedaço da tela de trás */
-@media (max-width:719px){
-  /* a janela continua para baixo, por trás do teclado: o teclado do iPhone é translúcido e deixava a comanda aparecer
-     numa faixa entre a janela e ele (e enquanto ele sobe ou desce) */
-  .kf-dlg::after{content:"";position:absolute;left:0;right:0;top:100%;height:120vh;background:inherit;pointer-events:none}
-  body.com-guia .kf-dlg::after{display:none}
-  /* com o teclado aberto sobra pouca altura: a janela aperta os espaços para o essencial caber sem cortar */
-  html.kf-teclado body:not(.com-guia) .kf-dlg-cab{padding-top:6px;padding-bottom:2px}
-  html.kf-teclado body:not(.com-guia) .kf-dlg-corpo{gap:8px;padding-bottom:10px}
-  html.kf-teclado body:not(.com-guia) .kf-dlg-pe{padding-top:8px;padding-bottom:10px;box-shadow:0 -10px 14px -12px rgba(16,40,28,.3)}
-}
-/* teclado numérico: a barra do OK tem a cor da janela e a janela desconta a altura dela (antes o título subia para fora da tela) */
-html.com-ok.kf-teclado .kf-dlg{max-height:calc(var(--kf-vv-h,100dvh) - 56px)}
-.ok-teclado{background:var(--kf-bg,var(--bg));border-top:0}
 
 /* fechar a comanda: o pagamento fica no cupom de cada pessoa */
 .fc-pago{margin-top:8px;display:flex;flex-direction:column;align-items:center}
@@ -687,3 +655,35 @@ html.com-ok.kf-teclado .kf-dlg{max-height:calc(var(--kf-vv-h,100dvh) - 56px)}
 /* cupom compartilhado: quem paga */
 .gs-lin{display:flex;align-items:center;gap:8px}
 .gs-lin .cs-tx{flex:1;min-width:0}
+
+/* ---------- 17. janelas: um mecanismo só (1.5.0) ----------
+   Antes havia três coisas mexendo na janela ao mesmo tempo: a entrada do Kit (sobe 28 px), o reposicionamento do Kit
+   quando o teclado abre (a janela pulava de lugar num quadro só) e o deslize do Kit a cada mudança de altura. No iPhone
+   isso dava o tranco: a janela nascia embaixo, saltava para cima do teclado, passava do ponto e voltava.
+   Agora a posição da janela é uma conta só — pé da tela, menos o guia (--cf-pe), menos o teclado (--cf-tk) — e toda
+   mudança dessa conta é uma transição: a janela nasce abaixo da tela e sobe, e se o teclado abre no meio do caminho
+   ela continua subindo até o novo lugar, sem saltar nem voltar. O que o Kit faz com `kf-teclado` fica sem efeito. */
+:root{--cf-tk:0px;--cf-pe:0px;--cf-jan-ms:340ms;--cf-jan-curva:cubic-bezier(.22,.9,.26,1)}
+body.com-guia{--cf-pe:calc(var(--pe-h) + var(--guia-h));--cf-tk:0px}
+.kf-ov::before{animation:kf-fade .22s ease-out}
+.kf-ov.cf-troca::before,#kf-saidas .kf-ov::before{animation:none}
+html .kf-dlg{animation:none;transition:translate var(--cf-jan-ms) var(--cf-jan-curva),opacity .18s ease-out}
+@media (max-width:719px){
+  html .kf-ov,html.kf-teclado .kf-ov{top:0!important;bottom:var(--cf-pe)!important;height:auto!important;padding:0!important;align-items:flex-end}
+  html .kf-dlg,html .kf-dlg-x{translate:0 calc(-1 * var(--cf-tk));border-radius:var(--kf-r-lg) var(--kf-r-lg) 0 0;
+    max-height:min(92dvh,calc(100dvh - var(--cf-pe) - var(--cf-tk) - env(safe-area-inset-top,0px) - 10px))!important;
+    padding-bottom:env(safe-area-inset-bottom,0px)!important}
+  html .kf-dlg{transition:translate var(--cf-jan-ms) var(--cf-jan-curva),max-height var(--cf-jan-ms) var(--cf-jan-curva),padding-bottom var(--cf-jan-ms) var(--cf-jan-curva)}
+  /* com o teclado (ou o guia) logo abaixo, a janela não precisa da folga do pé da tela */
+  html.cf-tk .kf-dlg,html.cf-tk .kf-dlg-x,body.com-guia .kf-dlg,body.com-guia .kf-dlg-x{padding-bottom:0!important}
+  /* a janela continua para baixo, na mesma cor: o teclado do iPhone é translúcido, e enquanto ele sobe ou desce não
+     aparece nenhum pedaço da tela de trás */
+  .kf-dlg::after,.kf-dlg-x::after{content:"";position:absolute;left:0;right:0;top:100%;height:120vh;background:inherit;pointer-events:none}
+  body.com-guia .kf-dlg::after,body.com-guia .kf-dlg-x::after{display:none}
+  .kf-dlg-x{position:relative}
+  /* com o teclado aberto sobra pouca altura: os espaços apertam (também em transição) para o essencial caber */
+  .kf-dlg-cab,.kf-dlg-corpo,.kf-dlg-pe{transition:padding var(--cf-jan-ms) var(--cf-jan-curva),gap var(--cf-jan-ms) var(--cf-jan-curva),box-shadow var(--cf-jan-ms) ease}
+  html.cf-tk body:not(.com-guia) .kf-dlg-cab{padding-top:6px;padding-bottom:2px}
+  html.cf-tk body:not(.com-guia) .kf-dlg-corpo{gap:8px;padding-bottom:10px}
+  html.cf-tk body:not(.com-guia) .kf-dlg-pe{padding-top:8px;padding-bottom:10px;box-shadow:0 -10px 14px -12px rgba(16,40,28,.3)}
+}
