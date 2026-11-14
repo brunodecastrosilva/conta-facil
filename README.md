@@ -92,8 +92,8 @@ A configuração web do Firebase em `config.js` é pública por natureza (não �
 
 ## Publicação
 
-GitHub Pages a partir da branch `main`, pasta raiz. A versão 1.0.0 está no ramo `claude/conta-facil-novo`, para ser conferida
-antes de ir para a `main`. Antes de publicar: `npm test`, e confira o app no celular e no computador, no claro e no escuro.
+GitHub Pages a partir da branch `main`, pasta raiz. Antes de publicar: `npm test`, e confira o app no celular e no computador,
+no claro e no escuro. Se o app abrir com erro no ar, desfaça o envio na hora (`git revert`) e só depois investigue.
 O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Exceções ao padrão
@@ -114,7 +114,7 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 | Arts. 77 a 79 (guia em dois níveis) | um guia só, em vídeo, refeito para as telas novas | mantém a exceção aprovada em 09/11/2026 |
 | Anexo II (o app não redefine os tokens do Kit) | cantos maiores e altura da navegação redefinidos; títulos em Bricolage Grotesque | identidade própria; a fonte de caráter nos títulos é permitida pelo Art. 56, IV |
 | Art. 22 (versão 0.x na fase de testes) | versão 1.0.0 | pedido de app pronto para a publicação oficial |
-| Art. 24 (publicar direto na `main`) | entregue num ramo, sem publicar | troca grande demais para ir ao ar sem o Bruno ver antes |
+| Art. 24 (publicar direto na `main`) | a 1.0.0 passou primeiro por um ramo (`claude/conta-facil-novo`) e foi para a `main` em 14/11/2026, a pedido do Bruno | troca grande demais para ir ao ar sem aviso |
 | Arts. 82, 84, 85 e 87 (perguntar antes, opções com desenho, textos só com "sim") | decisões de desenho e de texto tomadas sem perguntar | pedido de liberdade criativa total |
 | Anexo VII (testes comuns da moldura) | `npm test` roda os testes do Kit e os do app; a varredura de acessibilidade do Kit foi trocada por `tests/acessibilidade.test.mjs` | a varredura do Kit procura os Ajustes na barra do Kit, que mudou |
 | Regras, Art. 5º, parágrafo único (item novo no topo) | o item novo entra no fim da lista | fica ao lado do botão de lançar, como no Laboratório |
