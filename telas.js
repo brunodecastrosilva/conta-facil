@@ -113,8 +113,9 @@ const viewInicio = {
       papel = `<span class="mono ip-n">COMANDA Nº ${n} · ABERTA${d.live ? ' · AO VIVO' : ''}</span>
         <h1 class="ip-t">${esc(d.place || 'Comanda sem nome')}</h1>
         <div class="ip-linhas mono"><span><span>Pessoas</span><span>${d.people.length}</span></span><span><span>Pedidos</span><span>${d.items.length}${pend ? ` (${pend} sem divisão)` : ''}</span></span>
-          <span class="ip-tot"><span>TOTAL</span><span>${BRL(c.total)}</span></span>${falta < c.total ? `<span><span>Falta pagar</span><span>${BRL(falta)}</span></span>` : ''}</div>
-        <button type="button" class="btn bloco ip-btn" id="ini-continuar">${I.receipt}Continuar a comanda</button>`;
+          <span class="ip-tot"><span>TOTAL</span><span>${BRL(c.total)}</span></span>${algumPago(d) ? `<span><span>Falta pagar</span><span>${BRL(falta)}</span></span>` : ''}${trocoDevolver(d, c) ? `<span><span>Devolver</span><span>${BRL(trocoDevolver(d, c))}</span></span>` : ''}</div>
+        <button type="button" class="btn bloco ip-btn" id="ini-continuar">${I.receipt}Continuar a comanda</button>
+        ${d.live ? '' : `<button type="button" class="btn link small ip-excluir" id="ini-excluir">${I.trash}Excluir esta comanda</button>`}`;
     } else {
       papel = `<span class="mono ip-n">COMANDA Nº ${n}</span>
         <h1 class="ip-t"><label for="ini-local">Onde vai ser hoje?</label></h1>
@@ -129,7 +130,7 @@ const viewInicio = {
     return `<p class="saudacao">${oi}${catalog.me ? ', ' + esc(primeiroNome(catalog.me)) : ''}.</p>
       <section class="imp" aria-label="${d.active && !d.isExample ? 'Comanda aberta' : 'Nova comanda'}"><div class="imp-boca" aria-hidden="true"></div><div class="imp-saida"><div class="papel imp-papel ${anima}">${papel}</div></div></section>
 
-      ${d.active && !d.isExample ? '' : `<div class="aovivo ${aoVivoAberto ? 'aberto' : ''}" id="ini-aovivo">
+      ${d.active && !d.isExample ? '' : `<div class="aovivo ${aoVivoAberto ? 'aberto' : ''}" id="ini-aovivo" data-morf="aovivo">
         ${aoVivoAberto ? `<form id="av-form" class="av-form" autocomplete="off"><label class="so-leitor" for="av-codigo">Código da comanda ao vivo</label><input id="av-codigo" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="Código de 10 letras" maxlength="60" data-keep>
           <button type="button" class="ic-btn" id="av-colar" aria-label="Colar o código">${I.paste}</button><button type="submit" class="btn small">Entrar</button></form>`
         : `<button type="button" class="av-abre" id="av-abre"><span class="av-pulso" aria-hidden="true"></span><span><b>Entrar numa comanda ao vivo</b><small>Alguém da mesa já abriu? Use o código.</small></span>${I.next}</button>`}</div>`}
@@ -148,6 +149,7 @@ const viewInicio = {
       </div>`}`;
   },
   bind(v) {
+    $('#ini-excluir', v)?.addEventListener('click', () => deleteCurrent(true));
     $('#ini-continuar', v)?.addEventListener('click', () => irPara('comanda'));
     const inp = $('#ini-local', v);
     if (inp) attachSuggest(inp, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })));
@@ -192,7 +194,7 @@ function retrospectivaHTML() {
   const podio = (id, titulo, lista, valor, fmt) => {
     const L = lista.sort((a, b) => valor(b) - valor(a)).slice(0, 5); if (!L.length) return '';
     const mx = Math.max(...L.map(valor), 1), aberto = histPod[id], ver = aberto ? L : L.slice(0, 3);
-    return `<div class="podio"><h3>${titulo}</h3><ol>${ver.map((x, i) => `<li><span class="podio-n">${i + 1}</span><span class="podio-tx"><b>${esc(x.name)}</b><small>${fmt(x)}</small><span class="podio-barra"><i style="width:${Math.max(6, Math.round(valor(x) / mx * 100))}%"></i></span></span></li>`).join('')}</ol>
+    return `<div class="podio" data-morf="podio-${id}"><h3>${titulo}</h3><ol>${ver.map((x, i) => `<li><span class="podio-n">${i + 1}</span><span class="podio-tx"><b>${esc(x.name)}</b><small>${fmt(x)}</small><span class="podio-barra"><i style="width:${Math.max(6, Math.round(valor(x) / mx * 100))}%"></i></span></span></li>`).join('')}</ol>
       ${L.length > 3 ? `<button type="button" class="btn link small" data-podio="${id}" aria-expanded="${aberto}">${aberto ? 'Mostrar menos' : 'Mostrar os 5'}</button>` : ''}</div>`;
   };
   return `<section class="card retro" aria-labelledby="retro-t"><h2 class="so-leitor" id="retro-t">Resumo dos gastos</h2>
@@ -233,7 +235,7 @@ function openBill(id) {
   const b = bills.find(x => x.id === id); if (!b) return;
   const c = calcBill(b);
   openSheet({ title: b.place || 'Comanda sem nome', sub: `${fmtDateTime(b.closedAt)}, ${plural(b.people.length, 'pessoa', 'pessoas')}, total ${BRL(c.total)}`, tall: true, body: `${acertosHTML(c)}
-    <div class="receipts">${c.units.map(u => `<div class="receipt-wrap"><div class="cupom-1 ${pagoDe(b, u.members) ? 'cupom-pago' : ''}">${receiptHTML(u, b, c)}${pagoDe(b, u.members) ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div><button type="button" class="btn small ghost" data-share="${u.id}">${I.share}Compartilhar</button></div>`).join('')}</div>
+    <div class="receipts">${c.units.map(u => { const p = contaPaga(b, u, c), pago = p.estado === 'pago'; return `<div class="receipt-wrap">${p.estado !== 'aberto' && !pago ? `<p class="pa-dif">${p.estado === 'parte' ? `Parte deste cupom foi paga (${BRL(p.pago)}). Faltou ${BRL(p.falta)}.` : esc(fraseDiferenca(u, p))}</p>` : ''}<div class="cupom-1 ${pago ? 'cupom-pago' : ''}">${receiptHTML(u, b, c)}${pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div><button type="button" class="btn small ghost" data-share="${u.id}">${I.share}Compartilhar</button></div>`; }).join('')}</div>
     <div class="sheet-actions"><button type="button" class="btn ghost" id="sh-pdf">${I.file}Todos em PDF</button><button type="button" class="btn ghost danger-text" id="sh-del">${I.trash}Excluir</button></div>`,
     foot: `<button type="button" class="btn ghost" id="sh-edit">Abrir para editar</button><button type="button" class="btn" id="sh-reuse">Repetir comanda</button>`, onMount: s => {
     $$('[data-share]', s).forEach(x => x.onclick = () => shareReceipt(c.U[x.dataset.share], b, c, () => openBill(id)));

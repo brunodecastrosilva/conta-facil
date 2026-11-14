@@ -189,8 +189,10 @@ test('tampinhas e níveis: nascem do histórico, a tampinha gira em 3D, o sortei
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.click('[data-tampa="primeira"]');
   const o3d = p.locator('.kf-dlg .o3d'); await o3d.waitFor();
-  assert.ok(await p.locator('.kf-dlg .o3d-saia').count() >= 42, 'a saia da tampinha tem os gomos');
-  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .o3d-eixo').style.transform);
+  // desenhada num canvas (sem camadas de CSS 3D, que piscavam no iPhone): tem tinta e não tem faces soltas na página
+  assert.equal(await p.locator('.kf-dlg .o3d-saia, .kf-dlg .o3d-eixo').count(), 0);
+  assert.ok(await p.evaluate(() => { const c = document.querySelector('.kf-dlg .o3d canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 200) n++; return n > c.width * c.height * 0.2; }), 'a tampinha deveria estar desenhada');
+  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .o3d').dataset.ang);
   const g0 = await giro(), cx = await o3d.boundingBox();
   await p.mouse.move(cx.x + cx.width / 2 - 50, cx.y + cx.height / 2); await p.mouse.down(); await p.mouse.move(cx.x + cx.width / 2 + 60, cx.y + cx.height / 2, { steps: 6 }); await p.mouse.up();
   const g1 = await giro(); assert.notEqual(g1, g0, 'arrastar deveria girar a tampinha');
@@ -318,7 +320,8 @@ test('guia: janela fixa num espaço só dela, do começo ao fim, sem tocar nos d
   assert.deepEqual(await p.evaluate(() => [bills.length, catalog.people.length, JSON.parse(localStorage.getItem('contafacil.bills')).length, comReais(() => pacoteSync(true)).bills[0].place]), [0, 0, 1, 'Cantina Real']);
   // a janela fica entre o conteúdo e a barra de baixo, sem cobrir nenhum dos dois
   const g = await p.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect(); const d = r('#guia-doca'), n = r('.kf-nav.nav'); return { fundo: d.bottom, nav: n.top, navFundo: n.bottom, alt: innerHeight, moldura: document.querySelector('.gm-tempo').getAttribute('d') }; });
-  assert.ok(Math.abs(g.fundo - g.nav) <= 1, 'a janela do guia encosta na barra de baixo, sem cobrir'); assert.ok(Math.abs(g.navFundo - g.alt) <= 1); assert.match(g.moldura, /^M/);
+  assert.ok(Math.abs(g.fundo - g.nav) <= 1, 'a janela do guia encosta na barra de baixo, sem cobrir');
+  assert.ok(await p.evaluate(() => { const b = document.querySelector('.nav-bola').getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + 3); return !!e && !!e.closest('.kf-nav'); }), 'a faixa do guia não pode comer o botão do meio'); assert.ok(Math.abs(g.navFundo - g.alt) <= 1); assert.match(g.moldura, /^M/);
   // primeiro passo: pisca, a moldura esvazia (contagem) e só então o passo acontece
   assert.equal(await p.evaluate(() => guia.fase), 'conta');
   assert.ok(await esperar(() => p.evaluate(() => { const o = +document.querySelector('.gm-tempo').style.strokeDashoffset; return o < 0 && o > -1; })), 'a contagem na moldura não andou');
@@ -366,7 +369,8 @@ test('ícones do alto na mesma cor; Mais sem repetições; presente em 3D que gi
   assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('#view .lin b')].map(b => b.textContent)), ['Cadastros', 'Sortear alguém da mesa', 'Ajustes', 'Ver o guia', 'Abrir a comanda de exemplo']);
   await p.click('#topo-presente');
   const o3d = p.locator('.kf-dlg .o3d[data-o3d="presente"]'); await o3d.waitFor();
-  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .o3d-eixo').style.transform);
+  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .o3d').dataset.ang);
+  await p.emulateMedia({ reducedMotion: 'reduce' }); await p.keyboard.press('Escape'); await p.click('#topo-presente'); await o3d.waitFor();
   await o3d.focus(); const g0 = await giro(); await p.keyboard.press('ArrowLeft');
   assert.notEqual(await giro(), g0);
   assert.equal(await p.locator('.kf-dlg .kf-dlg-pe button').count(), 1); assert.match(await p.textContent('#ap-copiar'), /Copiar código Pix/);
@@ -377,4 +381,105 @@ test('ícones do alto na mesma cor; Mais sem repetições; presente em 3D que gi
     const m = txt.match(proibidas); assert.equal(m, null, `${arq} ainda fala de "${m && m[0]}"`);
   }
   semErros(a); await a.fechar();
+});
+
+test('abrir e recolher: o título tocado fica à vista, uma linha aberta por vez, e tudo que abre tem movimento', async () => {
+  const a = await aparelho(amb, { viewport: { width: 393, height: 700 } });
+  const p = a.page;
+  await p.evaluate(() => { newBillAt('Cantina do Teste', ['Ana', 'Bruno', 'Carla', 'Diego']); const d = draft, t = Object.fromEntries(d.people.map(x => [x.id, 1]));
+    d.items = ['Fritas', 'Suco', 'Pudim', 'Café', 'Água', 'Torta'].map((n, i) => ({ id: newId(), o: i + 1, name: n, qty: 1, price: 1000 + i * 100, fq: 0, mode: 'equal', lk: true, a: { ...t } }));
+    d.groups = [{ id: newId(), members: [d.people[0].id, d.people[1].id], payers: [d.people[0].id] }]; commit(); });
+  const cab = () => p.evaluate(() => document.querySelector('.cu-cab').getBoundingClientRect().bottom);
+  const topo = q => p.evaluate(q => document.querySelector(q).getBoundingClientRect().top, q);
+  const itens = await p.evaluate(() => draft.items.map(i => i.id));
+  // abre o primeiro pedido e depois o quinto (com o primeiro aberto acima dele): o título do quinto não sai do lugar
+  await p.click(`[data-item="${itens[0]}"] .it-lin`); await p.waitForTimeout(700);
+  await p.evaluate(q => document.querySelector(q).scrollIntoView({ block: 'center' }), `[data-item="${itens[4]}"] .it-lin`); await p.waitForTimeout(200);
+  const y0 = await topo(`[data-item="${itens[4]}"] .it-lin`);
+  await p.click(`[data-item="${itens[4]}"] .it-lin`); await p.waitForTimeout(1300);
+  const y1 = await topo(`[data-item="${itens[4]}"] .it-lin`);
+  assert.ok(y1 >= await cab(), 'o título do pedido aberto ficou coberto pelo cabeçalho'); assert.ok(y1 <= y0 + 2, 'o título deveria ficar onde estava (ou subir só o necessário)');
+  assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('details.item-d')].filter(d => d.open).length), 1);
+  // "Paga serviço" de um cupom compartilhado: abre crescendo e recolhe encolhendo
+  await p.evaluate(() => scrollTo(0, 0));
+  const grupo = await p.evaluate(() => compute(draft).units.find(u => u.members.length > 1).id);
+  await p.click(`summary[data-unit="${grupo}"]`); await p.waitForTimeout(700);
+  assert.ok(await topo(`summary[data-unit="${grupo}"]`) >= await cab(), 'o título do cupom aberto ficou coberto');
+  await p.click('[data-pa-svcabre]');
+  assert.ok(await p.evaluate(() => document.querySelector('.pa-sub').getAnimations().length > 0), 'a lista de Paga serviço deveria abrir com movimento');
+  await p.waitForTimeout(400);
+  await p.click('[data-pa-svcabre]');
+  assert.equal(await p.locator('.exp-fantasma').count(), 1, 'ao recolher, o trecho encolhe antes de sumir');
+  assert.ok(await esperar(async () => await p.locator('.exp-fantasma').count() === 0));
+  // "Ver cupom" só nos atalhos da pessoa: não se repete em Detalhes nem no cupom compartilhado
+  await p.click(`[data-pa="${grupo}"] [data-pa-mais]`); await p.locator('.kf-dlg').waitFor();
+  assert.equal(await p.locator('.kf-dlg >> text=Ver cupom').count(), 0);
+  await p.click('.kf-dlg [data-gs-p]'); await p.locator('.kf-dlg .cs-acoes, .kf-dlg .cs').first().waitFor();
+  assert.equal(await p.locator('.kf-dlg >> text=Ver cupom').count(), 0);
+  await p.keyboard.press('Escape');
+  assert.equal(await p.locator('#view >> text=Ver cupom >> visible=true').count(), 1);
+  semErros(a); await a.fechar();
+});
+
+test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando a conta muda depois', async () => {
+  const a = await aparelho(amb);
+  const p = a.page;
+  await p.evaluate(() => { newBillAt('Cantina do Teste', ['Ana', 'Bruno', 'Carla']); const d = draft, t = Object.fromEntries(d.people.map(x => [x.id, 1]));
+    d.service.enabled = false;
+    d.items = [{ id: newId(), o: 1, name: 'Fritas', qty: 1, price: 6000, fq: 0, mode: 'equal', lk: true, a: { ...t } }]; commit(); });
+  const estado = () => p.evaluate(() => { const c = compute(draft), u = c.units[0], x = contaPaga(draft, u, c); return [x.estado, x.pago, x.falta, x.troco, faltaReceber(draft, c), trocoDevolver(draft, c)]; });
+  const ana = await p.evaluate(() => draft.people[0].id);
+  await p.click(`summary[data-unit="${ana}"]`); await p.click(`[data-pa="${ana}"] [data-pa-pago="marcar"]`);
+  assert.deepEqual(await estado(), ['pago', 2000, 0, 0, 4000, 0]);
+  // 1) desconto depois do pagamento: a conta de Ana cai e o app manda devolver
+  await p.click('#cm-pe'); await p.locator('[data-cm="ds"]').click({ force: true });
+  const campo = p.locator('.kf-dlg [data-exp="cm-ds"] input[data-money]'); await campo.click(); await campo.pressSequentially('900'); await p.keyboard.press('Tab');
+  assert.match(await p.textContent('.kf-dlg .aviso-pago'), /Ana pagou R\$\s20,00 e a conta agora é R\$\s17,00: devolver R\$\s3,00/);
+  await p.click('#cm-ok');
+  assert.deepEqual(await estado(), ['troco', 2000, 0, 300, 3400, 300]);
+  assert.match(await p.textContent('#view .aviso-pago'), /devolver R\$\s3,00/); assert.match(await p.textContent('#cmd-conta + .cu-falta, .cu-falta'), /devolver/);
+  // salvar com diferença: o app pergunta antes
+  await p.evaluate(() => saveBill()); await p.locator('text=Salvar com diferença?').waitFor(); await p.keyboard.press('Escape');
+  assert.equal(await p.evaluate(() => bills.length), 0);
+  // acertar: "Devolvi" registra o valor novo
+  await p.click('#view [data-ap-acerta]');
+  assert.deepEqual(await estado(), ['pago', 1700, 0, 0, 3400, 0]); assert.equal(await p.locator('#view .aviso-pago:not(.exp-fantasma)').count(), 0);
+  // 2) item novo: quem já pagou fica de fora, com aviso; se marcar, volta a dever
+  await p.click('#it-novo'); await p.fill('#pr-nome', 'Pudim'); await p.locator('#pr-preco').pressSequentially('1000');
+  assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('[data-lc-ck]')].map(b => b.getAttribute('aria-pressed'))), ['false', 'true', 'true']);
+  assert.match(await p.textContent('#lc-pagou'), /Ana já pagou e ficou de fora/);
+  await p.click(`[data-lc-ck="${ana}"]`); assert.match(await p.textContent('#lc-pagou'), /volta a dever/);
+  await p.click('#lc-ok'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
+  const e2 = await estado(); assert.equal(e2[0], 'falta'); assert.ok(e2[2] > 0 && e2[2] === e2[4] - (await p.evaluate(() => { const c = compute(draft); return c.units[1].total + c.units[2].total; })));
+  assert.match(await p.textContent(`summary[data-unit="${ana}"]`), /pagou 17,00 · falta/);
+  await p.click(`[data-pa="${ana}"] [data-pa-pago="acertar"]`);
+  assert.equal((await estado())[0], 'pago');
+  // 3) pessoa nova num item "entre todos": a parte de quem pagou cai e vira troco
+  await p.evaluate(() => { addPessoa('Diego'); });
+  assert.equal((await estado())[0], 'troco');
+  // 4) registros antigos (só "pago", sem valor) passam a guardar o valor
+  await p.evaluate(() => { draft.pagos = { [draft.people[1].id]: true }; commit(); });
+  assert.equal(await p.evaluate(() => typeof draft.pagos[draft.people[1].id].v), 'number');
+  // 5) remover quem já pagou: o aviso fala do pagamento
+  await p.evaluate(() => removerPessoa(draft.people[1].id)); assert.match(await p.textContent('.kf-dlg'), /já pagou/); await p.keyboard.press('Escape');
+  semErros(a); await a.fechar();
+});
+
+test('Início: excluir a comanda em andamento; nomes na mesa sem perder o foco; escurecido de tela cheia', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.click('#add-pessoa');
+  assert.ok(await esperar(() => p.evaluate(() => document.activeElement && document.activeElement.id === 'pn-nome')), 'o campo do nome já abre com o foco');
+  for (const n of ['Ana', 'Bruno']) { await p.keyboard.type(n); await p.keyboard.press('Enter'); assert.equal(await p.evaluate(() => document.activeElement.id), 'pn-nome', 'o foco fica no campo entre um nome e outro'); }
+  assert.equal(await p.evaluate(() => draft.people.length), 2);
+  const esc = await p.evaluate(() => { const s = getComputedStyle(document.querySelector('.kf-ov'), '::before'); return [s.position, parseFloat(s.top) < 0, s.backgroundColor !== 'rgba(0, 0, 0, 0)']; });
+  assert.deepEqual(esc, ['fixed', true, true]);
+  await p.click('#pn-ok');
+  await nav(p, 'inicio');
+  await p.click('#ini-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('#cf-ok');
+  assert.equal(await p.evaluate(() => draft.active), false);
+  await p.locator('.kf-toast button').click(); // Desfazer
+  assert.equal(await p.evaluate(() => draft.active && draft.people.length), 2);
+  await a.fechar();
 });

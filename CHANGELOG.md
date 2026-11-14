@@ -3,6 +3,19 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.2.0 · 2026-11-14
+
+Segunda rodada de ajustes pedidos pelo Bruno depois de usar o app no iPhone.
+
+- **Quem já pagou:** marcar como pago guarda o valor pago. Se a conta da pessoa mudar depois (desconto, serviço, couvert, item novo, alguém que entrou num item "entre todos", pessoa removida), o app mostra a diferença em vez de seguir como se estivesse tudo certo: "falta R$ x" ou "devolver R$ x", na linha da pessoa, no alto da comanda, no cupom da mesa e num aviso com o botão "Recebi" ou "Devolvi". A conta da mesa avisa na hora o que cada mudança faz com quem já pagou. Salvar com diferença pede confirmação.
+- **Item novo com gente que já pagou:** essas pessoas ficam de fora da divisão por padrão, com a etiqueta "já pagou"; se forem marcadas, o app avisa que voltam a dever.
+- **Abrir e recolher:** abrir uma pessoa ou um pedido não rola mais a tela nem esconde o título atrás do cabeçalho; o título tocado fica parado. "Paga serviço", "Juntar", os ajustes da conta da mesa, a troca entre compartilhado e individual e os outros trechos que abrem e recolhem ganharam movimento.
+- **Tampinhas e presente em 3D:** passaram a ser desenhados num canvas. No iPhone, as faces em CSS 3D trocavam de ordem durante o giro e a tampinha piscava.
+- **Guia:** a faixa do guia não cobre mais o botão redondo do meio da barra.
+- **Quem está na mesa:** a janela já abre com o cursor no nome, e o teclado fica aberto entre um nome e outro. O escurecido atrás das janelas cobre sempre a tela toda.
+- **"Ver cupom":** só nos atalhos de cada pessoa (saiu de Detalhes e do cupom compartilhado, onde também saiu o "Desfazer", igual ao "Separar").
+- **Início:** "Excluir esta comanda" na comanda em andamento, com Desfazer.
+
 ## 1.1.0 · 2026-11-14
 
 Ajustes pedidos pelo Bruno depois de usar a 1.0.0 no iPhone.

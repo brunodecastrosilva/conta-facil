@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.1.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.2.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). A versão 1.0 foi refeita com liberdade
 para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porquê está em [Exceções ao padrão](#exceções-ao-padrão).
@@ -13,12 +13,12 @@ para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porqu�
 - **Lançar em uma janela:** produto, quantidade, preço e quem consumiu (compartilhado, entre todos ou entre alguns, ou individual, por unidade)
 - **Pessoas:** tocar num nome mostra os atalhos; segurar e arrastar um nome sobre outro junta os dois no mesmo cupom
 - **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, cortesias e "uma pessoa paga a conta de todos"
-- **Pago:** marque quem já acertou; o alto da comanda mostra quanto falta
+- **Pago:** marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo, alguém que chegou), mostra quanto falta ou quanto devolver
 - **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; salvar tem Desfazer
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai
 - **Cadastros:** pessoas e chaves Pix, turmas (quem sai junto entra na mesa com um toque) e preço de cada produto em cada lugar
-- **Tampinhas e níveis:** uma coleção que cresce conforme você usa o app; cada tampinha é um objeto 3D que gira com o dedo; dá para desligar nos Ajustes
+- **Tampinhas e níveis:** uma coleção que cresce conforme você usa o app; cada tampinha é um objeto 3D (desenhado num canvas) que gira com o dedo; dá para desligar nos Ajustes
 - **Sortear alguém da mesa:** um ponteiro gira e para num nome
 - **Apresentação na primeira abertura** e **guia** que faz cada passo na tela, do começo ao fim, numa demonstração que não grava nada
 - **Sem bebida alcoólica:** nenhum texto, exemplo ou imagem do app fala de bebida alcoólica (há um teste que confere)
@@ -44,7 +44,7 @@ Abra o endereço em qualquer navegador, no celular, no tablet ou no computador. 
 | Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback`; apagados depois de 2 anos |
 
 A comanda aberta não vai para a sincronização: para dividir a mesma comanda entre celulares, use a comanda ao vivo.
-"Pago" fica só no aparelho de quem marcou (não vai para a comanda ao vivo). As tampinhas e os níveis são calculados do
+"Pago" (com o valor pago por pessoa, em `pagos`) fica só no aparelho de quem marcou (não vai para a comanda ao vivo). As tampinhas e os níveis são calculados do
 histórico e dos cadastros, então acompanham a sincronização; só as marcas "ao vivo", "sorteio" e "guia" ficam no aparelho.
 
 Quem já usava a versão 0.5.0 não perde nada: as chaves do armazenamento e os formatos são os mesmos.
@@ -106,7 +106,7 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 |---|---|---|
 | Arts. 59 e 60 (navegação) e Regras, Art. 10 | barra de baixo colada ao pé da tela, baixa, com a comanda no centro; "Mais" é uma tela, e os Ajustes ficam dentro dela (no computador, no pé do trilho) | a comanda é a ação principal da noite e fica sempre sob o polegar; cinco destinos sem encolher os nomes |
 | Art. 64, II (um só jeito de criar) | a comanda nova nasce no Início e no botão do centro da barra | o botão do centro vale em qualquer tela; o campo do Início serve a quem acabou de abrir o app |
-| Art. 65 (componentes do Kit) | carrossel dos cupons, arrastar e soltar e seções da comanda são do app; Cadastros usa segmento no lugar das guias | são as peças afinadas no Laboratório, dentro do papel; trocá-las mudaria o comportamento já testado |
+| Art. 65 (componentes do Kit) | carrossel dos cupons, arrastar e soltar e seções da comanda são do app (as linhas de pessoas e pedidos usam a seção do Kit sem o modo "grupo", que rolava a tela e escondia o título; o app fecha as irmãs e segura o título no lugar); os trechos redesenhados animam com um ajudante do app (`comMovimento`); Cadastros usa segmento no lugar das guias | são as peças afinadas no Laboratório, dentro do papel; trocá-las mudaria o comportamento já testado |
 | Art. 66 (uma cor de botão principal) | verde para a ação principal e âmbar para abrir comanda e sortear | o âmbar marca o começo da comanda e dá identidade; os dois têm contraste AA |
 | Art. 67 (nada lado a lado) | tiras das últimas comandas, grade de tampinhas e três pódios lado a lado no computador | são coleções para ver de relance, não dados para comparar linha a linha |
 | Art. 68 (janelas e avisos só do Kit) | a abertura e a festa de fechamento são telas cheias do app | momentos de marca, com animação própria; foco preso, Esc e leitor de tela tratados |

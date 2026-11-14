@@ -131,76 +131,136 @@ let tampaFila = [];
 function tampaFilaMostrar() { if (!tampaFila.length || festaAberta || KitFacil.dialogo.aberto()) return; const l = tampaFila; tampaFila = []; tampaNova(l); }
 
 /* ---------- objetos em 3D que giram com o dedo (tampinha e presente) ----------
-   Tudo é montado com faces em CSS 3D, sem imagem. A luz é recalculada a cada giro, face por face. */
+   São desenhados num <canvas>, face por face, de trás para a frente, com a luz recalculada a cada giro.
+   (A primeira versão montava as faces com CSS 3D; no iPhone as faces trocavam de ordem enquanto giravam e a tampinha piscava.) */
 const cor2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const tom = (rgb, k) => `rgb(${rgb.map(v => Math.max(0, Math.min(255, Math.round(v * k)))).join(',')})`;
+const mistura = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 function tampa3dHTML(t, { apagada = false, D = 172 } = {}) {
-  const [c1, c2] = apagada ? ['#C3CCC6', '#8E9A92'] : ESMALTES[t.cor] || ESMALTES.ambar;
-  const R = D / 2, T = D * 0.19, rt = R * 0.8, N = 42, rFora = R, rDentro = R * 0.935;
-  let saia = '';
-  for (let i = 0; i < N; i++) {
-    const a0 = 2 * Math.PI * i / N, a1 = 2 * Math.PI * (i + 1) / N, r0 = i % 2 ? rDentro : rFora, r1 = i % 2 ? rFora : rDentro;
-    const x0 = r0 * Math.cos(a0), y0 = r0 * Math.sin(a0), x1 = r1 * Math.cos(a1), y1 = r1 * Math.sin(a1), mx = (x0 + x1) / 2, my = (y0 + y1) / 2, rm = Math.hypot(mx, my);
-    let psi = Math.atan2(y1 - y0, x1 - x0);
-    if (Math.sin(psi) * (-mx / rm) + (-Math.cos(psi)) * (-my / rm) < 0) psi += Math.PI; // a face de fora olha para fora
-    const w = Math.hypot(x1 - x0, y1 - y0) + .8, dr = rm - rt, s = Math.hypot(T, dr), ax = -Math.asin(T / s);
-    saia += `<i class="o3d-saia" data-n="${(mx / rm * T / s).toFixed(3)},${(my / rm * T / s).toFixed(3)},${(dr / s).toFixed(3)}" data-k="${i % 2 ? .93 : 1.05}" style="width:${w.toFixed(2)}px;height:${s.toFixed(2)}px;left:${(-w / 2).toFixed(2)}px;top:${(-s).toFixed(2)}px;transform:translate3d(${mx.toFixed(2)}px,${my.toFixed(2)}px,${(-T / 2).toFixed(2)}px) rotateZ(${psi.toFixed(4)}rad) rotateX(${ax.toFixed(4)}rad)"></i>`;
-  }
-  // por dentro dos gomos vai um forro liso (um tronco de cone de 21 faces): fecha as frestas e é o que se vê pelo avesso.
-  // As faces são retângulos simples e as cores são chapadas: recorte (clip-path) e degradê em cada face pesam demais para girar liso.
-  const M = 21, rb = rDentro * 0.985, rc = rt * 0.985, wb = 2 * rb * Math.tan(Math.PI / M) + .8, sb = Math.hypot(T, rb - rc);
-  for (let i = 0; i < M; i++) {
-    const a = 2 * Math.PI * (i + .5) / M, ca = Math.cos(a), sa = Math.sin(a);
-    saia += `<i class="o3d-saia" data-n="${(ca * T / sb).toFixed(3)},${(sa * T / sb).toFixed(3)},${((rb - rc) / sb).toFixed(3)}" data-k=".8" style="width:${wb.toFixed(2)}px;height:${sb.toFixed(2)}px;left:${(-wb / 2).toFixed(2)}px;top:${(-sb).toFixed(2)}px;transform:translate3d(${(rb * ca).toFixed(2)}px,${(rb * sa).toFixed(2)}px,${(-T / 2).toFixed(2)}px) rotateZ(${(a - Math.PI / 2).toFixed(4)}rad) rotateX(${(-Math.asin(T / sb)).toFixed(4)}rad)"></i>`;
-  }
-  const d = (rt * 2 + 3).toFixed(1), k = 'o3' + (tampaSeq++);
-  return `<div class="o3d" data-o3d="tampa" data-c1="${c1}" data-c2="${c2}" tabindex="0" role="img" aria-label="Tampinha ${esc(t.nome)}. Deslize o dedo ou use as setas para girar." style="width:${D + 40}px;height:${D + 40}px">
-    <div class="o3d-sombra" style="width:${D * .8}px"></div>
-    <div class="o3d-eixo">${saia}
-      <div class="o3d-face" data-n="0,0,1" style="width:${d}px;height:${d}px;margin:${-d / 2}px 0 0 ${-d / 2}px;transform:translateZ(${(T / 2).toFixed(2)}px)">
-        <svg viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="${k}" cx="36%" cy="28%" r="85%"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs>
-          <circle cx="50" cy="50" r="50" fill="url(#${k})"/><circle cx="50" cy="50" r="47.500" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/><circle cx="50" cy="50" r="40" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.200" stroke-dasharray="1.800 3.600"/>
-          <g transform="translate(14 14) scale(3)" fill="none" stroke="#FFFDF5" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round">${TAMPA_IC[t.ic] || TAMPA_IC.estrela}</g></svg><span class="o3d-luz"></span></div>
-      <div class="o3d-face o3d-verso" data-n="0,0,-1" style="width:${d}px;height:${d}px;margin:${-d / 2}px 0 0 ${-d / 2}px;transform:translateZ(${(T / 2 - 2).toFixed(2)}px) rotateY(180deg)"></div>
-    </div></div>`;
+  return `<div class="o3d" data-o3d="tampa" data-tampa="${esc(t.id)}" ${apagada ? 'data-apagada="1"' : ''} data-d="${D}" tabindex="0" role="img" aria-label="Tampinha ${esc(t.nome)}. Deslize o dedo ou use as setas para girar." style="width:${D + 44}px;height:${D + 44}px"><canvas aria-hidden="true"></canvas></div>`;
 }
 function presente3dHTML({ L = 112 } = {}) {
-  const A = L * .82, tl = L * 1.07, ta = L * .24, f = (w, h, tr, n, cls = '') => `<i class="o3d-pf ${cls}" data-n="${n}" style="width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;margin:${(-h / 2).toFixed(1)}px 0 0 ${(-w / 2).toFixed(1)}px;transform:${tr}"></i>`;
-  const lados = (w, h, y, cls) => f(w, h, `translateY(${y}px) translateZ(${w / 2}px)`, '0,0,1', cls) + f(w, h, `translateY(${y}px) rotateY(180deg) translateZ(${w / 2}px)`, '0,0,-1', cls)
-    + f(w, h, `translateY(${y}px) rotateY(90deg) translateZ(${w / 2}px)`, '1,0,0', cls) + f(w, h, `translateY(${y}px) rotateY(-90deg) translateZ(${w / 2}px)`, '-1,0,0', cls);
-  const yc = ta / 2, yt = -A / 2 + yc - ta / 2 + 2; // a caixa desce um pouco para o conjunto ficar centrado; a tampa encaixa em cima
-  return `<div class="o3d" data-o3d="presente" tabindex="0" role="img" aria-label="Presente. Deslize o dedo ou use as setas para girar." style="width:${L * 2}px;height:${L * 2}px">
-    <div class="o3d-sombra" style="width:${L * 1.2}px"></div>
-    <div class="o3d-eixo">
-      ${lados(L, A, yc, 'pf-caixa')}${f(L, L, `translateY(${yc + A / 2}px) rotateX(-90deg)`, '0,1,0', 'pf-fundo')}
-      ${lados(tl, ta, yt, 'pf-tampa')}${f(tl, tl, `translateY(${yt - ta / 2}px) rotateX(90deg)`, '0,-1,0', 'pf-topo')}
-      <i class="o3d-laco l1" style="transform:translateY(${yt - ta / 2 - L * .16}px) rotateY(0deg)"></i><i class="o3d-laco l2" style="transform:translateY(${yt - ta / 2 - L * .16}px) rotateY(90deg)"></i>
-      <i class="o3d-no" style="transform:translateY(${yt - ta / 2 - L * .06}px)"></i>
-    </div></div>`;
+  return `<div class="o3d" data-o3d="presente" data-d="${L}" tabindex="0" role="img" aria-label="Presente. Deslize o dedo ou use as setas para girar." style="width:${L * 2}px;height:${L * 2}px"><canvas aria-hidden="true"></canvas></div>`;
 }
-// liga o giro: arrastar na horizontal, inércia ao soltar, setas do teclado; a luz acompanha
+// o desenho de um ícone (trechos de SVG na grade de 24) vira caminhos de canvas
+function caminhosDoIcone(svg) {
+  const doc = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${svg}</svg>`, 'image/svg+xml'), out = [];
+  const n = (el, a) => parseFloat(el.getAttribute(a)) || 0;
+  for (const el of doc.documentElement.children) {
+    const p = new Path2D();
+    if (el.tagName === 'path') p.addPath(new Path2D(el.getAttribute('d')));
+    else if (el.tagName === 'circle') p.arc(n(el, 'cx'), n(el, 'cy'), n(el, 'r'), 0, Math.PI * 2);
+    else if (el.tagName === 'ellipse') p.ellipse(n(el, 'cx'), n(el, 'cy'), n(el, 'rx'), n(el, 'ry'), 0, 0, Math.PI * 2);
+    else if (el.tagName === 'rect') { const x = n(el, 'x'), y = n(el, 'y'), w = n(el, 'width'), h = n(el, 'height'), r = n(el, 'rx'); if (p.roundRect) p.roundRect(x, y, w, h, r); else p.rect(x, y, w, h); }
+    else continue;
+    out.push(p);
+  }
+  return out;
+}
+/* a tampinha: disco de esmalte, ombro, saia de 21 gomos e, pelo avesso, o metal com o forro */
+function cenaTampa(o) {
+  const t = TAMPINHAS.find(x => x.id === o.dataset.tampa) || TAMPINHAS[0], apagada = !!o.dataset.apagada;
+  const [c1, c2] = (apagada ? ['#C3CCC6', '#8E9A92'] : ESMALTES[t.cor] || ESMALTES.ambar).map(cor2rgb);
+  const R = +o.dataset.d / 2, T = R * 0.4, r0 = R * 0.75, r1 = R * 0.83, zt = T / 2, zo = T / 2 - T * 0.24, zb = -T / 2, N = 42;
+  const METAL = [198, 205, 201], base = mistura(c1, c2, 0.3), faces = [];
+  const pt = (r, a, z) => [r * Math.cos(a), r * Math.sin(a), z];
+  const normal = (a, b, c) => { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]], n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], m = Math.hypot(...n) || 1; return n.map(x => x / m); };
+  for (let i = 0; i < N; i++) {
+    const a0 = 2 * Math.PI * i / N, a1 = 2 * Math.PI * (i + 1) / N, rr = k => (k % 2 ? R * 0.925 : R);
+    // ombro (do disco até o começo da saia) e gomo da saia (do ombro até a borda, que entra e sai)
+    const ombro = [pt(r0, a0, zt), pt(r0, a1, zt), pt(r1, a1, zo), pt(r1, a0, zo)], gomo = [pt(r1, a0, zo), pt(r1, a1, zo), pt(rr(i + 1), a1, zb), pt(rr(i), a0, zb)];
+    for (const [p, k] of [[ombro, 1.06], [gomo, i % 2 ? 0.94 : 1.03]]) {
+      let n = normal(p[0], p[1], p[2]); const am = (a0 + a1) / 2;
+      if (n[0] * Math.cos(am) + n[1] * Math.sin(am) + n[2] < 0) n = n.map(x => -x); // a normal aponta para fora
+      faces.push({ p, n, fora: base.map(v => v * k), dentro: METAL.map(v => v * (k > 1 ? 1 : 0.93)) });
+    }
+  }
+  const icone = caminhosDoIcone(TAMPA_IC[t.ic] || TAMPA_IC.estrela), circ = (r, z) => Array.from({ length: 40 }, (_, i) => pt(r, 2 * Math.PI * i / 40, z));
+  // frente: o esmalte com o desenho. O pincel recebe o plano do disco já inclinado e desenha como se estivesse de frente.
+  faces.push({ p: circ(r0, zt), n: [0, 0, 1], plano: zt, pinta: (g, luz) => {
+    const gr = g.createRadialGradient(-r0 * 0.3, -r0 * 0.38, r0 * 0.05, 0, 0, r0 * 1.05); gr.addColorStop(0, tom(c1, 0.72 + 0.4 * luz)); gr.addColorStop(1, tom(c2, 0.72 + 0.4 * luz));
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r0 + 0.6, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(0,0,0,.2)'; g.lineWidth = r0 * 0.035; g.beginPath(); g.arc(0, 0, r0 * 0.955, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = r0 * 0.022; g.setLineDash([r0 * 0.035, r0 * 0.07]); g.beginPath(); g.arc(0, 0, r0 * 0.8, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+    const s = r0 * 1.44 / 24; g.save(); g.translate(-12 * s, -12 * s); g.scale(s, s);
+    g.strokeStyle = '#FFFDF5'; g.lineWidth = 1.7; g.lineCap = g.lineJoin = 'round'; icone.forEach(c => g.stroke(c)); g.restore();
+    // brilho: uma mancha clara que corre pelo esmalte conforme a tampinha vira
+    const bx = -r0 * (0.25 + 0.5 * luz), br = g.createRadialGradient(bx, -r0 * 0.45, 0, bx, -r0 * 0.45, r0 * 0.8); br.addColorStop(0, `rgba(255,255,255,${(0.1 + 0.42 * luz).toFixed(3)})`); br.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = br; g.beginPath(); g.arc(0, 0, r0, 0, Math.PI * 2); g.fill();
+  } });
+  // avesso: o fundo de metal e o forro claro, no centro
+  faces.push({ p: circ(r1 * 0.985, zo - 0.5), n: [0, 0, -1], plano: zo - 0.5, pinta: (g, luz) => {
+    const ra = r1 * 0.985, k = 0.62 + 0.5 * luz;
+    g.fillStyle = tom(METAL, k); g.beginPath(); g.arc(0, 0, ra + 0.6, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = tom(METAL, k * 0.78); g.lineWidth = ra * 0.05; g.beginPath(); g.arc(0, 0, ra * 0.86, 0, Math.PI * 2); g.stroke();
+    const gr = g.createRadialGradient(-ra * 0.2, -ra * 0.25, 0, 0, 0, ra * 0.62); gr.addColorStop(0, tom([252, 252, 250], k + 0.12)); gr.addColorStop(1, tom([214, 220, 216], k + 0.12));
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, ra * 0.62, 0, Math.PI * 2); g.fill();
+  } });
+  return { faces, incl: -0.2, escala: 1, dy: 0 };
+}
+/* o presente: caixa, tampa, fita em cruz e laço */
+function cenaPresente(o) {
+  const L = +o.dataset.d, A = L * 0.8, tl = L * 1.08, ta = L * 0.24, h = L / 2, ht = tl / 2, faces = [];
+  const PAPEL = [29, 90, 59], TAMPA = [40, 122, 80], FITA = [242, 179, 61], yb = A / 2 + ta * 0.42, y0 = yb - A, yt0 = y0 + 2, yt1 = yt0 - ta, fw = L * 0.09;
+  // quatro lados de uma caixa (meia largura m, do alto y1 até a base y2), cada um com a faixa da fita no meio
+  const lados = (m, y1, y2, cor, camada) => [[0, 0, 1], [1, 0, 0], [0, 0, -1], [-1, 0, 0]].forEach(n => {
+    const t = [n[2], 0, -n[0]], q = (s, y, e = 0) => [n[0] * (m + e) + t[0] * s, y, n[2] * (m + e) + t[2] * s];
+    faces.push({ p: [q(-m, y1), q(m, y1), q(m, y2), q(-m, y2)], n, fora: cor, camada });
+    faces.push({ p: [q(-fw, y1, 0.4), q(fw, y1, 0.4), q(fw, y2, 0.4), q(-fw, y2, 0.4)], n, fora: FITA, amb: 0.8, camada: camada + 0.1 });
+  });
+  lados(h, y0, yb, PAPEL, 0);
+  lados(ht, yt1, yt0, TAMPA, 2);
+  const topo = (m, y, cor, camada) => faces.push({ p: [[-m, y, -m], [m, y, -m], [m, y, m], [-m, y, m]], n: [0, -1, 0], fora: cor, camada });
+  topo(ht, yt1, TAMPA.map(v => v * 1.08), 2);
+  faces.push({ p: [[-fw, yt1 - 0.4, -ht], [fw, yt1 - 0.4, -ht], [fw, yt1 - 0.4, ht], [-fw, yt1 - 0.4, ht]], n: [0, -1, 0], fora: FITA, amb: 0.8, camada: 2.1 });
+  faces.push({ p: [[-ht, yt1 - 0.4, -fw], [ht, yt1 - 0.4, -fw], [ht, yt1 - 0.4, fw], [-ht, yt1 - 0.4, fw]], n: [0, -1, 0], fora: FITA, amb: 0.8, camada: 2.1 });
+  // laço: quatro alças (duas em cada plano) e o nó
+  const alca = (dir, lado) => { const p = []; for (let i = 0; i <= 22; i++) { const a = 2 * Math.PI * i / 22, u = lado * L * 0.27 * (1 - Math.cos(a)) * 0.9, v = -L * 0.2 * Math.sin(a) * (1 + 0.25 * Math.cos(a)) - L * 0.1 * (1 - Math.cos(a)); p.push([dir[0] * u, yt1 + v, dir[1] * u]); } return p; };
+  for (const dir of [[0.92, 0.38], [-0.38, 0.92]]) for (const lado of [1, -1]) faces.push({ p: alca(dir, lado), n: [-dir[1], 0, dir[0]], fora: FITA, dentro: FITA.map(v => v * 0.86), amb: 0.82, traco: L * 0.07, camada: 3 });
+  faces.push({ p: Array.from({ length: 14 }, (_, i) => [L * 0.07 * Math.cos(2 * Math.PI * i / 14), yt1 - L * 0.045 + L * 0.05 * Math.sin(2 * Math.PI * i / 14), 0]), n: [0, 0, 1], fora: FITA.map(v => v * 0.9), dentro: FITA.map(v => v * 0.9), amb: 0.9, sempre: true, camada: 4 });
+  return { faces, incl: -0.42, escala: 0.9, dy: L * 0.2 };
+}
+function pintar3d(cv, cena, ang) {
+  const g = cv.getContext('2d'), dpr = cv._dpr, W = cv.width / dpr, H = cv.height / dpr, cx = W / 2, cy = H / 2 + cena.dy, e = cena.escala;
+  const ca = Math.cos(ang), sa = Math.sin(ang), ct = Math.cos(cena.incl), st = Math.sin(cena.incl), LUZ = [-0.38, -0.62, 0.69];
+  const gira = ([x, y, z]) => { const x1 = x * ca + z * sa, z1 = -x * sa + z * ca; return [x1, y * ct - z1 * st, y * st + z1 * ct]; };
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  // sombra no chão
+  const sg = g.createRadialGradient(cx, H - 13, 0, cx, H - 13, W * 0.34); sg.addColorStop(0, 'rgba(6,20,13,.3)'); sg.addColorStop(1, 'rgba(6,20,13,0)');
+  g.save(); g.translate(0, (H - 13) * 0.76); g.scale(1, 0.24); g.fillStyle = sg; g.beginPath(); g.arc(cx, H - 13, W * 0.34, 0, Math.PI * 2); g.fill(); g.restore();
+  const vis = [];
+  for (const f of cena.faces) {
+    const n = gira(f.n), frente = n[2] >= 0;
+    if (!frente && !f.dentro && !f.sempre) continue; // face de um lado só, de costas: não aparece
+    const q = f.p.map(gira); let z = 0; for (const p of q) z += p[2];
+    vis.push({ f, q, z: z / q.length, frente, luz: Math.max(0, (frente ? 1 : -1) * (n[0] * LUZ[0] + n[1] * LUZ[1] + n[2] * LUZ[2])) });
+  }
+  vis.sort((a, b) => (a.f.camada || 0) - (b.f.camada || 0) || a.z - b.z);
+  for (const { f, q, frente, luz } of vis) {
+    if (f.pinta) { // disco com desenho: o pincel trabalha no plano do disco
+      const o = gira([0, 0, f.plano]), u = gira([1, 0, 0]), v = gira([0, 1, 0]);
+      g.save(); g.transform(u[0] * e, u[1] * e, v[0] * e, v[1] * e, cx + o[0] * e, cy + o[1] * e); f.pinta(g, luz); g.restore();
+      continue;
+    }
+    const amb = f.amb || 0.58, cor = tom(frente ? f.fora : f.dentro, amb + (1.2 - amb) * luz);
+    g.beginPath(); q.forEach((p, i) => (i ? g.lineTo(cx + p[0] * e, cy + p[1] * e) : g.moveTo(cx + p[0] * e, cy + p[1] * e))); g.closePath();
+    if (f.traco) { g.strokeStyle = tom(frente ? f.fora : f.dentro, 0.62); g.lineWidth = (f.traco + 2.4) * e; g.lineJoin = 'round'; g.stroke(); g.strokeStyle = cor; g.lineWidth = f.traco * e; g.stroke(); } // alça do laço: fita com contorno
+    else { g.fillStyle = cor; g.fill(); g.strokeStyle = cor; g.lineWidth = 0.7; g.stroke(); } // o traço da mesma cor fecha as frestas entre as faces
+  }
+}
+// liga o giro: arrastar na horizontal, inércia ao soltar, setas do teclado
 function girar3d(raiz, { auto = true, inicio = -0.5 } = {}) {
   const o = raiz.matches && raiz.matches('.o3d') ? raiz : raiz.querySelector('.o3d'); if (!o || o.dataset.ligado) return null;
   o.dataset.ligado = '1';
-  const eixo = o.querySelector('.o3d-eixo'), tampa = o.dataset.o3d === 'tampa', INCL = tampa ? -0.2 : -0.36, parado = semMovimento();
-  const faces = [...o.querySelectorAll('[data-n]')].map(el => ({ el, n: el.dataset.n.split(',').map(Number), k: +el.dataset.k || 1, saia: el.classList.contains('o3d-saia') }));
-  const c1 = tampa ? cor2rgb(o.dataset.c1) : null, luzes = [...o.querySelectorAll('.o3d-luz')], LUZ = [-0.36, -0.6, 0.716], METAL = [196, 203, 199];
+  const cv = o.querySelector('canvas'), cena = o.dataset.o3d === 'tampa' ? cenaTampa(o) : cenaPresente(o), parado = semMovimento();
+  const medir = () => { const dpr = Math.min(3, window.devicePixelRatio || 1), w = o.clientWidth, h = o.clientHeight; cv._dpr = dpr; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); };
+  medir();
   const ATRITO = 0.9955; // quanto do giro sobra a cada milissegundo
   let ang = inicio, vel = 0, arr = null, raf = 0, sozinho = auto && !parado, t0 = 0;
-  const pintar = () => {
-    eixo.style.transform = `rotateX(${INCL}rad) rotateY(${ang}rad)`;
-    const ca = Math.cos(ang), sa = Math.sin(ang), ct = Math.cos(INCL), st = Math.sin(INCL);
-    for (const f of faces) {
-      const [x, y, z] = f.n, x1 = x * ca + z * sa, z1 = -x * sa + z * ca, y2 = y * ct - z1 * st, z2 = y * st + z1 * ct;
-      const frente = z2 >= 0, b = Math.max(0, (frente ? 1 : -1) * (x1 * LUZ[0] + y2 * LUZ[1] + z2 * LUZ[2]));
-      if (f.saia) f.el.style.backgroundColor = frente ? tom(c1, (0.5 + 0.78 * b) * f.k) : tom(METAL, (0.55 + 0.55 * b) * f.k);
-      else f.el.style.filter = `brightness(${(0.74 + 0.46 * b).toFixed(3)})`;
-    }
-    for (const l of luzes) { l.style.transform = `translateX(${(-sa * 70).toFixed(1)}%)`; l.style.opacity = Math.max(0, ca).toFixed(2); }
-  };
+  const pintar = () => { o.dataset.ang = ang.toFixed(3); pintar3d(cv, cena, ang); };
   const quadro = t => {
     raf = 0; const dt = Math.min(48, t - (t0 || t)); t0 = t;
-    if (arr) { pintar(); return; }
+    if (arr) return;
     if (Math.abs(vel) > 0.0004) { const f = Math.pow(ATRITO, dt); ang += vel * (1 - f) / -Math.log(ATRITO); vel *= f; }
     else if (sozinho) ang += 0.0007 * dt;
     else { vel = 0; pintar(); return; }
@@ -208,7 +268,7 @@ function girar3d(raiz, { auto = true, inicio = -0.5 } = {}) {
   };
   const andar = () => { if (!raf && o.isConnected) { t0 = 0; raf = requestAnimationFrame(quadro); } };
   o.addEventListener('pointerdown', e => { if (e.button > 0) return; sozinho = false; arr = { x: e.clientX, t: performance.now(), v: 0 }; vel = 0; o.classList.add('pegou'); try { o.setPointerCapture(e.pointerId); } catch {} });
-  o.addEventListener('pointermove', e => { if (!arr) return; const agora = performance.now(), dx = e.clientX - arr.x, dt = Math.max(1, agora - arr.t); ang += dx * 0.0115; arr.v = arr.v * .6 + (dx * 0.0115 / dt) * .4; arr.x = e.clientX; arr.t = agora; pintar(); });
+  o.addEventListener('pointermove', e => { if (!arr) return; const agora = performance.now(), dx = e.clientX - arr.x, dt = Math.max(1, agora - arr.t); ang += dx * 0.0115; arr.v = arr.v * 0.6 + (dx * 0.0115 / dt) * 0.4; arr.x = e.clientX; arr.t = agora; pintar(); });
   const soltar = () => { if (!arr) return; vel = parado ? 0 : Math.max(-0.02, Math.min(0.02, arr.v)); arr = null; o.classList.remove('pegou'); andar(); };
   o.addEventListener('pointerup', soltar); o.addEventListener('pointercancel', soltar);
   o.addEventListener('keydown', e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); sozinho = false; vel = 0; ang += e.key === 'ArrowRight' ? 0.3 : -0.3; pintar(); });

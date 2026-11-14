@@ -57,8 +57,9 @@ function render(opts = {}) {
   const v = $('#view'), fn = tab === 'ajustes' ? viewAjustes : TELAS[tab];
   $('.wrap').classList.toggle('largo', tab === 'ajustes');
   const trocou = v.dataset.telaAtual !== tab; v.dataset.telaAtual = tab;
-  v.innerHTML = `<section class="view view-${tab}">${tab === 'comanda' ? '<h1 class="so-leitor">Comanda</h1>' : ''}${fn.html()}</section>`;
-  fn.bind(v);
+  const desenhar = () => { v.innerHTML = `<section class="view view-${tab}">${tab === 'comanda' ? '<h1 class="so-leitor">Comanda</h1>' : ''}${fn.html()}</section>`; fn.bind(v); };
+  // na mesma tela, o que abre e o que recolhe ganha movimento; ao trocar de tela, vale a entrada da tela
+  if (trocou) desenhar(); else comMovimento(v, desenhar);
   document.body.dataset.tela = tab;
   if (trocou) { KitFacil.movimento.entrar(v, { de: 'tela' }); document.title = tab === 'inicio' ? 'Conta Fácil' : `${TITULOS[tab]} · Conta Fácil`; }
   prepFields(v);
@@ -370,7 +371,8 @@ function guiaMaos(g, tk) {
   const suave = () => (g.rapido || semMovimento() ? 'auto' : 'smooth');
   const mostrar = async el => {
     if (el.closest('.kf-nav, .kf-barra, .kf-trilho')) return;
-    const r = el.getBoundingClientRect(), topo = ($('#barra')?.getBoundingClientRect().bottom || 0) + 10, fundo = ($('#guia-doca')?.getBoundingClientRect().top || innerHeight) - 12;
+    const cab = el.closest('.kf-dlg, .festa') ? null : $('#view .cu-cab'); // na comanda, o cabeçalho de papel também fica preso no alto
+    const r = el.getBoundingClientRect(), topo = Math.max($('#barra')?.getBoundingClientRect().bottom || 0, cab ? cab.getBoundingClientRect().bottom : 0) + 10, fundo = ($('#guia-doca')?.getBoundingClientRect().top || innerHeight) - 12;
     if (r.top >= topo && r.bottom <= fundo) return;
     if (el.closest('.kf-dlg, .festa')) el.scrollIntoView({ block: 'center', behavior: suave() });
     else window.scrollBy({ top: r.top + Math.min(r.height, fundo - topo) / 2 - (topo + fundo) / 2, behavior: suave() });

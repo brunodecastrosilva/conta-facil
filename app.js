@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.1.0';
+const VERSAO = '1.2.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -648,6 +648,15 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.2.0', itens: [
+    'Quem já pagou: o app guarda o valor pago. Se a conta mudar depois (desconto, item novo, alguém que chegou), ele mostra quanto falta ou quanto devolver.',
+    'Ao lançar um item, quem já pagou fica de fora, a menos que você marque.',
+    'Abrir uma pessoa ou um pedido não esconde mais o título, e tudo que abre e recolhe tem movimento.',
+    'As tampinhas e o presente em 3D não piscam mais ao girar.',
+    'Quem está na mesa: o teclado fica aberto entre um nome e outro.',
+    'Excluir a comanda em andamento também pelo Início.',
+    '"Ver cupom" fica num lugar só: nos atalhos de cada pessoa.',
+  ] },
   { versao: '1.1.0', itens: [
     'Guia novo, do começo ao fim: segue a ordem de uso do app, numa janela fixa, com contagem antes de cada passo.',
     'Tampinhas e presente em 3D: deslize o dedo para girar.',
@@ -1127,7 +1136,7 @@ function liveCardHTML() {
   }
   const main = closed ? '' : connected ? `<button class="btn mustard" id="live-invite">${I.share}Convidar</button>`
     : store.ready ? `<button class="btn mustard" id="live-reconnect">${I.refresh}Reconectar</button>` : '';
-  return `<section class="live-panel" id="live-card" aria-label="Comanda ao vivo">
+  return `<section class="live-panel" id="live-card" data-morf="live-card" aria-label="Comanda ao vivo">
     <div class="lp-head">
       <span class="lp-status ${st[0]}"><span class="lp-dot" aria-hidden="true"></span>${st[1]}</span>
       ${closed ? '' : `<button class="lp-code" id="live-code" aria-label="Código ${esc(draft.live.code.split('').join(' '))}. Mostrar convite">${esc(codeShort(draft.live.code))}${I.qr}</button>`}
@@ -1493,20 +1502,24 @@ function renameSheet(it) { return produtoSheet(null, it); }
 // 1.0: a divisão do item fica na mesma janela do produto (uma janela só para lançar)
 function divisaoHTML(d) {
   return `<div class="field"><span class="eyebrow">Tipo de consumo</span><span id="lc-modo"></span></div>
-      <div id="lc-lista"></div>
-      <p class="share" id="lc-resumo" role="status" style="margin:0"></p>`;
+      <div id="lc-lista" data-morf="lc-lista"></div>
+      <p class="share" id="lc-resumo" role="status" style="margin:0"></p>
+      <p class="hint lc-pagou" id="lc-pagou" role="status" hidden></p>`;
 }
 function divisaoLigar(s, d, getIt, setQty, ini) {
   let modo = ini ? (ini.mode === 'units' ? 'units' : 'equal') : 'equal', tocou = false;
   const ids = d.people.map(p => p.id);
-  const marcados = new Set(ini && ini.mode !== 'units' ? (ids.filter(id => (ini.a[id] || 0) > 0).length && !ini.auto ? ids.filter(id => (ini.a[id] || 0) > 0) : ids) : ids), un = {};
+  // quem já pagou a conta fica fora de um item novo, a menos que alguém marque: o pagamento dessa pessoa não muda sem querer
+  const pagou = id => !!(d.pagos && d.pagos[id]), semPagos = ids.filter(id => !pagou(id)), novos = !ini && semPagos.length && semPagos.length < ids.length ? semPagos : ids;
+  const nomeDe = id => d.people.find(p => p.id === id).name;
+  const marcados = new Set(ini && ini.mode !== 'units' ? (ids.filter(id => (ini.a[id] || 0) > 0).length && !ini.auto ? ids.filter(id => (ini.a[id] || 0) > 0) : ids) : novos), un = {};
   if (ini && ini.mode === 'units') ids.forEach(id => { if (ini.a[id] > 0) un[id] = ini.a[id]; });
   const soma = () => Object.values(un).reduce((a, b) => a + b, 0);
   const falta = () => getIt().qty - soma();
   const segModo = () => `<div class="seg" role="group" aria-label="Tipo de consumo">
       <button type="button" data-lc-modo="equal" aria-pressed="${modo === 'equal'}">Compartilhado</button>
       <button type="button" data-lc-modo="units" aria-pressed="${modo === 'units'}">Individual</button></div>`;
-  const listaComp = () => `<div class="ck-list" role="group" aria-label="Quem dividiu">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"`, p.name, marcados.has(p.id))).join('')}
+  const listaComp = () => `<div class="ck-list" role="group" aria-label="Quem dividiu">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"`, p.name, marcados.has(p.id), pagou(p.id) ? 'ck-pagou' : '')).join('')}
       <button type="button" class="ck-row ck-todos" data-lc-todos></button></div>`;
   const listaInd = () => `<div class="units">${d.people.map(p => `
       <div class="unit-row" data-lc-linha="${p.id}"><span class="who-name">${avatar(p.name)}<span>${esc(p.name)}</span></span>
@@ -1536,13 +1549,21 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
       const t = $('[data-lc-todos]', s); if (t) { t.hidden = d.people.length < 2; t.textContent = marcados.size === d.people.length ? 'Desmarcar todos' : 'Marcar todos'; }
     }
     $('#lc-resumo', s).innerHTML = resumo();
+    const aviso = $('#lc-pagou', s);
+    if (aviso) {
+      const pg = ids.filter(pagou), dentro = pg.filter(id => modo === 'units' ? (un[id] || 0) > 0 : marcados.has(id)), lista = L => L.map(nomeDe).join(', ');
+      aviso.hidden = !pg.length || !!ini;
+      aviso.textContent = !pg.length ? '' : dentro.length ? `${lista(dentro)} já ${dentro.length > 1 ? 'pagaram' : 'pagou'}: com este item, ${dentro.length > 1 ? 'voltam' : 'volta'} a dever a diferença.` : `${lista(pg)} já ${pg.length > 1 ? 'pagaram e ficaram' : 'pagou e ficou'} de fora. Marque se também ${pg.length > 1 ? 'consumiram' : 'consumiu'}.`;
+    }
   };
   const trocarModo = m => {
     if (m === modo) return;
     modo = m; $('#lc-modo', s).innerHTML = segModo();
-    $('#lc-lista', s).innerHTML = modo === 'units' ? listaInd() : listaComp();
-    if (modo === 'units' && getIt().qty === 1 && marcados.size === 1) un[[...marcados][0]] = 1;
-    atualizar();
+    comMovimento($('#lc-lista', s).parentElement, () => {
+      $('#lc-lista', s).innerHTML = modo === 'units' ? listaInd() : listaComp();
+      if (modo === 'units' && getIt().qty === 1 && marcados.size === 1) un[[...marcados][0]] = 1;
+      atualizar();
+    });
   };
   $('#lc-modo', s).innerHTML = segModo(); $('#lc-lista', s).innerHTML = modo === 'units' ? listaInd() : listaComp();
   $('#lc-modo', s).addEventListener('click', e => { const b = e.target.closest('[data-lc-modo]'); if (b) { tocou = true; trocarModo(b.dataset.lcModo); } });
@@ -1635,13 +1656,13 @@ function itemFechadoHTML(it, d) {
   const resumo = () => { const dq = cur.qty - it.qty, df = fq - (it.fq || 0), t = [];
     if (dq) t.push(`${dq > 0 ? '+' : ''}${plural(dq, 'unidade', 'unidades')}`); if (df) t.push(`cortesia ${it.fq || 0} → ${fq}`);
     if (!dq && cur.mode === 'units' && JSON.stringify(cur.a) !== JSON.stringify(it.a)) t.push('divisão'); return t.join(' · '); };
-  return `<details class="item-d ${sujo ? 'sujo' : ''}" data-kf-secao="grupo" data-item="${it.id}" ${aberto ? 'open' : ''}>
+  return `<details class="item-d ${sujo ? 'sujo' : ''}" data-kf-secao data-item="${it.id}" ${aberto ? 'open' : ''}>
     <summary class="it-lin" aria-label="${esc(`${it.qty} ${it.name}, ${BRL(it.qty * it.price)}, ${tipoItem(it, d)}${it.fq ? ', ' + plural(it.fq, 'cortesia', 'cortesias') : ''}`)}"><span class="it-q">${it.qty}×</span><span class="it-nome"><span>${esc(it.name)}</span><span class="it-tipo">${BRL(it.price).replace('R$', '').trim()} cada · ${esc(tipoItem(it, d))}${it.fq ? ` · ${plural(it.fq, 'cortesia', 'cortesias')}` : ''}</span></span><span class="it-v">${BRL(it.qty * it.price).replace('R$', '').trim()}</span></summary>
     <div class="item-corpo">
       <div class="div-lista">${linhas}</div>
       <div class="div-lin fq-lin"><span class="cs-tx"><span>Cortesia</span></span>
         <span class="div-dir"><span class="num fq-n" aria-label="${fq} de ${cur.qty} sem cobrança">${fq}<small>/${cur.qty}</small></span><span class="unit-btns"><button type="button" class="minus" data-it-fq="${it.id}" data-dir="-1" ${fq ? '' : 'disabled'} aria-label="Uma cortesia a menos em ${esc(it.name)}">−1</button><button type="button" class="plus" data-it-fq="${it.id}" data-dir="1" ${fq < cur.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span></span></div>
-      ${sujo ? `<div class="pending-bar"><span><b>Alteração não salva</b> · ${esc(resumo())} · <span class="num">${BRL((it.qty - (it.fq || 0)) * it.price)} → ${BRL((cur.qty - fq) * cur.price)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-it-desc="${it.id}">Descartar</button><button type="button" class="btn small" data-it-ok="${it.id}">${I.save}Salvar</button></span></div>`
+      ${sujo ? `<div class="pending-bar" data-exp="pend:${it.id}"><span><b>Alteração não salva</b> · ${esc(resumo())} · <span class="num">${BRL((it.qty - (it.fq || 0)) * it.price)} → ${BRL((cur.qty - fq) * cur.price)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-it-desc="${it.id}">Descartar</button><button type="button" class="btn small" data-it-ok="${it.id}">${I.save}Salvar</button></span></div>`
         : `<div class="grp item-acoes"><button class="btn small ghost" data-it-alt="${it.id}">${I.edit}Alterar</button><button class="btn small ghost del-btn" data-it-del="${it.id}">${I.trash}Remover</button></div>`}
     </div></details>`;
 }
@@ -1657,7 +1678,7 @@ function animarAltura(el, de, para, fim) {
 // atalhos de uma pessoa (ou de um cupom compartilhado), abertos ao tocar no nome
 function atalhosPessoaHTML(u, calc, d) {
   const aqui = pesAberto === u.id, juntando = aqui && pesJuntando, svcAberto = aqui && pesSvc;
-  const multi = u.members.length > 1, pid = u.members[0], p = calc.per[pid].person, pago = pagoDe(d, u.members);
+  const multi = u.members.length > 1, pid = u.members[0], p = calc.per[pid].person;
   const sw = (attr, on, label, valor) => `<label class="pa-lin"><span class="pa-tx"><span>${label}</span>${valor ? `<span class="pa-v">${valor}</span>` : ''}</span><span class="switch"><input type="checkbox" ${attr} ${on ? 'checked' : ''} aria-label="${esc(label)}"><span class="track"></span></span></label>`;
   const outros = calc.units.filter(x => x.id !== u.id);
   let h = '';
@@ -1666,24 +1687,24 @@ function atalhosPessoaHTML(u, calc, d) {
     const nao = u.members.filter(m => !calc.per[m].person.payService), nm = m => calc.per[m].person.name;
     const resumo = !nao.length ? 'todos pagam' : nao.length === u.members.length ? 'ninguém paga' : `${u.members.length - nao.length} de ${u.members.length} · ${nao.length === 1 ? `${esc(nm(nao[0]))} não paga` : `${nao.length} não pagam`}`;
     h += `<button type="button" class="pa-lin pa-res" data-pa-svcabre aria-expanded="${svcAberto}"><span class="pa-tx"><span>Paga serviço</span><span class="pa-v">${resumo}</span></span><span class="pa-seta" aria-hidden="true"></span></button>`;
-    if (svcAberto) h += `<div class="pa-sub">${u.members.map(m => { const q = calc.per[m].person; return sw(`data-pa-svc="${m}"`, q.payService, esc(q.name), q.payService ? BRL(calc.per[m].service) : 'não paga'); }).join('')}</div>`;
+    if (svcAberto) h += `<div class="pa-sub" data-exp="svc:${u.id}">${u.members.map(m => { const q = calc.per[m].person; return sw(`data-pa-svc="${m}"`, q.payService, esc(q.name), q.payService ? BRL(calc.per[m].service) : 'não paga'); }).join('')}</div>`;
   }
   if (!multi && d.couvert.enabled) h += sw('data-pa-cv', p.payCouvert, 'Paga couvert', p.payCouvert ? BRL(calc.per[pid].couvert) : 'não paga');
-  h += `<button type="button" class="btn small pa-pago ${pago ? 'on' : ''}" data-pa-pago aria-pressed="${pago}">${pago ? `${I.x}Desmarcar pago` : `${I.ok}Marcar como pago`}</button>`;
+  h += botoesPagoHTML(u, contaPaga(d, u, calc), 'data-pa-pago');
   const botoes = `<div class="pa-acoes">
       ${multi ? `<button type="button" class="btn small" data-pa-desfaz>${I.x}Separar</button>` : outros.length ? `<button type="button" class="btn small" data-pa-juntar aria-expanded="${juntando}">${I.users}Juntar</button>` : ''}
       <button type="button" class="btn small" data-pa-cupom>${I.file}Ver cupom</button>
       <button type="button" class="btn small" data-pa-mais aria-label="Detalhes de ${esc(u.name)}">Detalhes</button></div>`;
-  const junta = !multi && juntando ? `<div class="pa-junta" role="group" aria-label="Juntar ${esc(u.name)} com"><p class="pa-junta-t">Juntar ${esc(u.name)} com:</p>${outros.map(x => `<button type="button" class="pa-alvo" data-pa-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${I.users}${esc(x.name)}</span><span>${BRL(x.total)}${I.next}</span></button>`).join('')}</div>` : '';
+  const junta = !multi && juntando ? `<div class="pa-junta" data-exp="junta:${u.id}" role="group" aria-label="Juntar ${esc(u.name)} com"><p class="pa-junta-t">Juntar ${esc(u.name)} com:</p>${outros.map(x => `<button type="button" class="pa-alvo" data-pa-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${I.users}${esc(x.name)}</span><span>${BRL(x.total)}${I.next}</span></button>`).join('')}</div>` : '';
   return `<div class="dv-atalhos" data-pa="${u.id}">${h}${botoes}${junta}</div>`;
 }
 function removerPessoa(id) {
   const d = draft, p = d.people.find(x => x.id === id); if (!p) return;
   const has = d.items.some(i => (i.a[id] || 0) > 0), n = d.items.filter(i => (i.a[id] || 0) > 0).length;
-  confirmSheet(`Remover ${p.name}?`, has
+  confirmSheet(`Remover ${p.name}?`, (has
     ? `${p.name} está em ${plural(n, 'item', 'itens')}. Nos itens de consumo individual, as unidades dessa pessoa saem da comanda. Nos compartilhados, o valor passa a ser dividido entre os demais.`
-    : `${p.name} sai da comanda.`, 'Remover', () => {
-    d.people = d.people.filter(x => x.id !== id);
+    : `${p.name} sai da comanda.`) + (d.pagos && d.pagos[id] ? ` ${p.name} já pagou ${BRL(valorPago(d, id, compute(d)))}: esse pagamento sai junto, e a conta dos outros é refeita sem ele.` : ''), 'Remover', () => {
+    d.people = d.people.filter(x => x.id !== id); if (d.pagos) delete d.pagos[id];
     d.items.forEach(i => {
       const u = i.a[id] || 0; if (!u) return;
       delete i.a[id]; delete pending[i.id];
@@ -1713,14 +1734,17 @@ function pessoaNovaSheet() {
   const naMesa = () => d.people.length ? `Na mesa: ${esc(d.people.map(p => p.name).join(', '))}` : 'Ninguém na mesa ainda.';
   const turmas = !d.isExample && (catalog.groups || []).length ? `<div class="field field-sel"><label for="pn-turma">Pôr uma turma na mesa</label><select id="pn-turma"><option value="">Escolher turma</option>${[...catalog.groups].sort(ordemNome).map(g => { const falta = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n))).length; return `<option value="${esc(g.id)}" ${falta ? '' : 'disabled'}>${esc(g.name)} · ${falta ? plural(falta, 'pessoa', 'pessoas') + ' a pôr' : 'todos já na mesa'}</option>`; }).join('')}</select></div>` : '';
   openSheet({ title: 'Quem está na mesa?', body: `<form id="pn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
-      <div class="row"><div class="field grow"><label for="pn-nome">Nome</label><input id="pn-nome" type="text" autocapitalize="words" autocomplete="off"></div><button class="btn" type="submit">${I.plus}Adicionar</button></div>
+      <div class="row"><div class="field grow"><label for="pn-nome">Nome</label><input id="pn-nome" type="text" autocapitalize="words" autocomplete="off" enterkeyhint="next" autofocus></div><button class="btn" type="submit" id="pn-add">${I.plus}Adicionar</button></div>
       ${turmas}<p class="hint" id="pn-mesa" role="status" style="margin:0">${naMesa()}</p></form>`,
     foot: `<button type="button" class="btn ghost" id="pn-ok">Pronto</button>`, onMount: s => {
       const inp = $('#pn-nome', s);
-      const depois = () => { inp.value = ''; $('#pn-mesa', s).innerHTML = naMesa(); if (!isTouch) inp.focus(); };
+      const depois = () => { inp.value = ''; $('#pn-mesa', s).innerHTML = naMesa(); inp.focus({ preventScroll: true }); };
       attachSuggest(inp, () => catalog.people.filter(p => !d.people.some(x => norm(x.name) === norm(p.name)))
         .sort((a, b) => (Uu.people[norm(b.name)] || 0) - (Uu.people[norm(a.name)] || 0) || (b.last || 0) - (a.last || 0)).map(p => ({ label: p.name })), x => { if (addPessoa(x.label)) depois(); });
       $('#pn-form', s).addEventListener('submit', e => { e.preventDefault(); if (addPessoa(inp.value)) depois(); });
+      // a janela já abre com o cursor no nome (o teclado sobe junto); Enter adiciona sem "enviar o formulário" (o que fecharia o teclado), e o botão Adicionar não tira o foco do campo
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && !e.defaultPrevented) { e.preventDefault(); if (addPessoa(inp.value)) depois(); } });
+      $('#pn-add', s).addEventListener('pointerdown', e => e.preventDefault());
       $('#pn-turma', s)?.addEventListener('change', e => {
         const g = (catalog.groups || []).find(x => x.id === e.target.value); if (!g) return;
         const novos = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n)));
@@ -1808,31 +1832,118 @@ function produtoSheet(paraId, ed) {
     } });
 }
 // quem já acertou a sua parte na mesa (só neste aparelho, guardado junto com a comanda)
+/* ---------- quem já pagou ----------
+   d.pagos[id da pessoa] = { v: centavos pagos, t: quando }. O valor pago fica guardado. Se a conta da pessoa mudar depois
+   (item novo, desconto, serviço, alguém que entrou na divisão), o app mostra a diferença: falta receber ou há troco a devolver.
+   (Até a 1.1 só se guardava "pago": esses registros valem pelo valor da conta e passam a guardar o valor na primeira tela.) */
 const pagoDe = (d, ids) => ids.length > 0 && ids.every(id => d.pagos && d.pagos[id]);
-function marcarPago(d, ids, on) { d.pagos = { ...(d.pagos || {}) }; ids.forEach(id => { if (on) d.pagos[id] = true; else delete d.pagos[id]; }); }
-function faltaReceber(d, c) { return c.units.reduce((a, u) => a + (pagoDe(d, u.members) ? 0 : u.total), 0); }
+const algumPago = d => !!d.pagos && Object.keys(d.pagos).length > 0;
+const valorPago = (d, id, c) => { const x = d.pagos && d.pagos[id]; return !x ? 0 : x === true ? (c.per[id] ? c.per[id].total : 0) : (x.v || 0); };
+function fixarPagos(d, c) { if (d.pagos) for (const id in d.pagos) { if (!c.per[id]) delete d.pagos[id]; else if (d.pagos[id] === true) d.pagos[id] = { v: c.per[id].total, t: 0 }; } }
+// situação de um cupom: aberto, pago, falta (pagou e a conta subiu), troco (pagou e a conta desceu) ou parte (só alguns do cupom pagaram)
+function contaPaga(d, u, c) {
+  const marcados = u.members.filter(id => d.pagos && d.pagos[id]);
+  if (!marcados.length) return { estado: 'aberto', pago: 0, falta: u.total, troco: 0 };
+  const pago = marcados.reduce((a, id) => a + valorPago(d, id, c), 0), dif = u.total - pago;
+  return { estado: dif > 0 ? (marcados.length < u.members.length ? 'parte' : 'falta') : dif < 0 ? 'troco' : 'pago', pago, falta: Math.max(0, dif), troco: Math.max(0, -dif) };
+}
+function marcarPago(d, ids, on, c = compute(d)) { d.pagos = { ...(d.pagos || {}) }; ids.forEach(id => { if (on) d.pagos[id] = { v: c.per[id] ? c.per[id].total : 0, t: Date.now() }; else delete d.pagos[id]; }); }
+function faltaReceber(d, c) { return c.units.reduce((a, u) => a + contaPaga(d, u, c).falta, 0); }
+function trocoDevolver(d, c) { return c.units.reduce((a, u) => a + contaPaga(d, u, c).troco, 0); }
+// cupons de quem já pagou e cuja conta mudou depois
+const pagosComDiferenca = (d, c) => c.units.map(u => ({ u, p: contaPaga(d, u, c) })).filter(x => x.p.estado === 'falta' || x.p.estado === 'troco');
+const fraseDiferenca = (u, p) => `${u.name} pagou ${BRL(p.pago)} e a conta agora é ${BRL(u.total)}: ${p.estado === 'falta' ? 'falta ' + BRL(p.falta) : 'devolver ' + BRL(p.troco)}.`;
+// marca ou desmarca o pagamento de um cupom, com Desfazer; "acertar" registra que a diferença foi paga ou devolvida
+function alternarPago(u, modo) {
+  const d = draft, c = compute(d), antes = clone(d.pagos || {}), p = contaPaga(d, u, c);
+  const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; commit({ anchor: false }); } };
+  if (modo === 'desmarcar') { marcarPago(d, u.members, false, c); commit({ anchor: false }); toast(`${u.name}: pagamento desmarcado.`, desfazer); return; }
+  marcarPago(d, u.members, true, c); commit({ anchor: false });
+  if (modo === 'acertar') { toast(p.estado === 'troco' ? `${u.name}: troco de ${BRL(p.troco)} devolvido.` : `${u.name}: diferença de ${BRL(p.falta)} recebida.`, desfazer); return; }
+  const abertos = c.openItems.length + c.unassigned.length;
+  toast(`${u.name}: pago ${BRL(u.total)}.${abertos ? ' Ainda há itens sem divisão: a conta pode mudar.' : ''}`, desfazer);
+}
+// botões de pagamento de um cupom, conforme a situação
+function botoesPagoHTML(u, p, attr = 'data-pg') {
+  const b = (modo, cls, txt) => `<button type="button" class="btn small ${cls}" ${attr}="${modo}">${txt}</button>`;
+  if (p.estado === 'aberto') return b('marcar', 'pa-pago', `${I.ok}Marcar como pago`);
+  if (p.estado === 'pago') return b('desmarcar', 'pa-pago on', `${I.x}Desmarcar pago`);
+  const acerto = p.estado === 'troco' ? `${I.ok}Devolvi ${BRL(p.troco)}` : p.estado === 'parte' ? `${I.ok}Recebi o resto: ${BRL(p.falta)}` : `${I.ok}Recebi ${BRL(p.falta)}`;
+  return `<p class="pa-dif" role="status">${p.estado === 'parte' ? `Parte deste cupom já foi paga (${BRL(p.pago)}). Falta ${BRL(p.falta)}.` : esc(fraseDiferenca(u, p))}</p><div class="pa-acoes pa-acoes-2">${b('acertar', 'pa-pago', acerto)}${b('desmarcar', 'ghost', `${I.x}Desmarcar pago`)}</div>`;
+}
+// Abrir uma linha da comanda (pessoa ou pedido) fecha as irmãs. O título tocado fica parado na tela enquanto as outras
+// encolhem acima dele; no fim, se o que abriu não coube, a tela desce só o necessário, sem esconder o título.
+function abrirSoEsta(det, irmas) {
+  const sm = det.querySelector(':scope > summary'); if (!sm) return;
+  [...det.parentNode.children].forEach(x => { if (x !== det && x.matches('details' + irmas) && KitFacil.secao.aberta(x)) KitFacil.secao.fechar(x); });
+  const y0 = sm.getBoundingClientRect().top, t0 = performance.now();
+  const passo = () => {
+    if (!sm.isConnected) return;
+    const dy = sm.getBoundingClientRect().top - y0; if (Math.abs(dy) >= 0.5) window.scrollBy({ top: dy, behavior: 'instant' });
+    if (performance.now() - t0 < 460) return requestAnimationFrame(passo);
+    const cab = $('.cu-cab'), topo = (cab ? cab.getBoundingClientRect().bottom : 0) + 8, doca = $('#guia-doca') || $$('.kf-nav').find(n => n.getClientRects().length), fundo = (doca ? doca.getBoundingClientRect().top : innerHeight) - 14;
+    const r = det.getBoundingClientRect(), sobra = r.top < topo ? r.top - topo : Math.min(r.bottom - fundo, r.top - topo);
+    if (sobra > 4 || sobra < -1) window.scrollBy({ top: sobra, behavior: semMovimento() ? 'instant' : 'smooth' });
+  };
+  requestAnimationFrame(passo);
+}
+/* ---------- abrir e recolher com movimento ----------
+   As telas são redesenhadas inteiras; este ajudante compara o antes e o depois de um redesenho e anima o que mudou:
+   [data-exp="chave"]  um trecho que aparece ou some (abre crescendo, fecha encolhendo);
+   [data-morf="chave"] uma caixa cujo conteúdo troca (a altura desliza de uma para a outra). */
+const MOV_EXP = { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' };
+function comMovimento(raiz, redesenhar) {
+  if (!raiz || !raiz.animate || (typeof semMovimento === 'function' && semMovimento())) { redesenhar(); return; }
+  const marca = el => el.id ? '#' + CSS.escape(el.id) : el.dataset.pa ? `[data-pa="${CSS.escape(el.dataset.pa)}"]` : el.dataset.item ? `[data-item="${CSS.escape(el.dataset.item)}"]` : el.dataset.pes ? `[data-pes="${CSS.escape(el.dataset.pes)}"]` : '';
+  const caminho = el => { const seg = []; for (let p = el; p && p !== raiz; p = p.parentElement) { const m = marca(p); if (m) { seg.unshift(m); return seg.join(' > '); } seg.unshift(`:nth-child(${[...p.parentElement.children].indexOf(p) + 1})`); } return seg.length ? ':scope > ' + seg.join(' > ') : ''; };
+  const antes = new Map(), alturas = new Map();
+  raiz.querySelectorAll('[data-exp]').forEach(e => { if (e.offsetHeight) antes.set(e.dataset.exp, { clone: e.cloneNode(true), pai: caminho(e.parentElement), i: [...e.parentElement.children].indexOf(e) }); });
+  raiz.querySelectorAll('[data-morf]').forEach(e => alturas.set(e.dataset.morf, e.offsetHeight));
+  redesenhar();
+  const medidas = e => { const cs = getComputedStyle(e), pai = e.parentElement && getComputedStyle(e.parentElement), vao = pai && /flex|grid/.test(pai.display) ? parseFloat(pai.rowGap) || 0 : 0;
+    return [{ height: '0px', paddingTop: '0px', paddingBottom: '0px', marginTop: -vao + 'px', marginBottom: '0px', borderTopWidth: '0px', borderBottomWidth: '0px', opacity: 0 },
+      { height: e.offsetHeight + 'px', paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, marginTop: cs.marginTop, marginBottom: cs.marginBottom, borderTopWidth: cs.borderTopWidth, borderBottomWidth: cs.borderBottomWidth, opacity: 1 }]; };
+  const vistos = new Set();
+  raiz.querySelectorAll('[data-exp]').forEach(e => {
+    vistos.add(e.dataset.exp); if (antes.has(e.dataset.exp)) return;
+    const q = medidas(e); e.style.overflow = 'hidden'; e.style.boxSizing = 'border-box';
+    const a = e.animate(q, MOV_EXP); a.onfinish = a.oncancel = () => { e.style.overflow = ''; e.style.boxSizing = ''; };
+  });
+  for (const [k, x] of antes) {
+    if (vistos.has(k)) continue;
+    const pai = x.pai ? raiz.querySelector(x.pai) : raiz; if (!pai) continue;
+    const f = x.clone; f.removeAttribute('data-exp'); f.removeAttribute('id'); f.querySelectorAll('[id],[data-exp],[data-morf]').forEach(n => { n.removeAttribute('id'); n.removeAttribute('data-exp'); n.removeAttribute('data-morf'); });
+    f.classList.add('exp-fantasma'); f.setAttribute('aria-hidden', 'true'); f.inert = true;
+    pai.insertBefore(f, pai.children[Math.min(x.i, pai.children.length)] || null);
+    const q = medidas(f); f.style.overflow = 'hidden'; f.style.boxSizing = 'border-box';
+    const a = f.animate([q[1], q[0]], { ...MOV_EXP, fill: 'forwards' }); a.onfinish = a.oncancel = () => f.remove();
+  }
+  raiz.querySelectorAll('[data-morf]').forEach(e => {
+    const h0 = alturas.get(e.dataset.morf), h1 = e.offsetHeight; if (h0 == null || Math.abs(h0 - h1) < 3) return;
+    e.style.overflow = 'hidden'; const a = e.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], MOV_EXP); a.onfinish = a.oncancel = () => { e.style.overflow = ''; };
+  });
+}
 // o cupom compartilhado: quem está nele, quanto é de cada um e quem paga
 function grupoSheet(uid) {
   const d = draft, c = compute(d), u = c.U[uid]; if (!u) return;
   const so = u.payers.length < u.members.length;
   openSheet({ title: 'Cupom compartilhado', body: `<div class="cs"><div class="cs-topo"><span class="hint">${plural(u.members.length, 'pessoa', 'pessoas')}</span><b class="num cs-total">${BRL(u.total)}</b></div>
       <div class="cs-lista">${u.members.map(m => `<button type="button" class="cs-lin cs-alvo" data-gs-p="${m}">${avatar(c.per[m].person.name)}<span class="gs-nome">${esc(c.per[m].person.name)}${so && u.payers.includes(m) ? ' <span class="tag">paga</span>' : ''}</span><span class="num hint">${BRL(c.per[m].total)}</span>${I.next}</button>`).join('')}</div>
-      <div class="cs-acoes"><button type="button" class="btn small ghost" data-gs-cupom>${I.file}Ver cupom</button><button type="button" class="btn small ghost" data-gs-desfaz>${I.x}Desfazer cupom compartilhado</button></div></div>`,
+      <p class="hint">Toque numa pessoa para ver o que é dela. Para separar o cupom, use Separar na comanda.</p></div>`,
     foot: `<button type="button" class="btn" id="gs-ok">Fechar</button>`, onMount: s => {
       $$('[data-gs-p]', s).forEach(b => b.onclick = () => consumoSheet(b.dataset.gsP));
-      $('[data-gs-cupom]', s).onclick = () => cupomSheet(u.members[0]);
-      $('[data-gs-desfaz]', s).onclick = () => { const antes = clone(d.groups || []); u.members.forEach(m => leaveGroup(d, m)); closeSheet(true); commit(); toast('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); };
       $('#gs-ok', s).onclick = () => closeSheet();
     } });
 }
 // o cupom de uma pessoa (ou do grupo dela), para ver e compartilhar
 function cupomSheet(pid) {
   const d = draft, c = compute(d), u = c.U[c.unitOf[pid]]; if (!u) return;
-  const multi = u.members.length > 1, editar = () => multi ? grupoSheet(u.id) : consumoSheet(pid), pago = pagoDe(d, u.members);
-  openSheet({ title: multi ? 'Cupom compartilhado' : `Cupom de ${u.name}`, body: `<div class="cupom-1 ${pago ? 'cupom-pago' : ''}">${receiptHTML(u, d, c)}${pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>`,
-    foot: `<button type="button" class="btn ghost" id="cp-editar" aria-label="Editar">${I.edit}</button><button type="button" class="btn ghost" id="cp-share" aria-label="Compartilhar">${I.share}</button><button type="button" class="btn" id="cp-pago" style="flex:1">${pago ? `${I.x}Desmarcar pago` : `${I.ok}Marcar como pago`}</button>`, onMount: s => {
+  const multi = u.members.length > 1, editar = () => multi ? grupoSheet(u.id) : consumoSheet(pid), pg = contaPaga(d, u, c), pago = pg.estado === 'pago', dif = pg.estado !== 'aberto' && !pago;
+  const rotulo = pago ? `${I.x}Desmarcar pago` : pg.estado === 'troco' ? `${I.ok}Devolvi ${BRL(pg.troco)}` : dif ? `${I.ok}Recebi ${BRL(pg.falta)}` : `${I.ok}Marcar como pago`;
+  openSheet({ title: multi ? 'Cupom compartilhado' : `Cupom de ${u.name}`, body: `${dif ? `<p class="pa-dif" role="status">${pg.estado === 'parte' ? `Parte deste cupom já foi paga (${BRL(pg.pago)}). Falta ${BRL(pg.falta)}.` : esc(fraseDiferenca(u, pg))}</p>` : ''}<div class="cupom-1 ${pago ? 'cupom-pago' : ''}">${receiptHTML(u, d, c)}${pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>`,
+    foot: `<button type="button" class="btn ghost" id="cp-editar" aria-label="Editar">${I.edit}</button><button type="button" class="btn ghost" id="cp-share" aria-label="Compartilhar">${I.share}</button><button type="button" class="btn" id="cp-pago" style="flex:1">${rotulo}</button>`, onMount: s => {
       $('#cp-editar', s).onclick = editar;
-      $('#cp-pago', s).onclick = () => { marcarPago(d, u.members, !pago); closeSheet(true); commit({ anchor: false }); toast(pago ? `${u.name}: pagamento desmarcado.` : `${u.name}: pago.`, { label: 'Desfazer', run: () => { marcarPago(d, u.members, pago); commit({ anchor: false }); } }); };
+      $('#cp-pago', s).onclick = () => { closeSheet(true); alternarPago(u, pago ? 'desmarcar' : dif ? 'acertar' : 'marcar'); };
       $('#cp-share', s).onclick = () => shareReceipt(u, d, c, () => cupomSheet(pid));
     } });
 }
@@ -1870,16 +1981,15 @@ function consumoSheet(pid) {
     if (d.service.enabled) pag += sw(`data-cs-svc`, p.payService, 'Paga serviço', p.payService ? BRL(r.service) : 'não paga');
     if (d.couvert.enabled) pag += sw(`data-cs-cv`, p.payCouvert, 'Paga couvert', p.payCouvert ? BRL(r.couvert) : 'não paga');
     if (multi) pag += sw(`data-cs-payer`, isPayer, `Paga o cupom de ${esc(u.name)}`, isPayer ? '' : 'outra pessoa do grupo paga', isPayer && u.payers.length === 1);
-    if (r.custom) pag += `<div class="cs-lin"><span class="field" style="flex:1"><label for="cs-custom">Vai pagar</label><input id="cs-custom" type="text" inputmode="numeric" data-money value="${moneyInput(d.custom[pid] || 0)}"><span class="hint">Parte na conta: ${BRL(r.share)}. A diferença é acertada entre vocês.</span></span></div>`;
+    if (r.custom) pag += `<div class="cs-lin" data-exp="cs-custom"><span class="field" style="flex:1"><label for="cs-custom">Vai pagar</label><input id="cs-custom" type="text" inputmode="numeric" data-money value="${moneyInput(d.custom[pid] || 0)}"><span class="hint">Parte na conta: ${BRL(r.share)}. A diferença é acertada entre vocês.</span></span></div>`;
     const planoHTML = plain ? '' : plano.map(x => `<div class="cs-lin cs-plano ${x.k === 'in' ? 'recv' : ''}"><span>${esc(cap(x.t))}</span>${x.k === 'out' && debts.some(z => z.pid === pid) ? `<button type="button" class="btn small ghost" data-cs-pix>Pix</button>` : ''}</div>`).join('');
     const acoes = `<div class="cs-acoes">
-        <button type="button" class="btn small ghost" data-cs-cupom>${I.file}Ver cupom</button>
         ${isPayer ? `<button type="button" class="btn small ghost" data-cs-valor>${r.custom ? `${I.refresh}Valor da conta` : `${I.edit}Pagar outro valor`}</button>` : ''}
         ${multi ? `<button type="button" class="btn small ghost" data-cs-sair>${I.x}Sair do cupom compartilhado</button>` : outros.length ? `<button type="button" class="btn small ghost" data-cs-juntar aria-expanded="${juntando}">${I.users}Juntar com…</button>` : ''}
       </div>
-      ${juntando && !multi ? `<div class="cs-lista cs-junta" role="group" aria-label="Juntar ${esc(p.name)} com">${outros.map(x => `<button type="button" class="cs-lin cs-alvo" data-cs-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${esc(x.name)}</span><span class="num hint">${BRL(x.total)}</span>${I.next}</button>`).join('')}</div>` : ''}`;
+      ${juntando && !multi ? `<div class="cs-lista cs-junta" data-exp="cs-junta" role="group" aria-label="Juntar ${esc(p.name)} com">${outros.map(x => `<button type="button" class="cs-lin cs-alvo" data-cs-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${esc(x.name)}</span><span class="num hint">${BRL(x.total)}</span>${I.next}</button>`).join('')}</div>` : ''}`;
     const antes = compute(d).per[pid]?.total || 0;
-    const pend = sujo() ? `<div class="pending-bar cs-pend" role="status"><span><b>Alteração não salva</b> · <span class="num">${BRL(antes)} → ${BRL(r.total)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-cs-desc>Descartar</button><button type="button" class="btn small" data-cs-salvar>${I.save}Salvar</button></span></div>` : '';
+    const pend = sujo() ? `<div class="pending-bar cs-pend" data-exp="cs-pend" role="status"><span><b>Alteração não salva</b> · <span class="num">${BRL(antes)} → ${BRL(r.total)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-cs-desc>Descartar</button><button type="button" class="btn small" data-cs-salvar>${I.save}Salvar</button></span></div>` : '';
     return `<div class="cs-topo"><span class="hint">${multi ? `No cupom de ${esc(u.name)} · ${BRL(u.total)}` : `Total de ${esc(p.name)}`}</span><b class="num cs-total">${BRL(r.total)}</b></div>
       ${pend}
       ${ind.length ? `<span class="eyebrow">Consumo individual</span><div class="cs-lista">${ind.map(linhaInd).join('')}</div>` : ''}
@@ -1904,15 +2014,14 @@ function consumoSheet(pid) {
         commit({ anchor: false }); pintar();
         toast(`${antigo} agora é ${nome}${nome.endsWith('.') ? '' : '.'}`, { label: 'Desfazer', run: () => { const q = d.people.find(x => x.id === pid); if (q) { q.name = antigo; commit({ anchor: false }); } } });
       });
-      const pintar = () => { box.innerHTML = corpo(); prepFields(box); };
+      const pintar = () => comMovimento(box, () => { box.innerHTML = corpo(); prepFields(box); });
       const refazer = () => { commit({ anchor: false }); pintar(); };
       box.addEventListener('click', e => {
         const t = sel => e.target.closest(sel);
         if (t('[data-cs-salvar]')) { d.items = st; st = clone(d.items); commit({ anchor: false }); pintar(); toast('Alteração salva.'); return; }
         if (t('[data-cs-desc]')) { st = clone(d.items); pintar(); return; }
-        if (sujo() && ['[data-cs-lancar]', '[data-cs-cupom]', '[data-cs-pix]', '[data-cs-sair]', '[data-cs-alvo]', '[data-cs-valor]', '[data-cs-juntar]'].some(x => t(x))) { toast('Salve ou descarte a alteração primeiro.'); return; }
+        if (sujo() && ['[data-cs-lancar]', '[data-cs-pix]', '[data-cs-sair]', '[data-cs-alvo]', '[data-cs-valor]', '[data-cs-juntar]'].some(x => t(x))) { toast('Salve ou descarte a alteração primeiro.'); return; }
         if (t('[data-cs-lancar]')) { produtoSheet(pid); return; }
-        if (t('[data-cs-cupom]')) { cupomSheet(pid); return; }
         if (t('[data-cs-pix]')) { const x = pixDebts(compute(d)).find(z => z.pid === pid); if (x) pixSheet(x, () => consumoSheet(pid)); return; }
         if (t('[data-cs-juntar]')) { juntando = !juntando; pintar(); return; }
         if (t('[data-cs-sair]')) { leaveGroup(d, pid); refazer(); toast('Saiu do cupom compartilhado.'); return; }
@@ -1958,14 +2067,14 @@ function consumoSheet(pid) {
 // a conta da mesa: de onde vem o total, com uma chave para serviço, couvert e desconto
 function contaSheet() {
   const d = draft, s = d.service, ds = d.discount;
-  const bloco = (k, on, titulo, valor, extra) => `<div class="cm-bloco"><label class="cs-lin cs-sw"><span class="cs-tx"><b>${titulo}</b><span class="hint num">${valor}</span></span><span class="switch"><input type="checkbox" data-cm="${k}" ${on ? 'checked' : ''} aria-label="${esc(titulo)}"><span class="track"></span></span></label>${on && extra ? `<div class="cm-extra">${extra}</div>` : ''}</div>`;
+  const bloco = (k, on, titulo, valor, extra) => `<div class="cm-bloco"><label class="cs-lin cs-sw"><span class="cs-tx"><b>${titulo}</b><span class="hint num">${valor}</span></span><span class="switch"><input type="checkbox" data-cm="${k}" ${on ? 'checked' : ''} aria-label="${esc(titulo)}"><span class="track"></span></span></label>${on && extra ? `<div class="cm-extra" data-exp="cm-${k}">${extra}</div>` : ''}</div>`;
   const corpo = () => {
     const c = compute(d), names = ids => ids.map(id => c.per[id].person.name).join(', ');
     let nota = '';
     if (s.enabled && c.skipped.length) nota = s.policy === 'discount' ? `${esc(names(c.skipped))} não paga${c.skipped.length > 1 ? 'm' : ''} o serviço; o total fica ${BRL(c.skippedValue)} menor.` : `${BRL(c.skippedValue)} de serviço de ${esc(names(c.skipped))} divididos entre os outros.`;
     const svc = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de taxa"><button type="button" data-cm-svcmode="fixed" aria-pressed="${s.mode === 'fixed'}">R$</button><button type="button" data-cm-svcmode="pct" aria-pressed="${s.mode === 'pct'}">%</button></div>
       ${s.mode === 'fixed' ? `<input id="cm-svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais">` : `<input id="cm-svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa">`}</div>
-      ${nota ? `<div class="policy-note pol-row"><span>${nota}</span><button type="button" class="btn small ghost" data-cm-pol>Mudar</button></div>` : ''}`;
+      ${nota ? `<div class="policy-note pol-row" data-exp="cm-pol"><span>${nota}</span><button type="button" class="btn small ghost" data-cm-pol>Mudar</button></div>` : ''}`;
     const cvPct = d.couvert.mode === 'pct';
     const cv = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de couvert"><button type="button" data-cm-cvmode="value" aria-pressed="${!cvPct}">R$</button><button type="button" data-cm-cvmode="pct" aria-pressed="${cvPct}">%</button></div>
       <input id="cm-cv" type="text" inputmode="numeric" ${cvPct ? `data-pct value="${pctInput(d.couvert.pct || 0)}" aria-label="Percentual do couvert sobre o consumo de cada um"` : `data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa"`}></div>`;
@@ -1977,7 +2086,9 @@ function contaSheet() {
     let aviso = '';
     if (c.payDiff < 0) aviso = `Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga outro valor.`;
     if (c.payDiff > 0) aviso = `Os valores escolhidos passam ${BRL(c.payDiff)} do total.`;
-    return `<div class="cs-lista">
+    const mexe = pagosComDiferenca(d, c);
+    const jaPagou = mexe.length ? `<div class="aviso-pago" data-exp="cm-pago" role="status"><b>${I.warn}Isso mexe com quem já pagou</b>${mexe.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span></p>`).join('')}<p class="hint">Serviço, couvert e desconto valem para a mesa toda. Acerte a diferença com a pessoa e marque na comanda.</p></div>` : '';
+    return `${jaPagou}<div class="cs-lista">
         <div class="cs-lin"><span class="cs-tx"><b>Consumo</b>${c.freeValue ? '<span class="hint">já descontadas as cortesias</span>' : ''}</span><span class="num">${BRL(c.consumoBruto)}</span></div>
         ${bloco('svc', s.enabled, 'Serviço', s.enabled ? BRL(c.service) : 'não cobrado', svc)}
         ${bloco('cv', d.couvert.enabled, 'Couvert artístico', d.couvert.enabled ? `${BRL(c.couvert)}${d.couvert.mode === 'pct' ? ` · ${pctStr(d.couvert.pct || 0)}% do consumo de cada um` : ` · ${BRL(d.couvert.value)} por pessoa`}` : 'não cobrado', cv)}
@@ -1996,7 +2107,7 @@ function contaSheet() {
     $('#cm-fechar', sh)?.addEventListener('click', () => { closeSheet(true); fecharSheet(); });
     $('#cm-limpar', sh)?.addEventListener('click', () => { closeSheet(true); resetSheet(); });
     const box = $('#cm-corpo', sh);
-    const pintar = () => { box.innerHTML = corpo(); prepFields(box); };
+    const pintar = () => comMovimento(box, () => { box.innerHTML = corpo(); prepFields(box); });
     const refazer = () => { commit({ anchor: false }); pintar(); };
     box.addEventListener('change', e => {
       const el = e.target, k = el.dataset.cm;
@@ -2045,15 +2156,15 @@ function mesaRows(d, c) {
   if (d.couvert.enabled) R.push({ t: 'pair', left: 'Couvert', right: BRL(c.couvert) });
   if (d.discount.enabled) R.push({ t: 'pair', left: 'Desconto', right: '−' + BRL(c.discount) });
   R.push({ t: 'total', left: 'TOTAL', right: BRL(c.total) }, { t: 'section', text: 'PESSOAS' });
-  c.units.forEach(u => R.push({ t: 'pair', left: u.name, right: (pagoDe(d, u.members) ? 'pago · ' : '') + BRL(u.total) }));
-  const falta = faltaReceber(d, c);
-  if (falta < c.total) R.push({ t: 'dash' }, { t: 'sub', left: falta ? 'FALTA PAGAR' : 'TUDO PAGO', right: falta ? BRL(falta) : '✓' });
+  c.units.forEach(u => { const p = contaPaga(d, u, c); R.push({ t: 'pair', left: u.name, right: (p.estado === 'pago' ? 'pago · ' : '') + BRL(u.total) }); if (p.estado !== 'aberto' && p.estado !== 'pago') R.push({ t: 'detail', text: `pagou ${BRL(p.pago)} · ${p.estado === 'troco' ? 'devolver ' + BRL(p.troco) : 'falta ' + BRL(p.falta)}` }); });
+  const falta = faltaReceber(d, c), troco = trocoDevolver(d, c);
+  if (algumPago(d)) { R.push({ t: 'dash' }, { t: 'sub', left: falta ? 'FALTA PAGAR' : 'TUDO PAGO', right: falta ? BRL(falta) : '✓' }); if (troco) R.push({ t: 'sub', left: 'DEVOLVER', right: BRL(troco) }); }
   return R;
 }
 // fechar: todos os cupons, um por tela, arrastando para o lado (a mesa primeiro)
 function fecharSheet() {
   const d = draft, c = compute(d);
-  const slides = [{ nome: 'Mesa', arq: 'mesa', r: null, rows: mesaRows(d, c), pago: false }, ...c.units.map(u => ({ nome: u.name, arq: u.name.replace(/ \+ /g, ' e '), r: u, rows: null, pago: pagoDe(d, u.members) }))];
+  const slides = [{ nome: 'Mesa', arq: 'mesa', r: null, rows: mesaRows(d, c), pago: false }, ...c.units.map(u => ({ nome: u.name, arq: u.name.replace(/ \+ /g, ' e '), r: u, rows: null, pago: contaPaga(d, u, c).estado === 'pago' }))];
   const pend = c.openItems.length + c.incomplete.length + c.unassigned.length;
   openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
       <div class="fc-nav"><button type="button" class="btn ghost fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="btn ghost fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
@@ -2106,6 +2217,8 @@ function fecharSheet() {
 const viewComanda = {
   html() {
     const d = draft, calc = compute(d), s = d.service;
+    fixarPagos(d, calc);
+    const difs = pagosComDiferenca(d, calc);
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
     // mini comanda que mudou de valor dá um pulo (só quando muda, nunca na primeira vez)
     if (totaisAnt.id !== d.id) totaisAnt = { id: d.id, v: {} };
@@ -2116,7 +2229,7 @@ const viewComanda = {
     const itemsHTML = d.items.length ? ordenados.map(it => it.lk ? itemFechadoHTML(it, d) : itemPendenteHTML(it, d)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item lançado' });
     const abertosN = d.items.filter(it => !it.lk).length;
     const aj = [s.enabled && (s.mode === 'fixed' ? 'Serviço' : `Serviço ${pctStr(s.pct)}%`), d.couvert.enabled && 'Couvert', d.discount.enabled && 'Desconto', calc.freeValue && 'Cortesia'].filter(Boolean);
-    const nm = id => calc.per[id].person.name, falta = faltaReceber(d, calc);
+    const nm = id => calc.per[id].person.name, falta = faltaReceber(d, calc), troco = trocoDevolver(d, calc), comPago = algumPago(d);
     const num = pid => String(d.people.findIndex(p => p.id === pid) + 1).padStart(2, '0');
     const brl = v => BRL(v).replace('R$', '').trim();
     // o que a pessoa consumiu, em linhas curtas de cupom: "3× Suco", "1/3 Porção"
@@ -2151,22 +2264,27 @@ const viewComanda = {
         <button type="button" class="cu-local" id="cmd-local" aria-label="${esc(d.place ? 'Local: ' + d.place + '. Mudar o nome' : 'Dar nome ao local')}">
           <span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Toque para dar nome')}${I.edit}</span>
           <span class="cu-quando">${fmtDateTime(d.createdAt)}</span></button>
-        <button type="button" class="cu-conta ${falta < calc.total ? 'parcial' : ''}" id="cmd-conta" aria-label="Total: ${BRL(calc.total)}.${falta < calc.total ? ` Falta pagar ${BRL(falta)}.` : ''} ${esc(aj.join(', ') || 'Sem serviço')}. Abrir a conta da mesa: ajustes e fechar a comanda">
+        <button type="button" class="cu-conta ${comPago ? 'parcial' : ''}" id="cmd-conta" aria-label="Total: ${BRL(calc.total)}.${comPago ? ` Falta pagar ${BRL(falta)}.` : ''}${troco ? ` Devolver ${BRL(troco)}.` : ''} ${esc(aj.join(', ') || 'Sem serviço')}. Abrir a conta da mesa: ajustes e fechar a comanda">
           <span class="cu-total">${BRL(calc.total)}</span>${I.next}</button>
-        ${falta < calc.total ? `<p class="cu-falta ${falta ? '' : 'ok'}" role="status">${falta ? `<span class="sr-only">Falta pagar </span>${BRL(falta)}` : 'tudo pago ✓'}</p>` : ''}
+        ${comPago ? `<p class="cu-falta ${falta ? '' : 'ok'}" role="status">${falta ? `<span class="sr-only">Falta pagar </span>${BRL(falta)}` : 'tudo pago ✓'}${troco ? `<span class="cu-troco">devolver ${BRL(troco)}</span>` : ''}</p>` : ''}
       </header>
 
       <div class="cm-corpo">
         <div class="cu-sec" id="groups-card" aria-label="Pessoas: quanto cada um paga">
-          
+          ${difs.length ? `<div class="aviso-pago" data-exp="aviso-pago" role="status"><b>${I.warn}A conta de quem já pagou mudou</b>${difs.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span><button type="button" class="btn small" data-ap-acerta="${x.u.id}">${x.p.estado === 'troco' ? 'Devolvi' : 'Recebi'}</button></p>`).join('')}</div>` : ''}
           <div class="cu-tit">PESSOAS${d.people.length ? ` · ${d.people.length}` : ''}</div>
           <div class="cm-col dv-col" aria-hidden="true"><span>Nº</span><span>NOME</span><span>A PAGAR</span></div>
           ${calc.units.map(u => {
+            const pg = contaPaga(d, u, calc), marcado = pg.estado !== 'aberto', n = String(calc.units.indexOf(u) + 1).padStart(2, '0');
+            const selo = pg.estado === 'pago' ? '<span class="dv-selo" aria-hidden="true">PAGO</span>' : ''; // com diferença, quem fala é a linha "pagou x · falta y"
+            const dif = pg.estado === 'falta' ? `<span class="dv-obs dv-dif">pagou ${brl(pg.pago)} · falta ${brl(pg.falta)}</span>` : pg.estado === 'troco' ? `<span class="dv-obs dv-dif">pagou ${brl(pg.pago)} · devolver ${brl(pg.troco)}</span>` : pg.estado === 'parte' ? `<span class="dv-obs dv-dif">pago em parte · falta ${brl(pg.falta)}</span>` : '';
+            const fala = pg.estado === 'pago' ? ', pago' : pg.estado === 'falta' ? `, pagou ${BRL(pg.pago)}, falta ${BRL(pg.falta)}` : pg.estado === 'troco' ? `, pagou ${BRL(pg.pago)}, devolver ${BRL(pg.troco)}` : pg.estado === 'parte' ? `, pago em parte, falta ${BRL(pg.falta)}` : '';
+            const cls = `${pulou[u.id] ? 'pula' : ''} ${pg.estado === 'pago' ? 'pago' : marcado ? 'pago-dif' : ''}`;
             if (u.members.length === 1) { const pid = u.members[0], r = calc.per[pid];
-              return `<details class="dv-pes" data-kf-secao="grupo" data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin ${pulou[u.id] ? 'pula' : ''} ${pagoDe(d, u.members) ? 'pago' : ''}" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}" aria-label="${esc(nm(pid))}: ${BRL(u.total)}${pagoDe(d, u.members) ? ', pago' : ''}. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar">
-                <span class="dv-n">${String(calc.units.indexOf(u) + 1).padStart(2, '0')}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}</span><span class="dv-v">${brl(u.total)}</span>${pagoDe(d, u.members) ? '<span class="dv-selo" aria-hidden="true">PAGO</span>' : ''}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
-            return `<details class="dv-pes" data-kf-secao="grupo" data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin dv-grupo ${pulou[u.id] ? 'pula' : ''} ${pagoDe(d, u.members) ? 'pago' : ''}" data-unit="${u.id}" data-drop="g:${u.id}" data-grupo="${u.id}" aria-label="Cupom compartilhado de ${esc(u.name)}: ${BRL(u.total)}${pagoDe(d, u.members) ? ', pago' : ''}. Mostrar atalhos">
-              <span class="dv-n">${String(calc.units.indexOf(u) + 1).padStart(2, '0')}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado</span>${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${pagoDe(d, u.members) ? '<span class="dv-selo" aria-hidden="true">PAGO</span>' : ''}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
+              return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin ${cls}" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}" aria-label="${esc(nm(pid))}: ${BRL(u.total)}${fala}. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar">
+                <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}${dif}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
+            return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin dv-grupo ${cls}" data-unit="${u.id}" data-drop="g:${u.id}" data-grupo="${u.id}" aria-label="Cupom compartilhado de ${esc(u.name)}: ${BRL(u.total)}${fala}. Mostrar atalhos">
+              <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado</span>${dif}${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
           }).join('')}
           <button type="button" class="it-novo dv-add" id="add-pessoa" data-drop="out"><span class="it-q ma-add">+</span><span class="ma-add">${d.people.length ? 'Pessoa' : 'Adicionar quem está na mesa'}</span><span class="it-q ma-des">×</span><span class="ma-des">Desfazer o cupom compartilhado</span><span></span></button>
         </div>
@@ -2212,6 +2330,8 @@ const viewComanda = {
     const area = $('#groups-card', v);
     const abrir = e => {
       if (Date.now() - drag.droppedAt < 350) { if (e.target.closest('summary')) { e.preventDefault(); e.stopPropagation(); } return; }
+      const ap = e.target.closest('[data-ap-acerta]');
+      if (ap) { const u = compute(d).U[ap.dataset.apAcerta]; if (u) alternarPago(u, 'acertar'); return; }
       const pa = e.target.closest('[data-pa]');
       if (pa) {
         const c = compute(d), u = c.U[pa.dataset.pa]; if (!u) return;
@@ -2220,7 +2340,7 @@ const viewComanda = {
         if (t('[data-pa-mais]')) return u.members.length > 1 ? grupoSheet(u.id) : consumoSheet(u.members[0]);
         if (t('[data-pa-juntar]')) { pesJuntando = !pesJuntando; render({ anchor: false }); if (pesJuntando) requestAnimationFrame(() => { const j = $('.pa-junta'); j?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); j?.querySelector('[data-pa-alvo]')?.focus({ preventScroll: true }); }); return; }
         if (t('[data-pa-svcabre]')) { pesSvc = !pesSvc; return render({ anchor: false }); }
-        if (t('[data-pa-pago]')) { const era = pagoDe(d, u.members); marcarPago(d, u.members, !era); commit({ anchor: false }); toast(era ? `${u.name}: pagamento desmarcado.` : `${u.name}: pago.`, { label: 'Desfazer', run: () => { marcarPago(d, u.members, era); commit({ anchor: false }); } }); return; }
+        const pg = t('[data-pa-pago]'); if (pg) return alternarPago(u, pg.dataset.paPago);
         if (t('[data-pa-desfaz]')) { const antes = clone(d.groups || []); u.members.forEach(m => leaveGroup(d, m)); pesAberto = null; commit({ anchor: false }); toast('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); return; }
         const alvo = t('[data-pa-alvo]');
         if (alvo) { const antes = clone(d.groups || []); if (joinGroup(d, u.members[0], alvo.dataset.paAlvo)) { pesAberto = null; pesJuntando = false; commit({ anchor: false }); destacarCupom(u.members[0]); toast('Agora estão no mesmo cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); } }
@@ -2251,8 +2371,8 @@ const viewComanda = {
     v.addEventListener('kf-secao', e => {
       const el = e.target;
       if (el.id === 'itens-sec') itensAbertos = e.detail.aberta;
-      else if (el.classList.contains('dv-pes')) { const id = el.dataset.pes; if (e.detail.aberta) { pesAberto = id; pesJuntando = false; pesSvc = false; const cab = $('.cu-cab', v); el.style.scrollMarginTop = cab ? cab.offsetHeight + 8 + 'px' : ''; } else if (pesAberto === id) pesAberto = null; }
-      else if (el.classList.contains('item-d')) { if (e.detail.aberta) { itemAberto = el.dataset.item; const cab = $('.cu-cab', v); el.style.scrollMarginTop = cab ? cab.offsetHeight + 8 + 'px' : ''; } else if (itemAberto === el.dataset.item) itemAberto = null; }
+      else if (el.classList.contains('dv-pes')) { const id = el.dataset.pes; if (e.detail.aberta) { pesAberto = id; pesJuntando = false; pesSvc = false; abrirSoEsta(el, '.dv-pes'); } else if (pesAberto === id) pesAberto = null; }
+      else if (el.classList.contains('item-d')) { if (e.detail.aberta) { itemAberto = el.dataset.item; abrirSoEsta(el, '.item-d'); } else if (itemAberto === el.dataset.item) itemAberto = null; }
     });
     $$('[data-it-alt]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itAlt); if (it) renameSheet(it); }));
     const rasc = id => { const it = d.items.find(i => i.id === id); if (!it) return null; if (!itPend[id]) itPend[id] = { qty: it.qty, a: { ...it.a }, fq: it.fq || 0 }; return [it, itPend[id]]; };
@@ -2504,7 +2624,7 @@ function politicaSheet(d, p) {
       $('#pol-desfaz', dl).addEventListener('click', () => { if (p) { p.payService = true; closeSheet(true); commit(); } else closeSheet(); });
     } });
 }
-function saveBill() {
+function saveBill(opts = {}) {
   const d = draft, c = compute(d);
   if (d.isExample) { toast('No exemplo, nada é salvo no histórico.'); return; }
   if (c.unassigned.length || c.incomplete.length) { toast('Acerte a divisão de todos os itens antes de salvar.'); return; }
@@ -2512,6 +2632,8 @@ function saveBill() {
   if (c.openItems.length) { toast(`Confirme a divisão de ${plural(c.openItems.length, 'item', 'itens')} antes de salvar.`); return; }
   if (c.missingPayer) { toast('Escolha quem vai pagar a conta em Pagamento antes de salvar.'); return; }
   if (c.payDiff !== 0) { toast(`Os valores personalizados ${c.payDiff > 0 ? 'passam' : 'ficam'} ${BRL(Math.abs(c.payDiff))} ${c.payDiff > 0 ? 'do' : 'abaixo do'} total. Ajuste antes de salvar.`); return; }
+  const difs = pagosComDiferenca(d, c);
+  if (difs.length && !opts.comDiferenca) { confirmSheet('Salvar com diferença?', difs.map(x => fraseDiferenca(x.u, x.p)).join(' ') + ' A comanda fica salva assim, com a diferença anotada.', 'Salvar assim', () => saveBill({ comDiferenca: true })); return; }
   const firstSave = !bills.some(b => b.id === d.id);
   const antes = { draft: clone(d), bills: clone(bills), catalog: clone(catalog), tab }, eraAoVivo = !!draft.live, jogoAntes = { ...jogoEstado() };
   const now = Date.now();
