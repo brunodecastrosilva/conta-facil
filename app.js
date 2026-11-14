@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.5.0';
+const VERSAO = '1.6.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -236,16 +236,23 @@ function compute(d) {
       const free = ids.filter(id => !(id in custom) && share[id] > 0);
       // quem paga menos que a sua parte pode escolher quem cobre a diferença (e fica devendo a essa pessoa)
       let left = rest;
+      // quem paga outro valor pode escolher com quem fica a diferença: quem cobre o que faltou (paga a mais ao local)
+      // ou quem devolve o que sobrou (paga a menos ao local). Sem escolha, os outros dividem.
       Object.entries(d.cover || {}).forEach(([x, y]) => {
         const gap = (x in custom) ? share[x] - custom[x] : 0;
-        if (gap > 0 && free.includes(y) && x !== y && gap <= left) { coverOf[x] = y; paidBy[y] += gap; left -= gap; }
+        if (!gap || !free.includes(y) || x === y || unitOf[x] === unitOf[y]) return;
+        if (gap > 0 ? gap <= left : share[y] + gap >= 0) { coverOf[x] = y; paidBy[y] += gap; left -= gap; }
       });
-      const al = allocate(left, free.map(id => share[id]));
-      free.forEach((id, i) => paidBy[id] += al[i]);
+      // quem já pagou fica com a sua parte: a diferença dos outros é dividida só entre quem ainda vai pagar
+      const jaPagou = id => !!(d.pagos && d.pagos[id]), ja = free.filter(jaPagou), aindaNao = free.filter(id => !jaPagou(id));
+      if (ja.length && aindaNao.length) {
+        ja.forEach(id => { paidBy[id] += share[id]; left -= share[id]; });
+        const al = allocate(Math.max(0, left), aindaNao.map(id => share[id])); aindaNao.forEach((id, i) => paidBy[id] += al[i]);
+      } else { const al = allocate(left, free.map(id => share[id])); free.forEach((id, i) => paidBy[id] += al[i]); }
     }
   }
   const paidSum = ids.reduce((a, id) => a + paidBy[id], 0);
-  const bal = {}; ids.forEach(id => { bal[id] = paidBy[id] - share[id]; per[id].paid = paidBy[id]; per[id].share = share[id]; per[id].balance = bal[id]; per[id].custom = id in custom; });
+  const bal = {}; ids.forEach(id => { bal[id] = paidBy[id] - share[id]; per[id].paid = paidBy[id]; per[id].share = share[id]; per[id].balance = bal[id]; per[id].custom = id in custom; per[id].cover = coverOf[id] || ''; });
   // acertos entre pessoas: quem pagou menos que a sua parte passa a diferença a quem pagou mais
   const transfers = [];
   const left = { ...bal };
@@ -648,6 +655,15 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.6.0', itens: [
+    'Quem paga outro valor escolhe com quem fica a diferença: quem cobre o que faltou ou quem devolve o que sobrou.',
+    'A conta de quem já pagou mudou? Além de receber ou devolver, outra pessoa pode ficar com a diferença.',
+    'Quem pagou pode ser marcado como "Já saiu da mesa": o cupom trava e a pessoa não entra em novos pedidos.',
+    'No sorteio, você escolhe quem entra, e pode pôr um nome avulso.',
+    'Seu nome agora se escreve nos Ajustes; quem se apresenta na abertura já recebe a primeira tampinha.',
+    'Excluir comanda em vermelho, da largura de Fechar comanda; botões de Fechar a comanda com a mesma largura.',
+    'Abrir um nome ou um pedido na comanda rola a tela num movimento só.',
+  ] },
   { versao: '1.5.0', itens: [
     'As janelas nascem do pé da tela e sobem num movimento só, mesmo quando o teclado abre junto: sem saltar nem voltar.',
     'Ao abrir e fechar o teclado, a janela acompanha com suavidade.',
@@ -1516,7 +1532,10 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
   let modo = ini ? (ini.mode === 'units' ? 'units' : 'equal') : 'equal', tocou = false;
   const ids = d.people.map(p => p.id);
   // quem já pagou a conta fica fora de um item novo, a menos que alguém marque: o pagamento dessa pessoa não muda sem querer
-  const pagou = id => !!(d.pagos && d.pagos[id]), semPagos = ids.filter(id => !pagou(id)), novos = !ini && semPagos.length && semPagos.length < ids.length ? semPagos : ids;
+  // quem já pagou e saiu da mesa fica travado: não entra em item novo e não muda nos que já tem
+  const fora = id => saiu(d, id), aqui = ids.filter(id => !fora(id));
+  const pagou = id => !!(d.pagos && d.pagos[id]), semPagos = aqui.filter(id => !pagou(id)), novos = !ini && semPagos.length && semPagos.length < ids.length ? semPagos : aqui;
+  const todosMarcados = () => aqui.length > 0 && aqui.every(id => marcados.has(id));
   const nomeDe = id => d.people.find(p => p.id === id).name;
   const marcados = new Set(ini && ini.mode !== 'units' ? (ids.filter(id => (ini.a[id] || 0) > 0).length && !ini.auto ? ids.filter(id => (ini.a[id] || 0) > 0) : ids) : novos), un = {};
   if (ini && ini.mode === 'units') ids.forEach(id => { if (ini.a[id] > 0) un[id] = ini.a[id]; });
@@ -1525,12 +1544,12 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
   const segModo = () => `<div class="seg" role="group" aria-label="Tipo de consumo">
       <button type="button" data-lc-modo="equal" aria-pressed="${modo === 'equal'}">Compartilhado</button>
       <button type="button" data-lc-modo="units" aria-pressed="${modo === 'units'}">Individual</button></div>`;
-  const listaComp = () => `<div class="ck-list" role="group" aria-label="Quem dividiu">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"`, p.name, marcados.has(p.id), pagou(p.id) ? 'ck-pagou' : '')).join('')}
+  const listaComp = () => `<div class="ck-list" role="group" aria-label="Quem dividiu">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"${fora(p.id) ? ' disabled' : ''}`, p.name, marcados.has(p.id), fora(p.id) ? 'ck-saiu' : pagou(p.id) ? 'ck-pagou' : '')).join('')}
       <button type="button" class="ck-row ck-todos" data-lc-todos></button></div>`;
   const listaInd = () => `<div class="units">${d.people.map(p => `
       <div class="unit-row" data-lc-linha="${p.id}"><span class="who-name">${avatar(p.name)}<span>${esc(p.name)}</span></span>
         <span class="unit-count"><span class="num" data-lc-n="${p.id}">0</span></span>
-        <span class="unit-btns"><button type="button" class="minus" data-lc-un="${p.id}" data-dir="-1" aria-label="Uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-lc-un="${p.id}" data-dir="1" aria-label="Uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`).join('')}</div>`;
+        <span class="unit-btns"><button type="button" class="minus" data-lc-un="${p.id}" data-dir="-1" aria-label="Uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-lc-un="${p.id}" data-dir="1" ${fora(p.id) ? 'disabled' : ''} aria-label="Uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`).join('')}</div>`;
   const pronto = () => modo === 'units' ? falta() === 0 : marcados.size > 0;
   const resumo = () => {
     const it = getIt(), total = (it.price || 0) * it.qty;
@@ -1538,7 +1557,7 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
     const n = marcados.size;
     if (!n) return 'Marque quem dividiu.';
     if (n === 1) return `Só ${esc(d.people.find(p => marcados.has(p.id)).name)} marcado: vira consumo individual.`;
-    const quem = n === d.people.length ? 'Entre todos (quem chegar depois também entra)' : `Entre ${n}`;
+    const quem = todosMarcados() ? 'Entre todos (quem chegar depois também entra)' : `Entre ${n}`;
     return total ? `${quem} · ${BRL(Math.round(total / n))} cada` : quem;
   };
   const atualizar = () => {
@@ -1548,16 +1567,17 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
         const u = un[p.id] || 0;
         $(`[data-lc-n="${p.id}"]`, s).textContent = u;
         $(`[data-lc-linha="${p.id}"]`, s).classList.toggle('on', u > 0);
-        $(`[data-lc-un="${p.id}"][data-dir="-1"]`, s).disabled = !u;
+        $(`[data-lc-un="${p.id}"][data-dir="-1"]`, s).disabled = !u || fora(p.id);
       });
     } else {
       $$('[data-lc-ck]', s).forEach(b => b.setAttribute('aria-pressed', String(marcados.has(b.dataset.lcCk))));
-      const t = $('[data-lc-todos]', s); if (t) { t.hidden = d.people.length < 2; t.textContent = marcados.size === d.people.length ? 'Desmarcar todos' : 'Marcar todos'; }
+      const t = $('[data-lc-todos]', s); if (t) { t.hidden = aqui.length < 2; t.textContent = todosMarcados() ? 'Desmarcar todos' : 'Marcar todos'; }
     }
     $('#lc-resumo', s).innerHTML = resumo();
     const aviso = $('#lc-pagou', s);
     if (aviso) {
-      const pg = ids.filter(pagou), dentro = pg.filter(id => modo === 'units' ? (un[id] || 0) > 0 : marcados.has(id)), lista = L => L.map(nomeDe).join(', ');
+      // quem saiu da mesa já aparece travado na lista; o aviso fala só de quem pagou e continua na mesa
+      const pg = aqui.filter(pagou), dentro = pg.filter(id => modo === 'units' ? (un[id] || 0) > 0 : marcados.has(id)), lista = L => L.map(nomeDe).join(', ');
       aviso.hidden = !pg.length || !!ini;
       aviso.textContent = !pg.length ? '' : dentro.length ? `${lista(dentro)} já ${dentro.length > 1 ? 'pagaram' : 'pagou'}: com este item, ${dentro.length > 1 ? 'voltam' : 'volta'} a dever a diferença.` : `${lista(pg)} já ${pg.length > 1 ? 'pagaram e ficaram' : 'pagou e ficou'} de fora. Marque se também ${pg.length > 1 ? 'consumiram' : 'consumiu'}.`;
     }
@@ -1575,8 +1595,8 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
   $('#lc-modo', s).addEventListener('click', e => { const b = e.target.closest('[data-lc-modo]'); if (b) { tocou = true; trocarModo(b.dataset.lcModo); } });
   $('#lc-lista', s).addEventListener('click', e => {
     const ck = e.target.closest('[data-lc-ck]'), todos = e.target.closest('[data-lc-todos]'), ub = e.target.closest('[data-lc-un]');
-    if (ck) { const id = ck.dataset.lcCk; marcados.has(id) ? marcados.delete(id) : marcados.add(id); }
-    else if (todos) { if (marcados.size === d.people.length) marcados.clear(); else d.people.forEach(p => marcados.add(p.id)); }
+    if (ck) { const id = ck.dataset.lcCk; if (fora(id)) return; marcados.has(id) ? marcados.delete(id) : marcados.add(id); }
+    else if (todos) { if (todosMarcados()) aqui.forEach(id => marcados.delete(id)); else aqui.forEach(id => marcados.add(id)); }
     else if (ub && !ub.disabled) {
       const id = ub.dataset.lcUn, dir = +ub.dataset.dir;
       // +1 com tudo distribuído: a quantidade do item cresce junto (pediram mais um)
@@ -1594,7 +1614,7 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
       const qty = getIt().qty;
       if (modo === 'units') return { a: Object.fromEntries(Object.entries(un).filter(([, v]) => v > 0)), todos: false, modo: 'units' };
       if (marcados.size === 1) return { a: { [[...marcados][0]]: qty }, todos: false, modo: 'units' };
-      return { a: Object.fromEntries([...marcados].map(id => [id, 1])), todos: marcados.size === d.people.length, modo: 'equal' };
+      return { a: Object.fromEntries([...marcados].map(id => [id, 1])), todos: todosMarcados(), modo: 'equal' };
     },
   };
 }
@@ -1655,7 +1675,7 @@ function itemFechadoHTML(it, d) {
   const linhas = cur.mode === 'units'
     ? d.people.map(p => { const u = cur.a[p.id] || 0, x = div.find(y => y.id === p.id);
         return `<div class="div-lin ${u ? '' : 'cs-zero'}"><span class="who-name">${avatar(p.name)}<span>${esc(p.name)}</span><span class="hint num">· ${u}</span></span>
-          <span class="div-dir"><span class="num">${u ? BRL(x ? x.val : 0) : ''}</span><span class="unit-btns"><button type="button" class="minus" data-it-u="${it.id}" data-p="${p.id}" data-dir="-1" ${u && cur.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-it-u="${it.id}" data-p="${p.id}" data-dir="1" aria-label="Mais uma unidade de ${esc(it.name)} para ${esc(p.name)}">+1</button></span></span></div>`; }).join('')
+          <span class="div-dir"><span class="num">${u ? BRL(x ? x.val : 0) : ''}</span><span class="unit-btns"><button type="button" class="minus" data-it-u="${it.id}" data-p="${p.id}" data-dir="-1" ${u && cur.qty > 1 && !saiu(d, p.id) ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-it-u="${it.id}" data-p="${p.id}" data-dir="1" ${saiu(d, p.id) ? 'disabled' : ''} aria-label="Mais uma unidade de ${esc(it.name)} para ${esc(p.name)}">+1</button></span></span></div>`; }).join('')
     : div.map(x => `<div class="div-lin"><span class="who-name">${avatar(x.nome)}<span>${esc(x.nome)}</span>${x.txt ? `<span class="hint">· ${x.txt}</span>` : ''}</span><span class="num">${BRL(x.val)}</span></div>`).join('')
       + `<div class="div-lin"><span class="cs-tx"><span>Quantidade</span><span class="hint">${cur.qty} × ${BRL(cur.price)} = ${BRL(cur.qty * cur.price)}</span></span>
         <span class="div-dir"><span class="num fq-n">${cur.qty}</span><span class="unit-btns"><button type="button" class="minus" data-it-q="${it.id}" data-dir="-1" ${cur.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos">−1</button><button type="button" class="plus" data-it-q="${it.id}" data-dir="1" aria-label="Mais uma unidade de ${esc(it.name)}">+1</button></span></span></div>`;
@@ -1682,7 +1702,8 @@ function atalhosPessoaHTML(u, calc, d) {
   const aqui = pesAberto === u.id, juntando = aqui && pesJuntando, svcAberto = aqui && pesSvc, cvAberto = aqui && pesCv;
   const multi = u.members.length > 1, pid = u.members[0], p = calc.per[pid].person;
   const sw = (attr, on, label, valor) => `<label class="pa-lin"><span class="pa-tx"><span>${label}</span>${valor ? `<span class="pa-v">${valor}</span>` : ''}</span><span class="switch"><input type="checkbox" ${attr} ${on ? 'checked' : ''} aria-label="${esc(label)}"><span class="track"></span></span></label>`;
-  const outros = calc.units.filter(x => x.id !== u.id);
+  const outros = calc.units.filter(x => x.id !== u.id && !cupomSaiu(d, x));
+  if (cupomSaiu(d, u)) return `<div class="dv-atalhos" data-pa="${u.id}"><div class="pa-acoes"><button type="button" class="btn small" data-pa-cupom>${I.file}Ver cupom</button></div></div>`;
   let h = '';
   if (!multi && d.service.enabled) h += sw(`data-pa-svc="${pid}"`, p.payService, 'Paga serviço', p.payService ? BRL(calc.per[pid].service) : 'não paga');
   if (multi && d.service.enabled) {
@@ -1712,7 +1733,7 @@ function removerPessoa(id) {
   confirmSheet(`Remover ${p.name}?`, (has
     ? `${p.name} está em ${plural(n, 'item', 'itens')}. Nos itens de consumo individual, as unidades dessa pessoa saem da comanda. Nos compartilhados, o valor passa a ser dividido entre os demais.`
     : `${p.name} sai da comanda.`) + (d.pagos && d.pagos[id] ? ` ${p.name} já pagou ${BRL(valorPago(d, id, compute(d)))}: esse pagamento sai junto, e a conta dos outros é refeita sem ele.` : ''), 'Remover', () => {
-    d.people = d.people.filter(x => x.id !== id); if (d.pagos) delete d.pagos[id];
+    d.people = d.people.filter(x => x.id !== id); if (d.pagos) delete d.pagos[id]; if (d.saiu) delete d.saiu[id];
     d.items.forEach(i => {
       const u = i.a[id] || 0; if (!u) return;
       delete i.a[id]; delete pending[i.id];
@@ -1732,7 +1753,8 @@ function addPessoa(name) {
   d.people.push(p);
   // só entra sozinho em itens divididos entre todos (quem chega depois também entra)
   const entrou = [];
-  d.items.forEach(it => { if ((!it.lk || it.auto) && it.mode === 'equal' && prevCount && Object.keys(it.a).filter(k => it.a[k] > 0).length === prevCount) { it.a[p.id] = 1; entrou.push(it); } });
+  const naMesa = d.people.filter(x => x.id !== p.id && !saiu(d, x.id));
+  d.items.forEach(it => { if ((!it.lk || it.auto) && it.mode === 'equal' && prevCount && naMesa.length && naMesa.every(x => (it.a[x.id] || 0) > 0)) { it.a[p.id] = 1; entrou.push(it); } });
   commit();
   if (entrou.some(it => it.lk)) setTimeout(() => toast(`${p.name} entrou na divisão de ${plural(entrou.length, 'item', 'itens')} já lançados.`, { label: 'Desfazer', run: () => { entrou.forEach(it => { delete it.a[p.id]; }); commit(); } }), 60);
   return true;
@@ -1846,28 +1868,64 @@ function produtoSheet(paraId, ed) {
 const algumPago = d => !!d.pagos && Object.keys(d.pagos).length > 0;
 const valorPago = (d, id, c) => { const x = d.pagos && d.pagos[id]; return !x ? 0 : x === true ? (c.per[id] ? c.per[id].total : 0) : (x.v || 0); };
 function fixarPagos(d, c) { if (d.pagos) for (const id in d.pagos) { if (!c.per[id]) delete d.pagos[id]; else if (d.pagos[id] === true) d.pagos[id] = { v: c.per[id].total, t: 0 }; } }
+// o que um cupom paga ao local: a parte dele, já com outro valor combinado (ou o total, quando uma pessoa paga a conta de todos)
+const devido = (u, c) => c.payer ? u.total : u.members.reduce((a, id) => a + (c.per[id] ? c.per[id].paid : 0), 0);
 // situação de um cupom: aberto, pago, falta (pagou e a conta subiu), troco (pagou e a conta desceu) ou parte (só alguns do cupom pagaram)
 function contaPaga(d, u, c) {
-  const marcados = u.members.filter(id => d.pagos && d.pagos[id]);
-  if (!marcados.length) return { estado: 'aberto', pago: 0, falta: u.total, troco: 0 };
-  const pago = marcados.reduce((a, id) => a + valorPago(d, id, c), 0), dif = u.total - pago;
-  return { estado: dif > 0 ? (marcados.length < u.members.length ? 'parte' : 'falta') : dif < 0 ? 'troco' : 'pago', pago, falta: Math.max(0, dif), troco: Math.max(0, -dif) };
+  const marcados = u.members.filter(id => d.pagos && d.pagos[id]), dv = devido(u, c);
+  if (!marcados.length) return { estado: 'aberto', pago: 0, devido: dv, falta: dv, troco: 0 };
+  const pago = marcados.reduce((a, id) => a + valorPago(d, id, c), 0), dif = dv - pago;
+  return { estado: dif > 0 ? (marcados.length < u.members.length ? 'parte' : 'falta') : dif < 0 ? 'troco' : 'pago', pago, devido: dv, falta: Math.max(0, dif), troco: Math.max(0, -dif) };
 }
-function marcarPago(d, ids, on, c = compute(d)) { d.pagos = { ...(d.pagos || {}) }; ids.forEach(id => { if (on) d.pagos[id] = { v: c.per[id] ? c.per[id].total : 0, t: Date.now() }; else delete d.pagos[id]; }); }
+function marcarPago(d, ids, on, c = compute(d)) {
+  d.pagos = { ...(d.pagos || {}) };
+  ids.forEach(id => {
+    const r = c.per[id];
+    if (!on) { if (d.pagos[id] && d.pagos[id].fx) { if (d.custom) delete d.custom[id]; if (d.cover) delete d.cover[id]; } delete d.pagos[id]; if (d.saiu) delete d.saiu[id]; return; }
+    const v = r ? (c.payer ? r.total : r.paid) : 0;
+    // quem paga já dividindo a diferença de outra pessoa fica com esse valor fixo: o pagamento dele não muda sozinho depois
+    const fx = !!r && !c.payer && !r.custom && r.paid !== r.share && r.paid > 0;
+    if (fx) { d.custom = { ...(d.custom || {}), [id]: r.paid }; }
+    d.pagos[id] = { v, t: Date.now(), ...(fx || (d.pagos[id] && d.pagos[id].fx) ? { fx: true } : {}) };
+  });
+}
+// a conta de quem já pagou mudou e outra pessoa fica com a diferença: o que foi pago vira o valor desse cupom
+function cobrirDiferenca(d, u, quem, c = compute(d)) {
+  const pid = u.payers[0], p = contaPaga(d, u, c); if (!pid || u.payers.length !== 1) return false;
+  d.custom = { ...(d.custom || {}), [pid]: p.pago }; d.cover = { ...(d.cover || {}) };
+  if (quem) d.cover[pid] = quem; else delete d.cover[pid];
+  d.pagos = { ...(d.pagos || {}), [pid]: { ...(d.pagos[pid] || {}), v: p.pago, fx: true } };
+  return true;
+}
+// quem pode ficar com a diferença de alguém que paga outro valor: quem ainda vai pagar a própria parte, de outro cupom
+function quemCobre(d, c, pid, dif) {
+  return c.ids.filter(id => id !== pid && c.unitOf[id] !== c.unitOf[pid] && !(id in (d.custom || {})) && c.per[id].share > 0 && !(d.pagos && d.pagos[id]) && (dif > 0 || c.per[id].share + dif >= 0));
+}
+// quem é você nas comandas: o nome entra nos cadastros se ainda não estiver lá (vazio desfaz a escolha)
+function definirEu(nome) {
+  nome = String(nome || '').trim().replace(/\s+/g, ' ');
+  if (!nome) { catalog.me = ''; store.saveCatalog(); return ''; }
+  let p = catalog.people.find(x => norm(x.name) === norm(nome)); if (!p) { p = { name: nome, pix: '' }; catalog.people.push(p); }
+  catalog.me = p.name; store.saveCatalog(); return p.name;
+}
+// já pagou e foi embora: o cupom fica travado e a pessoa não entra em mais nada
+const saiu = (d, id) => !!(d.saiu && d.saiu[id]);
+const cupomSaiu = (d, u) => u.members.length > 0 && u.members.every(id => saiu(d, id));
 function faltaReceber(d, c) { return c.units.reduce((a, u) => a + contaPaga(d, u, c).falta, 0); }
 function trocoDevolver(d, c) { return c.units.reduce((a, u) => a + contaPaga(d, u, c).troco, 0); }
 // cupons de quem já pagou e cuja conta mudou depois
 const pagosComDiferenca = (d, c) => c.units.map(u => ({ u, p: contaPaga(d, u, c) })).filter(x => x.p.estado === 'falta' || x.p.estado === 'troco');
-const fraseDiferenca = (u, p) => `${u.name} pagou ${BRL(p.pago)} e a conta agora é ${BRL(u.total)}: ${p.estado === 'falta' ? 'falta ' + BRL(p.falta) : 'devolver ' + BRL(p.troco)}.`;
+const fraseDiferenca = (u, p) => `${u.name} pagou ${BRL(p.pago)} e a conta agora é ${BRL(p.devido)}: ${p.estado === 'falta' ? 'falta ' + BRL(p.falta) : 'devolver ' + BRL(p.troco)}.`;
 // marca ou desmarca o pagamento de um cupom, com Desfazer; "acertar" registra que a diferença foi paga ou devolvida
 function alternarPago(u, modo) {
   const d = draft, c = compute(d), antes = clone(d.pagos || {}), p = contaPaga(d, u, c);
-  const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; commit({ anchor: false }); fcRefazer?.(); } };
+  const antesX = { custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) }, saiu: { ...(d.saiu || {}) } };
+  const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; Object.assign(d, antesX); commit({ anchor: false }); fcRefazer?.(); } };
   if (modo === 'desmarcar') { marcarPago(d, u.members, false, c); commit({ anchor: false }); toast(`${u.name}: pagamento desmarcado.`, desfazer); return; }
   marcarPago(d, u.members, true, c); commit({ anchor: false });
   if (modo === 'acertar') { toast(p.estado === 'troco' ? `${u.name}: troco de ${BRL(p.troco)} devolvido.` : `${u.name}: diferença de ${BRL(p.falta)} recebida.`, desfazer); return; }
   const abertos = c.openItems.length + c.unassigned.length;
-  toast(`${u.name}: pago ${BRL(u.total)}.${abertos ? ' Ainda há itens sem divisão: a conta pode mudar.' : ''}`, desfazer);
+  toast(`${u.name}: pago ${BRL(p.falta)}.${abertos ? ' Ainda há itens sem divisão: a conta pode mudar.' : ''}`, desfazer);
 }
 // botões de pagamento de um cupom, conforme a situação
 function botoesPagoHTML(u, p, attr = 'data-pg') {
@@ -1881,18 +1939,46 @@ function botoesPagoHTML(u, p, attr = 'data-pg') {
 // encolhem acima dele; no fim, se o que abriu não coube, a tela desce só o necessário, sem esconder o título.
 function abrirSoEsta(det, irmas) {
   const sm = det.querySelector(':scope > summary'); if (!sm) return;
-  [...det.parentNode.children].forEach(x => { if (x !== det && x.matches('details' + irmas) && KitFacil.secao.aberta(x)) KitFacil.secao.fechar(x); });
-  const y0 = sm.getBoundingClientRect().top, t0 = performance.now();
-  const passo = () => {
+  let fechouAcima = 0;
+  [...det.parentNode.children].forEach(x => {
+    if (x === det || !x.matches('details' + irmas) || !KitFacil.secao.aberta(x)) return;
+    // quanto a irmã vai encolher: da altura de agora até só a linha do título
+    const t = x.querySelector(':scope > summary'), some = t ? x.offsetHeight - (t.offsetHeight + x.offsetHeight - x.clientHeight) : 0;
+    KitFacil.secao.fechar(x);
+    if (x.compareDocumentPosition(det) & Node.DOCUMENT_POSITION_FOLLOWING) fechouAcima += Math.max(0, some);
+  });
+  const y0 = sm.getBoundingClientRect().top;
+  // No quadro seguinte o Kit já sabe a altura final da linha que abre. Com ela, o destino da rolagem é calculado uma vez
+  // (título parado quando dá; senão, o mínimo para a linha aberta caber) e a tela vai até lá num movimento só, no mesmo
+  // tempo e na mesma curva das linhas. Antes a tela ia até o topo e voltava.
+  requestAnimationFrame(() => {
     if (!sm.isConnected) return;
-    const dy = sm.getBoundingClientRect().top - y0; if (Math.abs(dy) >= 0.5) window.scrollBy({ top: dy, behavior: 'instant' });
-    if (performance.now() - t0 < 460) return requestAnimationFrame(passo);
+    const an = det.getAnimations().find(a => { try { return a.effect.getKeyframes().some(k => k.height); } catch { return false; } });
+    let altura = det.offsetHeight; try { const kf = an && an.effect.getKeyframes(); if (kf && kf.length) altura = parseFloat(kf[kf.length - 1].height) || altura; } catch {}
     const cab = $('.cu-cab'), topo = (cab ? cab.getBoundingClientRect().bottom : 0) + 8, doca = $('#guia-doca') || $$('.kf-nav').find(n => n.getClientRects().length), fundo = (doca ? doca.getBoundingClientRect().top : innerHeight) - 14;
-    const r = det.getBoundingClientRect(), sobra = r.top < topo ? r.top - topo : Math.min(r.bottom - fundo, r.top - topo);
-    if (sobra > 4 || sobra < -1) window.scrollBy({ top: sobra, behavior: semMovimento() ? 'instant' : 'smooth' });
-  };
-  requestAnimationFrame(passo);
+    const tituloFim = y0 - fechouAcima;                 // onde o título para se a tela não rolar
+    let r = -fechouAcima;                               // rolagem que deixa o título onde o dedo tocou
+    const paraCaber = tituloFim + altura - fundo;       // rolagem mínima para a linha aberta caber acima do pé
+    if (tituloFim - r + altura > fundo) r = Math.min(paraCaber, tituloFim - topo);
+    if (tituloFim - r < topo) r = tituloFim - topo;
+    const max = Math.max(0, document.documentElement.scrollHeight - fechouAcima + (altura - det.offsetHeight) - innerHeight);
+    const de = window.scrollY, ate = Math.max(0, Math.min(max, de + r));
+    if (Math.abs(ate - de) < 1) return;
+    const m = MV(); if (m.off) { window.scrollTo({ top: ate, behavior: 'instant' }); return; }
+    const curva = window.KitFacil?.movimento?.curva || (t => t), t0 = performance.now();
+    const passo = agora => { const k = Math.min(1, (agora - t0) / m.ms); window.scrollTo({ top: de + (ate - de) * curva(k), behavior: 'instant' }); if (k < 1 && sm.isConnected) requestAnimationFrame(passo); };
+    requestAnimationFrame(passo);
+  });
 }
+// Linhas da comanda (pessoas e pedidos): lembra o que está aberto, para a tela voltar igual depois de cada mudança.
+// Um ouvinte só, para o app inteiro: antes ele era ligado de novo a cada redesenho da comanda, e depois de algumas
+// mudanças cada toque numa linha disparava várias rolagens ao mesmo tempo (a tela "bugava" ao abrir um nome).
+document.addEventListener('kf-secao', e => {
+  const el = e.target; if (!el.closest || !el.closest('#view')) return;
+  if (el.id === 'itens-sec') itensAbertos = e.detail.aberta;
+  else if (el.classList.contains('dv-pes')) { const id = el.dataset.pes; if (e.detail.aberta) { pesAberto = id; pesJuntando = false; pesSvc = false; pesCv = false; abrirSoEsta(el, '.dv-pes'); } else if (pesAberto === id) pesAberto = null; }
+  else if (el.classList.contains('item-d')) { if (e.detail.aberta) { itemAberto = el.dataset.item; abrirSoEsta(el, '.item-d'); } else if (itemAberto === el.dataset.item) itemAberto = null; }
+});
 /* ---------- abrir e recolher com movimento ----------
    As telas são redesenhadas inteiras; este ajudante compara o antes e o depois de um redesenho e anima o que mudou:
    [data-exp="chave"]  um trecho que aparece ou some (abre crescendo, fecha encolhendo);
@@ -2109,22 +2195,31 @@ function fecharSheet(abrirEm = 0) {
         ${quemAberto ? `<div class="fc-quem" data-exp="fc-quem" role="group" aria-label="Quem paga a conta de todos">${d.people.map(p => `<button type="button" class="chip-b" data-fc-quem="${p.id}">${esc(p.name)}</button>`).join('')}</div>` : ''}</div>`;
     }
     const u = x.r, pg = contaPaga(d, u, c), pid = u.payers.length === 1 ? u.payers[0] : '', r = pid && c.per[pid];
+    // com quem fica a diferença: os outros dividem (padrão) ou uma pessoa só
+    const quem = (attr, dif, atual, rot) => { const L = pid && !c.payer ? quemCobre(d, c, pid, dif) : []; if (!L.length) return '';
+      return `<div class="fc-cobre" role="group" aria-label="${rot} ${BRL(Math.abs(dif))}"><span class="fc-cobre-t">${rot} ${BRL(Math.abs(dif))}</span><div class="fc-quem">
+        <button type="button" class="chip-b" ${attr}="" aria-pressed="${atual === ''}">Os outros dividem</button>${L.map(id => `<button type="button" class="chip-b" ${attr}="${id}" aria-pressed="${atual === id}">${esc(c.per[id].person.name)}</button>`).join('')}</div></div>`; };
     // outro valor: só para quem paga o próprio cupom, enquanto ele não foi marcado como pago
     let valor = '';
     if (r && pid !== c.payer && pg.estado === 'aberto') {
-      const on = r.custom || valorAberto === pid;
-      valor = on ? `<div class="fc-valor" data-exp="fc-valor:${pid}"><div class="field"><label for="fc-v-${pid}">Vai pagar</label><input id="fc-v-${pid}" data-fc-custom="${pid}" type="text" inputmode="numeric" data-money value="${moneyInput(r.custom ? d.custom[pid] || 0 : r.paid)}"></div>
-          <button type="button" class="btn small ghost" data-fc-conta="${pid}">${I.refresh}Valor da conta</button></div>`
+      const on = r.custom || valorAberto === pid, dif = r.custom ? r.share - (d.custom[pid] || 0) : 0;
+      valor = on ? `<div class="fc-valor"><div class="field"><label for="fc-v-${pid}">Vai pagar</label><input id="fc-v-${pid}" data-fc-custom="${pid}" type="text" inputmode="numeric" data-money value="${moneyInput(r.custom ? d.custom[pid] || 0 : r.paid)}"></div>
+          <button type="button" class="btn small ghost" data-fc-conta="${pid}">${I.refresh}Valor da conta</button></div>${dif ? quem('data-fc-cobre', dif, r.cover || '', dif > 0 ? 'Quem cobre' : 'Quem devolve') : ''}`
         : `<button type="button" class="btn small ghost" data-fc-valor="${pid}">${I.edit}Pagar outro valor</button>`;
     }
-    return `<div class="fc-pago" data-fc-u="${u.id}">${botoesPagoHTML(u, pg, 'data-fc-pago')}${valor}</div>`;
+    // a conta mudou depois de paga: além de receber ou devolver, outra pessoa pode ficar com a diferença
+    const dif = pg.estado === 'falta' ? pg.falta : pg.estado === 'troco' ? -pg.troco : 0;
+    const outro = dif ? quem('data-fc-difcobre', dif, null, dif > 0 ? 'Ou quem cobre' : 'Ou quem devolve') : '';
+    // já pagou: pode já ter ido embora (o cupom trava e a pessoa não entra em mais nada)
+    const foi = pg.estado !== 'aberto' && pg.estado !== 'parte' ? `<label class="fc-saiu"><span>Já saiu da mesa</span><span class="switch"><input type="checkbox" data-fc-saiu="${u.id}" ${cupomSaiu(d, u) ? 'checked' : ''} aria-label="${esc(u.name)} já saiu da mesa"><span class="track"></span></span></label>` : '';
+    return `<div class="fc-pago" data-fc-u="${u.id}">${botoesPagoHTML(u, pg, 'data-fc-pago')}${outro}${foi}${valor}</div>`;
   };
   const avisoHTML = c => c.payDiff < 0 ? `<div class="status warn" data-exp="fc-aviso">${I.warn}<span>Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga outro valor.</span></div>` : c.payDiff > 0 ? `<div class="status warn" data-exp="fc-aviso">${I.warn}<span>Os valores escolhidos passam ${BRL(c.payDiff)} do total.</span></div>` : '';
   openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
       <div class="fc-nav"><button type="button" class="fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
       <div class="fc-janela" id="fc-janela"><div class="fc-trilho" id="fc-trilho" tabindex="0" aria-label="Cupons: arraste para o lado">${slides.map((x, i) => `<div class="fc-slide" role="group" aria-roledescription="cupom" aria-label="${i + 1} de ${slides.length}: ${esc(x.nome)}"><div class="cupom-1 ${x.pago ? 'cupom-pago' : ''}">${receiptHTML(x.r, d, c, x.rows)}${x.pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>
-        <div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}${i ? 'Copiar' : 'Copiar todos'}</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div>
-        <div class="fc-extra">${extras(x, c)}</div></div>`).join('')}</div></div>
+        <div class="fc-col"><div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}${i ? 'Copiar' : 'Copiar todos'}</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div>
+        <div class="fc-extra">${extras(x, c)}</div></div></div>`).join('')}</div></div>
       <div class="fc-pontos" aria-hidden="true">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
       <div id="fc-aviso">${avisoHTML(c)}</div>
       ${pend ? `<div class="status warn">${I.warn}<span>Há ${plural(pend, 'item', 'itens')} sem divisão. Divida antes de salvar.</span></div>` : ''}
@@ -2153,7 +2248,8 @@ function fecharSheet(abrirEm = 0) {
       tr.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); ir(i + 1); } if (e.key === 'ArrowLeft') { e.preventDefault(); ir(i - 1); } });
       $('#fc-ant', s).onclick = () => ir(i - 1);
       $('#fc-prox', s).onclick = () => ir(i + 1);
-      addEventListener('resize', () => { pos(X(i), false); altura(false); });
+      const aoMudarTela = () => { if (!tr.isConnected) return removeEventListener('resize', aoMudarTela); pos(X(i), false); altura(false); };
+      addEventListener('resize', aoMudarTela);
       // os cupons (e o da mesa) são refeitos no lugar, com o carimbo e os botões da situação de agora
       const refazer = () => {
         if (!tr.isConnected) { if (fcRefazer === refazer) fcRefazer = null; return; }
@@ -2174,6 +2270,8 @@ function fecharSheet(abrirEm = 0) {
       };
       const mudar = () => { commit({ anchor: false }); refazer(); };
       tr.addEventListener('change', e => {
+        const sa = e.target.closest('[data-fc-saiu]');
+        if (sa) { const u = cAt.U[sa.dataset.fcSaiu]; if (!u) return; d.saiu = { ...(d.saiu || {}) }; u.members.forEach(m => { if (sa.checked) d.saiu[m] = true; else delete d.saiu[m]; }); commit({ anchor: false }); cAt = compute(d); return; }
         const el = e.target.closest('[data-fc-custom]'); if (!el || el._cfFeito) return; el._cfFeito = true;
         const pid = el.dataset.fcCustom, v = parseMoney(el.value) || 0;
         // o cupom só é refeito depois que o campo soltar o foco de verdade (o teclado e a barra do OK se recolhem antes)
@@ -2189,7 +2287,14 @@ function fecharSheet(abrirEm = 0) {
         if (t('[data-fc-cada]')) { pagaTodos(d, ''); return mudar(); }
         // pagar outro valor
         if (t('[data-fc-valor]')) { valorAberto = t('[data-fc-valor]').dataset.fcValor; refazer(); const campo = $(`[data-fc-custom="${valorAberto}"]`, tr); campo?.focus({ preventScroll: true }); campo?.select?.(); return; }
-        if (t('[data-fc-conta]')) { const pid = t('[data-fc-conta]').dataset.fcConta; if (d.custom) delete d.custom[pid]; valorAberto = ''; return mudar(); }
+        if (t('[data-fc-conta]')) { const pid = t('[data-fc-conta]').dataset.fcConta; if (d.custom) delete d.custom[pid]; if (d.cover) delete d.cover[pid]; valorAberto = ''; return mudar(); }
+        // com quem fica a diferença de quem paga outro valor
+        if (t('[data-fc-cobre]')) { const b = t('[data-fc-cobre]'), pid = b.closest('[data-fc-u]') && cAt.U[b.closest('[data-fc-u]').dataset.fcU]?.payers[0]; if (!pid) return; d.cover = { ...(d.cover || {}) }; if (b.dataset.fcCobre) d.cover[pid] = b.dataset.fcCobre; else delete d.cover[pid]; return mudar(); }
+        // a conta de quem já pagou mudou e outra pessoa fica com a diferença
+        if (t('[data-fc-difcobre]')) { const b = t('[data-fc-difcobre]'), u = cAt.U[b.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
+          const antes = { pagos: clone(d.pagos || {}), custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) } }, p = contaPaga(d, u, cAt), q = b.dataset.fcDifcobre;
+          if (!cobrirDiferenca(d, u, q, cAt)) return; mudar();
+          toast(`${q ? cAt.per[q].person.name : 'Os outros'} ${p.estado === 'troco' ? (q ? 'devolve' : 'devolvem') : (q ? 'cobre' : 'cobrem')} ${BRL(p.falta || p.troco)} de ${u.name}.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
         // pagamento: marca, acerta ou desmarca; os cupons (e o da mesa) são refeitos no lugar, já com o carimbo
         if (pgb) {
           const u = cAt.U[pgb.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
@@ -2267,7 +2372,7 @@ const viewComanda = {
 
       <div class="cm-corpo">
         <div class="cu-sec" id="groups-card" aria-label="Pessoas: quanto cada um paga">
-          ${difs.length ? `<div class="aviso-pago" data-exp="aviso-pago" role="status"><b>${I.warn}A conta de quem já pagou mudou</b>${difs.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span><button type="button" class="btn small" data-ap-acerta="${x.u.id}">${x.p.estado === 'troco' ? 'Devolvi' : 'Recebi'}</button></p>`).join('')}</div>` : ''}
+          ${difs.length ? `<div class="aviso-pago" data-exp="aviso-pago" role="status"><b>${I.warn}A conta de quem já pagou mudou</b>${difs.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span><span class="ap-bts"><button type="button" class="btn small" data-ap-acerta="${x.u.id}">${x.p.estado === 'troco' ? 'Devolvi' : 'Recebi'}</button>${x.u.payers.length === 1 && !calc.payer && quemCobre(d, calc, x.u.payers[0], x.p.falta || -x.p.troco).length ? `<button type="button" class="btn small ghost" data-ap-cobre="${x.u.id}">${x.p.estado === 'troco' ? 'Outro devolve' : 'Outro cobre'}</button>` : ''}</span></p>`).join('')}</div>` : ''}
           <div class="cu-tit">PESSOAS${d.people.length ? ` · ${d.people.length}` : ''}</div>
           <div class="cm-col dv-col" aria-hidden="true"><span>Nº</span><span>NOME</span><span>A PAGAR</span></div>
           ${calc.units.map(u => {
@@ -2278,9 +2383,9 @@ const viewComanda = {
             const cls = `${pulou[u.id] ? 'pula' : ''} ${pg.estado === 'pago' ? 'pago' : marcado ? 'pago-dif' : ''}`;
             if (u.members.length === 1) { const pid = u.members[0], r = calc.per[pid];
               return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin ${cls}" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}" aria-label="${esc(nm(pid))}: ${BRL(u.total)}${fala}. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar">
-                <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}${dif}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
+                <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}${saiu(d, pid) ? '<span class="dv-obs">saiu da mesa</span>' : ''}${dif}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
             return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin dv-grupo ${cls}" data-unit="${u.id}" data-drop="g:${u.id}" data-grupo="${u.id}" aria-label="Cupom compartilhado de ${esc(u.name)}: ${BRL(u.total)}${fala}. Mostrar atalhos">
-              <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado</span>${dif}${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
+              <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado${cupomSaiu(d, u) ? ' · saiu da mesa' : ''}</span>${dif}${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
           }).join('')}
           <button type="button" class="it-novo dv-add" id="add-pessoa" data-drop="out"><span class="it-q ma-add">+</span><span class="ma-add">${d.people.length ? 'Pessoa' : 'Adicionar quem está na mesa'}</span><span class="it-q ma-des">×</span><span class="ma-des">Desfazer o cupom compartilhado</span><span></span></button>
         </div>
@@ -2306,7 +2411,7 @@ const viewComanda = {
 
     ${(() => {
       const fechar = d.items.length && d.people.length ? `<button type="button" class="kf-btn kf-pri fechar-btn" id="fechar-cmd">${I.receipt}<span>Fechar comanda</span></button>` : '';
-      const lixo = !d.isExample && (d.items.length || d.people.length || d.place) ? `<button type="button" class="btn small ghost danger-text" id="cmd-excluir">${I.trash}Excluir comanda</button>` : '';
+      const lixo = !d.isExample && (d.items.length || d.people.length || d.place) ? `<button type="button" class="btn danger" id="cmd-excluir">${I.trash}Excluir comanda</button>` : '';
       return fechar || lixo ? `<div class="fim-acoes">${fechar}${lixo}</div>` : '';
     })()}
 
@@ -2328,6 +2433,8 @@ const viewComanda = {
       if (Date.now() - drag.droppedAt < 350) { if (e.target.closest('summary')) { e.preventDefault(); e.stopPropagation(); } return; }
       const ap = e.target.closest('[data-ap-acerta]');
       if (ap) { const u = compute(d).U[ap.dataset.apAcerta]; if (u) alternarPago(u, 'acertar'); return; }
+      const ac = e.target.closest('[data-ap-cobre]');
+      if (ac) { const k = compute(d).units.findIndex(u => u.id === ac.dataset.apCobre); if (k >= 0) fecharSheet(k + 1); return; }
       const pa = e.target.closest('[data-pa]');
       if (pa) {
         const c = compute(d), u = c.U[pa.dataset.pa]; if (!u) return;
@@ -2365,13 +2472,6 @@ const viewComanda = {
     });
     $('#fechar-cmd', v)?.addEventListener('click', () => fecharSheet());
     $('#cmd-excluir', v)?.addEventListener('click', () => deleteCurrent(true));
-    // lembra o que está aberto, para a tela voltar igual depois de cada mudança
-    v.addEventListener('kf-secao', e => {
-      const el = e.target;
-      if (el.id === 'itens-sec') itensAbertos = e.detail.aberta;
-      else if (el.classList.contains('dv-pes')) { const id = el.dataset.pes; if (e.detail.aberta) { pesAberto = id; pesJuntando = false; pesSvc = false; pesCv = false; abrirSoEsta(el, '.dv-pes'); } else if (pesAberto === id) pesAberto = null; }
-      else if (el.classList.contains('item-d')) { if (e.detail.aberta) { itemAberto = el.dataset.item; abrirSoEsta(el, '.item-d'); } else if (itemAberto === el.dataset.item) itemAberto = null; }
-    });
     $$('[data-it-alt]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itAlt); if (it) renameSheet(it); }));
     const rasc = id => { const it = d.items.find(i => i.id === id); if (!it) return null; if (!itPend[id]) itPend[id] = { qty: it.qty, a: { ...it.a }, fq: it.fq || 0 }; return [it, itPend[id]]; };
     const repinta = () => render({ anchor: false });
@@ -2454,7 +2554,7 @@ function dragSource(el) {
   // as linhas com chave também levantam o cartão; só a chave e os botões ficam de fora
   if (!el.closest || el.closest('button, input, select, textarea, a, .switch, label:not(.prow)')) return null;
   const box = el.closest('#groups-card [data-unit]'); if (!box) return null;
-  const c = compute(draft), u = c.U[box.dataset.unit]; if (!u) return null;
+  const c = compute(draft), u = c.U[box.dataset.unit]; if (!u || u.members.some(m => saiu(draft, m))) return null;
   const multi = u.members.length > 1;
   // num cupom compartilhado, segurar a parte de uma pessoa leva só ela; segurar o topo leva o grupo todo
   const m = multi && el.closest('[data-mem]')?.dataset.mem;
@@ -2502,6 +2602,7 @@ function dragStart(x, y) {
 function dragTarget(x, y) {
   const t = document.elementFromPoint(x, y)?.closest('#groups-card [data-drop]');
   if (t && t.dataset.drop === 'out' && !drag.on.group) return null; // "+ Pessoa" só desfaz grupo
+  if (t && t.dataset.unit) { const u = compute(draft).U[t.dataset.unit]; if (u && u.members.some(m => saiu(draft, m))) return null; }
   return t && t.dataset.unit !== drag.on.unit ? t : null;
 }
 function dragMove(x, y) {

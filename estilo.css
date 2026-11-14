@@ -624,34 +624,52 @@ body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16p
 .ip-excluir .i{width:16px;height:16px}
 
 
-/* fechar a comanda: o pagamento fica no cupom de cada pessoa */
-.fc-pago{margin-top:8px;display:flex;flex-direction:column;align-items:center}
-.fc-pago>.btn{margin-top:0;width:auto;min-width:210px}
-.fc-pago .pa-dif{text-align:center;margin:0 0 2px}
-.fc-pago .pa-acoes-2{width:100%;padding-top:8px}
 /* ações da pessoa na comanda: três botões cabem numa linha sem encostar na borda */
 .pa-acoes .btn{flex:1 1 auto;padding-inline:8px;min-width:0}
 
-/* ---------- 1.4.0 ---------- */
-/* comanda: excluir fica logo abaixo de Fechar comanda */
-.fim-acoes{flex-direction:column;align-items:stretch;gap:6px}
-.fim-acoes #cmd-excluir{align-self:center;margin-top:0;width:auto}
-/* fechar a comanda: o que fica embaixo de cada cupom */
-.fc-extra{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;margin-top:8px}
-.fc-extra:empty{display:none}
-.fc-pago{margin-top:0;width:100%;gap:8px}
-.fc-pago:empty{display:none}
-.fc-todos{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
-.fc-todos>.btn,.fc-pago>.btn{margin-top:0;width:auto;min-width:210px}
-.fc-todos.on{flex-direction:row;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:var(--r-sm,12px);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);text-align:left;font-size:15px}
-.fc-todos.on .btn{min-width:0;flex:none}
-.fc-quem{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%}
+/* comanda: Excluir fica logo abaixo de Fechar comanda, da mesma largura, em vermelho */
+.fim-acoes{flex-direction:column;align-items:stretch;gap:8px}
+.fim-acoes #cmd-excluir{margin-top:0;width:100%;min-height:48px;gap:8px;font-size:16px}
+.fim-acoes #cmd-excluir .i{width:20px;height:20px}
+
+/* fechar a comanda: tudo o que fica embaixo do cupom tem a mesma largura (a de Copiar e PDF juntos) */
+.fc-col{width:min(100%,320px);display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:10px}
+.fc-acoes{margin-top:0}
+.fc-acoes .btn{flex:1 1 0;min-width:0}
+.fc-extra,.fc-pago,.fc-todos{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.fc-extra:empty,.fc-pago:empty{display:none}
+.fc-col .btn{margin-top:0;width:100%;min-width:0}
+.fc-pago .pa-dif{text-align:center;margin:0}
+.fc-pago .pa-acoes-2{padding-top:0;grid-template-columns:1fr}
+.fc-todos.on{flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:var(--r-sm,12px);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);text-align:left;font-size:15px}
+.fc-todos.on .btn{width:auto;flex:none}
+.fc-quem{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .chip-b{min-height:44px;padding:0 16px;border:0;border-radius:99px;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line);font:inherit;font-weight:700;cursor:pointer}
 .chip-b:active{background:var(--surface-2)}
-.fc-valor{width:100%;display:flex;align-items:flex-end;gap:8px}
+.chip-b[aria-pressed="true"]{background:var(--green);color:var(--green-ink);box-shadow:none}
+.fc-valor{display:flex;align-items:flex-end;gap:8px}
 .fc-valor .field{flex:1;min-width:0;text-align:left}
-.fc-valor .btn{margin-top:0;width:auto;flex:none;min-height:48px}
+.fc-valor .btn{width:auto;flex:none;min-height:48px}
+.fc-cobre{display:flex;flex-direction:column;gap:6px}
+.fc-cobre-t{font-size:13.5px;font-weight:700;color:var(--muted);text-align:left}
+.fc-saiu{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:6px 12px;border-radius:var(--r-sm,12px);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font-weight:700;font-size:15px;cursor:pointer}
 .fc-trilho input{-webkit-user-select:text;user-select:text}
+/* com o teclado aberto, o rodapé de Fechar a comanda se recolhe: Voltar e Salvar não sobem junto com o teclado */
+.kf-dlg:has(.fc) .kf-dlg-pe{max-height:140px;overflow:hidden;transition:max-height var(--cf-jan-ms) var(--cf-jan-curva),padding var(--cf-jan-ms) var(--cf-jan-curva),opacity .2s ease,border-color .2s ease}
+html.cf-tk body:not(.com-guia) .kf-dlg:has(.fc) .kf-dlg-pe{max-height:0;padding-top:0;padding-bottom:0;opacity:0;border-color:transparent;pointer-events:none}
+/* sorteio: quem entra é escolha de quem sorteia */
+.gf-quem{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%}
+.gf-add{display:flex;gap:8px;width:min(100%,320px)}
+.gf-add input{flex:1;min-width:0}
+.gf-add .btn{flex:none;width:48px;min-height:48px;margin-top:0;padding:0}
+/* Ajustes: o seu nome */
+.aj-me-l{display:flex;gap:8px}
+.aj-me-l input{flex:1;min-width:0}
+.aj-me-l .btn{flex:none;width:auto;margin-top:0}
+/* quem já pagou e saiu da mesa: fora dos novos pedidos */
+.ck-saiu{opacity:.55}
+.ck-saiu .ck-nome::after{content:"saiu da mesa";margin-left:8px;padding:2px 7px;border-radius:99px;background:var(--surface-2);color:var(--muted);font:700 11px/1.4 var(--f-body);vertical-align:middle}
+.aviso-pago .ap-bts{flex:none!important;display:flex;flex-direction:column;gap:6px}
 /* cupom compartilhado: quem paga */
 .gs-lin{display:flex;align-items:center;gap:8px}
 .gs-lin .cs-tx{flex:1;min-width:0}

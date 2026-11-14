@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.5.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.6.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). A versão 1.0 foi refeita com liberdade
 para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porquê está em [Exceções ao padrão](#exceções-ao-padrão).
@@ -14,12 +14,12 @@ para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porqu�
 - **Pessoas:** tocar num nome mostra os atalhos (serviço, couvert, Juntar, Ver cupom e Editar, que muda o nome ou tira da mesa); segurar e arrastar um nome sobre outro junta os dois no mesmo cupom
 - **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, e cortesias
 - **Pago:** só depois de fechar a comanda: em Fechar a comanda, no cupom de cada pessoa, marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo, alguém que chegou), mostra quanto falta ou quanto devolver
-- **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; ali também ficam "uma pessoa paga a conta de todos" (cada um continua com o seu cupom), "pagar outro valor" e marcar quem já pagou; salvar tem Desfazer
+- **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; ali também ficam "uma pessoa paga a conta de todos" (cada um continua com o seu cupom), "pagar outro valor" (com a escolha de quem cobre ou devolve a diferença), marcar quem já pagou e "já saiu da mesa" (trava o cupom); salvar tem Desfazer
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai
 - **Cadastros:** pessoas e chaves Pix, turmas (quem sai junto entra na mesa com um toque) e preço de cada produto em cada lugar
 - **Tampinhas e níveis:** uma coleção que cresce conforme você usa o app; cada tampinha é um objeto 3D (WebGL) que gira com o dedo; dá para desligar nos Ajustes
-- **Sortear alguém da mesa:** um ponteiro gira e para num nome
+- **Sortear alguém da mesa:** você escolhe quem entra; um ponteiro gira e para num nome
 - **Apresentação na primeira abertura** e **guia** que faz cada passo na tela, do começo ao fim, numa demonstração que não grava nada
 - **Sem bebida alcoólica:** nenhum texto, exemplo ou imagem do app fala de bebida alcoólica (há um teste que confere)
 - **Use em vários aparelhos (opcional):** histórico e cadastros sincronizados, criptografados, num gist secreto da sua conta GitHub
@@ -44,7 +44,7 @@ Abra o endereço em qualquer navegador, no celular, no tablet ou no computador. 
 | Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback`; apagados depois de 2 anos |
 
 A comanda aberta não vai para a sincronização: para dividir a mesma comanda entre celulares, use a comanda ao vivo.
-"Pago" (com o valor pago por pessoa, em `pagos`) fica só no aparelho de quem marcou (não vai para a comanda ao vivo). As tampinhas e os níveis são calculados do
+"Pago" (com o valor pago por pessoa, em `pagos`) e "já saiu da mesa" (em `saiu`) ficam só no aparelho de quem marcou (não vão para a comanda ao vivo). As tampinhas e os níveis são calculados do
 histórico e dos cadastros, então acompanham a sincronização; só as marcas "ao vivo", "sorteio" e "guia" ficam no aparelho.
 
 Quem já usava a versão 0.5.0 não perde nada: as chaves do armazenamento e os formatos são os mesmos.

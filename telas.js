@@ -266,6 +266,7 @@ function pessoaSheet() {
   openSheet({ title: 'Nova pessoa', body: `<form id="np-form" class="pilha" autocomplete="off">
       <div class="field"><label for="np-nome">Nome</label><input id="np-nome" type="text" autocapitalize="words" maxlength="40" placeholder="Nome ou apelido"></div>
       <div class="field"><label for="np-pix">Chave Pix (opcional)</label><input id="np-pix" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="CPF, celular, e-mail ou chave aleatória"></div>
+      <label class="aj-chave"><span class="lin-tx"><b>Sou eu</b></span><span class="switch"><input type="checkbox" id="np-eu"><span class="track"></span></span></label>
     </form>`, foot: `<button type="button" class="btn ghost" id="np-no">Cancelar</button><button type="submit" form="np-form" class="btn">${I.save}Salvar pessoa</button>`, onMount: s => {
     $('#np-no', s).onclick = () => closeSheet();
     if (!isTouch) setTimeout(() => $('#np-nome', s)?.focus(), 60);
@@ -275,7 +276,8 @@ function pessoaSheet() {
       if (!nome) { toast('Informe o nome.'); $('#np-nome', s).focus(); return; }
       if (catalog.people.some(p => norm(p.name) === norm(nome))) { toast(`${nome} já está nos cadastros.`); return; }
       catalog.people.push({ name: nome, pix: '' });
-      store.saveCatalog(); closeSheet(true);
+      const eu = $('#np-eu', s).checked; if (eu) definirEu(nome);
+      store.saveCatalog(); closeSheet(true); if (eu) setTimeout(() => jogoConferir(), 400);
       if (pix) savePixKey(nome, pix, () => { render(); toast(`${nome} cadastrado com a chave Pix.`); });
       else { render(); toast(`${nome} cadastrado.`); }
     });

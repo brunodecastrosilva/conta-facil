@@ -443,10 +443,10 @@ function girar3d(raiz, { auto = true, inicio = -0.5 } = {}) {
 }
 
 /* ---------- tampinha nova: cai girando e assenta; ficha da tampinha ---------- */
-function tampaNova(lista) {
+function tampaNova(lista, aoFechar) {
   const t = lista[0], resto = lista.slice(1);
   vibrar([18, 40, 18]);
-  openSheet({ title: 'Tampinha nova', onClose: () => setTimeout(tampaFilaMostrar, 500), body: `<div class="tn"><div class="o3d-cai">${tampa3dHTML(t)}</div>
+  openSheet({ title: 'Tampinha nova', onClose: () => { if (aoFechar) aoFechar(); else setTimeout(tampaFilaMostrar, 500); }, body: `<div class="tn"><div class="o3d-cai">${tampa3dHTML(t)}</div>
       <b class="tn-nome">${esc(t.nome)}</b><p class="hint">${esc(t.como.replace(/\.$/, ''))}: feito. +${XP.tampinha} pontos.</p>
       ${resto.length ? `<p class="tn-mais">E mais ${plural(resto.length, 'tampinha', 'tampinhas')}: ${esc(resto.map(x => x.nome).join(', '))}.</p>` : ''}</div>`,
     foot: `<button type="button" class="btn ghost" id="tn-ver">Ver a coleção</button><button type="button" class="btn" id="tn-ok">Boa</button>`,
@@ -491,29 +491,49 @@ const viewTampinhas = {
 const PONTEIRO_SVG = `<svg viewBox="0 0 60 200" aria-hidden="true"><defs><linearGradient id="pt-v" x1="0" x2="1"><stop offset="0" stop-color="#F7C65A"/><stop offset=".5" stop-color="#F2B33D"/><stop offset="1" stop-color="#B97A0E"/></linearGradient></defs>
   <path d="M30 6 52 62H38v92a8 8 0 0 1-16 0V62H8z" fill="url(#pt-v)" stroke="#8F5C08" stroke-width="2" stroke-linejoin="round"/><circle cx="30" cy="100" r="13" fill="#FFFDF5" stroke="#8F5C08" stroke-width="2"/><circle cx="30" cy="100" r="4.500" fill="#1D5A3B"/></svg>`;
 function sorteioSheet() {
-  const naMesa = draft.active ? draft.people.map(p => p.name) : [];
-  const base = naMesa.length >= 2 ? naMesa : [...catalog.people].sort((a, b) => (b.last || 0) - (a.last || 0)).slice(0, 8).map(p => p.name);
-  let nomes = base.slice(0, 10), ang = 0, girando = false;
-  const roda = () => { const n = nomes.length; return nomes.map((nm, i) => `<span class="gf-nome" data-i="${i}" style="--a:${(360 / n) * i}deg"><span>${esc(nm.split(' ')[0])}</span></span>`).join(''); };
+  // quem pode entrar: quem está na mesa e as pessoas dos cadastros. Quem entra de fato é escolha de quem sorteia:
+  // a mesa já vem marcada (é o caso mais comum) e cada nome liga e desliga com um toque; dá para pôr um nome avulso
+  const naMesa = draft.active ? draft.people.map(p => p.name) : [], MAX = 12;
+  const lista = []; [...naMesa, ...[...catalog.people].sort((a, b) => (b.last || 0) - (a.last || 0)).map(p => p.name)].forEach(n => { if (!lista.some(x => norm(x) === norm(n))) lista.push(n); });
+  const dentro = new Set(naMesa.slice(0, MAX));
+  let ang = 0, girando = false;
+  const nomes = () => lista.filter(n => dentro.has(n));
+  const roda = () => { const L = nomes(), n = L.length; return L.map((nm, i) => `<span class="gf-nome" data-i="${i}" style="--a:${(360 / n) * i}deg"><span>${esc(nm.split(' ')[0])}</span></span>`).join(''); };
+  const chips = () => lista.map(n => `<button type="button" class="chip-b" data-gf-n="${esc(n)}" aria-pressed="${dentro.has(n)}">${esc(n)}</button>`).join('');
+  const frase = () => { const n = nomes().length; return n < 2 ? 'Escolha duas pessoas ou mais.' : `${n} no sorteio.`; };
   openSheet({ title: 'Sortear alguém da mesa', onClose: () => setTimeout(tampaFilaMostrar, 500), body: `<div class="gf">
-      ${nomes.length >= 2 ? `<div class="gf-mesa" id="gf-mesa"><div class="gf-roda" id="gf-roda">${roda()}</div><div class="gf-ponteiro" id="gf-ponteiro">${PONTEIRO_SVG}</div></div>
-      <p class="gf-res" id="gf-res" role="status" aria-live="polite">${naMesa.length >= 2 ? 'Quem está na mesa entra no sorteio.' : 'Entram as pessoas dos seus cadastros.'}</p>`
-      : `<div class="vazio">${ILU.turmas}<b>Falta gente na mesa</b><p>Abra uma comanda com duas pessoas ou mais, ou cadastre pessoas, para sortear.</p></div>`}</div>`,
-    foot: nomes.length >= 2 ? `<button type="button" class="btn ghost" id="gf-x">Fechar</button><button type="button" class="btn ambar" id="gf-go">Sortear</button>` : `<button type="button" class="btn" id="gf-x">Fechar</button>`,
+      <div class="gf-mesa" id="gf-mesa"><div class="gf-roda" id="gf-roda">${roda()}</div><div class="gf-ponteiro" id="gf-ponteiro">${PONTEIRO_SVG}</div></div>
+      <p class="gf-res" id="gf-res" role="status" aria-live="polite">${frase()}</p>
+      <div class="gf-quem" id="gf-quem" role="group" aria-label="Quem entra no sorteio">${chips()}</div>
+      <form class="gf-add" id="gf-add" autocomplete="off"><label class="so-leitor" for="gf-novo">Outro nome</label><input id="gf-novo" type="text" autocapitalize="words" maxlength="40" placeholder="Outro nome" enterkeyhint="done"><button type="submit" class="btn small ghost" aria-label="Pôr este nome no sorteio">${I.plus}</button></form></div>`,
+    foot: `<button type="button" class="btn ghost" id="gf-x">Fechar</button><button type="button" class="btn ambar" id="gf-go">Sortear</button>`,
     onMount: s => {
       $('#gf-x', s).onclick = () => closeSheet();
-      const go = $('#gf-go', s); if (!go) return;
-      const g = $('#gf-ponteiro', s), res = $('#gf-res', s);
+      const go = $('#gf-go', s), g = $('#gf-ponteiro', s), res = $('#gf-res', s), quem = $('#gf-quem', s);
+      const pintar = () => { $('#gf-roda', s).innerHTML = roda(); quem.innerHTML = chips(); res.textContent = frase(); go.toggleAttribute('disabled', nomes().length < 2); go.textContent = 'Sortear'; };
+      pintar();
+      quem.addEventListener('click', e => {
+        const b = e.target.closest('[data-gf-n]'); if (!b || girando) return; const n = b.dataset.gfN;
+        if (dentro.has(n)) dentro.delete(n); else { if (dentro.size >= MAX) { toast(`O sorteio leva até ${MAX} pessoas.`); return; } dentro.add(n); }
+        pintar();
+      });
+      $('#gf-add', s).addEventListener('submit', e => {
+        e.preventDefault(); if (girando) return;
+        const el = $('#gf-novo', s), n = el.value.trim().replace(/\s+/g, ' '); if (!n) return;
+        const ja = lista.find(x => norm(x) === norm(n)), nome = ja || n; if (!ja) lista.push(n);
+        if (!dentro.has(nome)) { if (dentro.size >= MAX) { toast(`O sorteio leva até ${MAX} pessoas.`); return; } dentro.add(nome); }
+        el.value = ''; pintar();
+      });
       go.onclick = () => {
-        if (girando) return; girando = true; go.setAttribute('aria-disabled', 'true');
-        const n = nomes.length, i = Math.floor(Math.random() * n), alvo = (360 / n) * i;
+        const L = nomes(), n = L.length; if (girando || n < 2) return; girando = true; go.setAttribute('aria-disabled', 'true');
+        const i = Math.floor(Math.random() * n), alvo = (360 / n) * i;
         $$('.gf-nome', s).forEach(e => e.classList.remove('vez'));
         const voltas = semMovimento() ? 0 : 4 + Math.floor(Math.random() * 3), dur = 3.4 + voltas * .2;
         ang = Math.ceil(ang / 360) * 360 + voltas * 360 + alvo;
         g.style.transition = semMovimento() ? 'none' : `transform ${dur}s cubic-bezier(.1,.7,.1,1)`;
         g.style.transform = `translate(-50%,-50%) rotate(${ang}deg)`;
         res.textContent = 'Sorteando…';
-        const fim = () => { if (!go.isConnected) return; girando = false; go.removeAttribute('aria-disabled'); go.textContent = 'Sortear de novo'; $(`.gf-nome[data-i="${i}"]`, s)?.classList.add('vez'); res.innerHTML = `Saiu <b>${esc(nomes[i])}</b>.`; vibrar(30); jogoMarcar('sorteio'); };
+        const fim = () => { if (!go.isConnected) return; girando = false; go.removeAttribute('aria-disabled'); go.textContent = 'Sortear de novo'; $(`.gf-nome[data-i="${i}"]`, s)?.classList.add('vez'); res.innerHTML = `Saiu <b>${esc(L[i])}</b>.`; vibrar(30); jogoMarcar('sorteio'); };
         if (semMovimento()) fim(); else setTimeout(fim, dur * 1000 + 60);
       };
     } });

@@ -83,6 +83,9 @@ test('abertura: aparece na primeira vez, a demonstração recalcula, guarda o no
   await p.click('#ab-prox');
   await p.locator('.abertura').waitFor({ state: 'detached' });
   assert.equal(await p.evaluate(() => catalog.me), 'Bruno');
+  // quem disse o nome na apresentação já recebe a primeira tampinha; ao fechar, segue para a nova comanda
+  await p.locator('.tn').waitFor(); assert.match(await p.textContent('.tn-nome'), /Prazer, eu/);
+  await p.click('#tn-ok');
   await p.locator('#nc-local').waitFor(); // a última tela leva direto à nova comanda
   await p.reload(); await p.locator('#view .imp').waitFor();
   assert.equal(await p.locator('.abertura').count(), 0, 'a abertura não pode voltar sozinha');
@@ -210,8 +213,17 @@ test('tampinhas e níveis: nascem do histórico, a tampinha gira em 3D, o sortei
   await o3d.focus(); await p.keyboard.press('ArrowRight');
   assert.notEqual(await giro(), g1, 'a seta deveria girar a tampinha');
   await p.click('#tp-ok');
-  await p.click('#tp-sorteio'); await p.click('#gf-go');
-  assert.match(await p.textContent('#gf-res'), /Saiu /);
+  // sorteio: quem entra é escolha de quem sorteia (sem mesa aberta, ninguém vem marcado)
+  await p.click('#tp-sorteio'); await p.locator('#gf-quem').waitFor();
+  assert.equal(await p.locator('#gf-quem [aria-pressed="true"]').count(), 0); assert.ok(await p.locator('#gf-go').isDisabled(), 'sem duas pessoas não há sorteio');
+  const cand = await p.locator('#gf-quem [data-gf-n]').count(); assert.ok(cand >= 2, 'as pessoas dos cadastros são oferecidas');
+  await p.click('#gf-quem [data-gf-n] >> nth=0'); await p.click('#gf-quem [data-gf-n] >> nth=1');
+  await p.fill('#gf-novo', 'Visitante'); await p.press('#gf-novo', 'Enter');
+  assert.equal(await p.locator('#gf-roda .gf-nome').count(), 3, 'a roda mostra só quem foi escolhido, mais o nome avulso');
+  await p.click('#gf-quem [data-gf-n="Visitante"]'); assert.equal(await p.locator('#gf-roda .gf-nome').count(), 2);
+  const escolhidos = await p.locator('#gf-quem [aria-pressed="true"]').allTextContents();
+  await p.click('#gf-go');
+  assert.match(await p.textContent('#gf-res'), /Saiu /); assert.ok(escolhidos.includes((await p.textContent('#gf-res b')).trim()), 'quem sai está entre os escolhidos');
   await p.keyboard.press('Escape');
   assert.ok(await esperar(() => p.evaluate(() => !!jogo.flags.sorteio)));
   // desligar: a navegação troca Tampinhas por Cadastros e a festa não aparece
@@ -633,5 +645,72 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   // excluir pela comanda
   await p.click('#cmd-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('#cf-ok');
   assert.equal(await p.evaluate(() => draft.active), false);
+  semErros(a); await a.fechar();
+});
+
+test('1.6.0: quem cobre a diferença, quem já saiu da mesa, botões de Fechar com a mesma largura, Excluir vermelho e o nome nos Ajustes', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  await abrirMesa(p, 'Bar', ['Ana', 'Bruno', 'Carla']);
+  await lancar(p, 'Pizza', 9000); // 30,00 de cada um; com 10% de serviço, 33,00
+  const [ana, bruno, carla] = await p.evaluate(() => draft.people.map(x => x.id));
+  const pagam = () => p.evaluate(() => { const c = compute(draft); return [draft.people.map(x => c.per[x.id].paid), c.transfers.map(t => [c.per[t.from].person.name, c.per[t.to].person.name, t.value])]; });
+  // Excluir comanda: mesma largura de Fechar comanda, em vermelho
+  const [lf, le, cor] = await p.evaluate(() => { const f = document.querySelector('#fechar-cmd'), e = document.querySelector('#cmd-excluir'), s = getComputedStyle(e).backgroundColor.match(/\d+/g).map(Number); return [Math.round(f.getBoundingClientRect().width), Math.round(e.getBoundingClientRect().width), s]; });
+  assert.equal(le, lf, 'Excluir tem a largura de Fechar'); assert.ok(cor[0] > 150 && cor[0] > cor[1] * 1.8 && cor[0] > cor[2] * 1.8, `Excluir é vermelho (${cor})`);
+  const AQUI = '.fc-slide[aria-hidden="false"]';
+  await p.click('#fechar-cmd'); await assentar(p);
+  // todos os botões embaixo do cupom têm a mesma largura (a de Copiar e PDF juntos), também no cupom da mesa
+  const larguras = () => p.evaluate(q => { const s = document.querySelector(q), w = e => Math.round(e.getBoundingClientRect().width), ac = s.querySelector('.fc-acoes'); return [w(ac), ...[...s.querySelectorAll('.fc-extra > * > .btn, .fc-extra .fc-todos > .btn')].map(w)]; }, AQUI);
+  let L = await larguras(); assert.ok(L.length >= 2 && L.every(x => Math.abs(x - L[0]) <= 1), `no cupom da mesa: ${L}`);
+  await p.click('#fc-prox'); await p.waitForTimeout(500);
+  L = await larguras(); assert.ok(L.length === 3 && L.every(x => Math.abs(x - L[0]) <= 1), `no cupom da pessoa: ${L}`);
+  // Ana paga menos: os outros dividem (padrão) ou uma pessoa cobre
+  await p.click(`${AQUI} [data-fc-valor]`); await p.locator(`${AQUI} [data-fc-custom]`).fill('2000'); await p.locator(`${AQUI} [data-fc-custom]`).blur(); await p.waitForTimeout(300);
+  assert.match(await p.textContent(`${AQUI} .fc-cobre-t`), /Quem cobre\s*R\$\s13,00/);
+  assert.deepEqual((await pagam())[0], [2000, 3950, 3950]);
+  await p.click(`${AQUI} [data-fc-cobre="${bruno}"]`);
+  assert.deepEqual(await pagam(), [[2000, 4600, 3300], [['Ana', 'Bruno', 1300]]]);
+  // Ana paga mais: alguém devolve o excedente (paga menos ao local e acerta com ela)
+  await p.locator(`${AQUI} [data-fc-custom]`).fill('4000'); await p.locator(`${AQUI} [data-fc-custom]`).blur(); await p.waitForTimeout(300);
+  assert.match(await p.textContent(`${AQUI} .fc-cobre-t`), /Quem devolve\s*R\$\s7,00/);
+  await p.click(`${AQUI} [data-fc-cobre="${carla}"]`);
+  assert.deepEqual(await pagam(), [[4000, 3300, 2600], [['Carla', 'Ana', 700]]]);
+  // com o teclado aberto, Voltar e Salvar não sobem junto
+  await p.tap(`${AQUI} [data-fc-custom]`); await teclado(p, true); await p.waitForTimeout(600);
+  assert.ok(await p.evaluate(() => document.querySelector('.kf-dlg .kf-dlg-pe').getBoundingClientRect().height < 2), 'o rodapé se recolhe enquanto o teclado está aberto');
+  await p.evaluate(() => document.activeElement.blur()); await teclado(p, false); await p.waitForTimeout(600);
+  assert.ok(await p.evaluate(() => document.querySelector('.kf-dlg .kf-dlg-pe').getBoundingClientRect().height > 40));
+  await p.click(`${AQUI} [data-fc-conta]`);
+  assert.deepEqual(await p.evaluate(() => [Object.keys(draft.custom).length, Object.keys(draft.cover).length]), [0, 0]);
+  // Bruno paga e vai embora: o cupom dele trava
+  await p.click('#fc-prox'); await p.waitForTimeout(500);
+  await p.click(`${AQUI} [data-fc-pago="marcar"]`); await p.click(`${AQUI} .fc-saiu .switch`);
+  assert.equal(await p.evaluate(b => !!draft.saiu[b], bruno), true);
+  await p.click('#fc-volta'); await p.waitForTimeout(400);
+  assert.match(await p.textContent(`summary[data-unit="${bruno}"]`), /saiu da mesa/);
+  await p.click(`summary[data-unit="${bruno}"]`); await p.waitForTimeout(500);
+  assert.deepEqual(await p.locator(`[data-pa="${bruno}"] button`).allTextContents().then(x => x.map(s => s.trim())), ['Ver cupom'], 'quem saiu só tem o cupom');
+  // item novo: Bruno aparece travado e fica de fora; "entre todos" vale para quem está na mesa
+  await p.click('#it-novo'); await p.locator('#pr-nome').waitFor(); await assentar(p);
+  assert.ok(await p.locator(`[data-lc-ck="${bruno}"]`).isDisabled()); assert.equal(await p.getAttribute(`[data-lc-ck="${bruno}"]`, 'aria-pressed'), 'false');
+  await p.fill('#pr-nome', 'Suco'); await p.fill('#pr-preco', '600'); await p.locator('#pr-preco').blur(); await p.click('#lc-ok'); await p.waitForTimeout(500);
+  const suco = await p.evaluate(() => { const it = draft.items.find(i => i.name === 'Suco'); return [Object.keys(it.a).length, !!it.auto]; });
+  assert.deepEqual(suco, [2, true]);
+  // chega mais alguém: entra nos itens de todos; a conta de quem já pagou muda, e outra pessoa pode ficar com a diferença
+  await p.evaluate(() => addPessoa('Davi')); await p.waitForTimeout(400);
+  assert.deepEqual(await p.evaluate(() => draft.items.map(i => Object.keys(i.a).length)), [4, 3]);
+  await p.locator('#view .aviso-pago [data-ap-cobre]').waitFor();
+  assert.match(await p.textContent('#view .aviso-pago'), /Bruno pagou R\$\s33,00 e a conta agora é R\$\s24,75/);
+  await p.click('#view .aviso-pago [data-ap-cobre]'); await assentar(p);
+  assert.match(await p.textContent('#fc-cont'), /Bruno/);
+  await p.click(`${AQUI} [data-fc-difcobre=""]`); await p.waitForTimeout(300);
+  const fim = await p.evaluate(b => { const c = compute(draft); return [contaPaga(draft, c.U[b], c).estado, draft.custom[b], c.per[b].paid, c.transfers.filter(t => t.to === b).reduce((s, t) => s + t.value, 0)]; }, bruno);
+  assert.deepEqual(fim, ['pago', 3300, 3300, 825], 'o que Bruno pagou vale; os outros pagam menos ao local e devolvem a diferença a ele');
+  await p.click('#fc-volta');
+  // Ajustes: o nome se escreve, mesmo sem ter passado pela apresentação
+  await nav(p, 'mais'); await p.click('#view [data-kf="ajustes"]'); await p.click('#view [data-kf-aj-ir="conta"]');
+  await p.fill('#aj-me', 'Bruno'); await p.press('#aj-me', 'Enter');
+  assert.equal(await p.evaluate(() => catalog.me), 'Bruno');
   semErros(a); await a.fechar();
 });

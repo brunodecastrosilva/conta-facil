@@ -3,6 +3,19 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.6.0 · 2026-11-14
+
+- **Quem fica com a diferença:** em Fechar a comanda, quem paga outro valor (a mais ou a menos) escolhe com quem fica a diferença: "Os outros dividem" (padrão) ou uma pessoa só. Quem cobre paga a mais ao local; quem devolve paga a menos ao local e acerta com a pessoa. O cupom de cada um mostra os acertos.
+- **A conta de quem já pagou mudou:** além de "Recebi" ou "Devolvi", outra pessoa pode ficar com a diferença ("Outro cobre" ou "Outro devolve" no aviso da comanda, e as mesmas escolhas no cupom da pessoa). O que ela pagou passa a valer como o valor do cupom dela.
+- **Quem já pagou não entra no rateio dos outros:** se alguém paga menos e ninguém foi escolhido para cobrir, a diferença é dividida só entre quem ainda vai pagar.
+- **Já saiu da mesa:** depois de marcar como pago, uma chave trava o cupom da pessoa. Ela aparece travada ao lançar ou alterar pedidos, não entra em item novo (nem nos "entre todos"), não pode ser juntada nem arrastada, e na comanda só tem "Ver cupom". Desmarcar o pagamento ou a chave destrava.
+- **Sorteio:** quem entra é escolha de quem sorteia. A mesa vem marcada, cada nome liga e desliga com um toque, as pessoas dos cadastros ficam disponíveis e dá para pôr um nome avulso (até 12).
+- **Quem é você:** o nome agora se escreve em Ajustes → Conta e perfil (antes só dava para escolher entre cadastros que já existissem) e há a chave "Sou eu" em Nova pessoa, nos Cadastros. Quem diz o nome na apresentação recebe ali mesmo a tampinha "Prazer, eu".
+- **Excluir comanda:** em vermelho, da mesma largura de Fechar comanda.
+- **Fechar a comanda:** tudo o que fica embaixo do cupom (Copiar e PDF, Marcar como pago, Pagar outro valor, "Uma pessoa paga a conta de todos") tem a mesma largura. Com o teclado aberto, o rodapé (Voltar e Salvar) se recolhe em vez de subir junto.
+- **Abrir um nome ou um pedido:** a tela ia até o topo e voltava. Dois defeitos: o destino da rolagem só era acertado no fim, e o tratamento era ligado de novo a cada redesenho da comanda (depois de várias mudanças, cada toque disparava várias rolagens ao mesmo tempo). Agora o destino é calculado antes e a tela vai até lá num movimento só.
+- **Guia:** em "Separe quando quiser" a seção Paga serviço não abre mais, e cada cupom separado é destacado; em "Uma pessoa paga a conta de todos" o aviso não cobre mais o destaque do pagamento; "Ajustes" não entra mais em Aparência; os passos de pagamento mostram quem cobre a diferença e a chave "Já saiu da mesa"; o sorteio marca quem entra.
+
 ## 1.5.0 · 2026-11-14
 
 - **Janelas num movimento só:** no iPhone, a janela nascia embaixo, saltava para cima do teclado num quadro, passava do ponto e voltava. Havia três coisas mexendo nela ao mesmo tempo, todas do Kit: a entrada (sobe 28 px), o reposicionamento quando o teclado abre e um deslize a cada mudança de altura. Agora o app cuida sozinho da posição da janela, numa conta só (pé da tela, menos o guia, menos o teclado), e toda mudança é uma transição: a janela nasce abaixo da tela e sobe; se o teclado abre no meio do caminho, ela continua até o novo lugar, sem saltar nem voltar. Fechar o teclado desce a janela do mesmo jeito.
