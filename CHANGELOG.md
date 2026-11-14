@@ -3,6 +3,29 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.0.0 · 2026-11-14
+
+Conta Fácil refeito, pronto para a publicação oficial. O motor das contas, o Pix, a comanda ao vivo e a sincronização são os mesmos da 0.5.0; os dados de quem já usa o app continuam valendo.
+
+- **Uma comanda só, de papel:** a mesa inteira fica numa folha: quem está na mesa e quanto paga, os pedidos e o total, montados em tempo real. O total fica sempre no alto; tocar nele abre a conta da mesa (serviço, couvert e desconto).
+- **Lançar em uma janela:** produto, quantidade, preço e quem consumiu ficam juntos, com "entre todos" já marcado. O item novo entra no fim da lista, onde fica o botão, e pisca.
+- **Pessoas:** tocar num nome mostra os atalhos (paga serviço, marcar como pago, juntar, ver cupom, detalhes). Segurar e arrastar um nome sobre outro junta os dois no mesmo cupom.
+- **Pago:** marque quem já acertou. O alto da comanda mostra quanto falta, e o cupom ganha o carimbo PAGO, perto do total.
+- **Couvert em R$ ou em %:** como o serviço e o desconto.
+- **Fechar a comanda:** os cupons aparecem um por vez (a mesa primeiro), com Copiar e PDF em cada um; "Copiar todos" leva tudo de uma vez para o grupo. Salvar tem Desfazer.
+- **Início novo:** a comanda sai de uma impressora. Lugares recentes abrem uma comanda com um toque; as últimas comandas viram tiras de papel.
+- **Navegação nova:** Início, Histórico, a comanda no centro, Tampinhas e Mais (Cadastros, Ajustes, guia, avaliação e presente). No computador, um trilho lateral.
+- **Tampinhas e níveis:** 16 tampinhas e 6 níveis, calculados do histórico e dos cadastros. Nenhuma premia gastar ou beber mais. Dá para desligar em Ajustes → Comandas e tampinhas.
+- **Girar a garrafa:** sorteia alguém da mesa.
+- **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai; comandas agrupadas por mês, em papel.
+- **Cadastros:** Pessoas, Turmas e Produtos em três partes, com um só botão principal por tela.
+- **Apresentação nova (onboarding):** quatro telas na primeira abertura, com uma divisão para experimentar. Dá para rever em Mais.
+- **Guia refeito:** 12 etapas, na comanda de demonstração, que não salva nada.
+- **Identidade visual:** azulejo e papel, com títulos em Bricolage Grotesque; tema claro e escuro; ícone novo.
+- **Corrigido:** com o teclado numérico aberto, tocar em Lançar não perde mais o toque quando a barra do OK some.
+- **Por dentro:** o app foi dividido em `app.js` (motor e comanda), `telas.js`, `jogo.js` e `casca.js`; estilos em `estilo.css` e `comanda.css`; testes do app reescritos (15).
+- **Exceções ao Código do Projeto Fácil:** esta versão foi feita com liberdade para ignorar o Código. A lista do que foi ignorado e o porquê está no README, em "Exceções ao padrão".
+
 ## 0.5.0 · 2026-11-12
 
 - **Presente no lugar do chopp (Kit Fácil 0.6.0, Código 0.5):** o convite de apoio agora é "Gostando do app? Mande um presente para o criador!". O ícone é um presente colorido, em 3D, que dá uma volta quando o app abre e ao ser tocado; quem pede menos movimento no aparelho vê o presente parado. A janela do Pix e *Sobre o aplicativo* mostram o presente maior, com papel de bolinhas e laço.

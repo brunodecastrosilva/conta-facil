@@ -2,14 +2,14 @@
   "id": "/conta-facil/",
   "name": "Conta Fácil",
   "short_name": "Conta Fácil",
-  "description": "Divida a comanda sem calculadora",
+  "description": "Divida a conta do bar sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#EAF0EA",
-  "theme_color": "#1D5A3B",
+  "background_color": "#E8EEE7",
+  "theme_color": "#123F2A",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -26,6 +26,25 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "finance",
+    "food",
+    "utilities"
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova comanda",
+      "short_name": "Nova",
+      "url": "./?nova=1",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

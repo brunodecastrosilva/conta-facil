@@ -1,5 +1,6 @@
-/* conta-facil · código do app (saiu de dentro do index.html para a política de segurança barrar script injetado: Código, Art. 48) */
-const VERSAO = '0.5.0';
+/* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
+   As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
+const VERSAO = '1.0.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -179,7 +180,7 @@ function compute(d) {
   const payers = ids.filter(id => per[id].person.payService);
   if (s.policy === 'redistribute') allocate(nominalTotal, payers.map(id => per[id].subtotal)).forEach((v, i) => per[payers[i]].service = v);
   else payers.forEach(id => per[id].service = per[id].serviceNominal);
-  if (d.couvert.enabled) ids.forEach(id => { if (per[id].person.payCouvert) per[id].couvert = d.couvert.value; });
+  if (d.couvert.enabled) ids.forEach(id => { if (per[id].person.payCouvert) per[id].couvert = d.couvert.mode === 'pct' ? Math.round(per[id].subtotal * (d.couvert.pct || 0) / 100) : d.couvert.value; });
   ids.forEach(id => { const r = per[id]; r.total = r.subtotal + r.service + r.couvert; });
 
   // desconto no final: sobre o total já com serviço e couvert, como muitos restaurantes fazem
@@ -370,7 +371,7 @@ const live = {
       this.carimbarPrazo(code);
       this.last = toShared(draft);
       saveDraft(); render(); this.subscribe(); window.scrollTo({ top: 0 });
-      inviteSheet();
+      inviteSheet(); jogoMarcar('aoVivo');
     } catch (e) { console.warn(e); draft.live = null; render(); toast('Não foi possível criar a comanda ao vivo agora. Tente de novo em instantes.'); }
   },
   async subscribe() {
@@ -633,43 +634,42 @@ function aplicarSync(R) {
   SNAP_SYNC = registrosSync(); SY.salvar();
   return antes !== KitFacil.canon(pacoteSync(true));
 }
+/* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
+   Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
+const NOVIDADES = [
+  { versao: '1.0.0', itens: [
+    'Conta Fácil de cara nova: a mesa é uma comanda só, de papel, montada em tempo real.',
+    'Lançar um item cabe numa janela só: produto, quantidade, preço e quem consumiu.',
+    'Fechar a comanda mostra os cupons um por vez, com a mesa primeiro, e salvar tem Desfazer.',
+    'Marque quem já pagou: o total mostra quanto ainda falta.',
+    'Tampinhas e níveis: uma coleção que cresce conforme você usa o app. Dá para desligar em Ajustes.',
+    'Girar a garrafa: sorteie alguém da mesa.',
+    'Nova apresentação na primeira abertura e guia refeito.',
+  ] },
+];
+// quem chega à 1.0 (novo ou vindo de outra versão) vê a abertura do app; as novidades do Kit ficam para as próximas versões
+const ABERTURA_VISTA = LS.get('abertura', '');
+if (ABERTURA_VISTA !== '1') { try { localStorage.setItem('kitfacil.conta-facil.visto', JSON.stringify(VERSAO)); } catch {} }
 KitFacil.iniciar({
   app: 'conta-facil', nome: 'Conta Fácil', versao: VERSAO, icone: 'icons/icon-192.png',
   resumo: 'Divide a comanda do bar ou do restaurante sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.',
   tela: () => tab, exemploDados: 'as comandas, o histórico, os cadastros e as chaves Pix',
   abrirAjustes: secao => { if (secao || tab !== 'ajustes') abrirAjustes(); else fecharAjustes(); },
   emAjustes: () => tab === 'ajustes',
-  novidades: [{ versao: '0.5.0', itens: ['O ícone de apoio no alto da tela agora é um presente, que gira uma vez. Tocar nele abre o Pix para mandar um presente ao criador. É opcional.'] }, { versao: '0.4.1', itens: ['O aviso com Desfazer não some enquanto você está com o dedo, o mouse ou o teclado nele.'] }, { versao: '0.4.0', itens: ['Com o teclado aberto, a janela fica acima dele, e o campo em que você digita não fica escondido.', 'Quando uma janela muda de tamanho ou de lugar, ela desliza até a nova posição, em vez de pular.', 'Os avisos rápidos não cobrem mais os botões de uma janela aberta.', 'Nas janelas, a explicação curta vem logo abaixo do título.'] }, { versao: '0.3.0', itens: ['Telas mais limpas: sem título, sem linha de apoio e sem dicas. As listas vazias dizem só o essencial.', 'Guia novo, como um vídeo: o ponteiro mostra cada ação na tela e as etapas avançam sozinhas. Pause, volte e avance quando quiser; tocar na tela também pausa.', 'A comanda de exemplo não abre mais o guia sozinha.'] }, { versao: '0.2.1', itens: ['Na tela inicial, a comanda de exemplo é o último cartão.', 'Na Comanda, o botão Fechar a comanda fica fora da seção Itens da comanda.'] }, { versao: '0.2.0', itens: ['Lançar item com o mesmo desenho de Alterar: escolha o tipo de consumo (Compartilhado ou Individual) e marque quem consumiu na mesma janela.', 'Guia simplificado mais completo, e guia completo com instruções claras e todos os pedidos lançados num passo só.', 'No guia, o dedo não cobre mais o que está sendo digitado, e o cartão não cobre a parte que você está conhecendo.', 'No tablet deitado e no computador, as janelas ficam no centro da área do app.', 'Cupons centralizados, no tamanho de um cupom de papel; em tela larga, dois por linha.'] }, { versao: '0.1.0', itens: ['Recomeço: o app está em fase de testes, e a numeração das versões recomeçou em 0.1.0.', 'Por dentro: o código do app saiu de dentro da página, e a proteção contra código injetado ficou mais forte.'] }, { versao: '1.17.2', itens: ['Avaliações protegidas contra robôs pelo App Check do Firebase, com o reCAPTCHA do Google. A comanda ao vivo também.'] }, { versao: '1.17.1', itens: ['Por dentro: depois de uma atualização, o app nunca mistura arquivos novos com antigos, e as bibliotecas de fora são sempre conferidas.'] }, { versao: '1.17.0', itens: ['Avaliações mais protegidas: no máximo uma mensagem por minuto e dez por dia em cada aparelho, contra envios automáticos.', 'Sobre o aplicativo mostra o endereço oficial e o final da chave Pix do apoio, para você reconhecer cópias falsas.', 'Por dentro: o app só carrega código dos endereços conhecidos e confere a impressão digital das bibliotecas de fora.'] }, { versao: '1.16.1', itens: ['Por dentro: o Kit Fácil 2.13.0 segue o novo Código do Projeto Fácil.'] }, { versao: '1.16.0', itens: ['Guia completo mais calmo: você lê cada passo e toca em Mostrar; só então o app faz a ação, devagar.', 'Todos os passos do guia completo são feitos na tela, inclusive a troca de telas pela barra, o arrastar para o cupom compartilhado, o Compartilhar, o Histórico, os Cadastros e os Ajustes.'] }, { versao: '1.15.0', itens: ['Guia em dois níveis: o simplificado mostra o essencial em seis passos; o completo faz cada ação na tela, ao vivo, numa comanda de demonstração.', 'No celular, o destaque do guia acompanha a tela sem atraso e aponta só o que importa.', 'Botões mais limpos, sem texto de apoio dentro, e textos revistos.', '"Uma pessoa paga a conta de todos" fica no fim do Pagamento.'] }, { versao: '1.14.0', itens: ['Duas categorias claras: consumo compartilhado (entre todos ou entre alguns) e consumo individual, em que cada um paga as unidades que consumiu. Já na janela de lançar dá para distribuir as unidades.', 'Em Alterar, o tipo de consumo: Compartilhado ou Individual.', 'Saiu "Quem vai pagar a conta?". Para uma pessoa pagar por todos, use "Uma pessoa paga a conta de todos", no Pagamento.', 'Desconto: no valor total da comanda ou apenas no valor do consumo.'] }, { versao: '1.13.0', itens: ['Ao lançar um item, uma janela pergunta como dividir: entre todos, entre alguns ou consumo individual. O item novo entra no topo da lista.', 'Quem consumiu aparece em lista, um nome embaixo do outro; para dividir por unidade, toque no item e em Alterar.', 'Turmas, quem paga a conta e quem é você agora são escolhidos numa lista.', 'Taxa de serviço: em Mudar, escolha % ou R$. Ao desligar o serviço de alguém, o app pergunta o que fazer com essa parte.', 'Corrigido: segurar um nome no Pagamento fazia a tela subir sem parar.'] }, { versao: '1.12.0', itens: ['Cada item novo já entra dividido igual entre todos. Só pede confirmação o item em que você mexer.', 'Apresentação curta ao abrir o app e guia em 3 níveis: essencial, exploração e completo. Dá para desligar a apresentação em Ajustes.', 'Turmas: cadastre quem sai junto e ponha todos na mesa com um toque. Também dá para cadastrar pessoas e chaves Pix antes da comanda.', 'A comanda pergunta quem é você, e a tela inicial mostra quanto você gastou no mês, não o total da mesa.', 'Taxa de serviço mais simples: 10% já vem marcado e o resto aparece em Mudar.'] }, { versao: '1.11.0', itens: ['Botões, cartões e escolhas com as mesmas medidas dos outros apps da família.'] }, { versao: '1.10.0', itens: ['Novo em Ajustes › Privacidade e segurança: Restaurar padrões de fábrica. O app volta como novo neste aparelho, sem dados nem ajustes.'] }, { versao: '1.9.0', itens: ['Trocar de tela, abrir guias dos Ajustes e fechar janelas e listas agora tem movimento suave, igual nos apps da família.'] }, { versao: '1.8.0', itens: ['As listas de escolha agora são do próprio app, iguais no iPhone, no Android e no computador.', 'As partes que abrem e fecham se movem devagar e com suavidade, como nos outros apps da família.'] }, { versao: '1.7.0', itens: ['Janelas com os botões de ação sempre no pé, no mesmo lugar dos outros apps.', 'Na comanda do histórico, Abrir para editar e Repetir comanda ficam fixos no pé da janela.'] }, { versao: '1.6.0', itens: ['Todas as telas principais têm título e uma linha dizendo para que servem.', 'Listas vazias explicam o que aparece ali e o que fazer, no mesmo formato nos três apps.', 'Janelas e avisos iguais aos dos outros apps: o "Desfazer" fica acima da barra de baixo.', 'Botões e filtros maiores, mais fáceis de tocar (no mínimo 44 px), e textos pequenos mais legíveis.'] }, { versao: '1.5.0', itens: ['Barra de baixo mais limpa: Início, Comanda, Fechar, Histórico e Mais. Cadastros e Ajustes ficam em Mais, com os nomes sempre inteiros.'] }, { versao: '1.4.0', itens: ['Privacidade: ao encerrar a comanda ao vivo, ela é apagada do servidor na hora. Para dividir de novo, compartilhe a comanda outra vez: um código novo é gerado.'] }, { versao: '1.3.3', itens: ['No alto da tela, a nova ordem é nuvem, chopp e balão, com o chopp na mesma cor dos outros ícones.', 'A janela do chopp ficou mais simples: um só botão, Copiar código Pix.'] }, { versao: '1.3.2', itens: ['Comandas ao vivo agora são apagadas do Firebase 30 dias depois de criadas ou encerradas; avaliações, depois de 2 anos. Veja em Ajustes, Privacidade e segurança.'] }, { versao: '1.3.1', itens: [
-    'O chopp para o criador já está no ar: toque na caneca no alto da tela para ver o QR code e o Pix copia e cola. É opcional.',
-    'Ajustes agora fica na barra de baixo (no computador, no pé do menu lateral).',
-    'No alto da tela ficam o chopp, a nuvem e o balão, iguais nos três apps.',
-    'Novo: "Pague um chopp para o criador!", com QR code e Pix copia e cola. É opcional, o app continua gratuito.',
-    'Depois de cada atualização, o app mostra uma vez o que mudou. A lista também fica em Ajustes, Sobre o aplicativo.',
-    'Correção: o Conta Fácil agora tem identidade própria na instalação e não se confunde mais com os outros apps no mesmo aparelho.',
-  ] }],
-  apresentacao: { frase: 'Divida a conta do bar sem calculadora: cada um paga o que consumiu.', pontos: [
-    ['Abra a comanda', 'Dê o nome do bar e toque em Abrir comanda.'],
-    ['Lance o que foi pedido', 'Ao lançar, escolha o tipo de consumo: Compartilhado ou Individual.'],
-    ['Feche a conta', 'O app soma serviço, couvert e desconto e gera o Pix de cada um.'] ] },
-  // 0.3.0: guia único em vídeo (exceção aos Arts. 77 a 79 do Código; veja o README), numa demonstração que não salva nada
-  guia: { modo: 'video', get passos() { return GUIA; },
-    preparar: () => { if (draft.live) return; pending = {}; draft = { ...blankDraft(), isExample: true, active: false }; tab = 'inicio'; render(); window.scrollTo({ top: 0 }); },
-    // estado da demonstração no começo de cada etapa, para voltar e avançar no guia
+  novidades: [...NOVIDADES],
+  ocupado: () => typeof aberturaAtiva === 'function' && aberturaAtiva(),
+  guia: { modo: 'video', nome: 'Ver o guia', get passos() { return typeof GUIA === 'undefined' ? [] : GUIA; },
+    preparar: () => { if (draft.live) return; pending = {}; itPend = {}; draft = { ...blankDraft(), isExample: true, active: false }; tab = 'inicio'; render(); window.scrollTo({ top: 0 }); },
     foto: () => JSON.stringify({ draft, pending, tab }),
-    restaurar: f => { const o = JSON.parse(f); closeSheet(true); if (tab === 'ajustes') sairDosAjustes(); pickSel = null; selItem = null; selPay = null; svcMais = false; draft = o.draft; pending = o.pending; tab = o.tab; render(); window.scrollTo({ top: 0 }); },
-    ocupado: () => draft.isExample && !!draft.live },
-  boasVindas: {
-    novo: () => !bills.length && !(catalog.people || []).length && !draft.active,
-    passos: [['Abra uma comanda', 'Na tela inicial, dê o nome do local e toque em Abrir comanda.'], ['Marque o que cada um pediu', 'Na aba Comanda, adicione os itens e diga quem consumiu.'], ['Feche a conta', 'Na aba Fechar, o app soma serviço, couvert e desconto e diz quanto cada um paga, com Pix.']],
-    exemplo: () => enterExample(), rotuloExemplo: 'Ver exemplo',
-  },
+    restaurar: f => { const o = JSON.parse(f); closeSheet(true); if (tab === 'ajustes') sairDosAjustes(); pickSel = null; selPay = null; itPend = {}; pesAberto = null; itemAberto = null; draft = o.draft; pending = o.pending; tab = o.tab; render(); window.scrollTo({ top: 0 }); },
+    ocupado: () => draft.isExample && !!draft.live, fim: () => guiaFim() },
   copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
-    'As comandas, o histórico e os cadastros (nomes, chaves Pix e preços por local) ficam guardados neste aparelho.',
+    'As comandas, o histórico, os cadastros (nomes, chaves Pix e preços por local) e as tampinhas ficam guardados neste aparelho.',
     'Comanda ao vivo (opcional): o local, os nomes, os pedidos e os valores da comanda vão para o Firebase (Google), para todos da mesa verem as mudanças na hora. Esses dados são apagados do Firebase assim que o anfitrião encerra a comanda; se ela nunca for encerrada, saem na limpeza mensal, depois de 30 dias. Quem tem o código ou o link entra na comanda: compartilhe só com quem está na mesa.',
   ],
 });
-KitFacil.tema.iniciar({ chave: 'contafacil.pref', cores: { claro: '#EAF0EA', escuro: '#0D1712' } });
+KitFacil.tema.iniciar({ chave: 'contafacil.pref', cores: { claro: '#E8EEE7', escuro: '#0B1510' } });
 SY = KitFacil.sync.criar({
   app: 'conta-facil', nome: 'Conta Fácil', chave: 'contafacil.sync',
   dados: 'o histórico de comandas e os cadastros (pessoas, chaves Pix e preços)',
@@ -677,7 +677,7 @@ SY = KitFacil.sync.criar({
   carimbar: carimbarSync, aplicar: aplicarSync, pacote: () => pacoteSync(false),
   mesmo: (a, r) => KitFacil.canon(a) === KitFacil.canon({ v: r.v, bills: r.bills, people: r.people, products: r.products, me: r.me ?? '', st: r.st, del: r.del }),
   redesenhar: () => render({ preserve: true }),
-  ocupado: () => KitFacil.dialogo.aberto() || isField(document.activeElement) || KitFacil.guia.ativo(),
+  ocupado: () => KitFacil.dialogo.aberto() || isField(document.activeElement) || KitFacil.guia.ativo() || (typeof aberturaAtiva === 'function' && aberturaAtiva()),
   textoLigada: () => `Sincronização ligada. ${plural(bills.length, 'comanda salva', 'comandas salvas')} neste aparelho.`,
 });
 SNAP_SYNC = registrosSync();
@@ -700,19 +700,27 @@ function afterSubmit(sel) {
   if (isTouch) { document.activeElement?.blur?.(); return; }
   setTimeout(() => $(sel)?.focus({ preventScroll: true }), 0);
 }
-/* 1.13: o item recém-lançado entra no topo da lista; a tela desliza até ele e ele pisca uma vez */
+/* 1.0: o item recém-lançado entra no fim da lista; a tela rola até ele, no movimento do Kit, e ele pisca uma vez */
 let itemNovo = null;
 function mostrarItemNovo() {
   if (!itemNovo || tab !== 'comanda') return;
   const id = itemNovo; itemNovo = null;
-  const el = $(`#view [data-item="${CSS.escape(id)}"]`); if (!el) return;
-  el.classList.add('novo'); setTimeout(() => el.classList.remove('novo'), 1700);
-  const suave = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-  setTimeout(() => {
-    const r = el.getBoundingClientRect(), barra = $('#barra')?.getBoundingClientRect().bottom || 0;
+  requestAnimationFrame(() => {
+    const el = $(`#view [data-item="${CSS.escape(id)}"]`); if (!el) return;
+    const m = MV(), cab = $('.cu-cab')?.getBoundingClientRect().bottom || $('#barra')?.getBoundingClientRect().bottom || 0;
     const nav = $('.kf-nav'), fundo = nav && nav.getClientRects().length && nav.getBoundingClientRect().top > innerHeight / 2 ? nav.getBoundingClientRect().top : innerHeight;
-    if (r.top < barra + 8 || r.bottom > fundo - 8) window.scrollTo({ top: Math.max(0, scrollY + r.top - barra - Math.max(16, (fundo - barra - r.height) / 3)), behavior: suave ? 'smooth' : 'auto' });
-  }, 60);
+    const r = el.getBoundingClientRect(), folga = 96; // espaço para o botão "+ Novo item" logo abaixo
+    let alvo = null;
+    if (r.bottom + folga > fundo) alvo = scrollY + r.bottom + folga - fundo;
+    else if (r.top < cab + 8) alvo = scrollY + r.top - cab - 8;
+    const piscar = () => { if (m.off) return; el.animate([{ backgroundColor: 'rgba(232,180,80,0)' }, { backgroundColor: 'rgba(232,180,80,.45)', offset: .25 }, { backgroundColor: 'rgba(232,180,80,0)' }], { duration: 1200, easing: 'ease-out' }); };
+    if (alvo === null) return piscar();
+    alvo = Math.max(0, Math.min(alvo, document.documentElement.scrollHeight - innerHeight));
+    if (m.off) { scrollTo(0, alvo); return; }
+    const s0 = scrollY, t0 = performance.now(), curva = window.KitFacil?.movimento?.curva || (t => t);
+    const passo = agora => { const t = Math.min(1, (agora - t0) / m.ms); scrollTo(0, s0 + (alvo - s0) * curva(t)); if (t < 1) requestAnimationFrame(passo); else piscar(); };
+    requestAnimationFrame(passo);
+  });
 }
 const isField = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]), textarea, select');
 // tocar no fundo recolhe o teclado e não deixa o iPhone pular para outro campo
@@ -1021,8 +1029,8 @@ function receiptRows(r, b, calc) {
   add('foot', { text: `Total da comanda: ${BRL(calc.total)} · ${plural(b.people.length, 'pessoa', 'pessoas')}` });
   return R;
 }
-function receiptHTML(r, b, calc) {
-  const body = receiptRows(r, b, calc).map(x => {
+function receiptHTML(r, b, calc, rows0) {
+  const body = (rows0 || receiptRows(r, b, calc)).map(x => {
     const tone = x.tone ? ' rc-' + x.tone : '';
     switch (x.t) {
       case 'brand': return `<div class="rc-brand">${esc(x.text)}</div>`;
@@ -1042,10 +1050,10 @@ function receiptHTML(r, b, calc) {
   }).join('');
   return `<div class="receipt">${body}</div>`;
 }
-function receiptText(r, b, calc) {
+function receiptText(r, b, calc, rows0) {
   const W = 34, pad = (a, z) => { a = String(a); z = String(z); return a + ' '.repeat(Math.max(1, W - a.length - z.length)) + z; };
   const L = [];
-  receiptRows(r, b, calc).forEach(x => {
+  (rows0 || receiptRows(r, b, calc)).forEach(x => {
     switch (x.t) {
       case 'brand': case 'center': L.push(x.text); break;
       case 'foot': L.push('', x.text); break;
@@ -1064,7 +1072,7 @@ function receiptText(r, b, calc) {
       case 'section': { const t = ' ' + x.text + ' ', l = Math.floor((W - t.length) / 2); L.push('', '-'.repeat(l) + t + '-'.repeat(W - l - t.length)); break; }
     }
   });
-  pixDebts(calc).filter(x => x.unit === r.id).forEach(x => L.push('', `Pix copia e cola (${calc.per[x.pid].person.name}, ${BRL(x.value)}):`, pixPayload(x.key, x.toName, x.value)));
+  if (r) pixDebts(calc).filter(x => x.unit === r.id).forEach(x => L.push('', `Pix copia e cola (${calc.per[x.pid].person.name}, ${BRL(x.value)}):`, pixPayload(x.key, x.toName, x.value)));
   return L.join('\n');
 }
 async function copyText(text, okMsg) {
@@ -1084,71 +1092,6 @@ function anchorKey(el) {
   return null;
 }
 function renderSync() { KitFacil.topo.atualizar(); }
-function render(opts = {}) {
-  let anc = null;
-  if (opts.anchor !== false) {
-    const t = lastPress.target;
-    const from = opts.anchor?.from || (Date.now() - lastPress.at < 900 && t?.closest?.('#view') ? anchorKey(t) : null);
-    const el = from && $(from);
-    if (el) anc = { to: opts.anchor?.to || from, y: el.getBoundingClientRect().top };
-  }
-  // ao receber mudanças de outras pessoas, mantém o que você está digitando
-  let keep = null, focusId = null, sel = null;
-  if (opts.preserve) {
-    keep = {}; $$('#view input[data-keep]').forEach(i => keep[i.id] = i.value);
-    const a = document.activeElement; if (a && a.id && a.closest('#view')) { focusId = a.id; try { sel = [a.selectionStart, a.selectionEnd]; } catch {} }
-  }
-  const TABS = { inicio: [I.home, 'Início'], comanda: [I.receipt, 'Comanda'], fechar: [I.calc, 'Fechar'], historico: [I.clock, 'Histórico'], cadastros: [I.users, 'Cadastros'] };
-  if (!draft.active && (tab === 'comanda' || tab === 'fechar')) tab = 'inicio';
-  $$('[data-tab]').forEach(b => {
-    b.setAttribute('aria-selected', b.dataset.tab === tab);
-    const off = !draft.active && (b.dataset.tab === 'comanda' || b.dataset.tab === 'fechar');
-    b.classList.toggle('off', off); b.setAttribute('aria-disabled', off);
-    const [ic, lbl] = TABS[b.dataset.tab];
-    const abertos = b.dataset.tab === 'comanda' && !draft.isExample ? draft.items.filter(it => !it.lk).length : 0;
-    const badge = abertos ? `<span class="badge" aria-label="${plural(abertos, 'item espera', 'itens esperam')} a divisão">${abertos}</span>` : '';
-    b.innerHTML = b.classList.contains('kf-nav-it') ? `<span class="kf-nav-ic">${ic}</span><span class="kf-nav-l">${lbl}</span>${badge}` : `${ic}<span>${lbl}</span>${badge}`;
-  });
-  const v = $('#view');
-  const fn = { inicio: viewInicio, comanda: viewComanda, fechar: viewFechar, historico: viewHistorico, cadastros: viewCadastros, ajustes: viewAjustes }[tab];
-  $('.wrap').classList.toggle('largo', tab === 'ajustes');
-  // telas principais (menos o Início) abrem com o cabeçalho comum do Kit: título e uma linha do que a tela faz
-  const CAB = { comanda: 1, fechar: 1, historico: 1, cadastros: 1 };
-  const trocou = v.dataset.telaAtual !== tab; v.dataset.telaAtual = tab;
-  // 0.3.0: telas sem título visível e sem linha de apoio (exceção ao Art. 64, I); o título fica para o leitor de tela
-  v.innerHTML = `<section class="view">${CAB[tab] ? `<h1 class="so-leitor">${esc(TABS[tab][1])}</h1>` : ''}${fn.html()}</section>`;
-  fn.bind(v);
-  if (trocou) KitFacil.movimento.entrar(v, { de: 'tela' }); // troca de tela com o movimento comum
-  prepFields(v);
-  renderSync();
-  if (keep) {
-    Object.entries(keep).forEach(([id, val]) => { const i = document.getElementById(id); if (i) i.value = val; });
-    if (focusId) { const f = document.getElementById(focusId); if (f) { f.focus({ preventScroll: true }); try { sel && f.setSelectionRange(sel[0], sel[1]); } catch {} } }
-  }
-  if (anc) { const el = $(anc.to); if (el) { const dy = el.getBoundingClientRect().top - anc.y; if (Math.abs(dy) > 1) window.scrollBy(0, dy); } }
-  mostrarItemNovo();
-  if (KitFacil.guia.ativo()) { if (!draft.isExample) KitFacil.guia.parar(); else requestAnimationFrame(() => KitFacil.guia.posicionar()); }
-}
-const aoTocarAba = e => { const b = e.target.closest('button[data-tab]'); if (b && b.classList.contains('off')) { toast('Abra uma comanda na tela inicial.'); if (tab !== 'inicio') { sairDosAjustes(); tab = 'inicio'; render(); } return; } if (b) { sairDosAjustes(); tab = b.dataset.tab; pickSel = null; selItem = null; selPay = null; svcMais = false; render(); window.scrollTo({ top: 0 }); } };
-$('#tabs').addEventListener('click', aoTocarAba);
-$('#trilho').addEventListener('click', aoTocarAba);
-/* ---------- Ajustes: abre pelo botão do topo; o Voltar do navegador fecha ---------- */
-let tabAntesAjustes = 'inicio';
-function abrirAjustes() {
-  if (tab === 'ajustes') return;
-  tabAntesAjustes = tab; tab = 'ajustes';
-  try { history.pushState({ ajustes: true }, ''); } catch {}
-  closeSheet(); render(); window.scrollTo({ top: 0 });
-}
-function fecharAjustes() {
-  if (tab !== 'ajustes') return;
-  if (history.state && history.state.ajustes) { history.go(history.state.kfAjPush ? -2 : -1); return; } // o popstate volta para a aba anterior
-  tab = tabAntesAjustes; render(); window.scrollTo({ top: 0 });
-}
-// trocar de aba estando nos Ajustes tira a entrada dos Ajustes do histórico do navegador
-function sairDosAjustes() { if (tab === 'ajustes' && history.state && history.state.ajustes) { tab = tabAntesAjustes; history.go(history.state.kfAjPush ? -2 : -1); } }
-window.addEventListener('popstate', () => { if (tab === 'ajustes' && !(history.state && history.state.ajustes)) { tab = tabAntesAjustes; closeSheet(); render(); window.scrollTo({ top: 0 }); } });
-
 /* ---------- aba Comanda ---------- */
 let liveWho = false; // lista "Quem é você?" aberta depois de já ter escolhido
 function liveCardHTML() {
@@ -1291,14 +1234,14 @@ const fileSaver = {
 };
 async function downloadsNS() { return fileSaver; }
 const slug = s => placeKey(s || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'conta';
-async function receiptCanvas(r, b, calc) {
+async function receiptCanvas(r, b, calc, rows0) {
   try { await Promise.all(['400 24px "IBM Plex Mono"', '600 24px "IBM Plex Mono"', '800 36px "Atkinson Hyperlegible Next"'].map(f => document.fonts.load(f))); } catch {}
   const S = 2, M = 16 * S, W = 340 * S, PX = 20 * S, IW = W - PX * 2;
   // tinta única, como uma impressora térmica
   const C = { bg: '#EAF0EA', paper: '#FFFDF5', ink: '#1A1915' };
   const mono = (w, px) => `${w} ${px * S}px "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace`;
   const disp = px => `800 ${px * S}px "Atkinson Hyperlegible Next", system-ui, sans-serif`;
-  const rows = receiptRows(r, b, calc);
+  const rows = rows0 ? [...rows0] : receiptRows(r, b, calc);
   // QR code do Pix logo abaixo da chave, quando o cupom tem um Pix só
   for (let i = rows.length - 1; i >= 0; i--) {
     const q = rows[i].qr;
@@ -1526,260 +1469,30 @@ function newBillAt(place, people) {
 }
 
 /* ---------- aba Início ---------- */
-const viewInicio = {
-  html() {
-    const ex = draft.isExample, d = ex ? loadRealDraft() : draft;
-    const inProgress = d.active;
-    const c = inProgress ? compute(d) : null;
-    const now = new Date();
-    const doMes = bills.filter(b => { const t = new Date(b.closedAt); return t.getMonth() === now.getMonth() && t.getFullYear() === now.getFullYear(); });
-    // com "Você nas comandas" definido, mostra o que a pessoa gastou; sem isso, o total das mesas (e diz que é das mesas)
-    const meuNome = catalog.me || '';
-    const minha = b => { const mp = meuNome && b.people.find(p => norm(p.name) === norm(meuNome)); return mp ? compute(b).per[mp.id].total : null; };
-    const monthTotal = meuNome ? doMes.reduce((a, b) => a + (minha(b) || 0), 0) : doMes.reduce((a, b) => a + b.total, 0);
-    const monthLabel = meuNome ? 'você gastou neste mês' : 'nas mesas neste mês';
-    const h = now.getHours(), greet = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-    return `
-    <div class="hero">
-      <p class="hero-greet">${greet}.</p>
-      <h2 class="hero-title">Onde vai ser hoje?</h2>
-      <form id="start-form" class="start-row" autocomplete="off">
-        <input id="start-place" autocomplete="off" autocapitalize="words" type="text" placeholder="Nome do local" aria-label="Nome do local" data-keep>
-        <button class="btn mustard" type="submit">Abrir comanda</button>
-      </form>
-    </div>
-
-    ${inProgress ? `<div class="card current">
-      <div class="card-head"><div><span class="eyebrow">${d.savedAt ? 'Editando comanda salva' : 'Comanda em andamento'}</span><h2>${esc(d.place || 'Sem local')}</h2></div>
-        <span class="cur-total num">${BRL(c.total)}</span></div>
-      <p class="hint">${plural(d.people.length, 'pessoa', 'pessoas')} · ${plural(d.items.length, 'item', 'itens')} · aberta em ${fmtDateTime(d.createdAt)}${d.live ? ' · comanda ao vivo' : ''}</p>
-      <div class="actions-bar"><button class="btn" id="go-comanda">Continuar</button>${ex ? '' : `<button class="btn ghost danger-text" id="del-current">${I.trash}Excluir comanda</button>`}</div>
-    </div>` : ''}
-
-    ${store.db && !(d.live && inProgress) ? `<div class="card ex-card join" id="join-card">
-      <div class="ex-head"><span class="ex-icon join-icon">${I.live}</span><span><b>Comanda ao vivo</b></span></div>
-      <form id="join-form" autocomplete="off">
-        <span class="join-field"><input id="join-code" type="text" placeholder="Código ou link" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link da comanda ao vivo" data-keep>${navigator.clipboard?.readText ? `<button class="join-paste" type="button" id="join-paste" aria-label="Colar">${I.paste}</button>` : ''}</span>
-        <button class="btn join-go" type="submit">Entrar</button></form>
-    </div>` : ''}
-
-    ${bills.length ? `<div class="card">
-      <div class="card-head"><h2>Últimas comandas</h2><button class="btn small ghost" id="go-hist">Ver histórico</button></div>
-      <div class="mini-stats"><span><b class="num">${BRL(monthTotal)}</b> ${monthLabel}</span><span><b class="num">${bills.length}</b> ${bills.length === 1 ? 'comanda salva' : 'comandas salvas'}</span></div>
-      <div class="hist">${bills.slice(0, 3).map(histRowHTML).join('')}</div>
-    </div>` : ''}
-
-    <div class="card ex-card" id="ex-card">
-      <div class="ex-head"><span class="ex-icon">${I.receipt}</span><span><b>Comanda de exemplo</b></span></div>
-      ${ex ? `<div class="btn-row"><button class="btn small" id="ex-continue">Continuar</button><button class="btn small ghost" id="end-example">Sair do exemplo</button></div>`
-        : `<button class="btn small mustard" id="go-example">Ver exemplo</button>`}
-    </div>`;
-  },
-  bind(v) {
-    const startEl = $('#start-place', v);
-    // 1.13: os lugares já visitados aparecem só na lista que abre ao tocar no campo
-    attachSuggest(startEl, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })));
-    $('#start-form', v).addEventListener('submit', e => {
-      e.preventDefault();
-      const place = startEl.value.trim().replace(/\s+/g, ' ');
-      if (!place) { toast('Digite o nome do local ou escolha um da lista.'); if (!isTouch) startEl.focus(); return; }
-      document.activeElement?.blur?.(); newBillAt(place);
-    });
-    const jCard = $('#join-card', v), jIn = $('#join-code', v);
-    if (jCard) {
-      const sync = () => jCard.classList.toggle('open', document.activeElement === jIn || !!jIn.value.trim());
-      jIn.addEventListener('focus', sync);
-      jIn.addEventListener('input', sync);
-      jIn.addEventListener('blur', () => setTimeout(sync, 120));
-      // tocar em Entrar ou em colar não tira o foco do campo, senão os botões somem antes do toque
-      $$('.join-go, .join-paste', jCard).forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
-      requestAnimationFrame(sync);
-    }
-    $('#join-paste', v)?.addEventListener('click', async () => {
-      try { const t = (await navigator.clipboard.readText()).trim(); if (t) { $('#join-code', v).value = t; $('#join-form', v).requestSubmit(); } else toast('Nada copiado.'); }
-      catch { toast('Não deu para colar. Toque e segure no campo e escolha Colar.'); }
-    });
-    $('#join-form', v)?.addEventListener('submit', e => {
-      e.preventDefault(); document.activeElement?.blur?.();
-      const raw = $('#join-code', v).value.trim().toLowerCase().replace(/\s+/g, '');
-      const m = /#m([a-z0-9]{6,16})/.exec(raw) || /^([a-z0-9]{6,16})$/.exec(raw);
-      if (!m) { toast('Código inválido. Ele tem 10 letras e números.'); return; }
-      live.browserOk = true; // quem digita o código já está onde quer usar
-      if (location.hash === '#m' + m[1]) live.boot(); else location.hash = 'm' + m[1];
-    });
-    $('#go-comanda', v)?.addEventListener('click', () => { exitExample(); tab = 'comanda'; render(); window.scrollTo({ top: 0 }); });
-    $('#del-current', v)?.addEventListener('click', () => deleteCurrent(true));
-    $('#go-example', v)?.addEventListener('click', () => enterExample());
-    $('#ex-continue', v)?.addEventListener('click', () => { tab = 'comanda'; render(); window.scrollTo({ top: 0 }); });
-    $('#end-example', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); });
-    $('#go-hist', v)?.addEventListener('click', () => { tab = 'historico'; render(); window.scrollTo({ top: 0 }); });
-    $$('[data-bill]', v).forEach(b => b.addEventListener('click', () => openBill(b.dataset.bill)));
-  },
-};
-function histRowHTML(b) {
-  const dt = new Date(b.closedAt);
-  return `<button class="hist-row" data-bill="${b.id}">
-    <span class="hist-date"><b>${String(dt.getDate()).padStart(2, '0')}</b><small>${dt.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</small></span>
-    <span style="min-width:0"><span class="hist-title" style="display:block">${esc(b.place || 'Comanda sem nome')}</span>
-      <span class="hist-sub" style="display:block">${esc(b.people.map(p => p.name).join(', '))} · ${plural(b.items.length, 'item', 'itens')}</span></span>
-    <span class="hist-total">${BRL(b.total)}</span>
-  </button>`;
-}
-
-// alterações em itens já confirmados ficam num rascunho até tocar em Salvar
 let pending = {};
 function pendingFor(it) { return pending[it.id] || null; }
 function stage(it) { if (!pending[it.id]) pending[it.id] = { a: { ...it.a }, qty: it.qty }; return pending[it.id]; }
 function pendingDirty(it) { const p = pending[it.id]; if (!p) return false; return p.qty !== it.qty || JSON.stringify(Object.entries(p.a).filter(([, v]) => v > 0).sort()) !== JSON.stringify(Object.entries(it.a).filter(([, v]) => v > 0).sort()); }
 
 // item selecionado: mostra Alterar e Remover
-let selItem = null;
-function itemCardHTML(it, d, me) {
+function renameSheet(it) { return produtoSheet(null, it); }
+// 1.0: a divisão do item fica na mesma janela do produto (uma janela só para lançar)
+function divisaoHTML(d) {
+  return `<div class="field"><span class="eyebrow">Tipo de consumo</span><span id="lc-modo"></span></div>
+      <div id="lc-lista"></div>
+      <p class="share" id="lc-resumo" role="status" style="margin:0"></p>`;
+}
+function divisaoLigar(s, d, getIt, setQty, ini) {
+  let modo = ini ? (ini.mode === 'units' ? 'units' : 'equal') : 'equal', tocou = false;
   const ids = d.people.map(p => p.id);
-  const nm = id => esc(d.people.find(p => p.id === id)?.name || '');
-  const total = it.qty * it.price;
-  const head = (qty) => `<div class="item-top"><div style="min-width:0"><div class="item-name">${esc(it.name)}${it.fq ? `<span class="tag">${it.fq >= qty ? 'cortesia' : it.fq + ' cortesia'}</span>` : ''}</div><div class="item-meta num">${qty} × ${BRL(it.price)}</div></div>
-    <div class="item-total">${BRL(qty * it.price)}</div></div>`;
-  const sel = selItem === it.id;
-  // 1.14: duas categorias, consumo compartilhado (igual) e consumo individual (por unidade); o resumo aparece uma vez só, no rodapé
-  const pend = it.lk ? (pendingFor(it) || { a: it.a, qty: it.qty }) : { a: it.a, qty: it.qty };
-  const quem = ids.filter(id => (pend.a[id] || 0) > 0);
-  const cada = quem.length ? BRL(Math.round((pend.qty - Math.min(it.fq || 0, pend.qty)) * it.price / quem.length)) : '';
-  const resumoDiv = it.mode === 'units' ? 'Consumo individual'
-    : !quem.length ? '<b style="color:var(--danger)">Ninguém marcado</b>'
-    : quem.length === 1 ? `Só de ${nm(quem[0])}`
-    : `Compartilhado entre ${quem.length === ids.length ? 'todos' : quem.length} · <span class="num">${cada}</span> cada`;
-  const footer = `<div class="item-actions"><span class="share">${it.lk ? resumoDiv : it.mode === 'units' ? 'Consumo individual: distribua as unidades e confirme' : 'Escolha quem consumiu e confirme'}</span>
-    ${sel ? `<span class="grp"><button class="btn small ghost" data-rename>${I.edit}Alterar</button><button class="btn small ghost del-btn" data-del>${I.trash}Remover</button></span>` : ''}</div>`;
-  const sec = t => `<span class="sec">${t}</span>`;
-
-  /* ----- item confirmado ----- */
-  if (it.lk) {
-    const p = pendingFor(it); const cur = p || { a: it.a, qty: it.qty };
-    const dirty = pendingDirty(it);
-    let body;
-    if (it.mode === 'units') {
-      body = `<div class="units">${d.people.map(pp => {
-        const was = it.a[pp.id] || 0, now = cur.a[pp.id] || 0, delta = now - was;
-        return `<div class="unit-row ${now ? 'on' : ''}">
-          <span class="who-name">${avatar(pp.name)}<span class="${pp.id === me ? 'me-name' : ''}">${esc(pp.name)}</span></span>
-          <span class="unit-count"><span class="num">${now}</span>${delta ? `<span class="delta ${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '+' : ''}${delta}</span>` : ''}</span>
-          <span class="unit-btns"><button class="minus" data-dec="${pp.id}" aria-label="Tirar uma unidade de ${esc(pp.name)}" ${now ? '' : 'disabled'}>−1</button><button class="plus" data-inc="${pp.id}" aria-label="Mais uma unidade para ${esc(pp.name)}">+1</button></span>
-        </div>`; }).join('')}</div>`;
-    } else {
-      body = `<div class="ck-list" role="group" aria-label="Quem consumiu ${esc(it.name)}">${d.people.map(pp => {
-          const on = (cur.a[pp.id] || 0) > 0, was = (it.a[pp.id] || 0) > 0;
-          return ckRow(`data-toggle="${pp.id}"`, pp.name, on, `${pp.id === me ? 'me' : ''} ${on !== was ? 'changed' : ''}`); }).join('')}</div>
-        <div class="row" style="align-items:center;justify-content:flex-end">
-          <span class="unit-btns"><span class="hint">Qtd.</span><span class="num" style="min-width:22px;text-align:center;font-weight:600">${cur.qty}</span>${cur.qty !== it.qty ? `<span class="delta ${cur.qty > it.qty ? 'up' : 'down'}">${cur.qty > it.qty ? '+' : ''}${cur.qty - it.qty}</span>` : ''}
-            <button class="minus" data-qdec ${cur.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade a menos">−1</button><button class="plus" data-qinc aria-label="Mais uma unidade">+1</button></span>
-        </div>`;
-    }
-    let save = '';
-    if (dirty) {
-      const dq = cur.qty - it.qty;
-      const valid = it.mode === 'units' ? cur.qty > 0 : ids.some(id => (cur.a[id] || 0) > 0);
-      save = `<div class="pending-bar">
-        <span><b>Alteração não salva</b>${dq ? ` · ${dq > 0 ? '+' : ''}${plural(dq, 'unidade', 'unidades')} · ${dq > 0 ? '+' : '−'}${BRL(Math.abs(dq) * it.price)}` : ''}</span>
-        <span class="grp"><button class="btn small ghost" data-discard>Descartar</button><button class="btn small" data-save ${valid ? '' : 'disabled'}>${I.save}Salvar</button></span>
-      </div>`;
-    }
-    return `<div class="item locked ${dirty ? 'dirty' : ''} ${sel ? 'sel' : ''}" data-item="${it.id}">
-      ${head(cur.qty)}${sec(it.mode === 'units' ? 'Consumo individual' : 'Consumo compartilhado')}${body}${save}${footer}</div>`;
-  }
-
-  /* ----- item novo: primeira divisão ----- */
-  const who = ids.filter(id => (it.a[id] || 0) > 0); const n = who.length;
-  const units = who.reduce((s, id) => s + (it.a[id] || 0), 0);
-  const ok = it.mode === 'units' ? (n > 0 && units === it.qty) : n > 0;
-  let body = '';
-  if (it.mode === 'units') {
-    const left = it.qty - units;
-    body = `<div class="units">${d.people.map(p => { const u = it.a[p.id] || 0; return `
-      <div class="unit-row ${u ? 'on' : ''}">
-        <span class="who-name">${avatar(p.name)}<span class="${p.id === me ? 'me-name' : ''}">${esc(p.name)}</span></span>
-        <span class="unit-count"><span class="num">${u}</span></span>
-        <span class="unit-btns"><button class="minus" data-unit="${p.id}" data-dir="-1" aria-label="Uma unidade a menos para ${esc(p.name)}" ${u ? '' : 'disabled'}>−1</button><button class="plus" data-unit="${p.id}" data-dir="1" aria-label="Uma unidade a mais para ${esc(p.name)}" ${left > 0 ? '' : 'disabled'}>+1</button></span>
-      </div>`; }).join('')}</div>
-      ${left === 0 ? `<div class="status ok">${I.ok}<span><b>${it.qty} de ${it.qty} distribuídas.</b> Já pode confirmar.</span></div>`
-        : left > 0 ? `<div class="status warn">${I.warn}<span><b>Faltam ${plural(left, 'unidade', 'unidades')}</b> (${units} de ${it.qty} distribuídas).</span></div>`
-        : `<div class="status bad">${I.warn}<span><b>${plural(-left, 'unidade', 'unidades')} a mais</b> (${units} de ${it.qty}).</span></div>`}`;
-  } else {
-    const all = n === ids.length && n > 0;
-    body = `${d.people.length ? `<div class="ck-list" role="group" aria-label="Quem consumiu ${esc(it.name)}">
-        ${d.people.map(p => ckRow(`data-toggle="${p.id}"`, p.name, (it.a[p.id] || 0) > 0, p.id === me ? 'me' : '')).join('')}
-        ${d.people.length > 1 ? `<button type="button" class="ck-row ck-todos" data-all="${all ? 'none' : 'all'}">${all ? 'Desmarcar todos' : 'Marcar todos'}</button>` : ''}
-      </div>` : ''}
-      ${n > 1 ? `<span class="share">Compartilhado entre ${n === ids.length ? 'todos' : n} · <span class="num">${BRL(Math.round((it.qty - Math.min(it.fq || 0, it.qty)) * it.price / n))}</span> cada</span>` : ''}`;
-  }
-  return `<div class="item open ${sel ? 'sel' : ''}" data-item="${it.id}">
-    ${head(it.qty)}
-    ${d.people.length ? sec(it.mode === 'units' ? 'Consumo individual' : 'Consumo compartilhado') : ''}
-    ${body}
-    <div class="row" style="align-items:center;gap:10px"><span class="hint">Quantidade</span>
-      <span class="stepper sm"><button data-q="-1" aria-label="Diminuir quantidade" ${it.qty > 1 ? '' : 'disabled'}>−</button><span class="num">${it.qty}</span><button data-q="1" aria-label="Aumentar quantidade">+</button></span></div>
-    <button class="btn" data-confirm ${ok ? '' : 'disabled'}>${I.lock}Confirmar</button>
-    ${footer}
-  </div>`;
-}
-
-function renameSheet(it) {
-  // 1.13: Alterar também troca o modo de divisão (antes era um botão solto no cartão)
-  const d = draft, varios = d.people.length > 1;
-  let modo = it.mode;
-  const segModo = () => `<div class="seg" role="group" aria-label="Como dividir ${esc(it.name)}">
-      <button type="button" data-rn-modo="equal" aria-pressed="${modo === 'equal'}">Compartilhado</button>
-      <button type="button" data-rn-modo="units" aria-pressed="${modo === 'units'}">Individual</button></div>`;
-  openSheet({ title: `Alterar ${it.name}`, body: `<form id="rn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
-      <div class="field"><label for="rn-name">Nome do produto</label><input id="rn-name" type="text" value="${esc(it.name)}"></div>
-      <div class="field"><label for="rn-price">Valor unitário (R$)</label><input id="rn-price" type="text" inputmode="numeric" data-money value="${moneyInput(it.price)}"></div>
-      ${varios ? `<div class="field"><span class="eyebrow">Tipo de consumo</span><span id="rn-modo">${segModo()}</span></div>` : ''}
-    </form>`, foot: `<button type="button" class="btn ghost" id="rn-no">Cancelar</button><button type="submit" form="rn-form" class="btn">${I.save}Salvar alteração</button>`, onMount: s => {
-    $('#rn-no', s).onclick = () => closeSheet();
-    if (!isTouch) $('#rn-name', s).focus();
-    $('#rn-modo', s)?.addEventListener('click', e => { const b = e.target.closest('[data-rn-modo]'); if (!b) return; modo = b.dataset.rnModo; $('#rn-modo', s).innerHTML = segModo(); });
-    $('#rn-form', s).addEventListener('submit', e => {
-      e.preventDefault();
-      const name = $('#rn-name', s).value.trim().replace(/\s+/g, ' ');
-      const price = parseMoney($('#rn-price', s).value);
-      if (!name) { toast('Informe o nome do produto.'); return; }
-      if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); return; }
-      const cur = draft.items.find(x => x.id === it.id); if (!cur) { closeSheet(true); return; }
-      const trocouModo = modo !== cur.mode;
-      const changed = cur.name !== name || cur.price !== price || trocouModo;
-      cur.name = name; cur.price = price;
-      if (trocouModo) {
-        const who = d.people.map(p => p.id).filter(id => (cur.a[id] || 0) > 0);
-        const base = who.length ? who : d.people.map(p => p.id);
-        delete pending[cur.id];
-        if (modo === 'units') {
-          // ponto de partida: parte inteira igual para cada um; o que sobrar a pessoa distribui no item e confirma
-          const each = Math.floor(cur.qty / base.length);
-          cur.a = each ? Object.fromEntries(base.map(id => [id, each])) : {};
-          cur.lk = each * base.length === cur.qty;
-        } else { cur.a = Object.fromEntries(base.map(id => [id, 1])); cur.lk = true; }
-        cur.mode = modo; cur.auto = false;
-      }
-      closeSheet(true); selItem = null;
-      if (changed) { commit(); toast(trocouModo && modo === 'units' && !cur.lk ? `${cur.name}: distribua as unidades e confirme.` : 'Item alterado.'); }
-    });
-  } });
-}
-
-/* 0.2.0: a janela de lançar tem o mesmo desenho da janela de Alterar: o campo "Tipo de consumo" (Compartilhado ou
-   Individual) e, logo embaixo, quem consumiu. Compartilhado: lista de marcar, todos marcados (com todos marcados,
-   quem chega depois também entra); Individual: unidades de cada pessoa. Os números mudam no lugar, sem redesenhar a
-   lista, para o foco e o destaque do guia não se perderem a cada toque. */
-function lancarSheet(it, d, lancar) {
-  const total = it.qty * it.price;
-  let modo = 'equal';
-  const marcados = new Set(d.people.map(p => p.id)), un = {};
+  const marcados = new Set(ini && ini.mode !== 'units' ? (ids.filter(id => (ini.a[id] || 0) > 0).length && !ini.auto ? ids.filter(id => (ini.a[id] || 0) > 0) : ids) : ids), un = {};
+  if (ini && ini.mode === 'units') ids.forEach(id => { if (ini.a[id] > 0) un[id] = ini.a[id]; });
   const soma = () => Object.values(un).reduce((a, b) => a + b, 0);
-  const falta = () => it.qty - soma();
-  const segModo = () => `<div class="seg" role="group" aria-label="Tipo de consumo de ${esc(it.name)}">
+  const falta = () => getIt().qty - soma();
+  const segModo = () => `<div class="seg" role="group" aria-label="Tipo de consumo">
       <button type="button" data-lc-modo="equal" aria-pressed="${modo === 'equal'}">Compartilhado</button>
       <button type="button" data-lc-modo="units" aria-pressed="${modo === 'units'}">Individual</button></div>`;
-  const listaComp = () => `<div class="ck-list" role="group" aria-label="Quem dividiu ${esc(it.name)}">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"`, p.name, marcados.has(p.id))).join('')}
+  const listaComp = () => `<div class="ck-list" role="group" aria-label="Quem dividiu">${d.people.map(p => ckRow(`data-lc-ck="${p.id}"`, p.name, marcados.has(p.id))).join('')}
       <button type="button" class="ck-row ck-todos" data-lc-todos></button></div>`;
   const listaInd = () => `<div class="units">${d.people.map(p => `
       <div class="unit-row" data-lc-linha="${p.id}"><span class="who-name">${avatar(p.name)}<span>${esc(p.name)}</span></span>
@@ -1787,148 +1500,759 @@ function lancarSheet(it, d, lancar) {
         <span class="unit-btns"><button type="button" class="minus" data-lc-un="${p.id}" data-dir="-1" aria-label="Uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-lc-un="${p.id}" data-dir="1" aria-label="Uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`).join('')}</div>`;
   const pronto = () => modo === 'units' ? falta() === 0 : marcados.size > 0;
   const resumo = () => {
-    if (modo === 'units') { const f = falta(); return f === 0 ? `${it.qty} de ${it.qty} ${it.qty === 1 ? 'distribuída' : 'distribuídas'}.` : `Faltam ${plural(f, 'unidade', 'unidades')} (${soma()} de ${it.qty}).`; }
+    const it = getIt(), total = (it.price || 0) * it.qty;
+    if (modo === 'units') { const f = falta(); return f === 0 ? `${it.qty} de ${it.qty} ${it.qty === 1 ? 'distribuída' : 'distribuídas'}.` : f < 0 ? 'Há mais unidades distribuídas que a quantidade.' : `Faltam ${plural(f, 'unidade', 'unidades')} (${soma()} de ${it.qty}).`; }
     const n = marcados.size;
     if (!n) return 'Marque quem dividiu.';
     if (n === 1) return `Só ${esc(d.people.find(p => marcados.has(p.id)).name)} marcado: vira consumo individual.`;
-    return `${n === d.people.length ? 'Entre todos' : `Entre ${n}`} · ${BRL(Math.round(total / n))} cada`;
+    const quem = n === d.people.length ? 'Entre todos (quem chegar depois também entra)' : `Entre ${n}`;
+    return total ? `${quem} · ${BRL(Math.round(total / n))} cada` : quem;
   };
-  const sub = `${it.qty > 1 ? `${it.qty} × ${BRL(it.price)} · ` : ''}${BRL(total)}`;
-  openSheet({ title: `Lançar ${it.name}`, sub, body: `<div style="display:flex;flex-direction:column;gap:12px">
-      <div class="field"><span class="eyebrow">Tipo de consumo</span><span id="lc-modo">${segModo()}</span></div>
-      <div id="lc-lista">${listaComp()}</div>
-      <p class="share" id="lc-resumo" role="status" style="margin:0"></p></div>`,
-    foot: `<button type="button" class="btn ghost" id="lc-no">Cancelar</button><button type="button" class="btn" id="lc-ok">${I.plus}Lançar</button>`, onMount: s => {
-    // atualiza marcações, números e botões sem trocar os elementos da lista
-    const atualizar = () => {
-      if (modo === 'units') {
-        const f = falta();
-        d.people.forEach(p => {
-          const u = un[p.id] || 0;
-          $(`[data-lc-n="${p.id}"]`, s).textContent = u;
-          $(`[data-lc-linha="${p.id}"]`, s).classList.toggle('on', u > 0);
-          $(`[data-lc-un="${p.id}"][data-dir="-1"]`, s).disabled = !u;
-          $(`[data-lc-un="${p.id}"][data-dir="1"]`, s).disabled = f <= 0;
-        });
-      } else {
-        $$('[data-lc-ck]', s).forEach(b => b.setAttribute('aria-pressed', String(marcados.has(b.dataset.lcCk))));
-        const t = $('[data-lc-todos]', s); if (t) { t.hidden = d.people.length < 2; t.textContent = marcados.size === d.people.length ? 'Desmarcar todos' : 'Marcar todos'; }
-      }
-      $('#lc-resumo', s).innerHTML = resumo();
-      $('#lc-ok', s).disabled = !pronto();
-    };
-    const trocarModo = m => {
-      if (m === modo) return;
-      modo = m; $('#lc-modo', s).innerHTML = segModo();
-      $('#lc-lista', s).innerHTML = modo === 'units' ? listaInd() : listaComp();
-      // uma unidade só: no individual, já começa em quem estava marcado sozinho
-      if (modo === 'units' && it.qty === 1 && marcados.size === 1) un[[...marcados][0]] = 1;
-      atualizar();
-    };
-    $('#lc-no', s).addEventListener('click', () => closeSheet());
-    $('#lc-modo', s).addEventListener('click', e => { const b = e.target.closest('[data-lc-modo]'); if (b) trocarModo(b.dataset.lcModo); });
-    $('#lc-lista', s).addEventListener('click', e => {
-      const ck = e.target.closest('[data-lc-ck]'), todos = e.target.closest('[data-lc-todos]'), ub = e.target.closest('[data-lc-un]');
-      if (ck) { const id = ck.dataset.lcCk; marcados.has(id) ? marcados.delete(id) : marcados.add(id); }
-      else if (todos) { if (marcados.size === d.people.length) marcados.clear(); else d.people.forEach(p => marcados.add(p.id)); }
-      else if (ub && !ub.disabled) { const id = ub.dataset.lcUn, dir = +ub.dataset.dir; un[id] = Math.max(0, (un[id] || 0) + dir); if (soma() > it.qty) un[id]--; }
-      else return;
-      atualizar();
-    });
-    $('#lc-ok', s).addEventListener('click', () => {
-      if (!pronto()) return;
-      closeSheet(true);
-      if (modo === 'units') return lancar(Object.fromEntries(Object.entries(un).filter(([, v]) => v > 0)), false, 'units');
-      // uma só pessoa marcada vira consumo individual, com todas as unidades
-      if (marcados.size === 1) return lancar({ [[...marcados][0]]: it.qty }, false, 'units');
-      lancar(Object.fromEntries([...marcados].map(id => [id, 1])), marcados.size === d.people.length);
-    });
+  const atualizar = () => {
+    if (modo === 'units') {
+      const f = falta();
+      d.people.forEach(p => {
+        const u = un[p.id] || 0;
+        $(`[data-lc-n="${p.id}"]`, s).textContent = u;
+        $(`[data-lc-linha="${p.id}"]`, s).classList.toggle('on', u > 0);
+        $(`[data-lc-un="${p.id}"][data-dir="-1"]`, s).disabled = !u;
+      });
+    } else {
+      $$('[data-lc-ck]', s).forEach(b => b.setAttribute('aria-pressed', String(marcados.has(b.dataset.lcCk))));
+      const t = $('[data-lc-todos]', s); if (t) { t.hidden = d.people.length < 2; t.textContent = marcados.size === d.people.length ? 'Desmarcar todos' : 'Marcar todos'; }
+    }
+    $('#lc-resumo', s).innerHTML = resumo();
+  };
+  const trocarModo = m => {
+    if (m === modo) return;
+    modo = m; $('#lc-modo', s).innerHTML = segModo();
+    $('#lc-lista', s).innerHTML = modo === 'units' ? listaInd() : listaComp();
+    if (modo === 'units' && getIt().qty === 1 && marcados.size === 1) un[[...marcados][0]] = 1;
     atualizar();
-    if (!isTouch) $('#lc-ok', s).focus();
+  };
+  $('#lc-modo', s).innerHTML = segModo(); $('#lc-lista', s).innerHTML = modo === 'units' ? listaInd() : listaComp();
+  $('#lc-modo', s).addEventListener('click', e => { const b = e.target.closest('[data-lc-modo]'); if (b) { tocou = true; trocarModo(b.dataset.lcModo); } });
+  $('#lc-lista', s).addEventListener('click', e => {
+    const ck = e.target.closest('[data-lc-ck]'), todos = e.target.closest('[data-lc-todos]'), ub = e.target.closest('[data-lc-un]');
+    if (ck) { const id = ck.dataset.lcCk; marcados.has(id) ? marcados.delete(id) : marcados.add(id); }
+    else if (todos) { if (marcados.size === d.people.length) marcados.clear(); else d.people.forEach(p => marcados.add(p.id)); }
+    else if (ub && !ub.disabled) {
+      const id = ub.dataset.lcUn, dir = +ub.dataset.dir;
+      // +1 com tudo distribuído: a quantidade do item cresce junto (pediram mais um)
+      if (dir > 0 && falta() <= 0) setQty(getIt().qty + 1);
+      un[id] = Math.max(0, (un[id] || 0) + dir);
+    }
+    else return;
+    tocou = true; atualizar();
+  });
+  atualizar();
+  return {
+    atualizar, pronto, tocou: () => tocou,
+    porque: () => modo === 'units' ? 'Distribua todas as unidades entre as pessoas.' : 'Marque quem dividiu.',
+    resultado: () => {
+      const qty = getIt().qty;
+      if (modo === 'units') return { a: Object.fromEntries(Object.entries(un).filter(([, v]) => v > 0)), todos: false, modo: 'units' };
+      if (marcados.size === 1) return { a: { [[...marcados][0]]: qty }, todos: false, modo: 'units' };
+      return { a: Object.fromEntries([...marcados].map(id => [id, 1])), todos: marcados.size === d.people.length, modo: 'equal' };
+    },
+  };
+}
+
+/* ---------- 1.0: Comanda nova (mini comandas, faixa do local, itens que abrem e fecham) ---------- */
+let pesAberto = null, pesJuntando = false, pesSvc = false;
+let itensAbertos = true, itemAberto = null, totaisAnt = { id: null, v: {} }, itPend = {};
+// quem está num item e quanto paga dele (mesma conta do compute)
+function divisaoItem(it, d) {
+  const ids = d.people.map(p => p.id), who = ids.filter(id => (it.a[id] || 0) > 0);
+  const nome = id => d.people.find(p => p.id === id)?.name || '';
+  const fq = Math.min(it.fq || 0, it.qty), charged = (it.qty - fq) * it.price;
+  if (it.mode === 'units') {
+    const frees = allocate(fq * it.price, who.map(id => it.a[id]));
+    return who.map((id, i) => ({ id, nome: nome(id), txt: plural(it.a[id], 'unidade', 'unidades'), val: it.a[id] * it.price - frees[i] }));
+  }
+  const w = who.map(id => it.mode === 'parts' ? it.a[id] : 1), v = allocate(charged, w);
+  return who.map((id, i) => ({ id, nome: nome(id), txt: it.mode === 'parts' && new Set(w).size > 1 ? plural(w[i], 'parte', 'partes') : '', val: v[i] }));
+}
+function tipoItem(it, d) {
+  const n = d.people.filter(p => (it.a[p.id] || 0) > 0).length;
+  if (it.mode === 'units') return 'individual';
+  if (n === 1) return 'só de ' + (d.people.find(p => (it.a[p.id] || 0) > 0)?.name || '');
+  return n === d.people.length ? 'entre todos' : 'entre ' + n;
+}
+// item que ainda espera a divisão: uma linha da comanda com a lista de marcar logo abaixo
+function itemPendenteHTML(it, d) {
+  const ids = d.people.map(p => p.id), who = ids.filter(id => (it.a[id] || 0) > 0), n = who.length;
+  const units = who.reduce((s, id) => s + (it.a[id] || 0), 0), left = it.qty - units;
+  const ok = it.mode === 'units' ? (n > 0 && left === 0) : n > 0;
+  const div = divisaoItem(it, d), val = id => { const x = div.find(y => y.id === id); return x ? BRL(x.val).replace('R$', '').trim() : ''; };
+  const brl = v => BRL(v).replace('R$', '').trim();
+  let corpo;
+  if (it.mode === 'units') {
+    corpo = d.people.map(p => { const u = it.a[p.id] || 0; return `<div class="ip-lin ${u ? 'on' : ''}"><span class="ip-nome">${esc(p.name)}</span><span class="ip-n">${u}</span>
+      <span class="unit-btns"><button type="button" class="minus" data-unit="${p.id}" data-dir="-1" ${u ? '' : 'disabled'} aria-label="Uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-unit="${p.id}" data-dir="1" ${left > 0 ? '' : 'disabled'} aria-label="Uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`; }).join('')
+      + `<p class="ip-status ${left === 0 ? 'ok' : ''}">${left === 0 ? `${it.qty} de ${it.qty} distribuídas` : left > 0 ? `Faltam ${plural(left, 'unidade', 'unidades')} · ${units} de ${it.qty}` : `${plural(-left, 'unidade', 'unidades')} a mais`}</p>`;
+  } else {
+    const todos = n === ids.length && n > 0;
+    corpo = d.people.map(p => { const on = (it.a[p.id] || 0) > 0; return `<button type="button" class="ip-lin ip-ck ${on ? 'on' : ''}" data-toggle="${p.id}" aria-pressed="${on}"><span class="ip-box" aria-hidden="true">${on ? '✓' : ''}</span><span class="ip-nome">${esc(p.name)}</span><span class="ip-v">${on ? val(p.id) : ''}</span></button>`; }).join('')
+      + (ids.length > 1 ? `<button type="button" class="it-novo ip-todos" data-all="${todos ? 'none' : 'all'}"><span class="it-q">${todos ? '−' : '+'}</span><span>${todos ? 'Desmarcar todos' : 'Marcar todos'}</span><span></span></button>` : '')
+      + `<div class="ip-lin ip-qtd"><span class="ip-nome">Quantidade</span><span class="ip-n">${it.qty}</span><span class="unit-btns"><button type="button" class="minus" data-q="-1" ${it.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade a menos">−1</button><button type="button" class="plus" data-q="1" aria-label="Uma unidade a mais">+1</button></span></div>`
+      + `<p class="ip-status ${n ? 'ok' : ''}">${n ? `÷ ${n === ids.length ? 'todos' : n} · ${brl(Math.round((it.qty - Math.min(it.fq || 0, it.qty)) * it.price / n))} cada` : 'Marque quem consumiu'}</p>`;
+  }
+  return `<div class="item item-p" data-item="${it.id}">
+    <div class="ip-cab"><span class="it-q">${it.qty}×</span><span class="it-nome"><span>${esc(it.name)}</span><span class="it-tipo">${brl(it.price)} cada · ${it.mode === 'units' ? 'individual' : 'compartilhado'}</span></span><span class="it-v">${brl(it.qty * it.price)}</span></div>
+    <span class="ip-selo">FALTA DIVIDIR</span>
+    <div class="ip-corpo">${corpo}</div>
+    <div class="ip-acoes"><button type="button" class="btn ip-ok" data-confirm ${ok ? '' : 'disabled'}>Confirmar divisão</button><button type="button" class="btn" data-rename aria-label="Alterar ${esc(it.name)}" title="Alterar">${I.edit}</button><button type="button" class="btn" data-del aria-label="Remover ${esc(it.name)}">${I.trash}</button></div>
+  </div>`;
+}
+// item aberto: dá para pôr ou tirar unidades e cortesias; tudo fica num rascunho até tocar em Salvar
+const itCur = it => itPend[it.id] ? { ...it, ...itPend[it.id] } : it;
+const itSujo = it => { const p = itPend[it.id]; return !!p && JSON.stringify({ qty: p.qty, a: p.a, fq: p.fq }) !== JSON.stringify({ qty: it.qty, a: it.a, fq: it.fq || 0 }); };
+function itemFechadoHTML(it, d) {
+  const aberto = itemAberto === it.id, cur = itCur(it), sujo = itSujo(it), div = divisaoItem(cur, d);
+  const fq = cur.fq || 0;
+  const linhas = cur.mode === 'units'
+    ? d.people.map(p => { const u = cur.a[p.id] || 0, x = div.find(y => y.id === p.id);
+        return `<div class="div-lin ${u ? '' : 'cs-zero'}"><span class="who-name">${avatar(p.name)}<span>${esc(p.name)}</span><span class="hint num">· ${u}</span></span>
+          <span class="div-dir"><span class="num">${u ? BRL(x ? x.val : 0) : ''}</span><span class="unit-btns"><button type="button" class="minus" data-it-u="${it.id}" data-p="${p.id}" data-dir="-1" ${u && cur.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-it-u="${it.id}" data-p="${p.id}" data-dir="1" aria-label="Mais uma unidade de ${esc(it.name)} para ${esc(p.name)}">+1</button></span></span></div>`; }).join('')
+    : div.map(x => `<div class="div-lin"><span class="who-name">${avatar(x.nome)}<span>${esc(x.nome)}</span>${x.txt ? `<span class="hint">· ${x.txt}</span>` : ''}</span><span class="num">${BRL(x.val)}</span></div>`).join('')
+      + `<div class="div-lin"><span class="cs-tx"><span>Quantidade</span><span class="hint">${cur.qty} × ${BRL(cur.price)} = ${BRL(cur.qty * cur.price)}</span></span>
+        <span class="div-dir"><span class="num fq-n">${cur.qty}</span><span class="unit-btns"><button type="button" class="minus" data-it-q="${it.id}" data-dir="-1" ${cur.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos">−1</button><button type="button" class="plus" data-it-q="${it.id}" data-dir="1" aria-label="Mais uma unidade de ${esc(it.name)}">+1</button></span></span></div>`;
+  const resumo = () => { const dq = cur.qty - it.qty, df = fq - (it.fq || 0), t = [];
+    if (dq) t.push(`${dq > 0 ? '+' : ''}${plural(dq, 'unidade', 'unidades')}`); if (df) t.push(`cortesia ${it.fq || 0} → ${fq}`);
+    if (!dq && cur.mode === 'units' && JSON.stringify(cur.a) !== JSON.stringify(it.a)) t.push('divisão'); return t.join(' · '); };
+  return `<details class="item-d ${sujo ? 'sujo' : ''}" data-kf-secao="grupo" data-item="${it.id}" ${aberto ? 'open' : ''}>
+    <summary class="it-lin" aria-label="${esc(`${it.qty} ${it.name}, ${BRL(it.qty * it.price)}, ${tipoItem(it, d)}${it.fq ? ', ' + plural(it.fq, 'cortesia', 'cortesias') : ''}`)}"><span class="it-q">${it.qty}×</span><span class="it-nome"><span>${esc(it.name)}</span><span class="it-tipo">${BRL(it.price).replace('R$', '').trim()} cada · ${esc(tipoItem(it, d))}${it.fq ? ` · ${plural(it.fq, 'cortesia', 'cortesias')}` : ''}</span></span><span class="it-v">${BRL(it.qty * it.price).replace('R$', '').trim()}</span></summary>
+    <div class="item-corpo">
+      <div class="div-lista">${linhas}</div>
+      <div class="div-lin fq-lin"><span class="cs-tx"><span>Cortesia</span></span>
+        <span class="div-dir"><span class="num fq-n" aria-label="${fq} de ${cur.qty} sem cobrança">${fq}<small>/${cur.qty}</small></span><span class="unit-btns"><button type="button" class="minus" data-it-fq="${it.id}" data-dir="-1" ${fq ? '' : 'disabled'} aria-label="Uma cortesia a menos em ${esc(it.name)}">−1</button><button type="button" class="plus" data-it-fq="${it.id}" data-dir="1" ${fq < cur.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span></span></div>
+      ${sujo ? `<div class="pending-bar"><span><b>Alteração não salva</b> · ${esc(resumo())} · <span class="num">${BRL((it.qty - (it.fq || 0)) * it.price)} → ${BRL((cur.qty - fq) * cur.price)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-it-desc="${it.id}">Descartar</button><button type="button" class="btn small" data-it-ok="${it.id}">${I.save}Salvar</button></span></div>`
+        : `<div class="grp item-acoes"><button class="btn small ghost" data-it-alt="${it.id}">${I.edit}Alterar</button><button class="btn small ghost del-btn" data-it-del="${it.id}">${I.trash}Remover</button></div>`}
+    </div></details>`;
+}
+// movimento do Kit (Anexo V); quem pede movimento reduzido vê a troca direta
+const MV = () => { const m = window.KitFacil?.movimento; return { ms: m?.ms || 560, css: m?.css || 'cubic-bezier(.45,0,.2,1)', off: !!(m?.reduzido ? m.reduzido() : matchMedia('(prefers-reduced-motion: reduce)').matches) }; };
+// abre ou fecha um painel animando a altura, como as seções do Kit
+function animarAltura(el, de, para, fim) {
+  const m = MV(); if (m.off || !el.animate) { fim?.(); return; }
+  el.style.overflow = 'hidden';
+  const a = el.animate([{ height: de + 'px', opacity: de ? 1 : 0 }, { height: para + 'px', opacity: para ? 1 : 0 }], { duration: m.ms, easing: m.css });
+  a.onfinish = a.oncancel = () => { el.style.overflow = ''; fim?.(); };
+}
+// atalhos de uma pessoa (ou de um cupom compartilhado), abertos ao tocar no nome
+function atalhosPessoaHTML(u, calc, d) {
+  const aqui = pesAberto === u.id, juntando = aqui && pesJuntando, svcAberto = aqui && pesSvc;
+  const multi = u.members.length > 1, pid = u.members[0], p = calc.per[pid].person, pago = pagoDe(d, u.members);
+  const sw = (attr, on, label, valor) => `<label class="pa-lin"><span class="pa-tx"><span>${label}</span>${valor ? `<span class="pa-v">${valor}</span>` : ''}</span><span class="switch"><input type="checkbox" ${attr} ${on ? 'checked' : ''} aria-label="${esc(label)}"><span class="track"></span></span></label>`;
+  const outros = calc.units.filter(x => x.id !== u.id);
+  let h = '';
+  if (!multi && d.service.enabled) h += sw(`data-pa-svc="${pid}"`, p.payService, 'Paga serviço', p.payService ? BRL(calc.per[pid].service) : 'não paga');
+  if (multi && d.service.enabled) {
+    const nao = u.members.filter(m => !calc.per[m].person.payService), nm = m => calc.per[m].person.name;
+    const resumo = !nao.length ? 'todos pagam' : nao.length === u.members.length ? 'ninguém paga' : `${u.members.length - nao.length} de ${u.members.length} · ${nao.length === 1 ? `${esc(nm(nao[0]))} não paga` : `${nao.length} não pagam`}`;
+    h += `<button type="button" class="pa-lin pa-res" data-pa-svcabre aria-expanded="${svcAberto}"><span class="pa-tx"><span>Paga serviço</span><span class="pa-v">${resumo}</span></span><span class="pa-seta" aria-hidden="true"></span></button>`;
+    if (svcAberto) h += `<div class="pa-sub">${u.members.map(m => { const q = calc.per[m].person; return sw(`data-pa-svc="${m}"`, q.payService, esc(q.name), q.payService ? BRL(calc.per[m].service) : 'não paga'); }).join('')}</div>`;
+  }
+  if (!multi && d.couvert.enabled) h += sw('data-pa-cv', p.payCouvert, 'Paga couvert', p.payCouvert ? BRL(calc.per[pid].couvert) : 'não paga');
+  h += `<button type="button" class="btn small pa-pago ${pago ? 'on' : ''}" data-pa-pago aria-pressed="${pago}">${pago ? `${I.x}Desmarcar pago` : `${I.ok}Marcar como pago`}</button>`;
+  const botoes = `<div class="pa-acoes">
+      ${multi ? `<button type="button" class="btn small" data-pa-desfaz>${I.x}Separar</button>` : outros.length ? `<button type="button" class="btn small" data-pa-juntar aria-expanded="${juntando}">${I.users}Juntar</button>` : ''}
+      <button type="button" class="btn small" data-pa-cupom>${I.file}Ver cupom</button>
+      <button type="button" class="btn small" data-pa-mais aria-label="Detalhes de ${esc(u.name)}">Detalhes</button></div>`;
+  const junta = !multi && juntando ? `<div class="pa-junta" role="group" aria-label="Juntar ${esc(u.name)} com"><p class="pa-junta-t">Juntar ${esc(u.name)} com:</p>${outros.map(x => `<button type="button" class="pa-alvo" data-pa-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${I.users}${esc(x.name)}</span><span>${BRL(x.total)}${I.next}</span></button>`).join('')}</div>` : '';
+  return `<div class="dv-atalhos" data-pa="${u.id}">${h}${botoes}${junta}</div>`;
+}
+function removerPessoa(id) {
+  const d = draft, p = d.people.find(x => x.id === id); if (!p) return;
+  const has = d.items.some(i => (i.a[id] || 0) > 0), n = d.items.filter(i => (i.a[id] || 0) > 0).length;
+  confirmSheet(`Remover ${p.name}?`, has
+    ? `${p.name} está em ${plural(n, 'item', 'itens')}. Nos itens de consumo individual, as unidades dessa pessoa saem da comanda. Nos compartilhados, o valor passa a ser dividido entre os demais.`
+    : `${p.name} sai da comanda.`, 'Remover', () => {
+    d.people = d.people.filter(x => x.id !== id);
+    d.items.forEach(i => {
+      const u = i.a[id] || 0; if (!u) return;
+      delete i.a[id]; delete pending[i.id];
+      if (i.mode === 'units' && i.lk) i.qty = Math.max(1, i.qty - u);
+      if (!Object.keys(i.a).length) i.lk = false;
+    });
+    leaveGroup(d, id);
+    delete d.custom[id]; delete d.cover[id]; Object.keys(d.cover).forEach(k => { if (d.cover[k] === id) delete d.cover[k]; }); if (d.payer === id) d.payer = ''; commit();
+  }, true);
+}
+function addPessoa(name) {
+  const d = draft;
+  name = String(name || '').trim().replace(/\s+/g, ' ');
+  if (!name) return false;
+  if (d.people.some(p => norm(p.name) === norm(name))) { toast(`${name} já está na comanda.`); return false; }
+  const p = newPerson(name), prevCount = d.people.length;
+  d.people.push(p);
+  // só entra sozinho em itens divididos entre todos (quem chega depois também entra)
+  const entrou = [];
+  d.items.forEach(it => { if ((!it.lk || it.auto) && it.mode === 'equal' && prevCount && Object.keys(it.a).filter(k => it.a[k] > 0).length === prevCount) { it.a[p.id] = 1; entrou.push(it); } });
+  commit();
+  if (entrou.some(it => it.lk)) setTimeout(() => toast(`${p.name} entrou na divisão de ${plural(entrou.length, 'item', 'itens')} já lançados.`, { label: 'Desfazer', run: () => { entrou.forEach(it => { delete it.a[p.id]; }); commit(); } }), 60);
+  return true;
+}
+function pessoaNovaSheet() {
+  const d = draft, Uu = usage();
+  const naMesa = () => d.people.length ? `Na mesa: ${esc(d.people.map(p => p.name).join(', '))}` : 'Ninguém na mesa ainda.';
+  const turmas = !d.isExample && (catalog.groups || []).length ? `<div class="field field-sel"><label for="pn-turma">Pôr uma turma na mesa</label><select id="pn-turma"><option value="">Escolher turma</option>${[...catalog.groups].sort(ordemNome).map(g => { const falta = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n))).length; return `<option value="${esc(g.id)}" ${falta ? '' : 'disabled'}>${esc(g.name)} · ${falta ? plural(falta, 'pessoa', 'pessoas') + ' a pôr' : 'todos já na mesa'}</option>`; }).join('')}</select></div>` : '';
+  openSheet({ title: 'Quem está na mesa?', body: `<form id="pn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
+      <div class="row"><div class="field grow"><label for="pn-nome">Nome</label><input id="pn-nome" type="text" autocapitalize="words" autocomplete="off"></div><button class="btn" type="submit">${I.plus}Adicionar</button></div>
+      ${turmas}<p class="hint" id="pn-mesa" role="status" style="margin:0">${naMesa()}</p></form>`,
+    foot: `<button type="button" class="btn ghost" id="pn-ok">Pronto</button>`, onMount: s => {
+      const inp = $('#pn-nome', s);
+      const depois = () => { inp.value = ''; $('#pn-mesa', s).innerHTML = naMesa(); if (!isTouch) inp.focus(); };
+      attachSuggest(inp, () => catalog.people.filter(p => !d.people.some(x => norm(x.name) === norm(p.name)))
+        .sort((a, b) => (Uu.people[norm(b.name)] || 0) - (Uu.people[norm(a.name)] || 0) || (b.last || 0) - (a.last || 0)).map(p => ({ label: p.name })), x => { if (addPessoa(x.label)) depois(); });
+      $('#pn-form', s).addEventListener('submit', e => { e.preventDefault(); if (addPessoa(inp.value)) depois(); });
+      $('#pn-turma', s)?.addEventListener('change', e => {
+        const g = (catalog.groups || []).find(x => x.id === e.target.value); if (!g) return;
+        const novos = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n)));
+        novos.forEach(n => addPessoa(n)); depois();
+        toast(`${plural(novos.length, 'pessoa entrou', 'pessoas entraram')} na mesa: ${novos.join(', ')}.`);
+      });
+      $('#pn-ok', s).addEventListener('click', () => closeSheet());
+      if (!isTouch) inp.focus();
+    } });
+}
+function localSheet() {
+  const d = draft;
+  openSheet({ title: 'Nome do local', body: `<form id="lo-form" autocomplete="off"><div class="field"><label for="lo-nome">Local</label><input id="lo-nome" type="text" autocapitalize="words" autocomplete="off" placeholder="Ex.: Boteco do Zé" value="${esc(d.place)}"></div></form>`,
+    foot: `<button type="button" class="btn ghost" id="lo-no">Cancelar</button><button type="submit" form="lo-form" class="btn">${I.save}Salvar</button>`, onMount: s => {
+      const inp = $('#lo-nome', s);
+      const salvar = v => { d.place = String(v || '').trim().replace(/\s+/g, ' '); closeSheet(true); commit(); };
+      attachSuggest(inp, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })), x => salvar(x.label));
+      $('#lo-no', s).onclick = () => closeSheet();
+      $('#lo-form', s).addEventListener('submit', e => { e.preventDefault(); salvar(inp.value); });
+      if (!isTouch) inp.focus();
+    } });
+}
+// produto, quantidade e preço; depois, a janela de dividir (ou direto para uma pessoa)
+function produtoSheet(paraId, ed) {
+  const d = draft, Uu = usage(), para = !ed && paraId && d.people.find(p => p.id === paraId);
+  openSheet({ title: ed ? `Alterar ${ed.name}` : para ? `Lançar para ${para.name}` : 'Lançar item', tall: !para && d.people.length > 1, body: `<form id="pr-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
+      <div class="field"><label for="pr-nome">Produto</label><input id="pr-nome" type="text" autocapitalize="words" autocomplete="off" placeholder="Ex.: Chopp 500 ml" value="${ed ? esc(ed.name) : ''}"></div>
+      <div class="row"><div class="field"><label for="pr-qtd">Quantidade</label><div class="stepper"><button type="button" data-pr-step="-1" aria-label="Menos">−</button><input id="pr-qtd" type="number" min="1" step="1" inputmode="numeric" value="${ed ? ed.qty : 1}"><button type="button" data-pr-step="1" aria-label="Mais">+</button></div></div>
+        <div class="field grow"><label for="pr-preco">Valor unitário (R$)</label><input id="pr-preco" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${ed ? moneyInput(ed.price) : ''}"></div></div>
+      <p class="price-hint" id="pr-dica" hidden></p>${!para && d.people.length > 1 ? divisaoHTML(d) : ''}</form>`,
+    foot: `<button type="button" class="btn ghost" id="pr-no">Cancelar</button><button type="submit" form="pr-form" class="btn" id="lc-ok">${ed ? `${I.save}Salvar alteração` : `${I.plus}Lançar`}</button>`, onMount: s => {
+      const nomeEl = $('#pr-nome', s), precoEl = $('#pr-preco', s), qtdEl = $('#pr-qtd', s), dica = $('#pr-dica', s);
+      const div = !para && d.people.length > 1 ? divisaoLigar(s, d, () => ({ qty: Math.max(1, parseInt(qtdEl.value) || 1), price: parseMoney(precoEl.value) }), n => { qtdEl.value = n; }, ed) : null;
+      if (div) { qtdEl.addEventListener('input', div.atualizar); precoEl.addEventListener('input', () => setTimeout(div.atualizar)); }
+      let auto = false;
+      const preencher = (name, force) => {
+        const info = priceInfo(findProduct(name), d.place);
+        if (!info) { if (auto) { precoEl.value = ''; auto = false; } dica.hidden = true; return; }
+        if (force || !precoEl.value || auto) { precoEl.value = moneyInput(info.price); auto = true; }
+        dica.hidden = false; dica.className = 'price-hint' + (info.here ? '' : ' other');
+        dica.textContent = info.here ? `Preço registrado ${d.place ? 'em ' + d.place : 'para este local'}.` : `Último preço${info.where ? ' em ' + info.where : ''}. Confira o cardápio daqui.`;
+      };
+      nomeEl.addEventListener('input', () => preencher(nomeEl.value));
+      precoEl.addEventListener('input', () => { auto = false; dica.hidden = true; });
+      attachSuggest(nomeEl, () => catalog.products.map(p => ({ p, i: priceInfo(p, d.place), n: Uu.products[norm(p.name)] || 0 }))
+        .sort((a, b) => (!!b.i?.here - !!a.i?.here) || b.n - a.n || a.p.name.localeCompare(b.p.name, 'pt-BR'))
+        .map(({ p, i }) => ({ label: p.name, right: i ? BRL(i.price) + (i.here ? '' : ' · outro local') : '', dim: i && !i.here })), x => { preencher(x.label, true); if (!isTouch) qtdEl.focus(); });
+      $$('[data-pr-step]', s).forEach(b => b.addEventListener('click', () => { qtdEl.value = Math.max(1, (parseInt(qtdEl.value) || 1) + +b.dataset.prStep); div?.atualizar(); }));
+      $('#pr-no', s).onclick = () => closeSheet();
+      $('#pr-form', s).addEventListener('submit', e => {
+        e.preventDefault();
+        const name = nomeEl.value.trim().replace(/\s+/g, ' '), qty = Math.max(1, parseInt(qtdEl.value) || 1), price = parseMoney(precoEl.value);
+        if (!name) { toast('Informe o nome do produto.'); nomeEl.focus(); return; }
+        if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); precoEl.focus(); return; }
+        if (ed) {
+          const cur = d.items.find(x => x.id === ed.id); if (!cur) { closeSheet(true); return; }
+          if (div && !div.pronto()) { toast(div.porque()); return; }
+          cur.name = name; cur.price = price; cur.qty = qty; cur.fq = Math.min(cur.fq || 0, qty);
+          // a divisão só muda se a pessoa mexeu nela (preserva partes desiguais feitas em outro lugar)
+          if (div && div.tocou()) { const r = div.resultado(); cur.a = r.a; cur.mode = r.modo; cur.auto = r.todos; cur.lk = true; }
+          else if (cur.mode === 'units') { const tot = Object.values(cur.a).reduce((x, y) => x + y, 0); cur.lk = tot === qty; }
+          delete pending[cur.id]; delete itPend[cur.id];
+          closeSheet(true); itemAberto = cur.id; commit(); toast(cur.mode === 'units' && !cur.lk ? `${cur.name}: distribua as unidades e confirme.` : 'Item alterado.');
+          return;
+        }
+        if (para) {
+          // o mesmo produto, pelo mesmo preço, já lançado como individual: só ganha unidades
+          const igual = d.items.find(it => it.lk && it.mode === 'units' && norm(it.name) === norm(name) && it.price === price);
+          if (igual) { igual.a[para.id] = (igual.a[para.id] || 0) + qty; igual.qty += qty; igual.auto = false; itemNovo = igual.id; }
+          else { const id = newId(); itemNovo = id; d.items.push({ id, o: nextOrder(), name, qty, price, fq: 0, mode: 'units', lk: true, auto: false, a: { [para.id]: qty } }); }
+          closeSheet(true); commit(); toast(`${qty > 1 ? qty + ' × ' : ''}${name} para ${para.name}.`);
+          consumoSheet(para.id);
+          return;
+        }
+        const lancar = (a, todos, modo = 'equal') => {
+          const id = newId();
+          d.items.push({ id, o: nextOrder(), name, qty, price, fq: 0, mode: modo, lk: d.people.length > 0, auto: !!todos && d.people.length > 0, a });
+          itemAberto = null; itensAbertos = true; itemNovo = id; commit();
+        };
+        if (!div) { closeSheet(true); return lancar(Object.fromEntries(d.people.map(p => [p.id, 1])), true); }
+        if (!div.pronto()) { toast(div.porque()); return; }
+        const r = div.resultado(); closeSheet(true); lancar(r.a, r.todos, r.modo);
+      });
+      if (!isTouch) nomeEl.focus();
+    } });
+}
+// quem já acertou a sua parte na mesa (só neste aparelho, guardado junto com a comanda)
+const pagoDe = (d, ids) => ids.length > 0 && ids.every(id => d.pagos && d.pagos[id]);
+function marcarPago(d, ids, on) { d.pagos = { ...(d.pagos || {}) }; ids.forEach(id => { if (on) d.pagos[id] = true; else delete d.pagos[id]; }); }
+function faltaReceber(d, c) { return c.units.reduce((a, u) => a + (pagoDe(d, u.members) ? 0 : u.total), 0); }
+// o cupom compartilhado: quem está nele, quanto é de cada um e quem paga
+function grupoSheet(uid) {
+  const d = draft, c = compute(d), u = c.U[uid]; if (!u) return;
+  const so = u.payers.length < u.members.length;
+  openSheet({ title: 'Cupom compartilhado', body: `<div class="cs"><div class="cs-topo"><span class="hint">${plural(u.members.length, 'pessoa', 'pessoas')}</span><b class="num cs-total">${BRL(u.total)}</b></div>
+      <div class="cs-lista">${u.members.map(m => `<button type="button" class="cs-lin cs-alvo" data-gs-p="${m}">${avatar(c.per[m].person.name)}<span class="gs-nome">${esc(c.per[m].person.name)}${so && u.payers.includes(m) ? ' <span class="tag">paga</span>' : ''}</span><span class="num hint">${BRL(c.per[m].total)}</span>${I.next}</button>`).join('')}</div>
+      <div class="cs-acoes"><button type="button" class="btn small ghost" data-gs-cupom>${I.file}Ver cupom</button><button type="button" class="btn small ghost" data-gs-desfaz>${I.x}Desfazer cupom compartilhado</button></div></div>`,
+    foot: `<button type="button" class="btn" id="gs-ok">Fechar</button>`, onMount: s => {
+      $$('[data-gs-p]', s).forEach(b => b.onclick = () => consumoSheet(b.dataset.gsP));
+      $('[data-gs-cupom]', s).onclick = () => cupomSheet(u.members[0]);
+      $('[data-gs-desfaz]', s).onclick = () => { const antes = clone(d.groups || []); u.members.forEach(m => leaveGroup(d, m)); closeSheet(true); commit(); toast('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); };
+      $('#gs-ok', s).onclick = () => closeSheet();
+    } });
+}
+// o cupom de uma pessoa (ou do grupo dela), para ver e compartilhar
+function cupomSheet(pid) {
+  const d = draft, c = compute(d), u = c.U[c.unitOf[pid]]; if (!u) return;
+  const multi = u.members.length > 1, editar = () => multi ? grupoSheet(u.id) : consumoSheet(pid), pago = pagoDe(d, u.members);
+  openSheet({ title: multi ? 'Cupom compartilhado' : `Cupom de ${u.name}`, body: `<div class="cupom-1 ${pago ? 'cupom-pago' : ''}">${receiptHTML(u, d, c)}${pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>`,
+    foot: `<button type="button" class="btn ghost" id="cp-editar" aria-label="Editar">${I.edit}</button><button type="button" class="btn ghost" id="cp-share" aria-label="Compartilhar">${I.share}</button><button type="button" class="btn" id="cp-pago" style="flex:1">${pago ? `${I.x}Desmarcar pago` : `${I.ok}Marcar como pago`}</button>`, onMount: s => {
+      $('#cp-editar', s).onclick = editar;
+      $('#cp-pago', s).onclick = () => { marcarPago(d, u.members, !pago); closeSheet(true); commit({ anchor: false }); toast(pago ? `${u.name}: pagamento desmarcado.` : `${u.name}: pago.`, { label: 'Desfazer', run: () => { marcarPago(d, u.members, pago); commit({ anchor: false }); } }); };
+      $('#cp-share', s).onclick = () => shareReceipt(u, d, c, () => cupomSheet(pid));
+    } });
+}
+// a mini comanda de uma pessoa: o que ela consumiu, o que dá para mudar só para ela e como ela paga
+function consumoSheet(pid) {
+  const d = draft;
+  const p0 = d.people.find(p => p.id === pid); if (!p0) return;
+  let juntando = false;
+  // mudanças nos itens ficam num rascunho até tocar em Salvar
+  let st = clone(d.items);
+  const sujo = () => JSON.stringify(st) !== JSON.stringify(d.items);
+  const dv = () => ({ ...d, items: st });
+  const sw = (attr, on, label, value, dis) => `<label class="cs-lin cs-sw"><span class="cs-tx"><b>${label}</b>${value ? `<span class="hint num">${value}</span>` : ''}</span><span class="switch"><input type="checkbox" ${attr} ${on ? 'checked' : ''} ${dis ? 'disabled' : ''} aria-label="${esc(label)}"><span class="track"></span></span></label>`;
+  const corpo = () => {
+    const p = d.people.find(x => x.id === pid); if (!p) return '';
+    const calc = compute(dv()), r = calc.per[pid], u = calc.U[calc.unitOf[pid]], multi = u.members.length > 1;
+    const ind = st.filter(it => it.lk && it.mode === 'units').sort((a, b) => (b.a[pid] || 0) - (a.a[pid] || 0));
+    const comp = st.filter(it => it.lk && it.mode !== 'units');
+    const linhaInd = it => { const u = it.a[pid] || 0; return `<div class="cs-lin ${u ? '' : 'cs-zero'}"><span class="cs-tx"><b>${esc(it.name)}</b><span class="hint num">${u ? `${u} × ${BRL(it.price)} · ${BRL(u * it.price)}` : BRL(it.price) + ' cada'}</span></span>
+      <span class="unit-btns"><button type="button" class="minus" data-cs-menos="${it.id}" ${u ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-cs-mais="${it.id}" aria-label="Mais uma unidade de ${esc(it.name)} para ${esc(p.name)}">+1</button></span></div>`; };
+    const linhaComp = it => {
+      const on = (it.a[pid] || 0) > 0, n = d.people.filter(x => (it.a[x.id] || 0) > 0).length;
+      const charged = (it.qty - Math.min(it.fq || 0, it.qty)) * it.price;
+      const minha = on ? (divisaoItem(it, dv()).find(x => x.id === pid)?.val || 0) : 0;
+      const efeito = on ? (n > 1 ? `Se sair, ${n - 1 === 1 ? 'a outra pessoa paga' : `os outros ${n - 1} pagam`} ${BRL(Math.round(charged / (n - 1)))}${n - 1 > 1 ? ' cada' : ''}.` : `Só ${esc(p.name)} está neste item.`)
+        : `Se entrar, ${n ? `cada um paga ${BRL(Math.round(charged / (n + 1)))}` : `paga ${BRL(charged)}`}.`;
+      return `<div class="cs-lin"><span class="cs-tx"><b>${esc(it.name)}</b><span class="hint num">${on ? `÷ ${n} · ${BRL(minha)}` : 'fora da divisão'}</span><span class="cs-efeito">${efeito}</span></span>
+        <label class="switch"><input type="checkbox" data-cs-div="${it.id}" ${on ? 'checked' : ''} ${on && n === 1 ? 'disabled' : ''} aria-label="${esc(p.name)} na divisão de ${esc(it.name)}"><span class="track"></span></label></div>`; };
+    // como paga
+    const isPayer = u.payers.includes(pid);
+    const plano = planOf(calc, pid), debts = pixDebts(calc);
+    const plain = !r.custom && u.payers.length === 1 && plano.length === 1 && plano[0].k === 'place' && plano[0].v === r.share;
+    const outros = calc.units.filter(x => x.id !== u.id);
+    let pag = '';
+    if (d.service.enabled) pag += sw(`data-cs-svc`, p.payService, 'Paga serviço', p.payService ? BRL(r.service) : 'não paga');
+    if (d.couvert.enabled) pag += sw(`data-cs-cv`, p.payCouvert, 'Paga couvert', p.payCouvert ? BRL(r.couvert) : 'não paga');
+    if (multi) pag += sw(`data-cs-payer`, isPayer, `Paga o cupom de ${esc(u.name)}`, isPayer ? '' : 'outra pessoa do grupo paga', isPayer && u.payers.length === 1);
+    if (r.custom) pag += `<div class="cs-lin"><span class="field" style="flex:1"><label for="cs-custom">Vai pagar</label><input id="cs-custom" type="text" inputmode="numeric" data-money value="${moneyInput(d.custom[pid] || 0)}"><span class="hint">Parte na conta: ${BRL(r.share)}. A diferença é acertada entre vocês.</span></span></div>`;
+    const planoHTML = plain ? '' : plano.map(x => `<div class="cs-lin cs-plano ${x.k === 'in' ? 'recv' : ''}"><span>${esc(cap(x.t))}</span>${x.k === 'out' && debts.some(z => z.pid === pid) ? `<button type="button" class="btn small ghost" data-cs-pix>Pix</button>` : ''}</div>`).join('');
+    const acoes = `<div class="cs-acoes">
+        <button type="button" class="btn small ghost" data-cs-cupom>${I.file}Ver cupom</button>
+        ${isPayer ? `<button type="button" class="btn small ghost" data-cs-valor>${r.custom ? `${I.refresh}Valor da conta` : `${I.edit}Pagar outro valor`}</button>` : ''}
+        ${multi ? `<button type="button" class="btn small ghost" data-cs-sair>${I.x}Sair do cupom compartilhado</button>` : outros.length ? `<button type="button" class="btn small ghost" data-cs-juntar aria-expanded="${juntando}">${I.users}Juntar com…</button>` : ''}
+      </div>
+      ${juntando && !multi ? `<div class="cs-lista cs-junta" role="group" aria-label="Juntar ${esc(p.name)} com">${outros.map(x => `<button type="button" class="cs-lin cs-alvo" data-cs-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${esc(x.name)}</span><span class="num hint">${BRL(x.total)}</span>${I.next}</button>`).join('')}</div>` : ''}`;
+    const antes = compute(d).per[pid]?.total || 0;
+    const pend = sujo() ? `<div class="pending-bar cs-pend" role="status"><span><b>Alteração não salva</b> · <span class="num">${BRL(antes)} → ${BRL(r.total)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-cs-desc>Descartar</button><button type="button" class="btn small" data-cs-salvar>${I.save}Salvar</button></span></div>` : '';
+    return `<div class="cs-topo"><span class="hint">${multi ? `No cupom de ${esc(u.name)} · ${BRL(u.total)}` : `Total de ${esc(p.name)}`}</span><b class="num cs-total">${BRL(r.total)}</b></div>
+      ${pend}
+      ${ind.length ? `<span class="eyebrow">Consumo individual</span><div class="cs-lista">${ind.map(linhaInd).join('')}</div>` : ''}
+      ${comp.length ? `<span class="eyebrow">Consumo compartilhado</span><div class="cs-lista">${comp.map(linhaComp).join('')}</div>` : ''}
+      ${!ind.length && !comp.length ? `<p class="hint" style="margin:0">Nada lançado ainda.</p>` : ''}
+      <button type="button" class="btn ghost" data-cs-lancar>${I.plus}Lançar para ${esc(p.name)}</button>
+      <span class="eyebrow">Pagamento</span>
+      ${pag || planoHTML ? `<div class="cs-lista">${pag}${planoHTML}</div>` : ''}
+      ${acoes}`;
+  };
+  openSheet({ title: p0.name, onClose: () => { if (sujo()) toast('Alteração descartada.'); }, body: `<form class="field cs-nome-f" id="cs-nome-f" autocomplete="off"><label for="cs-nome">Nome</label><div class="cs-nome-l"><input id="cs-nome" type="text" autocapitalize="words" autocomplete="off" value="${esc(p0.name)}"><button type="submit" class="btn ghost small" id="cs-nome-ok">Salvar nome</button></div></form><div id="cs-corpo" class="cs">${corpo()}</div>`,
+    foot: `<button type="button" class="btn ghost danger-text" id="cs-rm">${I.trash}Remover</button><button type="button" class="btn" id="cs-ok">Fechar</button>`, onMount: s => {
+      const box = $('#cs-corpo', s);
+      $('#cs-nome-f', s).addEventListener('submit', e => {
+        e.preventDefault();
+        const el = $('#cs-nome', s), nome = el.value.trim().replace(/\s+/g, ' '), p = d.people.find(x => x.id === pid); if (!p) return;
+        if (!nome) { toast('Informe o nome.'); el.focus(); return; }
+        if (d.people.some(x => x.id !== pid && norm(x.name) === norm(nome))) { toast(`Já há ${nome} na mesa. Use outro nome.`); el.focus(); return; }
+        if (nome === p.name) { el.blur(); return; }
+        const antigo = p.name; p.name = nome; el.blur();
+        const h = $('.kf-dlg-cab h2', s.closest('.kf-dlg') || s); if (h) h.textContent = nome;
+        commit({ anchor: false }); pintar();
+        toast(`${antigo} agora é ${nome}${nome.endsWith('.') ? '' : '.'}`, { label: 'Desfazer', run: () => { const q = d.people.find(x => x.id === pid); if (q) { q.name = antigo; commit({ anchor: false }); } } });
+      });
+      const pintar = () => { box.innerHTML = corpo(); prepFields(box); };
+      const refazer = () => { commit({ anchor: false }); pintar(); };
+      box.addEventListener('click', e => {
+        const t = sel => e.target.closest(sel);
+        if (t('[data-cs-salvar]')) { d.items = st; st = clone(d.items); commit({ anchor: false }); pintar(); toast('Alteração salva.'); return; }
+        if (t('[data-cs-desc]')) { st = clone(d.items); pintar(); return; }
+        if (sujo() && ['[data-cs-lancar]', '[data-cs-cupom]', '[data-cs-pix]', '[data-cs-sair]', '[data-cs-alvo]', '[data-cs-valor]', '[data-cs-juntar]'].some(x => t(x))) { toast('Salve ou descarte a alteração primeiro.'); return; }
+        if (t('[data-cs-lancar]')) { produtoSheet(pid); return; }
+        if (t('[data-cs-cupom]')) { cupomSheet(pid); return; }
+        if (t('[data-cs-pix]')) { const x = pixDebts(compute(d)).find(z => z.pid === pid); if (x) pixSheet(x, () => consumoSheet(pid)); return; }
+        if (t('[data-cs-juntar]')) { juntando = !juntando; pintar(); return; }
+        if (t('[data-cs-sair]')) { leaveGroup(d, pid); refazer(); toast('Saiu do cupom compartilhado.'); return; }
+        const alvo = t('[data-cs-alvo]');
+        if (alvo) { if (joinGroup(d, pid, alvo.dataset.csAlvo)) { juntando = false; refazer(); toast('Agora estão no mesmo cupom.'); } return; }
+        if (t('[data-cs-valor]')) {
+          d.custom = d.custom || {};
+          if (pid in d.custom) { delete d.custom[pid]; refazer(); return; }
+          d.custom[pid] = compute(d).per[pid].paid; refazer(); $('#cs-custom', box)?.focus(); return;
+        }
+        const mais = t('[data-cs-mais]'), menos = t('[data-cs-menos]');
+        const it = st.find(x => x.id === (mais || menos)?.getAttribute(mais ? 'data-cs-mais' : 'data-cs-menos')); if (!it) return;
+        if (mais) { it.a[pid] = (it.a[pid] || 0) + 1; it.qty++; it.auto = false; return pintar(); }
+        if (!(it.a[pid] > 0)) return;
+        if (it.qty === 1) { st = st.filter(x => x.id !== it.id); return pintar(); }
+        it.a[pid]--; if (!it.a[pid]) delete it.a[pid]; it.qty--; it.auto = false; it.fq = Math.min(it.fq || 0, it.qty); pintar();
+      });
+      box.addEventListener('change', e => {
+        const p = d.people.find(x => x.id === pid); if (!p) return;
+        const el = e.target;
+        if (el.id === 'cs-custom') { d.custom[pid] = parseMoney(el.value) || 0; return refazer(); }
+        if (el.matches('[data-cs-svc]') && sujo()) { el.checked = !el.checked; toast('Salve ou descarte a alteração primeiro.'); return; }
+        if (el.matches('[data-cs-svc]')) { p.payService = el.checked; refazer(); if (!el.checked) politicaSheet(d, p); return; }
+        if (el.matches('[data-cs-cv]')) { p.payCouvert = el.checked; return refazer(); }
+        if (el.matches('[data-cs-payer]')) {
+          const g = cleanGroups(d).find(x => x.members.includes(pid)); if (!g) return;
+          const on = g.payers.includes(pid);
+          if (on && g.payers.length === 1) { el.checked = true; toast('O cupom compartilhado precisa de alguém que pague.'); return; }
+          g.payers = on ? g.payers.filter(x => x !== pid) : [...g.payers, pid];
+          if (on) dropCustom(d, pid);
+          d.groups = cleanGroups(d).map(x => x.id === g.id ? g : x); return refazer();
+        }
+        const ck = el.closest('[data-cs-div]'); if (!ck) return;
+        const it = st.find(x => x.id === ck.dataset.csDiv); if (!it) return;
+        if (ck.checked) it.a[pid] = 1;
+        else { if (d.people.filter(x => (it.a[x.id] || 0) > 0).length <= 1) { ck.checked = true; return; } delete it.a[pid]; }
+        it.auto = false; pintar();
+      });
+      $('#cs-ok', s).onclick = () => closeSheet();
+      $('#cs-rm', s).onclick = () => { if (sujo()) { toast('Salve ou descarte a alteração primeiro.'); return; } removerPessoa(pid); };
+    } });
+}
+// a conta da mesa: de onde vem o total, com uma chave para serviço, couvert e desconto
+function contaSheet() {
+  const d = draft, s = d.service, ds = d.discount;
+  const bloco = (k, on, titulo, valor, extra) => `<div class="cm-bloco"><label class="cs-lin cs-sw"><span class="cs-tx"><b>${titulo}</b><span class="hint num">${valor}</span></span><span class="switch"><input type="checkbox" data-cm="${k}" ${on ? 'checked' : ''} aria-label="${esc(titulo)}"><span class="track"></span></span></label>${on && extra ? `<div class="cm-extra">${extra}</div>` : ''}</div>`;
+  const corpo = () => {
+    const c = compute(d), names = ids => ids.map(id => c.per[id].person.name).join(', ');
+    let nota = '';
+    if (s.enabled && c.skipped.length) nota = s.policy === 'discount' ? `${esc(names(c.skipped))} não paga${c.skipped.length > 1 ? 'm' : ''} o serviço; o total fica ${BRL(c.skippedValue)} menor.` : `${BRL(c.skippedValue)} de serviço de ${esc(names(c.skipped))} divididos entre os outros.`;
+    const svc = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de taxa"><button type="button" data-cm-svcmode="fixed" aria-pressed="${s.mode === 'fixed'}">R$</button><button type="button" data-cm-svcmode="pct" aria-pressed="${s.mode === 'pct'}">%</button></div>
+      ${s.mode === 'fixed' ? `<input id="cm-svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais">` : `<input id="cm-svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa">`}</div>
+      ${nota ? `<div class="policy-note pol-row"><span>${nota}</span><button type="button" class="btn small ghost" data-cm-pol>Mudar</button></div>` : ''}`;
+    const cvPct = d.couvert.mode === 'pct';
+    const cv = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de couvert"><button type="button" data-cm-cvmode="value" aria-pressed="${!cvPct}">R$</button><button type="button" data-cm-cvmode="pct" aria-pressed="${cvPct}">%</button></div>
+      <input id="cm-cv" type="text" inputmode="numeric" ${cvPct ? `data-pct value="${pctInput(d.couvert.pct || 0)}" aria-label="Percentual do couvert sobre o consumo de cada um"` : `data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa"`}></div>`;
+    const dsc = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de desconto"><button type="button" data-cm-dsmode="value" aria-pressed="${ds.mode === 'value'}">R$</button><button type="button" data-cm-dsmode="pct" aria-pressed="${ds.mode === 'pct'}">%</button></div>
+      <input id="cm-ds" type="text" inputmode="numeric" ${ds.mode === 'pct' ? `data-pct value="${pctInput(ds.pct)}" aria-label="Percentual de desconto"` : `data-money value="${moneyInput(ds.value)}" aria-label="Valor do desconto"`}></div>
+      <div class="seg" role="group" aria-label="Onde o desconto incide"><button type="button" data-cm-dsat="after" aria-pressed="${ds.at === 'after'}">No valor total da comanda</button><button type="button" data-cm-dsat="before" aria-pressed="${ds.at !== 'after'}">Apenas no valor do consumo</button></div>`;
+    const fqN = d.items.reduce((a, it) => a + (it.fq || 0), 0);
+    const todosJuntos = d.people.length > 1 && c.groups.length === 1 && c.groups[0].members.length === d.people.length;
+    let aviso = '';
+    if (c.payDiff < 0) aviso = `Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga outro valor.`;
+    if (c.payDiff > 0) aviso = `Os valores escolhidos passam ${BRL(c.payDiff)} do total.`;
+    return `<div class="cs-lista">
+        <div class="cs-lin"><span class="cs-tx"><b>Consumo</b>${c.freeValue ? '<span class="hint">já descontadas as cortesias</span>' : ''}</span><span class="num">${BRL(c.consumoBruto)}</span></div>
+        ${bloco('svc', s.enabled, 'Serviço', s.enabled ? BRL(c.service) : 'não cobrado', svc)}
+        ${bloco('cv', d.couvert.enabled, 'Couvert artístico', d.couvert.enabled ? `${BRL(c.couvert)}${d.couvert.mode === 'pct' ? ` · ${pctStr(d.couvert.pct || 0)}% do consumo de cada um` : ` · ${BRL(d.couvert.value)} por pessoa`}` : 'não cobrado', cv)}
+        ${bloco('ds', ds.enabled, 'Desconto', ds.enabled ? '−' + BRL(c.discount) : 'sem desconto', dsc)}
+        <div class="cs-lin cm-total"><b>Total da comanda</b><b class="num">${BRL(c.total)}</b></div>
+      </div>
+      ${d.people.length > 1 ? (todosJuntos
+        ? `<button type="button" class="btn small ghost" data-cm-separar>${I.x}Cada um paga o seu</button>`
+        : `<button type="button" class="lanc-op atalho" data-cm-todos>${I.users}<span><b>Uma pessoa paga a conta de todos</b></span><span class="lanc-seta">${I.next}</span></button>`) : ''}
+      ${aviso ? `<div class="status warn">${I.warn}<span>${aviso}</span></div>` : ''}
+      `;
+  };
+  const podeFechar = d.items.length && d.people.length, podeLimpar = !d.isExample && (d.items.length || d.people.length || d.place);
+  openSheet({ title: 'Conta da mesa', body: `<div id="cm-corpo" class="cs">${corpo()}</div>${podeLimpar ? `<button type="button" class="btn small ghost danger-text cm-limpar" id="cm-limpar">${I.trash}Limpar ou excluir comanda</button>` : ''}`,
+    foot: podeFechar ? `<button type="button" class="btn ghost" id="cm-ok">Pronto</button><button type="button" class="btn" id="cm-fechar">${I.receipt}Fechar comanda</button>` : `<button type="button" class="btn" id="cm-ok">Pronto</button>`, onMount: sh => {
+    $('#cm-fechar', sh)?.addEventListener('click', () => { closeSheet(true); fecharSheet(); });
+    $('#cm-limpar', sh)?.addEventListener('click', () => { closeSheet(true); resetSheet(); });
+    const box = $('#cm-corpo', sh);
+    const pintar = () => { box.innerHTML = corpo(); prepFields(box); };
+    const refazer = () => { commit({ anchor: false }); pintar(); };
+    box.addEventListener('change', e => {
+      const el = e.target, k = el.dataset.cm;
+      if (k === 'svc') s.enabled = el.checked;
+      else if (k === 'cv') d.couvert.enabled = el.checked;
+      else if (k === 'ds') ds.enabled = el.checked;
+      else if (el.id === 'cm-svc-pct') s.pct = parsePct(el.value) ?? 0;
+      else if (el.id === 'cm-svc-fixed') { const v = parseMoney(el.value); if (v !== null) s.fixed = v; }
+      else if (el.id === 'cm-cv') { if (d.couvert.mode === 'pct') d.couvert.pct = parsePct(el.value) ?? 0; else { const v = parseMoney(el.value); if (v !== null) d.couvert.value = v; } }
+      else if (el.id === 'cm-ds') { if (ds.mode === 'pct') ds.pct = parsePct(el.value) ?? 0; else ds.value = parseMoney(el.value) ?? 0; }
+      else return;
+      refazer();
+    });
+    box.addEventListener('click', e => {
+      const t = sel => e.target.closest(sel), c = compute(d);
+      const sm = t('[data-cm-svcmode]'), dm = t('[data-cm-dsmode]'), da = t('[data-cm-dsat]'), cm = t('[data-cm-cvmode]');
+      if (cm) { const m = cm.dataset.cmCvmode; if (m === (d.couvert.mode || 'value')) return; d.couvert.mode = m; if (m === 'pct' && !d.couvert.pct) d.couvert.pct = 10; return refazer(); }
+      if (sm) { const m = sm.dataset.cmSvcmode; if (m === s.mode) return; if (m === 'pct') { s.mode = 'pct'; if (!s.pct) s.pct = 10; } else { s.mode = 'fixed'; if (!s.fixed) s.fixed = Math.round(c.consumo * 0.1); } return refazer(); }
+      if (dm) { ds.mode = dm.dataset.cmDsmode; return refazer(); }
+      if (da) { ds.at = da.dataset.cmDsat; return refazer(); }
+      if (t('[data-cm-pol]')) return politicaSheet(d);
+      if (t('[data-cm-todos]')) return pagaTodosSheet(d);
+      if (t('[data-cm-separar]')) { const antes = clone(d.groups || []); d.groups = []; refazer(); toast('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); return; }
+      if (t('[data-cm-acertos]')) return copyText(['Acertos — ' + (d.place || 'Comanda'), ...c.transfers.map(x => { const to = c.per[x.to].person.name, k = pixOf(to); return `${c.per[x.from].person.name} paga ${BRL(x.value)} para ${to}${k ? ' (Pix: ' + k + ')' : ''}`; })].join('\n'), 'Acertos copiados.');
+      if (t('[data-cm-copiar]')) return copyText(c.units.map(u => receiptText(u, d, c)).join('\n\n'), 'Todos os cupons copiados.');
+      if (t('[data-cm-pdf]')) return shareAllPDF(d, c, t('[data-cm-pdf]'));
+    });
+    $('#cm-ok', sh).onclick = () => closeSheet();
   } });
 }
 
+// fechar a comanda: o resumo de quem paga quanto, o que falta receber e salvar no histórico
+// o cupom da mesa inteira, nas mesmas linhas dos outros cupons (tela, texto e PDF)
+function mesaRows(d, c) {
+  const s = d.service, R = [];
+  // mesmo preâmbulo dos cupons de cada pessoa
+  R.push({ t: 'brand', text: 'CONTA FÁCIL' }, { t: 'center', text: d.place || 'Comanda' }, { t: 'center', text: fmtDateTime(d.closedAt || d.createdAt), tone: 'muted' }, { t: 'dash' },
+    { t: 'who', text: 'Mesa' }, { t: 'center', text: `Comanda da mesa · ${plural(d.people.length, 'pessoa', 'pessoas')}`, tone: 'muted', small: true }, { t: 'dash' });
+  [...d.items].sort((x, y) => (x.o || 0) - (y.o || 0)).forEach(it => {
+    R.push({ t: 'pair', left: it.name, right: BRL(it.qty * it.price) }, { t: 'detail', text: `${it.qty} un. × ${BRL(it.price)}` });
+    if (it.fq) R.push({ t: 'detail', text: `${plural(it.fq, 'cortesia', 'cortesias')} · −${BRL(it.fq * it.price)}` });
+  });
+  R.push({ t: 'dash' }, { t: 'pair', left: 'Consumo', right: BRL(c.itemsGross + c.freeValue) });
+  if (c.freeValue) R.push({ t: 'pair', left: 'Cortesia', right: '−' + BRL(c.freeValue) });
+  if (s.enabled) R.push({ t: 'pair', left: serviceLabel(d), right: BRL(c.service) });
+  if (d.couvert.enabled) R.push({ t: 'pair', left: 'Couvert', right: BRL(c.couvert) });
+  if (d.discount.enabled) R.push({ t: 'pair', left: 'Desconto', right: '−' + BRL(c.discount) });
+  R.push({ t: 'total', left: 'TOTAL', right: BRL(c.total) }, { t: 'section', text: 'PESSOAS' });
+  c.units.forEach(u => R.push({ t: 'pair', left: u.name, right: (pagoDe(d, u.members) ? 'pago · ' : '') + BRL(u.total) }));
+  const falta = faltaReceber(d, c);
+  if (falta < c.total) R.push({ t: 'dash' }, { t: 'sub', left: falta ? 'FALTA PAGAR' : 'TUDO PAGO', right: falta ? BRL(falta) : '✓' });
+  return R;
+}
+// fechar: todos os cupons, um por tela, arrastando para o lado (a mesa primeiro)
+function fecharSheet() {
+  const d = draft, c = compute(d);
+  const slides = [{ nome: 'Mesa', arq: 'mesa', r: null, rows: mesaRows(d, c), pago: false }, ...c.units.map(u => ({ nome: u.name, arq: u.name.replace(/ \+ /g, ' e '), r: u, rows: null, pago: pagoDe(d, u.members) }))];
+  const pend = c.openItems.length + c.incomplete.length + c.unassigned.length;
+  openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
+      <div class="fc-nav"><button type="button" class="btn ghost fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="btn ghost fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
+      <div class="fc-janela" id="fc-janela"><div class="fc-trilho" id="fc-trilho" tabindex="0" aria-label="Cupons: arraste para o lado">${slides.map((x, i) => `<div class="fc-slide" role="group" aria-roledescription="cupom" aria-label="${i + 1} de ${slides.length}: ${esc(x.nome)}"><div class="cupom-1 ${x.pago ? 'cupom-pago' : ''}">${receiptHTML(x.r, d, c, x.rows)}${x.pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>
+        <div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}${i ? 'Copiar' : 'Copiar todos'}</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div></div>`).join('')}</div></div>
+      <div class="fc-pontos" aria-hidden="true">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
+      ${pend ? `<div class="status warn">${I.warn}<span>Há ${plural(pend, 'item', 'itens')} sem divisão. Divida antes de salvar.</span></div>` : ''}
+    </div>`,
+    foot: `<button type="button" class="btn ghost" id="fc-volta">Voltar à comanda</button><button type="button" class="btn" id="fc-salvar">${I.save}Salvar no histórico</button>`, onMount: s => {
+      const jan = $('#fc-janela', s), tr = $('#fc-trilho', s), pts = $$('.fc-pontos i', s), cont = $('#fc-cont', s), els = $$('.fc-slide', s);
+      let i = 0, arr = null;
+      const W = () => jan.clientWidth, n = slides.length;
+      const pos = (x, anim) => { const m = MV(); tr.style.transition = anim && !m.off ? `transform ${Math.round(m.ms * .7)}ms ${m.css}` : 'none'; tr.style.transform = `translate3d(${x}px,0,0)`; };
+      const altura = anim => { const m = MV(), h = els[i].offsetHeight; jan.style.transition = anim && !m.off ? `height ${m.ms}ms ${m.css}` : 'none'; jan.style.height = h + 'px'; };
+      const mostrar = anim => { cont.textContent = `${i + 1} de ${n} · ${slides[i].nome}`; pts.forEach((p, k) => p.classList.toggle('on', k === i)); $('#fc-ant', s).disabled = i === 0; $('#fc-prox', s).disabled = i === n - 1; els.forEach((e, k) => e.setAttribute('aria-hidden', k === i ? 'false' : 'true')); altura(anim); };
+      const X = k => -(els[k]?.offsetLeft || 0);
+      const ir = k => { i = Math.max(0, Math.min(n - 1, k)); pos(X(i), true); mostrar(true); };
+      // o cupom acompanha o dedo; soltando, vai para o vizinho se andou um quarto da tela ou foi um gesto rápido
+      jan.addEventListener('pointerdown', e => { if (e.button > 0 || e.target.closest('button')) return; arr = { x: e.clientX, y: e.clientY, t: performance.now(), dx: 0, ok: null, id: e.pointerId }; });
+      jan.addEventListener('pointermove', e => {
+        if (!arr || e.pointerId !== arr.id) return;
+        const dx = e.clientX - arr.x, dy = e.clientY - arr.y;
+        if (arr.ok === null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; arr.ok = Math.abs(dx) > Math.abs(dy); if (!arr.ok) { arr = null; return; } try { jan.setPointerCapture(e.pointerId); } catch {} }
+        const borda = (i === 0 && dx > 0) || (i === n - 1 && dx < 0);
+        arr.dx = borda ? dx / 3 : dx; arr.v = dx / Math.max(1, performance.now() - arr.t);
+        pos(X(i) + arr.dx, false);
+      });
+      const soltar = () => { if (!arr) return; const { dx, v = 0, ok } = arr; arr = null; if (!ok) return; const lim = W() / 4; const flick = Math.abs(dx) > 24 && Math.abs(v) > .25; ir(dx < -lim || (flick && v < 0) ? i + 1 : dx > lim || (flick && v > 0) ? i - 1 : i); };
+      jan.addEventListener('pointerup', soltar); jan.addEventListener('pointercancel', soltar);
+      tr.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); ir(i + 1); } if (e.key === 'ArrowLeft') { e.preventDefault(); ir(i - 1); } });
+      $('#fc-ant', s).onclick = () => ir(i - 1);
+      $('#fc-prox', s).onclick = () => ir(i + 1);
+      addEventListener('resize', () => { pos(X(i), false); altura(false); });
+      tr.addEventListener('click', async e => {
+        const cp = e.target.closest('[data-fc-copiar]'), pd = e.target.closest('[data-fc-pdf]');
+        if (cp) { const x = slides[+cp.dataset.fcCopiar]; if (!x.r) return copyText([receiptText(null, d, c, x.rows), ...c.units.map(u => receiptText(u, d, c))].join('\n\n'), 'Todos os cupons copiados.'); return copyText(receiptText(x.r, d, c, x.rows), `Cupom de ${x.nome} copiado.`); }
+        if (pd) {
+          const x = slides[+pd.dataset.fcPdf];
+          if (!(await downloadsNS())) { toast('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }
+          pd.disabled = true;
+          try { await saveFile(`cupom-${slug(x.arq)}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(x.r, d, c, x.rows)])); } catch { toast('Não foi possível gerar o PDF agora.'); }
+          pd.disabled = false;
+        }
+      });
+      requestAnimationFrame(() => { pos(0, false); mostrar(false); });
+      $('#fc-volta', s).onclick = () => closeSheet();
+      $('#fc-salvar', s).onclick = () => { closeSheet(true); saveBill(); };
+    } });
+}
 const viewComanda = {
   html() {
-    const d = draft, calc = compute(d);
-    const allIds = d.people.map(p => p.id);
+    const d = draft, calc = compute(d), s = d.service;
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
-    const itemsHTML = d.items.length ? [...d.items].sort((x, y) => (y.o || 0) - (x.o || 0)).map(it => itemCardHTML(it, d, me)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item lançado' });
-
+    // mini comanda que mudou de valor dá um pulo (só quando muda, nunca na primeira vez)
+    if (totaisAnt.id !== d.id) totaisAnt = { id: d.id, v: {} };
+    const pulou = {};
+    calc.units.forEach(u => { const a = totaisAnt.v[u.id]; if (a !== undefined && a !== u.total) pulou[u.id] = true; });
+    totaisAnt.v = Object.fromEntries(calc.units.map(u => [u.id, u.total]));
+    const ordenados = [...d.items].sort((x, y) => (x.o || 0) - (y.o || 0)); // o novo entra no fim da fila, onde fica o botão
+    const itemsHTML = d.items.length ? ordenados.map(it => it.lk ? itemFechadoHTML(it, d) : itemPendenteHTML(it, d)).join('') : KitFacil.ui.vazio({ titulo: 'Nenhum item lançado' });
+    const abertosN = d.items.filter(it => !it.lk).length;
+    const aj = [s.enabled && (s.mode === 'fixed' ? 'Serviço' : `Serviço ${pctStr(s.pct)}%`), d.couvert.enabled && 'Couvert', d.discount.enabled && 'Desconto', calc.freeValue && 'Cortesia'].filter(Boolean);
+    const nm = id => calc.per[id].person.name, falta = faltaReceber(d, calc);
+    const num = pid => String(d.people.findIndex(p => p.id === pid) + 1).padStart(2, '0');
+    const brl = v => BRL(v).replace('R$', '').trim();
+    // o que a pessoa consumiu, em linhas curtas de cupom: "3× Chopp", "1/3 Porção"
+    const linhas = pid => calc.per[pid].lines.slice().sort((x, y) => y.value - x.value).map(l => ({
+      q: l.mode === 'units' ? l.units + '×' : l.n > 1 ? (l.uneq ? l.parts + '/' + l.totalParts : '1/' + l.n) : l.qty + '×', t: l.name, v: l.value }));
+    const lista = pid => { const L = linhas(pid); if (!L.length) return '<span class="mc-vazio">nada ainda</span>';
+      return L.slice(0, 3).map(x => `<span class="mc-it"><span class="mc-q">${esc(x.q)}</span><span class="mc-t">${esc(x.t)}</span><span class="mc-v">${brl(x.v)}</span></span>`).join('') + (L.length > 3 ? `<span class="mc-mais">+ ${plural(L.length - 3, 'item', 'itens')}</span>` : ''); };
+    const giro = id => { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return ((h % 5) - 2) * 0.35; };
+    const mini = u => {
+      const st = `style="--giro:${giro(u.id)}deg"`;
+      if (u.members.length === 1) { const pid = u.members[0], r = calc.per[pid];
+        return `<div class="mini-cmd ${pulou[u.id] ? 'pula' : ''}" ${st} role="button" tabindex="0" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}" aria-label="${esc(nm(pid))}: ${BRL(u.total)}. Ver o cupom">
+        <span class="mc-n">COMANDA Nº ${num(pid)}</span><span class="mc-nome">${esc(nm(pid))}</span><span class="mc-linha" aria-hidden="true"></span>
+        <span class="mc-itens" aria-hidden="true">${lista(pid)}</span>
+        <span class="mc-tot"><span>TOTAL</span><span class="mc-valor num">${BRL(u.total)}</span></span>${!r.person.payService && d.service.enabled ? '<span class="mc-obs">sem serviço</span>' : ''}</div>`; }
+      const so = u.payers.length < u.members.length;
+      return `<div class="mc-pilha" ${st} data-unit="${u.id}" data-drop="g:${u.id}"><span class="mc-tras" aria-hidden="true"></span>
+        <div class="mini-cmd mc-grupo ${pulou[u.id] ? 'pula' : ''}" role="button" tabindex="0" data-grupo="${u.id}" aria-label="Cupom compartilhado de ${esc(u.name)}: ${BRL(u.total)}. Ver o cupom">
+        <span class="mc-n">CUPOM COMPARTILHADO</span><span class="mc-nome">${u.members.length} pessoas</span><span class="mc-linha" aria-hidden="true"></span>
+        <span class="mc-itens" aria-hidden="true">${u.members.map(m => `<span class="mc-it mc-it2"><span class="mc-t">${esc(nm(m))}</span><span class="mc-v">${brl(calc.per[m].total)}</span></span>`).join('')}</span>
+        <span class="mc-tot"><span>TOTAL</span><span class="mc-valor num">${BRL(u.total)}</span></span></div></div>`;
+    };
     return `
-    ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small mustard" id="clear-example">Sair</button></span></div>` : ''}
+    ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small ghost" id="clear-example">Sair</button></span></div>` : ''}
     ${d.live ? liveCardHTML() : ''}
-    ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. Alterações aqui podem ser salvas de novo em <b>Fechar</b>.</span><button class="btn small mustard" id="new-bill-top">Encerrar edição</button></div>` : ''}
-    <div class="card">
-      <div class="place-row">
-        <div class="field"><label for="place">Local</label><input id="place" type="text" placeholder="Ex.: Boteco do Zé" value="${esc(d.place)}" autocomplete="off" data-keep></div>
-        <div class="field"><label>&nbsp;</label><span class="hint num" style="padding-bottom:12px">${fmtDate(d.createdAt)}</span></div>
-      </div>
-    </div>
+    ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. As alterações são guardadas quando você salvar de novo.</span><button class="btn small ghost" id="new-bill-top">Encerrar edição</button></div>` : ''}
+    ${calc.incomplete.length ? `<div class="banner warn"><span><b>Unidades a distribuir:</b> ${calc.incomplete.map(x => `${esc(x.it.name)} (${x.units} de ${x.it.qty})`).join(', ')}.</span></div>` : ''}
+    ${calc.unassigned.length ? `<div class="banner warn"><span><b>Sem ninguém marcado, fora da conta:</b> ${esc(calc.unassigned.map(i => i.name).join(', '))}.</span></div>` : ''}
 
-    <div class="card" id="people-card">
-      <div class="card-head"><h2>Pessoas na comanda</h2><span class="hint">${plural(d.people.length, 'pessoa', 'pessoas')}</span></div>
-      ${!d.isExample && (catalog.groups || []).length ? `<div class="field field-sel turmas-sel"><label for="turma-sel">Pôr uma turma na mesa</label><select id="turma-sel"><option value="">Escolher turma</option>${[...catalog.groups].sort(ordemNome).map(g => { const falta = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n))).length; return `<option value="${esc(g.id)}" ${falta ? '' : 'disabled'}>${esc(g.name)} · ${falta ? plural(falta, 'pessoa', 'pessoas') + ' a pôr' : 'todos já na mesa'}</option>`; }).join('')}</select></div>` : ''}
-      <form class="row" id="person-form" autocomplete="off">
-        <div class="field grow"><label for="person-name">Nome</label><input id="person-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Nome" data-keep></div>
-        <button class="btn" type="submit">${I.plus}Adicionar</button>
-      </form>
-      <div class="people">${d.people.map(p => `<span class="person">${avatar(p.name)}<span class="n">${esc(p.name)}</span><span class="num hint">${BRL(calc.per[p.id].gross)}</span><button data-rm-person="${p.id}" aria-label="Remover ${esc(p.name)}">${I.x}</button></span>`).join('') || '<span class="hint">Ninguém na mesa</span>'}</div>
-      ${!d.isExample && !d.live && d.people.length && !catalog.me && !catalog.meNao ? `<div class="quem-voce" id="quem-voce"><div class="field field-sel" style="flex:1 1 100%"><label for="sou-sel">Qual destes é você?</label><select id="sou-sel"><option value="">Escolher meu nome</option>${d.people.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('')}</select></div><button class="btn small ghost" data-sou-nao>Não estou na comanda</button><span class="hint" style="flex-basis:100%">O Histórico passa a mostrar só o seu gasto.</span></div>` : ''}
-    </div>
+    <article class="cmd-una" aria-label="Comanda">
+      <header class="cu-cab">
+        <button type="button" class="cu-local" id="cmd-local" aria-label="${esc(d.place ? 'Local: ' + d.place + '. Mudar o nome' : 'Dar nome ao local')}">
+          <span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Toque para dar nome')}${I.edit}</span>
+          <span class="cu-quando">${fmtDateTime(d.createdAt)}</span></button>
+        <button type="button" class="cu-conta ${falta < calc.total ? 'parcial' : ''}" id="cmd-conta" aria-label="Total: ${BRL(calc.total)}.${falta < calc.total ? ` Falta pagar ${BRL(falta)}.` : ''} ${esc(aj.join(', ') || 'Sem serviço')}. Abrir a conta da mesa: ajustes e fechar a comanda">
+          <span class="cu-total">${BRL(calc.total)}</span>${I.next}</button>
+        ${falta < calc.total ? `<p class="cu-falta ${falta ? '' : 'ok'}" role="status">${falta ? `<span class="sr-only">Falta pagar </span>${BRL(falta)}` : 'tudo pago ✓'}</p>` : ''}
+      </header>
 
-    <div class="card" id="item-card">
-      <div class="card-head"><h2>Lançar item</h2></div>
-      <form id="item-form" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
-        <div class="field"><label for="item-name">Produto</label><input id="item-name" autocomplete="off" autocapitalize="words" type="text" placeholder="Ex.: Chopp 500 ml" value="" data-keep></div>
-        <div class="row">
-          <div class="field"><label for="item-qty">Quantidade</label>
-            <div class="stepper"><button type="button" data-step="-1" aria-label="Menos">−</button><input id="item-qty" type="number" min="1" step="1" inputmode="numeric" value="1" data-keep><button type="button" data-step="1" aria-label="Mais">+</button></div></div>
-          <div class="field grow"><label for="item-price">Valor unitário (R$)</label><input id="item-price" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="" data-keep></div>
-          <button class="btn" type="submit">${I.plus}Lançar</button>
+      <div class="cm-corpo">
+        <div class="cu-sec" id="groups-card" aria-label="Pessoas: quanto cada um paga">
+          
+          <div class="cu-tit">PESSOAS${d.people.length ? ` · ${d.people.length}` : ''}</div>
+          <div class="cm-col dv-col" aria-hidden="true"><span>Nº</span><span>NOME</span><span>A PAGAR</span></div>
+          ${calc.units.map(u => {
+            if (u.members.length === 1) { const pid = u.members[0], r = calc.per[pid];
+              return `<details class="dv-pes" data-kf-secao="grupo" data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin ${pulou[u.id] ? 'pula' : ''} ${pagoDe(d, u.members) ? 'pago' : ''}" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}" aria-label="${esc(nm(pid))}: ${BRL(u.total)}${pagoDe(d, u.members) ? ', pago' : ''}. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar">
+                <span class="dv-n">${String(calc.units.indexOf(u) + 1).padStart(2, '0')}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}</span><span class="dv-v">${brl(u.total)}</span>${pagoDe(d, u.members) ? '<span class="dv-selo" aria-hidden="true">PAGO</span>' : ''}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
+            return `<details class="dv-pes" data-kf-secao="grupo" data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin dv-grupo ${pulou[u.id] ? 'pula' : ''} ${pagoDe(d, u.members) ? 'pago' : ''}" data-unit="${u.id}" data-drop="g:${u.id}" data-grupo="${u.id}" aria-label="Cupom compartilhado de ${esc(u.name)}: ${BRL(u.total)}${pagoDe(d, u.members) ? ', pago' : ''}. Mostrar atalhos">
+              <span class="dv-n">${String(calc.units.indexOf(u) + 1).padStart(2, '0')}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado</span>${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${pagoDe(d, u.members) ? '<span class="dv-selo" aria-hidden="true">PAGO</span>' : ''}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
+          }).join('')}
+          <button type="button" class="it-novo dv-add" id="add-pessoa" data-drop="out"><span class="it-q ma-add">+</span><span class="ma-add">${d.people.length ? 'Pessoa' : 'Adicionar quem está na mesa'}</span><span class="it-q ma-des">×</span><span class="ma-des">Desfazer o cupom compartilhado</span><span></span></button>
         </div>
-        <p class="price-hint" id="price-hint" hidden></p>
-        <p class="price-hint other" id="dup-hint" hidden>Este produto já está na comanda.</p>
-      </form>
-    </div>
 
-    <div class="card">
-      <div class="card-head"><h2>Itens da comanda</h2><span class="hint num">${plural(d.items.length, 'item', 'itens')} · ${BRL(calc.itemsGross)}</span></div>
-      <div class="items">${itemsHTML}</div>
-    </div>
+        <div class="cu-sec cmd-mesa-in">
+          <div class="cu-tit">PEDIDOS${d.items.length ? ` · ${d.items.length}` : ''}${abertosN ? ` · ${abertosN} sem divisão` : ''}</div>
+          <div class="cm-col" aria-hidden="true"><span>QTD</span><span>ITEM</span><span>VALOR</span></div>
+          ${d.items.length ? `<div class="items">${itemsHTML}</div>` : ''}
+          <button type="button" class="it-novo" id="it-novo"><span class="it-q">+</span><span>${d.items.length ? 'Novo item' : 'Lançar o primeiro item'}</span></button>
+        </div>
 
-    ${d.items.length && d.people.length ? `<button class="btn mustard close-btn" id="go-close">Fechar a comanda</button>` : ''}
+        <button type="button" class="cm-pe" id="cm-pe" aria-label="Total: ${BRL(calc.total)}. Abrir a conta da mesa: ajustes e fechar a comanda">
+          <span class="cm-l"><span>Consumo</span><span>${brl(calc.itemsGross + calc.freeValue)}</span></span>
+          ${calc.freeValue ? `<span class="cm-l"><span>Cortesia</span><span>−${brl(calc.freeValue)}</span></span>` : ''}
+          ${s.enabled ? `<span class="cm-l"><span>${esc(serviceLabel(d))}</span><span>${brl(calc.service)}</span></span>` : ''}
+          ${d.couvert.enabled ? `<span class="cm-l"><span>Couvert</span><span>${brl(calc.couvert)}</span></span>` : ''}
+          ${d.discount.enabled ? `<span class="cm-l"><span>Desconto</span><span>−${brl(calc.discount)}</span></span>` : ''}
+          <span class="cm-l cm-tot"><span>TOTAL</span><span>${BRL(calc.total)}</span></span>
+          <span class="cm-aj">Serviço, couvert e desconto ${I.next}</span></button>
+        <p class="cu-rodape">Conta Fácil · divida a conta</p>
+      </div>
+    </article>
 
-    ${d.live ? '' : liveCardHTML()}
+    ${(() => {
+      const fechar = d.items.length && d.people.length ? `<button type="button" class="kf-btn kf-pri fechar-btn" id="fechar-cmd">${I.receipt}<span>Fechar comanda</span></button>` : '';
+      const lixo = ''; // 1.0: a lixeira foi para a Conta da mesa, longe do botão principal
+      return fechar || lixo ? `<div class="fim-acoes">${fechar}${lixo}</div>` : '';
+    })()}
 
-    ${!d.isExample && (d.items.length || d.people.length || d.place) ? `<button class="btn ghost reset-btn" id="reset">${I.refresh}Limpar ou excluir comanda</button>` : ''}`;
+    ${d.live ? '' : liveCardHTML()}`;
   },
   bind(v) {
     const d = draft;
     $('#clear-example', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); });
-    $('#ex-guide', v)?.addEventListener('click', () => KitFacil.guia.escolher());
-    $('#reset', v)?.addEventListener('click', resetSheet);
+    $('#ex-guide', v)?.addEventListener('click', () => guiaIniciar());
     $('#new-bill-top', v)?.addEventListener('click', () => { pending = {}; draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 }); });
-    const addPerson = name => {
-      name = name.trim().replace(/\s+/g, ' ');
-      if (!name) return;
-      if (d.people.some(p => norm(p.name) === norm(name))) { toast(`${name} já está na comanda.`); return; }
-      const p = newPerson(name);
-      const prevCount = d.people.length;
-      d.people.push(p);
-      // só entra automaticamente em itens ainda abertos e divididos igual entre todos; itens confirmados não mudam
-      const entrou = [];
-      d.items.forEach(it => { if ((!it.lk || it.auto) && it.mode === 'equal' && prevCount && Object.keys(it.a).filter(k => it.a[k] > 0).length === prevCount) { it.a[p.id] = 1; entrou.push(it); } });
-      if (entrou.some(it => it.lk)) setTimeout(() => toast(`${p.name} entrou na divisão de ${plural(entrou.length, 'item', 'itens')} já lançados.`, { label: 'Desfazer', run: () => { entrou.forEach(it => { delete it.a[p.id]; }); commit(); } }), 60);
-      const inp = $('#person-name'); if (inp) inp.value = '';
-      commit(); afterSubmit('#person-name');
+    $('#cmd-local', v).addEventListener('click', localSheet);
+    $('#cmd-conta', v).addEventListener('click', contaSheet);
+    $('#cm-pe', v)?.addEventListener('click', contaSheet);
+    $('#it-novo', v)?.addEventListener('click', () => { if (!d.people.length) { toast('Primeiro, adicione quem está na mesa.'); pessoaNovaSheet(); return; } produtoSheet(); });
+    $('#add-pessoa', v).addEventListener('click', pessoaNovaSheet);
+    // mini comandas: tocar abre a pessoa; segurar e arrastar sobre outra junta as duas num cupom compartilhado
+    const area = $('#groups-card', v);
+    const abrir = e => {
+      if (Date.now() - drag.droppedAt < 350) { if (e.target.closest('summary')) { e.preventDefault(); e.stopPropagation(); } return; }
+      const pa = e.target.closest('[data-pa]');
+      if (pa) {
+        const c = compute(d), u = c.U[pa.dataset.pa]; if (!u) return;
+        const t = sel => e.target.closest(sel);
+        if (t('[data-pa-cupom]')) return cupomSheet(u.members[0]);
+        if (t('[data-pa-mais]')) return u.members.length > 1 ? grupoSheet(u.id) : consumoSheet(u.members[0]);
+        if (t('[data-pa-juntar]')) { pesJuntando = !pesJuntando; render({ anchor: false }); if (pesJuntando) requestAnimationFrame(() => { const j = $('.pa-junta'); j?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); j?.querySelector('[data-pa-alvo]')?.focus({ preventScroll: true }); }); return; }
+        if (t('[data-pa-svcabre]')) { pesSvc = !pesSvc; return render({ anchor: false }); }
+        if (t('[data-pa-pago]')) { const era = pagoDe(d, u.members); marcarPago(d, u.members, !era); commit({ anchor: false }); toast(era ? `${u.name}: pagamento desmarcado.` : `${u.name}: pago.`, { label: 'Desfazer', run: () => { marcarPago(d, u.members, era); commit({ anchor: false }); } }); return; }
+        if (t('[data-pa-desfaz]')) { const antes = clone(d.groups || []); u.members.forEach(m => leaveGroup(d, m)); pesAberto = null; commit({ anchor: false }); toast('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); return; }
+        const alvo = t('[data-pa-alvo]');
+        if (alvo) { const antes = clone(d.groups || []); if (joinGroup(d, u.members[0], alvo.dataset.paAlvo)) { pesAberto = null; pesJuntando = false; commit({ anchor: false }); destacarCupom(u.members[0]); toast('Agora estão no mesmo cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); } }
+        return;
+      }
     };
-    $('#place', v).addEventListener('change', e => { d.place = e.target.value.trim(); commit(); });
-    attachSuggest($('#place', v), () => recentPlaces().map(p => ({ label: p.name })), x => { if (d.place !== x.label) { d.place = x.label; commit(); } });
-    // listas ordenadas pelo uso: quem mais aparece e o que já foi pedido neste local vêm primeiro
-    const Uu = usage();
-    attachSuggest($('#person-name', v), () => catalog.people.filter(p => !d.people.some(x => norm(x.name) === norm(p.name)))
-      .sort((a, b) => (Uu.people[norm(b.name)] || 0) - (Uu.people[norm(a.name)] || 0) || (b.last || 0) - (a.last || 0)).map(p => ({ label: p.name })), x => addPerson(x.label));
+    area.addEventListener('click', abrir);
+    area.addEventListener('change', e => {
+      const pa = e.target.closest('[data-pa]'); if (!pa) return;
+      const c = compute(d), u = c.U[pa.dataset.pa]; if (!u) return;
+      const el = e.target, p = d.people.find(x => x.id === u.members[0]);
+      if (el.matches('[data-pa-svc]')) { const p = d.people.find(x => x.id === el.dataset.paSvc); if (!p) return; p.payService = el.checked; commit({ anchor: false }); if (!el.checked) politicaSheet(d, p); return; }
+      if (el.matches('[data-pa-cv]') && p) { p.payCouvert = el.checked; commit({ anchor: false }); }
+    });
+    area.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return dragCancel();
+      const src = dragSource(e.target); if (!src) return;
+      const t = e.touches[0];
+      drag.pend = { ...src, x: t.clientX, y: t.clientY };
+      clearTimeout(drag.timer); drag.timer = setTimeout(() => dragStart(drag.pend.x, drag.pend.y), 320);
+    }, { passive: true });
+    area.addEventListener('pointerdown', e => {
+      if (e.pointerType !== 'mouse' || e.button) return;
+      const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
+    });
+    $('#fechar-cmd', v)?.addEventListener('click', fecharSheet);
+    // lembra o que está aberto, para a tela voltar igual depois de cada mudança
+    v.addEventListener('kf-secao', e => {
+      const el = e.target;
+      if (el.id === 'itens-sec') itensAbertos = e.detail.aberta;
+      else if (el.classList.contains('dv-pes')) { const id = el.dataset.pes; if (e.detail.aberta) { pesAberto = id; pesJuntando = false; pesSvc = false; const cab = $('.cu-cab', v); el.style.scrollMarginTop = cab ? cab.offsetHeight + 8 + 'px' : ''; } else if (pesAberto === id) pesAberto = null; }
+      else if (el.classList.contains('item-d')) { if (e.detail.aberta) { itemAberto = el.dataset.item; const cab = $('.cu-cab', v); el.style.scrollMarginTop = cab ? cab.offsetHeight + 8 + 'px' : ''; } else if (itemAberto === el.dataset.item) itemAberto = null; }
+    });
+    $$('[data-it-alt]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itAlt); if (it) renameSheet(it); }));
+    const rasc = id => { const it = d.items.find(i => i.id === id); if (!it) return null; if (!itPend[id]) itPend[id] = { qty: it.qty, a: { ...it.a }, fq: it.fq || 0 }; return [it, itPend[id]]; };
+    const repinta = () => render({ anchor: false });
+    $$('[data-it-fq]', v).forEach(b => b.addEventListener('click', () => { const r = rasc(b.dataset.itFq); if (!r) return; const [, p] = r; p.fq = Math.max(0, Math.min(p.qty, p.fq + +b.dataset.dir)); repinta(); }));
+    $$('[data-it-q]', v).forEach(b => b.addEventListener('click', () => { const r = rasc(b.dataset.itQ); if (!r) return; const [, p] = r; p.qty = Math.max(1, p.qty + +b.dataset.dir); p.fq = Math.min(p.fq, p.qty); repinta(); }));
+    $$('[data-it-u]', v).forEach(b => b.addEventListener('click', () => { const r = rasc(b.dataset.itU); if (!r) return; const [, p] = r, pid = b.dataset.p, dir = +b.dataset.dir;
+      if (dir < 0 && (!(p.a[pid] > 0) || p.qty <= 1)) return;
+      p.a = { ...p.a, [pid]: (p.a[pid] || 0) + dir }; if (!p.a[pid]) delete p.a[pid]; p.qty += dir; p.fq = Math.min(p.fq, p.qty); repinta(); }));
+    $$('[data-it-desc]', v).forEach(b => b.addEventListener('click', () => { delete itPend[b.dataset.itDesc]; repinta(); }));
+    $$('[data-it-ok]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itOk), p = it && itPend[it.id]; if (!p) return;
+      it.qty = p.qty; it.a = p.a; it.fq = p.fq; it.auto = false; delete itPend[it.id]; commit({ anchor: false }); toast(`${it.name}: alteração salva.`); }));
+    $$('[data-it-del]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itDel); if (!it) return;
+      confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda.`, 'Remover', () => { delete pending[it.id]; d.items = d.items.filter(i => i.id !== it.id); if (itemAberto === it.id) itemAberto = null; commit(); }, true); }));
 
     // mesa ao vivo
     $('#live-start', v)?.addEventListener('click', () => live.start());
@@ -1944,125 +2268,13 @@ const viewComanda = {
     });
     $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { LS.set('me.' + d.live.code, b.dataset.me); liveWho = false; live.beat(); render({ preserve: true }); }));
 
-    $('#person-form', v).addEventListener('submit', e => { e.preventDefault(); if (isTouch) document.activeElement?.blur?.(); addPerson($('#person-name', v).value); });
-    $$('[data-rm-person]', v).forEach(b => b.addEventListener('click', () => {
-      const id = b.dataset.rmPerson; const p = d.people.find(x => x.id === id);
-      const has = d.items.some(i => (i.a[id] || 0) > 0);
-      const go = () => {
-        d.people = d.people.filter(x => x.id !== id);
-        d.items.forEach(i => {
-          const u = i.a[id] || 0; if (!u) return;
-          delete i.a[id]; delete pending[i.id];
-          if (i.mode === 'units' && i.lk) i.qty = Math.max(1, i.qty - u);
-          if (!Object.keys(i.a).length) i.lk = false;
-        });
-        leaveGroup(d, id);
-        delete d.custom[id]; delete d.cover[id]; Object.keys(d.cover).forEach(k => { if (d.cover[k] === id) delete d.cover[k]; }); if (d.payer === id) d.payer = ''; commit();
-      };
-      const n = d.items.filter(i => (i.a[id] || 0) > 0).length;
-      confirmSheet(`Remover ${p.name}?`, has
-        ? `${p.name} está em ${plural(n, 'item', 'itens')}. Nos itens de consumo individual, as unidades dessa pessoa saem da comanda. Nos compartilhados, o valor passa a ser dividido entre os demais.`
-        : `${p.name} sai da comanda.`, 'Remover', go, true);
-    }));
-
-    // formulário de item
-    const nameEl = $('#item-name', v), priceEl = $('#item-price', v), qtyEl = $('#item-qty', v);
-    let autoFilled = false;
-    const hintEl = $('#price-hint', v);
-    const fillFrom = (name, force) => {
-      const info = priceInfo(findProduct(name), d.place);
-      if (!info) { if (autoFilled) { priceEl.value = ''; autoFilled = false; } hintEl.hidden = true; return; }
-      if (force || !priceEl.value || autoFilled) { priceEl.value = moneyInput(info.price); autoFilled = true; }
-      hintEl.hidden = false;
-      hintEl.className = 'price-hint' + (info.here ? '' : ' other');
-      hintEl.textContent = info.here ? `Preço registrado ${d.place ? 'em ' + d.place : 'para este local'}.` : `Último preço${info.where ? ' em ' + info.where : ''}. Confira o cardápio daqui.`;
-      dupHint(name);
-    };
-    const dupEl = $('#dup-hint', v);
-    const dupHint = name => { const has = d.items.some(it => norm(it.name) === norm(name)); dupEl.hidden = !has; };
-    nameEl.addEventListener('input', () => { fillFrom(nameEl.value); dupHint(nameEl.value); });
-    attachSuggest(nameEl, () => catalog.products.map(p => ({ p, i: priceInfo(p, d.place), n: Uu.products[norm(p.name)] || 0 }))
-      .sort((a, b) => (!!b.i?.here - !!a.i?.here) || b.n - a.n || a.p.name.localeCompare(b.p.name, 'pt-BR'))
-      .map(({ p, i }) => ({ label: p.name, right: i ? BRL(i.price) + (i.here ? '' : ' · outro local') : '', dim: i && !i.here })),
-      x => { fillFrom(x.label, true); syncClr(); if (!isTouch) qtyEl.focus(); });
-    priceEl.addEventListener('input', () => { autoFilled = false; hintEl.hidden = true; });
-    // × dentro do campo para apagar o nome do produto
-    const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'sg-clear'; clr.setAttribute('aria-label', 'Limpar produto'); clr.innerHTML = I.x;
-    nameEl.parentNode.insertBefore(clr, nameEl.nextSibling);
-    const syncClr = () => { clr.hidden = !nameEl.value; };
-    syncClr(); ['input', 'change', 'focus'].forEach(ev => nameEl.addEventListener(ev, syncClr));
-    clr.addEventListener('pointerdown', e => e.preventDefault());
-    clr.addEventListener('click', () => { nameEl.value = ''; syncClr(); $('#dup-hint', v).hidden = true; if (autoFilled) { priceEl.value = ''; hintEl.hidden = true; autoFilled = false; } nameEl.focus(); setTimeout(() => { const el = document.getElementById('item-name'); if (el) { el.focus(); el.dispatchEvent(new Event('input', { bubbles: true })); } }, 0); });
-    $$('[data-step]', v).forEach(b => b.addEventListener('click', () => { qtyEl.value = Math.max(1, (parseInt(qtyEl.value) || 1) + +b.dataset.step); }));
-    $('#item-form', v).addEventListener('submit', e => {
-      e.preventDefault();
-      if (isTouch) document.activeElement?.blur?.();
-      const name = nameEl.value.trim().replace(/\s+/g, ' ');
-      const qty = Math.max(1, parseInt(qtyEl.value) || 1);
-      const price = parseMoney(priceEl.value);
-      if (!name) { toast('Informe o nome do produto.'); nameEl.focus(); return; }
-      if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); priceEl.focus(); return; }
-      // "entre todos" fica automático: quem chega depois também entra no item (decisão da 1.12, opção B)
-      const lancar = (a, todos, modo = 'equal') => {
-        const id = newId();
-        d.items.push({ id, o: nextOrder(), name, qty, price, fq: 0, mode: modo, lk: d.people.length > 0, auto: !!todos && d.people.length > 0, a });
-        nameEl.value = ''; priceEl.value = ''; qtyEl.value = 1; hintEl.hidden = true; dupEl.hidden = true;
-        itemNovo = id; commit(); afterSubmit('#item-name');
-      };
-      // 1.13: com duas ou mais pessoas, uma janela pergunta como dividir antes de lançar
-      if (d.people.length < 2) return lancar(Object.fromEntries(d.people.map(p => [p.id, 1])), true);
-      lancarSheet({ name, qty, price }, d, lancar);
-    });
-
-    // cartões de item
-    $('#turma-sel', v)?.addEventListener('change', e => {
-      const g = (catalog.groups || []).find(x => x.id === e.target.value); if (!g) return;
-      const novos = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n)));
-      novos.forEach(n => addPerson(n));
-      toast(`${plural(novos.length, 'pessoa entrou', 'pessoas entraram')} na mesa: ${novos.join(', ')}.`);
-    });
-    $('#sou-sel', v)?.addEventListener('change', e => { if (!e.target.value) return; catalog.me = e.target.value; store.saveCatalog(); toast(`Pronto: você é ${catalog.me}. Dá para mudar em Ajustes → Conta e perfil.`); render({ preserve: true }); });
-    $('[data-sou-nao]', v)?.addEventListener('click', () => { catalog.meNao = true; store.saveCatalog(); render({ preserve: true }); });
-    $$('[data-item]', v).forEach(card => {
+    // itens ainda sem divisão confirmada: continuam com a lista de marcar e o Confirmar
+    $$('.item[data-item]', v).forEach(card => {
       const it = d.items.find(i => i.id === card.dataset.item);
-      if (!it) return;
-      card.addEventListener('click', e => {
-        if (e.target.closest('button, input, select, textarea, label, a')) return;
-        selItem = selItem === it.id ? null : it.id; render({ preserve: true });
-      });
+      if (!it || it.lk) return;
       $('[data-rename]', card)?.addEventListener('click', () => renameSheet(it));
-      $('[data-del]', card)?.addEventListener('click', () => confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda${it.lk ? ', mesmo com a divisão já confirmada' : ''}.`, 'Remover', () => { delete pending[it.id]; d.items = d.items.filter(i => i.id !== it.id); commit(); }, true));
-
-      if (it.lk) {
-        const touch = () => { if (!pendingDirty(it)) delete pending[it.id]; render(); };
-        $$('[data-inc]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it); p.a[b.dataset.inc] = (p.a[b.dataset.inc] || 0) + 1; p.qty++; touch(); }));
-        $$('[data-dec]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it), id = b.dataset.dec; if (!(p.a[id] > 0)) return; p.a[id]--; if (!p.a[id]) delete p.a[id]; p.qty--; touch(); }));
-        $$('[data-toggle]', card).forEach(b => b.addEventListener('click', () => { const p = stage(it), id = b.dataset.toggle; if ((p.a[id] || 0) > 0) delete p.a[id]; else p.a[id] = 1; touch(); }));
-        $('[data-qinc]', card)?.addEventListener('click', () => { stage(it).qty++; touch(); });
-        $('[data-qdec]', card)?.addEventListener('click', () => { const p = stage(it); if (p.qty > 1) p.qty--; touch(); });
-        $('[data-discard]', card)?.addEventListener('click', () => { delete pending[it.id]; render(); });
-        $('[data-save]', card)?.addEventListener('click', () => {
-          const p = pending[it.id]; if (!p) return;
-          const dq = p.qty - it.qty;
-          it.a = Object.fromEntries(Object.entries(p.a).filter(([, x]) => x > 0)); it.qty = p.qty; it.fq = Math.min(it.fq || 0, it.qty); it.auto = false;
-          delete pending[it.id]; commit();
-          toast(`Alteração salva em ${it.name}${dq ? ` (${dq > 0 ? '+' : ''}${plural(dq, 'unidade', 'unidades')})` : ''}.`);
-        });
-        return;
-      }
-
+      $('[data-del]', card)?.addEventListener('click', () => confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda.`, 'Remover', () => { d.items = d.items.filter(i => i.id !== it.id); commit(); }, true));
       $('[data-confirm]', card)?.addEventListener('click', () => { it.lk = true; it.auto = false; commit(); toast(`${it.name}: divisão confirmada.`); });
-      $$('[data-mode]', card).forEach(b => b.addEventListener('click', () => {
-        const m = b.dataset.mode; if (m === it.mode) return;
-        const who = d.people.map(p => p.id).filter(id => (it.a[id] || 0) > 0);
-        const base = who.length ? who : d.people.map(p => p.id);
-        if (m === 'units') {
-          // ponto de partida: parte inteira igual para cada um; o que sobrar você distribui
-          const each = Math.floor(it.qty / base.length);
-          it.a = each ? Object.fromEntries(base.map(id => [id, each])) : {};
-        } else it.a = Object.fromEntries(base.map(id => [id, 1]));
-        it.mode = m; commit();
-      }));
       $$('[data-unit]', card).forEach(b => b.addEventListener('click', () => {
         const id = b.dataset.unit, dir = +b.dataset.dir;
         const used = Object.values(it.a).reduce((s, x) => s + x, 0);
@@ -2071,32 +2283,13 @@ const viewComanda = {
         if (nv <= 0) delete it.a[id]; else it.a[id] = nv;
         commit();
       }));
-      $$('[data-toggle]', card).forEach(b => b.addEventListener('click', () => {
-        const id = b.dataset.toggle; if ((it.a[id] || 0) > 0) delete it.a[id]; else it.a[id] = 1; commit();
-      }));
+      $$('[data-toggle]', card).forEach(b => b.addEventListener('click', () => { const id = b.dataset.toggle; if ((it.a[id] || 0) > 0) delete it.a[id]; else it.a[id] = 1; commit(); }));
       $('[data-all]', card)?.addEventListener('click', e => { it.a = e.currentTarget.dataset.all === 'all' ? Object.fromEntries(d.people.map(p => [p.id, it.a[p.id] || 1])) : {}; commit(); });
       $$('[data-q]', card).forEach(b => b.addEventListener('click', () => { it.qty = Math.max(1, it.qty + +b.dataset.q); it.fq = Math.min(it.fq || 0, it.qty); commit(); }));
     });
-    $('#go-close', v)?.addEventListener('click', () => { tab = 'fechar'; render(); window.scrollTo({ top: 0 }); });
   },
 };
 
-/* ---------- aba Fechar ---------- */
-// quanto cada um paga e para quem (lista só de leitura, no histórico)
-function settleHTML(c) {
-  if (!c.units.length || c.total <= 0) return '';
-  const debts = pixDebts(c);
-  return `<div class="card settle">
-    <div class="card-head"><h2>Quanto cada um paga</h2></div>
-    <div class="who">${c.ids.map(id => { const nm = c.per[id].person.name, plan = planOf(c, id);
-      const out = plan.filter(x => x.k !== 'in').reduce((a, x) => a + x.v, 0);
-      return `<div class="who-row settle-row">
-      <div class="who-name">${avatar(nm)}<span>${esc(nm)}</span></div>
-      <div class="who-total">${out ? BRL(out) : '—'}</div>
-      <div class="who-sub"><span class="hint">${plan.length ? esc(plan.map(x => x.t).join(' · ')) : 'não paga nada'}</span>${debts.some(x => x.pid === id) ? `<button class="btn small ghost pix-btn" data-pixpay="${id}">Pix</button>` : ''}</div>
-    </div>`; }).join('')}</div>
-  </div>`;
-}
 // quadro de grupos: arraste uma pessoa sobre outra, ou toque no cartão e em Juntar com…
 let pickSel = null;
 // cartão de pagamento selecionado: mostra Pagar outro valor e Juntar com…
@@ -2136,53 +2329,6 @@ function leaveGroup(d, pid) {
   d.groups = cleanGroups(d).map(g => ({ ...g, members: g.members.filter(m => m !== pid), payers: g.payers.filter(m => m !== pid) }))
     .map(g => ({ ...g, payers: g.payers.length ? g.payers : g.members.slice(0, 1) })).filter(g => g.members.length > 1);
 }
-function bindGroups(v, d) {
-  const card = $('#groups-card', v); if (!card) return;
-  const act = (pid, target) => { pickSel = null; if (joinGroup(d, pid, target)) { selPay = null; commit(); toast('Agora estão no mesmo cupom.'); } else render({ preserve: true }); };
-  $('#pick-cancel', card)?.addEventListener('click', () => { pickSel = null; render({ preserve: true }); });
-  $$('[data-payer-t]', card).forEach(b => b.addEventListener('click', e => {
-    e.stopPropagation();
-    const pid = b.dataset.payerT, g = cleanGroups(d).find(x => x.members.includes(pid)); if (!g) return;
-    const on = g.payers.includes(pid);
-    if (on && g.payers.length === 1) { toast('O cupom compartilhado precisa de alguém que pague.'); return; }
-    g.payers = on ? g.payers.filter(x => x !== pid) : [...g.payers, pid];
-    if (on) dropCustom(d, pid);
-    d.groups = cleanGroups(d).map(x => x.id === g.id ? g : x); commit();
-  }));
-  $$('[data-ungroup]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); leaveGroup(d, b.dataset.ungroup); pickSel = null; selPay = b.dataset.ungroup; commit(); toast('Saiu do grupo.'); }));
-  $$('[data-join]', card).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); pickSel = b.dataset.join; selPay = null; render({ preserve: true }); }));
-  // toque no cartão: seleciona (como nos itens da comanda); depois de Juntar com…, escolhe o cupom
-  card.addEventListener('click', e => {
-    if (Date.now() - drag.droppedAt < 350) return;
-    if (e.target.closest('button, input, label, select, textarea, .switch, a')) return;
-    const box = e.target.closest('[data-unit]');
-    if (pickSel) {
-      if (!box) return;
-      if (box.classList.contains('picking')) { pickSel = null; render({ preserve: true }); return; }
-      return act(pickSel, box.dataset.drop);
-    }
-    if (!box) return;
-    const multi = box.classList.contains('group'), mem = e.target.closest('[data-mem]');
-    const key = !multi ? box.dataset.unit : mem ? mem.dataset.mem : 'g:' + box.dataset.unit;
-    selPay = selPay === key ? null : key; render({ preserve: true });
-  });
-  $$('[data-ungroup-all]', card).forEach(b => b.addEventListener('click', e => {
-    e.stopPropagation(); const g = cleanGroups(d).find(x => x.id === b.dataset.ungroupAll); if (!g) return;
-    g.members.forEach(pid => leaveGroup(d, pid)); selPay = null; pickSel = null; commit(); toast('Grupo desfeito.');
-  }));
-  // segurar e arrastar o cartão inteiro (no computador, basta arrastar)
-  card.addEventListener('touchstart', e => {
-    if (e.touches.length !== 1) return dragCancel();
-    const src = dragSource(e.target); if (!src) return;
-    const t = e.touches[0];
-    drag.pend = { ...src, x: t.clientX, y: t.clientY };
-    clearTimeout(drag.timer); drag.timer = setTimeout(() => dragStart(drag.pend.x, drag.pend.y), 320);
-  }, { passive: true });
-  card.addEventListener('pointerdown', e => {
-    if (e.pointerType !== 'mouse' || e.button) return;
-    const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
-  });
-}
 const c_groupOf = (d, pid) => cleanGroups(d).find(g => g.members.includes(pid))?.id || null;
 // arrastar cartões de pagamento: segurar um instante levanta o cartão; deslizar sem segurar rola a página
 const drag = { pend: null, timer: 0, on: null, x: 0, y: 0, ghost: null, over: null, raf: 0, droppedAt: 0 };
@@ -2198,14 +2344,36 @@ function dragSource(el) {
   return { unit: u.id, pids, group: multi, whole: multi && pids.length > 1 };
 }
 function dragCancel() { clearTimeout(drag.timer); drag.pend = null; }
+// o cupom que acabou de juntar pessoas pisca de leve e assenta no lugar
+function destacarCupom(pid) {
+  requestAnimationFrame(() => {
+    const uid = compute(draft).unitOf[pid], el = uid && $(`#groups-card [data-unit="${CSS.escape(uid)}"]`); if (!el) return;
+    try { navigator.vibrate?.([10, 40, 18]); } catch {}
+    if (MV().off) return;
+    el.animate([{ transform: 'scale(.96)', backgroundColor: 'rgba(232,180,80,.55)' }, { transform: 'scale(1.015)', backgroundColor: 'rgba(232,180,80,.35)', offset: .35 }, { transform: 'none', backgroundColor: 'rgba(232,180,80,0)' }], { duration: 900, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    $$('.dv-obs, .dv-mem', el).forEach((x, i) => x.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 120 + i * 70, easing: 'ease-out', fill: 'backwards' }));
+  });
+}
 function dragStart(x, y) {
   const p = drag.pend; dragCancel(); if (!p || drag.on) return;
   const c = compute(draft), u = c.U[p.unit]; if (!u) return;
   const one = p.pids.length === 1, per = one && c.per[p.pids[0]];
   const name = one ? per.person.name : u.name, total = one ? per.total : u.total;
-  const g = document.createElement('div'); g.className = 'drag-ghost';
-  g.innerHTML = `<span class="dg-avs">${p.pids.slice(0, 3).map(id => avatar(c.per[id].person.name)).join('')}</span><span class="dg-name">${esc(name)}</span><b class="num">${BRL(total)}</b>`;
+  const orig = p.whole || one ? $('#groups-card [data-unit="' + CSS.escape(p.unit) + '"]') : null;
+  let g;
+  if (orig) { // 1.0: arrasta o próprio cupom, não uma etiqueta com o nome
+    g = orig.cloneNode(true); ['role', 'tabindex', 'data-unit', 'data-drop'].forEach(k => g.removeAttribute(k)); $$('[data-unit],[data-drop],[tabindex],[role]', g).forEach(x => ['role', 'tabindex', 'data-unit', 'data-drop'].forEach(k => x.removeAttribute(k)));
+    // o cupom sai do lugar exatamente onde estava, preso ao ponto em que o dedo tocou
+    const rc = orig.getBoundingClientRect();
+    drag.off = { x: p.x - rc.left, y: p.y - rc.top }; drag.casa = rc;
+    g.classList.add('drag-cupom'); g.style.width = rc.width + 'px'; g.style.height = rc.height + 'px'; g.setAttribute('aria-hidden', 'true');
+    g.style.transform = `translate(${rc.left}px, ${rc.top}px)`;
+  } else {
+    g = document.createElement('div'); g.className = 'drag-ghost';
+    g.innerHTML = `<span class="dg-avs">${p.pids.slice(0, 3).map(id => avatar(c.per[id].person.name)).join('')}</span><span class="dg-name">${esc(name)}</span><b class="num">${BRL(total)}</b>`;
+  }
   document.body.appendChild(g);
+  if (orig) requestAnimationFrame(() => g.classList.add('no-ar'));
   drag.on = p; drag.ghost = g;
   document.body.classList.add('is-dragging'); document.body.classList.toggle('drag-out', p.group);
   const out = $('.drop-out'); if (out) out.textContent = p.whole ? 'Solte aqui para desfazer o cupom compartilhado' : 'Solte aqui para sair do cupom compartilhado';
@@ -2215,12 +2383,13 @@ function dragStart(x, y) {
 }
 function dragTarget(x, y) {
   const t = document.elementFromPoint(x, y)?.closest('#groups-card [data-drop]');
+  if (t && t.dataset.drop === 'out' && !drag.on.group) return null; // "+ Pessoa" só desfaz grupo
   return t && t.dataset.unit !== drag.on.unit ? t : null;
 }
 function dragMove(x, y) {
   drag.x = x; drag.y = y;
   const g = drag.ghost; if (!g) return;
-  g.style.transform = `translate(${Math.round(x - g.offsetWidth / 2)}px, ${Math.round(y - g.offsetHeight - 34)}px)`;
+  g.style.transform = g.classList.contains('drag-cupom') ? `translate(${Math.round(x - drag.off.x)}px, ${Math.round(y - drag.off.y)}px)` : `translate(${Math.round(x - g.offsetWidth / 2)}px, ${Math.round(y - g.offsetHeight - 34)}px)`;
   $('#groups-card [data-unit="' + CSS.escape(drag.on.unit) + '"]')?.classList.add('lifting');
   const t = dragTarget(x, y);
   if (drag.over !== t) { drag.over?.classList.remove('drop-on'); drag.over = t; t?.classList.add('drop-on'); }
@@ -2241,16 +2410,29 @@ function dragScroll() {
 function dragEnd(drop) {
   const p = drag.on; if (!p) return dragCancel();
   cancelAnimationFrame(drag.raf);
-  const t = drop ? dragTarget(drag.x, drag.y) : null;
-  drag.ghost?.remove(); drag.ghost = null; drag.on = null; drag.over?.classList.remove('drop-on'); drag.over = null;
-  document.body.classList.remove('is-dragging', 'drag-out'); $$('.ubox.lifting').forEach(x => x.classList.remove('lifting'));
+  const t = drop ? dragTarget(drag.x, drag.y) : null, g = drag.ghost, casa = drag.casa;
+  drag.ghost = null; drag.on = null; drag.over = null; drag.casa = null;
+  document.body.classList.remove('is-dragging', 'drag-out');
   drag.droppedAt = Date.now();
-  if (!t) return;
-  const d = draft, to = t.dataset.drop; pickSel = null; selPay = null;
-  if (to === 'out') { if (!p.group) return; p.pids.forEach(pid => leaveGroup(d, pid)); commit(); toast(p.whole ? 'Grupo desfeito.' : 'Saiu do grupo.'); return; }
-  let dest = to, changed = false;
-  p.pids.forEach(pid => { if (joinGroup(d, pid, dest)) { changed = true; const gid = c_groupOf(d, pid); if (gid) dest = 'g:' + gid; } });
-  if (changed) { commit(); toast('Agora estão no mesmo cupom.'); } else render({ preserve: true });
+  const aplicar = () => {
+    $$('.drop-on').forEach(x => x.classList.remove('drop-on')); $$('.lifting').forEach(x => x.classList.remove('lifting'));
+    if (!t) return;
+    const d = draft, to = t.dataset.drop; pickSel = null; selPay = null;
+    if (to === 'out') { if (!p.group) return; p.pids.forEach(pid => leaveGroup(d, pid)); commit(); toast(p.whole ? 'Grupo desfeito.' : 'Saiu do grupo.'); return; }
+    let dest = to, changed = false;
+    p.pids.forEach(pid => { if (joinGroup(d, pid, dest)) { changed = true; const gid = c_groupOf(d, pid); if (gid) dest = 'g:' + gid; } });
+    if (changed) { LS.set('dicaJuntar', true); commit(); destacarCupom(p.pids[0]); toast('Agora estão no mesmo cupom.'); } else render({ preserve: true });
+  };
+  // 1.0: o cupom pousa — entra no cupom de destino ou volta para o seu lugar
+  const suave = g && g.classList.contains('drag-cupom') && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!suave) { g?.remove(); return aplicar(); }
+  const alvo = t && t.dataset.drop !== 'out' ? t.getBoundingClientRect() : null;
+  g.classList.remove('no-ar'); g.classList.add(alvo ? 'pousa-alvo' : t ? 'pousa-fora' : 'pousa-casa');
+  if (alvo) g.style.transform = `translate(${alvo.left + alvo.width / 2 - g.offsetWidth / 2}px, ${alvo.top + alvo.height / 2 - g.offsetHeight / 2}px)`;
+  else if (!t && casa) g.style.transform = `translate(${casa.left}px, ${casa.top}px)`;
+  let feito = false; const fim = () => { if (feito) return; feito = true; g.remove(); aplicar(); };
+  g.addEventListener('transitionend', e => { if (e.propertyName === 'transform' || e.propertyName === 'opacity') fim(); });
+  setTimeout(fim, 320);
 }
 document.addEventListener('touchmove', e => {
   const t = e.touches[0]; if (!t) return;
@@ -2268,82 +2450,6 @@ document.addEventListener('pointermove', e => {
 document.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') return; drag.on ? dragEnd(true) : dragCancel(); });
 window.addEventListener('blur', () => drag.on && dragEnd(false));
 // cartão único de pagamento: quem pagou o local, grupos e quanto cada um paga, numa caixa por cupom
-function paymentHTML(d, c) {
-  if (!c.units.length) return '';
-  const nm = pid => c.per[pid].person.name;
-  const first = pid => esc(nm(pid).split(' ')[0]);
-  const debts = pixDebts(c);
-
-  // 1.14: sem "Quem vai pagar a conta?". Quem paga por todos fica num cupom compartilhado com todos; o atalho monta esse cupom
-  const todosJuntos = d.people.length > 1 && c.groups.length === 1 && c.groups[0].members.length === d.people.length;
-  const atalho = d.people.length > 1 ? (todosJuntos
-    ? `<button class="lanc-op atalho" id="pay-separar">${I.users}<span><b>Separar todos</b></span></button>`
-    : `<button class="lanc-op atalho" id="pay-todos">${I.users}<span><b>Uma pessoa paga a conta de todos</b></span><span class="lanc-seta">${I.next}</span></button>`) : '';
-  let warn = '';
-  if (!c.missingPayer && c.payDiff < 0) warn = `<div class="status warn">${I.warn}<span>Faltam <b>${BRL(-c.payDiff)}</b> para cobrir o total de ${BRL(c.total)}. Ajuste os valores personalizados.</span></div>`;
-  if (c.payDiff > 0) warn = `<div class="status warn">${I.warn}<span>Os valores personalizados passam <b>${BRL(c.payDiff)}</b> do total de ${BRL(c.total)}.</span></div>`;
-
-  // ações de quem foi tocado (quem paga a conta inteira cobre o restante e não escolhe outro valor)
-  const actions = (pid, u) => {
-    const multi = u.members.length > 1, custom = c.per[pid].custom;
-    const val = c.payer === pid || !u.payers.includes(pid) ? '' : custom
-      ? `<button class="btn small ghost" data-cv="${pid}">${I.refresh}Valor da conta</button>`
-      : `<button class="btn small ghost" data-cv="${pid}">${I.edit}Pagar outro valor</button>`;
-    const grp = multi ? `<button class="btn small ghost" data-ungroup="${pid}">${I.x}Sair do grupo</button>`
-      : c.units.length > 1 ? `<button class="btn small ghost" data-join="${pid}">${I.users}Juntar com…</button>` : '';
-    return val || grp ? `<div class="uact"><span class="grp">${val}${grp}</span></div>` : '';
-  };
-  // uma linha por informação: rótulo, valor e, quando houver, a chave da pessoa
-  const row = (label, value, ctl = '', off = false) => `<div class="prow${off ? ' off' : ''}"><span class="pl">${label}</span><span class="pv num">${value}</span><span class="pc">${ctl}</span></div>`;
-  const swRow = (label, value, attr, on) => `<label class="prow sw${on ? '' : ' off'}"><span class="pl">${label}</span><span class="pv num">${on ? value : 'não paga'}</span><span class="pc"><span class="switch"><input type="checkbox" ${attr} ${on ? 'checked' : ''} aria-label="${esc(label)}"><span class="track"></span></span></span></label>`;
-  // a pessoa: cabeçalho, linhas de valores e o que ela faz com o dinheiro; tudo num bloco só
-  const member = (pid, u) => {
-    const multi = u.members.length > 1, p = c.per[pid], plan = planOf(c, pid), isPayer = u.payers.includes(pid);
-    const sel = selPay === pid && !pickSel;
-    let h = `<div class="mhead">${avatar(nm(pid))}<span class="mname">${esc(nm(pid))}</span>
-      ${multi ? `<button class="pay-t" data-payer-t="${pid}" aria-pressed="${isPayer}" aria-label="${isPayer ? 'Paga o cupom. Tocar para não pagar' : 'Não paga o cupom. Tocar para pagar'}">${isPayer ? 'paga' : 'não paga'}</button>` : ''}
-      <b class="num mtotal">${BRL(p.total)}</b></div>
-      <div class="prows">${row('Consumo', BRL(p.gross))}${p.discount ? row('Desconto', '−' + BRL(p.discount)) : ''}
-      ${d.service.enabled ? swRow(serviceLabel(d), BRL(p.service), `data-pay-svc="${pid}"`, p.person.payService) : ''}
-      ${d.couvert.enabled ? swRow('Couvert', BRL(p.couvert), `data-pay-cv="${pid}"`, p.person.payCouvert) : ''}</div>`;
-    if (p.custom) h += `<div class="cv-row"><label for="cv-${pid}">Vai pagar</label><input id="cv-${pid}" data-custom="${pid}" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${moneyInput(d.custom[pid] || 0)}" data-keep><span class="hint">Parte na conta: ${BRL(p.share)}. A diferença é acertada entre vocês.</span></div>`;
-    const gap = p.custom && d.payMode !== 'single' ? p.share - (d.custom[pid] || 0) : 0;
-    if (gap > 0) {
-      const opts = c.ids.filter(id => id !== pid && !c.per[id].custom && c.per[id].share > 0);
-      if (opts.length) h += `<div class="cover-row field field-sel"><label for="cover-${pid}">Quem cobre os ${BRL(gap)} que faltam?</label><select id="cover-${pid}" data-cover="${pid}">
-        <option value="" ${!c.coverOf[pid] ? 'selected' : ''}>Todos, dividido</option>
-        ${opts.map(id => `<option value="${id}" ${c.coverOf[pid] === id ? 'selected' : ''}>${esc(nm(id))}</option>`).join('')}</select></div>`;
-    }
-    // "paga ao local" só aparece quando diz algo novo: quem paga só a própria parte já está no valor do topo
-    const plain = d.payMode !== 'single' && !p.custom && u.payers.length === 1;
-    const lines = plan.filter(x => !(x.k === 'place' && plain && x.v === p.share));
-    if (lines.length) h += `<div class="plan">${lines.map(x => `<div class="urow ${x.k === 'in' ? 'recv' : ''}"><span>${esc(cap(x.t)).replace(/R\$\s?[\d.]+,\d{2}/, m => `<b class="num">${m}</b>`)}</span>${x.k === 'out' && debts.some(z => z.pid === pid) ? `<button class="btn small ghost pix-btn" data-pixpay="${pid}">Pix</button>` : ''}</div>`).join('')}</div>`;
-    if (plan.some(x => x.k === 'in')) h += `<div class="pix-row"><label for="pix-${pid}">Pix de ${first(pid)}</label><input id="pix-${pid}" type="text" data-pix="${esc(nm(pid))}" value="${esc(pixOf(nm(pid)))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocomplete="off" autocapitalize="off" spellcheck="false" data-keep></div>`;
-    if (sel) h += actions(pid, u);
-    return `<div class="umem${sel && multi ? ' sel' : ''}" data-mem="${pid}">${h}</div>`;
-  };
-  const unitBox = u => {
-    const multi = u.members.length > 1;
-    const picking = pickSel && u.members.includes(pickSel);
-    const sel = !pickSel && (multi ? selPay === 'g:' + u.id : selPay === u.id);
-    const head = multi ? `<div class="ghead" data-ghead><span class="ubox-tag">Cupom compartilhado</span><b class="num">${BRL(u.total)}</b></div>` : '';
-    const gact = multi && sel ? `<div class="uact"><span class="grp"><button class="btn small ghost" data-ungroup-all="${u.id}">${I.x}Desfazer grupo</button></span></div>` : '';
-    return `<div class="ubox ${multi ? 'group' : ''} ${sel ? 'sel' : ''} ${pickSel && !picking ? 'target' : ''} ${picking ? 'picking' : ''}" data-unit="${u.id}" data-drop="${multi ? 'g:' + u.id : 'p:' + u.id}">
-      ${head}${u.members.map(m => member(m, u)).join('')}${gact}
-    </div>`;
-  };
-
-  return `<div class="card pay-card" id="groups-card">
-    <div class="card-head"><h2>Pagamento</h2></div>
-    <span class="eyebrow">Quem paga o quê</span>
-    ${warn}
-    ${pickSel ? `<div class="pick-hint">${I.users}<span>Toque no cartão de quem vai ficar no mesmo cupom de <b>${esc(c.per[pickSel]?.person.name || '')}</b>.</span><button class="btn small ghost" id="pick-cancel">Cancelar</button></div>` : ''}
-    <div class="ubox-list">${c.units.map(unitBox).join('')}</div>
-    <div class="drop-out" data-drop="out">Solte aqui para sair do cupom compartilhado</div>
-    ${c.transfers.length ? `<button class="btn small ghost" id="copy-transfers" style="align-self:flex-start">${I.copy}Copiar acertos</button>` : ''}
-    ${atalho}
-  </div>`;
-}
 /* 1.14: atalho "Uma pessoa paga a conta de todos": junta todos num cupom compartilhado, com só quem foi escolhido pagando */
 function pagaTodosSheet(d) {
   openSheet({ title: 'Quem paga a conta de todos?', sub: 'Todos ficam no mesmo cupom; só essa pessoa paga.',
@@ -2376,200 +2482,14 @@ function politicaSheet(d, p) {
   const quem = p ? p.name : c.skipped.map(id => c.per[id].person.name).join(', ');
   const valor = p ? (c.per[p.id]?.serviceNominal || 0) : c.skippedValue;
   const op = (k, t, sub) => `<button type="button" class="lanc-op" data-pol="${k}" aria-pressed="${s.policy === k}">${s.policy === k ? I.check : '<span style="width:22px;flex:none"></span>'}<span><b>${t}</b></span></button>`;
-  openSheet({ title: `${quem} não paga o serviço`, sub: valor ? `O que fazer com ${BRL(valor)} de serviço?` : 'O que fazer com essa parte do serviço?',
-    body: `<div class="lanc-ops">${op('discount', 'Ninguém paga essa parte', '')}${op('redistribute', 'Os outros dividem essa parte', '')}</div>`,
+  openSheet({ title: `${quem} não paga o serviço`,
+    body: `<p class="pol-perg">${valor ? `O que fazer com ${BRL(valor)} de serviço?` : 'O que fazer com essa parte do serviço?'}</p><div class="lanc-ops">${op('discount', 'Ninguém paga essa parte', '')}${op('redistribute', 'Os outros dividem essa parte', '')}</div>`,
     foot: `<button type="button" class="btn ghost" id="pol-desfaz">${p ? `${esc(p.name.split(' ')[0])} paga o serviço` : 'Fechar'}</button>`,
     onMount: dl => {
       $$('[data-pol]', dl).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.pol; closeSheet(true); commit(); toast(s.policy === 'discount' ? 'Ninguém paga essa parte.' : 'Os outros dividem essa parte.'); }));
       $('#pol-desfaz', dl).addEventListener('click', () => { if (p) { p.payService = true; closeSheet(true); commit(); } else closeSheet(); });
     } });
 }
-const viewFechar = {
-  html() {
-    const d = draft, c = compute(d), s = d.service, ds = d.discount;
-    if (!d.people.length || !d.items.length) return KitFacil.ui.vazio({ titulo: 'Comanda vazia' });
-    const names = ids => ids.map(id => c.per[id].person.name).join(', ');
-    let note = '';
-    if (s.enabled && c.skipped.length) {
-      note = s.policy === 'discount'
-        ? `<b>${esc(names(c.skipped))}</b> não paga${c.skipped.length > 1 ? 'm' : ''} o serviço. A taxa total fica <b class="num">${BRL(c.skippedValue)}</b> menor.`
-        : (c.service > 0 ? `<b class="num">${BRL(c.skippedValue)}</b> de serviço de ${esc(names(c.skipped))} redistribuídos entre ${plural(c.payers.length, 'pessoa', 'pessoas')}, proporcional ao consumo de cada uma.` : `Ninguém com consumo vai pagar o serviço, então não há para quem redistribuir.`);
-    }
-    const me = d.live ? LS.get('me.' + d.live.code, '') : '';
-    const myUnit = me && c.unitOf[me];
-    const order = myUnit ? [myUnit, ...c.units.map(u => u.id).filter(x => x !== myUnit)] : c.units.map(u => u.id);
-    const adj = adjActive(d, c), fresh = k => adjFresh === k ? ' adj-in' : '';
-    const adjCard = {
-      cv: () => `<div class="card${fresh('cv')}" id="cv-card">
-      <div class="card-head"><h2>Couvert artístico</h2>
-        <label class="switch"><input type="checkbox" id="cv-on" checked><span class="track"></span>Cobrar</label></div>
-      <div class="row" style="align-items:center"><div class="field" style="width:140px"><input id="cv-val" type="text" inputmode="numeric" data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa" data-keep></div><span class="hint">por pessoa</span></div>
-    </div>`,
-      ds: () => `<div class="card${fresh('ds')}" id="ds-card">
-      <div class="card-head"><h2>Desconto</h2>
-        <label class="switch"><input type="checkbox" id="ds-on" checked><span class="track"></span>Aplicar</label></div>
-      <div class="ds-row">
-        <div class="seg" role="group" aria-label="Tipo de desconto"><button data-dsmode="value" aria-pressed="${ds.mode === 'value'}">R$</button><button data-dsmode="pct" aria-pressed="${ds.mode === 'pct'}">%</button></div>
-        <input id="ds-val" type="text" inputmode="numeric" ${ds.mode === 'pct' ? `data-pct value="${pctInput(ds.pct)}" aria-label="Percentual de desconto"` : `data-money value="${moneyInput(ds.value)}" aria-label="Valor do desconto"`} data-keep>
-      </div>
-      <div class="field"><span class="eyebrow">Onde o desconto incide</span>
-        <div class="seg" role="group" aria-label="Onde o desconto incide">
-          <button data-dsat="after" aria-pressed="${ds.at === 'after'}">No valor total da comanda</button>
-          <button data-dsat="before" aria-pressed="${ds.at !== 'after'}">Apenas no valor do consumo</button>
-        </div></div>
-      <div class="policy-note"><b class="num">−${BRL(c.discount)}</b> sobre <b class="num">${BRL(ds.at === 'after' ? c.total + c.discount : c.consumoBruto)}</b></div>
-    </div>`,
-      fq: () => `<div class="card${fresh('fq')}" id="fq-card">
-      <div class="card-head"><h2>Cortesia</h2>
-        <label class="switch"><input type="checkbox" id="fq-on" checked><span class="track"></span>Aplicar</label></div>
-      <div class="who">${d.items.map(it => `<div class="who-row free-row">
-        <div style="min-width:0"><div style="font-weight:600;overflow-wrap:anywhere">${esc(it.name)}</div>
-          <div class="hint num">${it.qty} × ${BRL(it.price)}${it.fq ? ` · <b style="color:var(--green)">−${BRL(it.fq * it.price)}</b>` : ''}</div></div>
-        <span class="unit-btns"><button class="minus" data-fq="${it.id}" data-dir="-1" ${it.fq ? '' : 'disabled'} aria-label="Uma cortesia a menos em ${esc(it.name)}">−1</button>
-          <span class="fq-count num">${it.fq || 0}<small>/${it.qty}</small></span>
-          <button class="plus" data-fq="${it.id}" data-dir="1" ${it.fq < it.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span>
-      </div>`).join('')}</div>
-      ${c.freeValue ? `<div class="policy-note"><b class="num">−${BRL(c.freeValue)}</b> em ${plural(d.items.reduce((a, it) => a + (it.fq || 0), 0), 'unidade', 'unidades')} sem cobrança</div>` : ''}
-    </div>`,
-    };
-    return `
-    ${c.incomplete.length ? `<div class="banner warn"><span><b>Distribuição incompleta, item fora da conta:</b> ${c.incomplete.map(x => `${esc(x.it.name)} (${x.units} de ${x.it.qty} unidades)`).join(', ')}.</span><button class="btn small ghost" data-fix>Corrigir</button></div>` : ''}
-    ${c.openItems.length ? `<div class="banner"><span><b>${plural(c.openItems.length, 'item aguarda', 'itens aguardam')} confirmação:</b> ${esc(c.openItems.map(i => i.name).join(', '))}. Os valores já aparecem abaixo, mas a comanda só pode ser salva depois que todos forem confirmados.</span><button class="btn small mustard" data-fix>Revisar</button></div>` : ''}
-    ${c.unassigned.length ? `<div class="banner warn"><span><b>${plural(c.unassigned.length, 'item sem ninguém marcado ficou', 'itens sem ninguém marcado ficaram')} fora da comanda:</b> ${esc(c.unassigned.map(i => i.name).join(', '))}.</span><button class="btn small ghost" id="fix-items">Corrigir</button></div>` : ''}
-    <div class="sum-grid">
-      <div class="sum"><span class="eyebrow">Consumo</span><b>${BRL(c.consumoBruto)}</b></div>
-      <div class="sum"><span class="eyebrow">Serviço</span><b>${BRL(c.service)}</b></div>
-      ${d.couvert.enabled ? `<div class="sum"><span class="eyebrow">Couvert</span><b>${BRL(c.couvert)}</b></div>` : ''}
-      ${ds.enabled ? `<div class="sum"><span class="eyebrow">Desconto</span><b>−${BRL(c.discount)}</b></div>` : ''}
-      <div class="sum total"><span class="eyebrow">Total da comanda</span><b>${BRL(c.total)}</b></div>
-    </div>
-
-
-
-
-
-
-
-
-    <div class="card" id="svc-card">
-      <div class="card-head"><h2>Taxa de serviço</h2>
-        <label class="switch"><input type="checkbox" id="svc-on" ${s.enabled ? 'checked' : ''}><span class="track"></span>Cobrar</label></div>
-      ${s.enabled ? (s.mode === 'pct' && s.pct === 10 && !svcMais ? `
-      <div class="row svc-simples" style="align-items:center;justify-content:space-between"><span><b>10%</b> sobre o consumo</span><button class="btn small ghost" id="svc-mudar">Mudar</button></div>` : `
-      <div class="ds-row">
-        <div class="seg" role="group" aria-label="Tipo de taxa"><button data-svcmode="pct" aria-pressed="${s.mode === 'pct'}">%</button><button data-svcmode="fixed" aria-pressed="${s.mode === 'fixed'}">R$</button></div>
-        ${s.mode === 'fixed' ? `<input id="svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais" data-keep>` : `<input id="svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa" data-keep>`}
-      </div>`) + `
-      ${note ? `<div class="policy-note pol-row"><span>${note}</span><button class="btn small ghost" id="svc-politica">Mudar</button></div>` : ''}` : `<p class="hint">Sem taxa de serviço nesta comanda.</p>`}
-    </div>
-
-    ${adj.ord.map(k => adjCard[k]()).join('')}
-    ${adj.ord.length < 3 ? `<div class="adj" id="adj-area">
-      <span class="eyebrow">Ajustes da comanda</span>
-      <div class="adj-btns">
-        ${!adj.on.cv ? `<button class="adj-btn" data-adj="cv">${I.plus}Couvert</button>` : ''}
-        ${!adj.on.ds ? `<button class="adj-btn" data-adj="ds">${I.plus}Desconto</button>` : ''}
-        ${!adj.on.fq ? `<button class="adj-btn" data-adj="fq">${I.plus}Cortesia</button>` : ''}
-      </div>
-    </div>` : ''}
-
-    ${paymentHTML(d, c)}
-
-    <div class="card">
-      <div class="card-head"><h2>Cupons</h2></div><div class="btn-row"><button class="btn small ghost" id="copy-all">${I.copy}Copiar todos</button><button class="btn small ghost" id="pdf-all">${I.file}Todos em PDF</button></div>
-      <div class="receipts">${order.map(id => `<div class="receipt-wrap">${receiptHTML(c.U[id], d, c)}<button class="btn small" data-share="${id}">${I.share}Compartilhar cupom de ${esc(c.U[id].name)}</button></div>`).join('')}</div>
-    </div>
-
-    <div class="actions-bar">
-      <button class="btn" id="save-bill">${I.save}${d.savedAt ? 'Atualizar e encerrar' : 'Salvar e encerrar'}</button>
-      ${d.isExample ? '<button class="btn ghost" id="ex-exit">Sair do exemplo</button>' : d.savedAt ? '<button class="btn ghost" id="end-edit">Encerrar sem salvar</button>' : `<button class="btn ghost danger-text" id="del-bill">${I.trash}Excluir comanda</button>`}
-    </div>`;
-  },
-  bind(v) {
-    const d = draft, s = d.service, ds = d.discount;
-    $('#fix-items', v)?.addEventListener('click', () => { tab = 'comanda'; render(); });
-    $$('[data-fix]', v).forEach(b => b.addEventListener('click', () => { tab = 'comanda'; render(); window.scrollTo({ top: 0 }); }));
-    // serviço
-    $('#svc-on', v)?.addEventListener('change', e => { s.enabled = e.target.checked; commit(); });
-    $('#svc-mudar', v)?.addEventListener('click', () => { svcMais = true; render({ preserve: true }); });
-    $$('[data-svcmode]', v).forEach(b => b.addEventListener('click', () => {
-      const m = b.dataset.svcmode; if (m === s.mode) return;
-      if (m === 'pct') { s.mode = 'pct'; if (!s.pct) s.pct = 10; }
-      else { s.mode = 'fixed'; if (!s.fixed) s.fixed = Math.round(compute(d).consumo * 0.1); }
-      commit();
-    }));
-    $('#svc-politica', v)?.addEventListener('click', () => politicaSheet(d));
-    $('#svc-pct', v)?.addEventListener('change', e => { s.pct = parsePct(e.target.value) ?? 0; commit(); });
-    $('#svc-fixed', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) s.fixed = c; commit(); });
-    // desconto
-    const adjOff = (k, off) => { off(); d.adjOrder = (d.adjOrder || []).filter(x => x !== k); commit({ anchor: { from: '#' + k + '-card', to: '#adj-area' } }); };
-    $('#ds-on', v)?.addEventListener('change', () => adjOff('ds', () => { ds.enabled = false; }));
-    $$('[data-dsat]', v).forEach(b => b.addEventListener('click', () => { ds.at = b.dataset.dsat; commit(); }));
-    $$('[data-dsmode]', v).forEach(b => b.addEventListener('click', () => { ds.mode = b.dataset.dsmode; commit(); }));
-    $('#ds-val', v)?.addEventListener('change', e => {
-      if (ds.mode === 'pct') ds.pct = parsePct(e.target.value) ?? 0;
-      else { const c = parseMoney(e.target.value); ds.value = c ?? 0; }
-      commit();
-    });
-    $$('[data-fq]', v).forEach(b => b.addEventListener('click', () => {
-      const it = d.items.find(x => x.id === b.dataset.fq); if (!it) return;
-      it.fq = Math.max(0, Math.min(it.qty, (it.fq || 0) + +b.dataset.dir)); commit();
-    }));
-    // ajustes: o novo cartão ocupa o lugar dos botões e entra com uma animação curta
-    $$('[data-adj]', v).forEach(b => b.addEventListener('click', () => {
-      const k = b.dataset.adj, anchor = { from: '#adj-area', to: '#' + k + '-card' };
-      d.adjOrder = [...(d.adjOrder || []).filter(x => x !== k), k];
-      adjFresh = k;
-      if (k === 'cv') { d.couvert.enabled = true; commit({ anchor }); }
-      else if (k === 'ds') { ds.enabled = true; commit({ anchor }); }
-      else { openAdj.add('fq'); render({ preserve: true, anchor }); }
-      $('#' + k + '-card')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }));
-    // desligar a cortesia zera as unidades marcadas; dá para desfazer logo em seguida
-    $('#fq-on', v)?.addEventListener('change', () => {
-      const before = Object.fromEntries(d.items.filter(it => it.fq).map(it => [it.id, it.fq]));
-      adjOff('fq', () => { d.items.forEach(it => { it.fq = 0; }); openAdj.delete('fq'); });
-      if (Object.keys(before).length) toast('Cortesia desligada.', { label: 'Desfazer', run: () => {
-        draft.items.forEach(it => { if (before[it.id]) it.fq = Math.min(it.qty, before[it.id]); });
-        openAdj.add('fq'); draft.adjOrder = [...(draft.adjOrder || []).filter(x => x !== 'fq'), 'fq']; commit();
-      } });
-    });
-    adjFresh = null;
-    // couvert
-    $('#cv-on', v)?.addEventListener('change', () => adjOff('cv', () => { d.couvert.enabled = false; }));
-    $('#cv-val', v)?.addEventListener('change', e => { const c = parseMoney(e.target.value); if (c !== null) d.couvert.value = c; commit(); });
-    $$('[data-pay-svc]', v).forEach(i => i.addEventListener('change', () => {
-      const p = d.people.find(x => x.id === i.dataset.paySvc); p.payService = i.checked; commit();
-      if (!i.checked) politicaSheet(d, p);
-    }));
-    $$('[data-pay-cv]', v).forEach(i => i.addEventListener('change', () => { d.people.find(p => p.id === i.dataset.payCv).payCouvert = i.checked; commit(); }));
-    bindGroups(v, d);
-    $$('[data-pixpay]', v).forEach(b => b.addEventListener('click', () => { const x = pixDebts(compute(d)).find(z => z.pid === b.dataset.pixpay); if (x) pixSheet(x); }));
-    $$('[data-pix]', v).forEach(i => i.addEventListener('change', () => savePixKey(i.dataset.pix, i.value, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); })));
-    // quem pagou
-    $('#pay-todos', v)?.addEventListener('click', () => pagaTodosSheet(d));
-    $('#pay-separar', v)?.addEventListener('click', () => { const antes = clone(d.groups || []); d.groups = []; commit(); toast('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); });
-    $$('[data-cv]', v).forEach(b => b.addEventListener('click', e => {
-      e.stopPropagation(); const pid = b.dataset.cv; d.custom = d.custom || {};
-      if (pid in d.custom) { delete d.custom[pid]; commit(); return; }
-      d.custom[pid] = compute(d).per[pid].paid; commit();
-      // o campo recebe o foco no mesmo toque, para o teclado do iPhone abrir
-      const i = document.getElementById('cv-' + pid); if (i) i.focus();
-    }));
-    $$('select[data-cover]', v).forEach(b => b.addEventListener('change', () => { d.cover = d.cover || {}; if (b.value) d.cover[b.dataset.cover] = b.value; else delete d.cover[b.dataset.cover]; commit(); }));
-    $$('[data-custom]', v).forEach(i => i.addEventListener('change', () => { d.custom[i.dataset.custom] = parseMoney(i.value) || 0; commit(); }));
-    const c = compute(d);
-    $('#copy-transfers', v)?.addEventListener('click', () => copyText(['Acertos — ' + (d.place || 'Comanda'), ...c.transfers.map(t => { const to = c.per[t.to].person.name, k = pixOf(to); return `${c.per[t.from].person.name} paga ${BRL(t.value)} para ${to}${k ? ' (Pix: ' + k + ')' : ''}`; })].join('\n'), 'Acertos copiados.'));
-    $$('[data-share]', v).forEach(b => b.addEventListener('click', () => shareReceipt(c.U[b.dataset.share], d, c)));
-    $('#pdf-all', v)?.addEventListener('click', e => shareAllPDF(d, c, e.currentTarget));
-    $('#copy-all', v)?.addEventListener('click', () => copyText(c.units.map(u => receiptText(u, d, c)).join('\n\n'), 'Todos os cupons copiados.'));
-    $('#save-bill', v)?.addEventListener('click', saveBill);
-    $('#ex-exit', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); });
-    $('#del-bill', v)?.addEventListener('click', () => deleteCurrent(true));
-    $('#end-edit', v)?.addEventListener('click', () => confirmSheet('Encerrar sem salvar?', 'As alterações desta edição serão perdidas. A versão do histórico continua como estava.', 'Encerrar', () => { if (draft.live) live.end(); pending = {}; draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 }); }, true));
-  },
-};
-
 function saveBill() {
   const d = draft, c = compute(d);
   if (d.isExample) { toast('No exemplo, nada é salvo no histórico.'); return; }
@@ -2579,6 +2499,7 @@ function saveBill() {
   if (c.missingPayer) { toast('Escolha quem vai pagar a conta em Pagamento antes de salvar.'); return; }
   if (c.payDiff !== 0) { toast(`Os valores personalizados ${c.payDiff > 0 ? 'passam' : 'ficam'} ${BRL(Math.abs(c.payDiff))} ${c.payDiff > 0 ? 'do' : 'abaixo do'} total. Ajuste antes de salvar.`); return; }
   const firstSave = !bills.some(b => b.id === d.id);
+  const antes = { draft: clone(d), bills: clone(bills), catalog: clone(catalog), tab }, eraAoVivo = !!draft.live, jogoAntes = { ...jogoEstado() };
   const now = Date.now();
   d.savedAt = now;
   const { live: _l, isExample: _e, ...rest } = d;
@@ -2594,232 +2515,14 @@ function saveBill() {
   pending = {};
   draft = blankDraft(); tab = 'inicio';
   saveDraft(); render(); window.scrollTo({ top: 0 });
-  toast(firstSave ? 'Comanda salva no histórico e encerrada.' : 'Comanda atualizada no histórico.');
+  // salvar tem volta (a comanda ao vivo, se havia, já foi encerrada e não volta)
+  const desfazer = eraAoVivo ? null : () => {
+    bills = antes.bills; catalog = antes.catalog; draft = antes.draft; draft.savedAt = firstSave ? null : draft.savedAt; tab = 'comanda';
+    jogoMemo.chave = ''; store.saveBill(); store.saveCatalog(); saveDraft(); render(); window.scrollTo({ top: 0 });
+  };
+  if (firstSave && festa(bill, jogoAntes, { desfazer })) return;
+  toast(firstSave ? 'Comanda salva no histórico.' : 'Comanda atualizada no histórico.', desfazer ? { label: 'Desfazer', run: desfazer } : undefined);
 }
-
-/* ---------- aba Histórico (com estatísticas) ---------- */
-function statsHTML() {
-  const meName = catalog.me || '';
-  const rows = bills.map(b => { const c = compute(b); const mp = b.people.find(p => norm(p.name) === norm(meName)); return { b, c, mine: mp ? c.per[mp.id].total : null }; });
-  const mineRows = rows.filter(r => r.mine !== null);
-  const useMine = !!meName;
-  const total = rows.reduce((a, r) => a + r.c.total, 0);
-  const mineTotal = mineRows.reduce((a, r) => a + r.mine, 0);
-  // últimos 6 meses
-  const now = new Date(); const months = [];
-  for (let k = 5; k >= 0; k--) { const dt = new Date(now.getFullYear(), now.getMonth() - k, 1); months.push({ y: dt.getFullYear(), m: dt.getMonth(), v: 0, n: 0, label: dt.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '') }); }
-  rows.forEach(r => { const dt = new Date(r.b.closedAt); const mo = months.find(x => x.y === dt.getFullYear() && x.m === dt.getMonth()); if (mo) { const v = useMine ? r.mine : r.c.total; if (v !== null) { mo.v += v; mo.n++; } } });
-  const max = Math.max(...months.map(m => m.v), 1);
-  const maxIdx = months.reduce((bi, m, i, arr) => m.v > arr[bi].v ? i : bi, 0);
-  // rankings
-  const places = {}; (useMine ? mineRows.filter(r => r.mine > 0) : rows).forEach(r => { const k = (r.b.place || 'Sem nome').trim(); const key = norm(k); places[key] = places[key] || { name: k, n: 0, v: 0 }; places[key].n++; places[key].v += useMine ? (r.mine || 0) : r.c.total; });
-  const topPlaces = Object.values(places).sort((a, b) => b.n - a.n || b.v - a.v).slice(0, 5);
-  const friends = {}; (useMine ? mineRows : rows).forEach(r => r.b.people.forEach(p => { if (norm(p.name) === norm(meName)) return; const key = norm(p.name); friends[key] = friends[key] || { name: p.name, n: 0 }; friends[key].n++; }));
-  const topFriends = Object.values(friends).sort((a, b) => b.n - a.n).slice(0, 5);
-  const prods = {}; rows.forEach(r => r.b.items.forEach(it => { const key = norm(it.name); prods[key] = prods[key] || { name: it.name, q: 0 }; prods[key].q += it.qty; }));
-  const topProds = Object.values(prods).sort((a, b) => b.q - a.q).slice(0, 5);
-  const rank = (list, val, fmt, avatars) => { const mx = Math.max(...list.map(val), 1); return list.length ? `<div class="rank">${list.map(x => `<div class="rank-row"><span class="nm">${avatars ? avatar(x.name) : ''}<span>${esc(x.name)}</span></span><span class="vl">${fmt(x)}</span><div class="track2"><div class="fill" style="width:${Math.round(val(x) / mx * 100)}%"></div></div></div>`).join('')}</div>` : '<p class="hint">Sem dados ainda.</p>'; };
-  // 1.13: os rankings ficam em seções que abrem e fecham, uma embaixo da outra (antes eram cartões lado a lado)
-  const secao = (titulo, primeiro, corpo) => `<details class="card fold" data-kf-secao><summary><h2>${titulo}</h2>${primeiro ? `<span class="fold-res" data-kf-secao-resumo>${esc(primeiro)}</span>` : ''}</summary><div class="fold-in">${corpo}</div></details>`;
-  const avg = useMine ? (mineRows.length ? Math.round(mineTotal / mineRows.length) : 0) : Math.round(total / rows.length);
-  return `<div class="card">
-    <div class="card-head"><h2>Resumo</h2>
-      <span class="me-pick"><label class="hint" for="me-select">Mostrar gastos de</label><select id="me-select"><option value="">Todas as pessoas</option>${catalog.people.map(p => `<option value="${esc(p.name)}" ${norm(p.name) === norm(meName) ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></span></div>
-    <div class="stats-tiles">
-      <div class="sum"><span class="eyebrow">Comandas</span><b>${useMine ? mineRows.length : rows.length}</b></div>
-      <div class="sum"><span class="eyebrow">${useMine ? 'Gasto de ' + esc(meName.split(' ')[0]) : 'Gasto total'}</span><b>${BRL(useMine ? mineTotal : total)}</b></div>
-      <div class="sum"><span class="eyebrow">Média por comanda</span><b>${BRL(avg)}</b></div>
-      <div class="sum"><span class="eyebrow">Este mês</span><b>${BRL(months[5].v)}</b></div>
-    </div>
-    <div>
-      <span class="eyebrow">${useMine ? 'Gasto de ' + esc(meName.split(' ')[0]) : 'Gasto total'} nos últimos 6 meses</span>
-      <div class="chart" role="img" aria-label="Gasto por mês">${months.map((m, i) => `
-        <div class="bar-col" tabindex="0">
-          ${(i === maxIdx || i === 5) && m.v > 0 ? `<span class="bar-val" style="bottom:${Math.max(2, m.v / max * 100)}%">${BRL(m.v).replace(/,\d\d$/, '')}</span>` : ''}
-          <span class="bar-tip">${m.label}: ${BRL(m.v)} · ${plural(m.n, 'comanda', 'comandas')}</span>
-          <div class="bar ${m.v ? '' : 'zero'}" style="height:${m.v ? Math.max(2, m.v / max * 100) : 1}%"></div>
-        </div>`).join('')}</div>
-      <div class="chart-x">${months.map(m => `<span>${m.label}</span>`).join('')}</div>
-    </div>
-  </div>
-  <div class="two-col">
-    ${secao('Locais mais frequentes', topPlaces[0]?.name, rank(topPlaces, x => x.n, x => `${plural(x.n, 'vez', 'vezes')} · ${BRL(x.v)}`))}
-    ${secao(useMine ? 'Com quem ' + esc(meName.split(' ')[0]) + ' mais sai' : 'Quem mais aparece', topFriends[0]?.name, rank(topFriends, x => x.n, x => plural(x.n, 'comanda', 'comandas'), true))}
-    ${secao('Mais pedidos', topProds[0]?.name, rank(topProds, x => x.q, x => plural(x.q, 'unidade', 'unidades')))}
-  </div>`;
-}
-const viewHistorico = {
-  html() {
-    if (!bills.length) return KitFacil.ui.vazio({ titulo: 'Nenhuma comanda salva' });
-    return `${statsHTML()}
-      <div class="card-head" style="padding-inline:4px"><h2 style="font-family:var(--f-display);font-size:19px;margin:0">Comandas salvas</h2><span class="hint">${plural(bills.length, 'comanda', 'comandas')}</span></div>
-      <div class="hist">${bills.map(histRowHTML).join('')}</div>`;
-  },
-  bind(v) {
-    $$('[data-bill]', v).forEach(b => b.addEventListener('click', () => openBill(b.dataset.bill)));
-    $('#me-select', v)?.addEventListener('change', e => { catalog.me = e.target.value; store.saveCatalog(); render(); });
-  },
-};
-function openBill(id) {
-  const b = bills.find(x => x.id === id); if (!b) return;
-  const c = compute(b);
-  openSheet({ title: b.place || 'Comanda sem nome', sub: `${fmtDateTime(b.closedAt)} · ${plural(b.people.length, 'pessoa', 'pessoas')} · total ${BRL(c.total)}`, tall: true, body: `${settleHTML(c)}
-    <div class="receipts">${c.units.map(u => `<div class="receipt-wrap">${receiptHTML(u, b, c)}<button class="btn small" data-share="${u.id}">${I.share}Compartilhar</button></div>`).join('')}</div>
-    <div class="sheet-actions">
-      <button class="btn ghost" id="sh-pdf">${I.file}Todos em PDF</button>
-      <button class="btn ghost" id="sh-del" style="color:var(--danger)">${I.trash}Excluir</button>
-    </div>`,
-    foot: `<button class="btn ghost" id="sh-edit">Abrir para editar</button><button class="btn" id="sh-reuse">Repetir comanda</button>`, onMount: s => {
-    $$('[data-share]', s).forEach(x => x.onclick = () => shareReceipt(c.U[x.dataset.share], b, c, () => openBill(id)));
-    $$('[data-pixpay]', s).forEach(x => x.onclick = () => { const dbt = pixDebts(c).find(z => z.pid === x.dataset.pixpay); if (dbt) pixSheet(dbt, () => openBill(id)); });
-    $('#sh-pdf', s).onclick = e => shareAllPDF(b, c, e.currentTarget);
-    $('#sh-del', s).onclick = () => confirmSheet('Excluir esta comanda?', 'Ela sai do histórico e das estatísticas. Pessoas e produtos cadastrados continuam, e dá para desfazer logo em seguida.', 'Excluir', () => {
-      const gone = bills.find(x => x.id === id);
-      bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(true); if (draft.id === id) draft.savedAt = null; saveDraft(); render();
-      toast('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
-    }, true);
-    const replace = fn => {
-      const go = () => { if (draft.live) live.end(); pending = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(true); commit(); window.scrollTo({ top: 0 }); };
-      confirmReplace(go);
-    };
-    $('#sh-edit', s).onclick = () => replace(() => semPagadorUnico(migrate({ ...clone(b), savedAt: b.closedAt, isExample: false, live: null })));
-    $('#sh-reuse', s).onclick = () => replace(() => {
-      const d = blankDraft(); d.place = b.place;
-      const map = {}; b.people.forEach(p => { const np = { ...newPerson(p.name) }; map[p.id] = np.id; d.people.push(np); });
-      d.items = b.items.map(i => ({ ...clone(i), id: newId(), fq: 0, a: Object.fromEntries(Object.entries(i.a).filter(([k]) => map[k]).map(([k, v]) => [map[k], v])) }));
-      d.service = { ...b.service }; d.couvert = { ...b.couvert }; d.discount = { ...b.discount, enabled: false };
-      return d;
-    });
-  } });
-}
-
-/* ---------- aba Cadastros ---------- */
-// cadastro direto de pessoa, antes de qualquer comanda (com a chave Pix, se quiser)
-function pessoaSheet() {
-  openSheet({ title: 'Nova pessoa', body: `<form id="np-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
-      <div class="field"><label for="np-nome">Nome</label><input id="np-nome" type="text" autocapitalize="words" maxlength="40" placeholder="Nome ou apelido"></div>
-      <div class="field"><label for="np-pix">Chave Pix (opcional)</label><input id="np-pix" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="CPF, celular, e-mail ou chave aleatória"></div>
-    </form>`, foot: `<button type="button" class="btn ghost" id="np-no">Cancelar</button><button type="submit" form="np-form" class="btn">${I.save}Salvar</button>`, onMount: s => {
-    $('#np-no', s).onclick = () => closeSheet();
-    setTimeout(() => $('#np-nome', s)?.focus(), 60);
-    $('#np-form', s).addEventListener('submit', e => {
-      e.preventDefault();
-      const nome = $('#np-nome', s).value.trim().replace(/\s+/g, ' '), pix = $('#np-pix', s).value.trim();
-      if (!nome) { toast('Informe o nome.'); $('#np-nome', s).focus(); return; }
-      if (catalog.people.some(p => norm(p.name) === norm(nome))) { toast(`${nome} já está nos cadastros.`); return; }
-      catalog.people.push({ name: nome, pix: '' });
-      store.saveCatalog(); closeSheet(true);
-      if (pix) savePixKey(nome, pix, () => { render(); toast(`${nome} cadastrado com a chave Pix.`); });
-      else { render(); toast(`${nome} cadastrado.`); }
-    });
-  } });
-}
-// turmas: grupos de pessoas que entram juntas na comanda
-function turmaSheet(g) {
-  const nomes = [...catalog.people].sort(ordemNome).map(p => p.name), sel = new Set(g ? g.members : []);
-  openSheet({ title: g ? `Turma ${g.name}` : 'Nova turma', body: `<form id="tg-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
-      <div class="field"><label for="tg-nome">Nome da turma</label><input id="tg-nome" type="text" maxlength="40" placeholder="Turma do futebol" value="${esc(g ? g.name : '')}"></div>
-      <div class="field"><span class="eyebrow">Quem faz parte</span><div class="ck-list" role="group" aria-label="Quem faz parte da turma">${nomes.map(n => ckRow(`data-tg="${esc(n)}"`, n, sel.has(n))).join('')}</div></div>
-    </form>`, foot: `<button type="button" class="btn ghost" id="tg-no">Cancelar</button><button type="submit" form="tg-form" class="btn">${I.save}Salvar turma</button>`, onMount: s => {
-    $('#tg-no', s).onclick = () => closeSheet();
-    $$('[data-tg]', s).forEach(b => b.addEventListener('click', () => { const n = b.dataset.tg; if (sel.has(n)) sel.delete(n); else sel.add(n); b.setAttribute('aria-pressed', sel.has(n)); }));
-    $('#tg-form', s).addEventListener('submit', e => {
-      e.preventDefault();
-      const nome = $('#tg-nome', s).value.trim().replace(/\s+/g, ' ');
-      if (!nome) { toast('Dê um nome para a turma.'); $('#tg-nome', s).focus(); return; }
-      if (sel.size < 2) { toast('Escolha ao menos duas pessoas.'); return; }
-      if ((catalog.groups || []).some(x => x !== g && norm(x.name) === norm(nome))) { toast(`Já existe a turma ${nome}.`); return; }
-      const members = nomes.filter(n => sel.has(n));
-      if (g) Object.assign(g, { name: nome, members }); else catalog.groups.push({ id: newId(), name: nome, members });
-      store.saveCatalog(); closeSheet(true); render(); toast(g ? 'Turma atualizada.' : `Turma ${nome} criada.`);
-    });
-  } });
-}
-const viewCadastros = {
-  html() {
-    const U = usage();
-    const cnt = p => U.people[norm(p.name)] || 0, pc = p => U.products[norm(p.name)] || 0;
-    const ppl = [...catalog.people].sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name, 'pt-BR'));
-    const prods = [...catalog.products].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-    const used = n => n ? `em ${plural(n, 'comanda salva', 'comandas salvas')}` : 'em nenhuma comanda salva';
-    // preços por local que faltam em produtos já cadastrados são completados direto do histórico
-    if (backfillPrices()) store.saveCatalog();
-    const H = historyCatalog(), nMiss = H.missingProducts.length + H.missingPeople.length;
-    return `
-    <div class="card">
-      <div class="card-head"><h2>Pessoas</h2><button class="btn small" id="cad-pessoa">${I.plus}Pessoa</button></div>
-      ${ppl.length ? `<div class="cat-list">${ppl.map(p => `<div class="cat-row"><span class="nm" style="display:flex;gap:8px;align-items:center">${avatar(p.name)}<span style="min-width:0">${esc(p.name)}<small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(p.pix) : ''}</small></span></span><button class="btn small ghost" data-pix-edit="${esc(p.name)}">Pix</button>
-        <button class="icon-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhuma pessoa cadastrada' })}
-    </div>
-    <div class="card" id="turmas-card">
-      <div class="card-head"><h2>Turmas</h2><button class="btn small" id="cad-turma" ${catalog.people.length > 1 ? '' : 'disabled'}>${I.plus}Turma</button></div>
-      ${(catalog.groups || []).length ? `<div class="cat-list">${[...catalog.groups].sort(ordemNome).map(g => `<div class="cat-row"><span class="nm" style="min-width:0">${esc(g.name)}<small>${esc(g.members.join(', '))}</small></span><button class="btn small ghost" data-turma-ed="${esc(g.id)}">Alterar</button><button class="icon-btn del" data-turma-del="${esc(g.id)}" aria-label="Excluir a turma ${esc(g.name)}">${I.trash}</button></div>`).join('')}</div>`
-        : `<p class="hint">Nenhuma turma</p>`}
-    </div>
-    <div class="card">
-      <div class="card-head"><h2>Produtos e preços por local</h2><span class="hint">${prods.length}</span></div>
-      ${prods.length ? `<div class="prod-list">${prods.map((p, i) => {
-        const entries = Object.entries(p.prices || {}).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
-        return `<div class="prod">
-          <div class="prod-head"><span class="nm">${esc(p.name)}<small>${used(pc(p))}</small></span>
-            <button class="icon-btn del" data-del-prod="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>
-          ${entries.length ? entries.map(([k, e]) => `<div class="price-row"><span class="pl">${esc(e.place)}</span>
-            <input type="text" inputmode="numeric" data-money value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Preço de ${esc(p.name)} em ${esc(e.place)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">
-            <button class="icon-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar preço de ${esc(e.place)}">${I.x}</button></div>`).join('')
-          : `<div class="price-row"><span class="pl hint">Sem local</span><input type="text" inputmode="numeric" data-money value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" aria-label="Preço de ${esc(p.name)}" id="pp-${i}-x"><span></span></div>`}
-        </div>`; }).join('')}</div>` : KitFacil.ui.vazio({ titulo: 'Nenhum produto cadastrado' })}
-    </div>
-
-    ${bills.length ? `<div class="card ex-card" id="recover-card">
-      <div class="ex-head"><span class="ex-icon">${I.refresh}</span><span><b>Recuperar do histórico</b><span class="hint">${nMiss
-      ? `${[H.missingProducts.length ? plural(H.missingProducts.length, 'produto', 'produtos') : '', H.missingPeople.length ? plural(H.missingPeople.length, 'pessoa', 'pessoas') : ''].filter(Boolean).join(' e ')} das comandas salvas ${nMiss === 1 ? 'está' : 'estão'} fora dos cadastros.`
-      : 'Todos os produtos e pessoas das comandas salvas já estão nos cadastros.'}</span></span></div>
-      ${nMiss ? '<button class="btn small" id="recover">Recuperar</button>' : ''}</div>` : ''}`;
-  },
-  bind(v) {
-    $('#recover', v)?.addEventListener('click', recoverSheet);
-    $('#cad-pessoa', v)?.addEventListener('click', () => pessoaSheet());
-    $('#cad-turma', v)?.addEventListener('click', () => turmaSheet());
-    $$('[data-turma-ed]', v).forEach(b => b.addEventListener('click', () => turmaSheet((catalog.groups || []).find(g => g.id === b.dataset.turmaEd))));
-    $$('[data-turma-del]', v).forEach(b => b.addEventListener('click', () => {
-      const idx = catalog.groups.findIndex(g => g.id === b.dataset.turmaDel); if (idx < 0) return;
-      const [gone] = catalog.groups.splice(idx, 1); store.saveCatalog(); render();
-      toast(`Turma ${gone.name} excluída.`, { label: 'Desfazer', run: () => { catalog.groups.splice(idx, 0, gone); store.saveCatalog(); render(); } });
-    }));
-    $$('[data-pix-edit]', v).forEach(b => b.addEventListener('click', () => {
-      const name = b.dataset.pixEdit;
-      openSheet({ title: `Chave Pix de ${name}`, body: `<form id="px-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off"><div class="field"><label for="px-in">Chave Pix</label><input id="px-in" type="text" value="${esc(pixOf(name))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocapitalize="off" spellcheck="false"></div>
-        </form>`, foot: `<button type="button" class="btn ghost" id="px-no">Cancelar</button><button type="submit" form="px-form" class="btn">${I.save}Salvar</button>`, onMount: s => {
-        $('#px-no', s).onclick = () => closeSheet();
-        $('#px-form', s).addEventListener('submit', e => { e.preventDefault(); const val = $('#px-in', s).value; closeSheet(true); savePixKey(name, val, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); }); });
-      } });
-    }));
-    $$('[data-del-person]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delPerson} do cadastro?`, 'A pessoa deixa de aparecer nas sugestões. As comandas do histórico não mudam.', 'Excluir', () => {
-      const idx = catalog.people.findIndex(p => p.name === b.dataset.delPerson); if (idx < 0) return;
-      const [gone] = catalog.people.splice(idx, 1), wasMe = norm(catalog.me) === norm(gone.name);
-      if (wasMe) catalog.me = '';
-      store.saveCatalog(); render();
-      toast(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.people.splice(idx, 0, gone); if (wasMe) catalog.me = gone.name; store.saveCatalog(); render(); } });
-    }, true)));
-    $$('[data-del-prod]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delProd} do cadastro?`, 'O produto e os preços guardados por local saem das sugestões. As comandas do histórico não mudam, e dá para recuperar o produto a partir delas.', 'Excluir', () => {
-      const idx = catalog.products.findIndex(p => p.name === b.dataset.delProd); if (idx < 0) return;
-      const [gone] = catalog.products.splice(idx, 1);
-      store.saveCatalog(); render();
-      toast(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.products.splice(idx, 0, gone); store.saveCatalog(); render(); } });
-    }, true)));
-    $$('[data-pdel]', v).forEach(b => b.addEventListener('click', () => {
-      const p = catalog.products.find(x => x.name === b.dataset.pdel); if (!p) return;
-      delete p.prices[b.dataset.pk]; store.saveCatalog(); render(); toast('Preço do local apagado.');
-    }));
-    $$('[data-pprod]', v).forEach(i => i.addEventListener('change', () => {
-      const c = parseMoney(i.value), p = catalog.products.find(x => x.name === i.dataset.pprod);
-      if (!c || !p) { toast('Valor inválido. Digite, por exemplo, 12,90.'); render(); return; }
-      if (i.dataset.pk && p.prices[i.dataset.pk]) Object.assign(p.prices[i.dataset.pk], { price: c, edited: true }); else p.price = c;
-      store.saveCatalog(); i.value = moneyInput(c); toast('Preço atualizado.');
-    }));
-  },
-};
-
 
 /* ---------- aba Ajustes: só as guias comuns do Kit Fácil ---------- */
 function baixarCopiaConta() {
@@ -2844,113 +2547,3 @@ async function restaurarCopiaConta(f) {
       render(); toast('Cópia restaurada.' + extra);
     } });
 }
-const viewAjustes = {
-  html() {
-    const pessoas = [...catalog.people].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-    return KitFacil.ajustes.html({
-      extras: {
-        conta: `<div class="kf-bloco"><h3>Você nas comandas</h3>
-          <p class="kf-ajuda">Escolha o seu nome entre as pessoas cadastradas. O Histórico usa essa escolha para mostrar os seus gastos e com quem você mais sai.</p>
-          ${pessoas.length ? `<div class="field"><label for="aj-me">Seu nome</label><select id="aj-me" class="kf-entrada"><option value="">Não escolhido</option>${pessoas.map(p => `<option value="${esc(p.name)}" ${norm(p.name) === norm(catalog.me) ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>`
-            : '<p class="kf-ajuda">Ainda não há pessoas cadastradas. Elas entram nos Cadastros quando você salva a primeira comanda.</p>'}</div>`,
-      },
-      resumos: { conta: catalog.me ? `Você é ${catalog.me}` : undefined },
-      // 1.13: sem a guia própria "Comandas": não havia nada para ajustar ali (o exemplo fica no Início; os Cadastros, em Mais)
-    });
-  },
-  bind(v) {
-    KitFacil.ajustes.ligar(v);
-    $('#aj-me', v)?.addEventListener('change', e => { catalog.me = e.target.value; store.saveCatalog(); KitFacil.ajustes.resumo('conta', catalog.me ? `Você é ${catalog.me}` : 'Sem cadastro · dados neste aparelho'); toast(catalog.me ? `Pronto: você é ${catalog.me}.` : 'Nome desmarcado.'); });
-  },
-};
-
-/* ---------- guia do app em dois níveis: Simplificado (comanda de exemplo) e Completo (demonstração ao vivo) ----------
-   0.2.0: os textos são instruções para a pessoa, no imperativo (o que fazer e como), e não narram o que o app faz */
-function irAba(t) { if (tab !== t) { tab = t; closeSheet(); render(); } }
-const visivel = q => $$(q).find(e => e.getClientRects().length);
-/* lança um item na demonstração, como a pessoa faria: digita, toca em Lançar e escolhe o tipo de consumo na janela */
-async function demoLancar(m, { nome, qtd = 1, preco, individual, so }) {
-  await m.digitar('#item-name', nome);
-  if (qtd > 1) await m.digitar('#item-qty', String(qtd), { lento: 120 });
-  await m.digitar('#item-price', preco);
-  await m.tocar('#item-form button[type=submit]');
-  if (individual) {
-    await m.tocar('[data-lc-modo="units"]');
-    for (const [n, q] of individual) for (let i = 0; i < q; i++) await m.tocar(`[data-lc-un="${demoId(n)}"][data-dir="1"]`);
-  } else if (so) {
-    for (const p of draft.people) if (!so.includes(p.name)) await m.tocar(`[data-lc-ck="${p.id}"]`);
-  }
-  await m.tocar('#lc-ok'); await m.esperar(900);
-}
-/* 0.3.0: guia único em vídeo (Kit 0.3.0, modo 'video'). O título de cada etapa já diz o que fazer; o app faz a ação na
-   tela, com o ponteiro, numa comanda de demonstração que não salva nada. Toda troca de tela é feita tocando na barra. */
-const GUIA = [
-  { t: 'Abra a comanda com o nome do bar',
-    acao: async m => { await m.digitar('#start-place', 'Bar do Zé'); await m.tocar('#start-form button[type=submit]', { semClique: true }); demoAbrir('Bar do Zé'); await m.esperar(900); } },
-  { t: 'Adicione cada pessoa da mesa',
-    acao: async m => { for (const n of ['Ana', 'Bruno', 'Carla', 'Diego']) { await m.digitar('#person-name', n); await m.tocar('#person-form button[type=submit]'); } } },
-  { t: 'Lance cada pedido e escolha o tipo de consumo',
-    acao: async m => {
-      await demoLancar(m, { nome: 'Porção de fritas', preco: '4200' });
-      await demoLancar(m, { nome: 'Chopp', qtd: 3, preco: '1290', individual: [['Ana', 2], ['Bruno', 1]] });
-      await demoLancar(m, { nome: 'Caipirinha', preco: '2200', so: ['Carla', 'Diego'] });
-    } },
-  { t: 'Toque no item e desmarque quem não consumiu',
-    acao: async m => { const it = demoItem('Porção de fritas'); await m.tocar(`[data-item="${it}"] [data-toggle="${demoId('Diego')}"]`); await m.tocar(`[data-item="${it}"] [data-save]`); } },
-  { t: 'Em Alterar, mude nome, valor ou tipo de consumo',
-    acao: async m => { const it = demoItem('Caipirinha'); await m.tocar(`[data-item="${it}"] .item-name`); await m.tocar(`[data-item="${it}"] [data-rename]`); await m.apontar('#rn-name'); await m.apontar('#rn-price'); await m.apontar('#rn-modo'); await m.tocar('#rn-no'); } },
-  { t: 'Divida a comanda ao vivo com a turma', se: () => !!store.db,
-    acao: async m => { await m.apontar('#live-start'); } },
-  { t: 'Toque em Fechar a comanda',
-    acao: async m => { await m.tocar('#go-close'); await m.esperar(700); } },
-  { t: 'Confira consumo, serviço e total',
-    acao: async m => { for (const r of $$('.sum-grid .sum')) await m.apontar(r); } },
-  { t: 'Mude o serviço para outro % ou um valor em R$',
-    acao: async m => { await m.tocar('#svc-mudar'); await m.apontar('[data-svcmode="pct"]'); await m.apontar('[data-svcmode="fixed"]'); await m.apontar('#svc-pct'); } },
-  { t: 'Desligue o serviço de quem não paga',
-    acao: async m => { await m.tocar(`[data-pay-svc="${demoId('Diego')}"]`); await m.tocar('[data-pol="redistribute"]'); await m.esperar(700); } },
-  { t: 'Dê desconto no total ou só no consumo',
-    acao: async m => { await m.tocar('[data-adj="ds"]'); await m.digitar('#ds-val', '1000'); await m.apontar('[data-dsat="after"]'); await m.apontar('[data-dsat="before"]'); } },
-  { t: 'Uma pessoa pode pagar a conta de todos',
-    acao: async m => { await m.tocar('#pay-todos'); await m.tocar(`[data-pt="${demoId('Ana')}"]`); await m.esperar(1200); await m.tocar('#pay-separar'); await m.esperar(600); } },
-  { t: 'Arraste um nome até outro para pagarem juntos',
-    acao: async m => { await m.arrastar(`[data-unit="${demoId('Bruno')}"] .mhead`, `[data-unit="${demoId('Carla')}"]`, () => { if (joinGroup(draft, demoId('Bruno'), 'p:' + demoId('Carla'))) { selPay = null; commit(); toast('Agora estão no mesmo cupom.'); } }); } },
-  { t: 'Envie o cupom de cada um',
-    acao: async m => { await m.tocar('.receipt-wrap [data-share]'); for (const b of $$('.kf-ov .share-actions button')) await m.apontar(b); await m.tocar('.kf-ov [data-kf-fechar]'); } },
-  { t: 'Salve e encerre a comanda',
-    acao: async m => { await m.tocar('#save-bill', { semClique: true }); toast('Na demonstração, nada é salvo.'); await m.esperar(900); } },
-  { t: 'Reveja suas comandas no Histórico',
-    acao: async m => { await m.tocar(visivel('#tab-historico, #trilho-historico')); await m.esperar(700); const a = $$('#view details.fold, #view .card, #view .kf-vazio').filter(e => e.getClientRects().length).slice(0, 3); for (const e of a) await m.apontar(e); } },
-  { t: 'Cadastre pessoas, chaves Pix e turmas',
-    acao: async m => { await irVia(m, 'Cadastros', '#tab-cadastros, #trilho-cadastros'); await m.esperar(700); await m.apontar('#cad-pessoa'); await m.apontar('#turmas-card'); } },
-  { t: 'Reveja este guia em Ajustes',
-    acao: async m => { await irVia(m, 'Ajustes', '[data-kf="ajustes"]'); await m.esperar(700); await m.tocar('[data-kf-aj-ir="preferencias"]'); await m.esperar(600); await m.apontar('.kf-guia-lista'); } },
-];
-/* 1.15: demonstração do guia completo, numa comanda de exemplo que começa vazia */
-function demoAbrir(lugar) { pending = {}; draft = { ...blankDraft(), place: lugar, isExample: true, active: true, createdAt: Date.now() }; tab = 'comanda'; render(); window.scrollTo({ top: 0 }); }
-const demoId = n => draft.people.find(p => p.name === n)?.id || '';
-/* troca de tela pelo guia ao vivo: toca na barra; se a seção estiver no Mais, abre o Mais e toca nela */
-async function irVia(m, nome, sel) {
-  const direto = $$(sel).find(e => e.getClientRects().length);
-  if (direto) return m.tocar(direto);
-  await m.tocar('[data-kf-nav-mais]'); await m.esperar(500);
-  const b = $$('.kf-ov [data-kf-mais-i]').find(x => x.textContent.trim().startsWith(nome));
-  if (b) await m.tocar(b);
-}
-const demoItem = n => draft.items.find(x => x.name === n)?.id || '';
-/* ---------- início ---------- */
-if (draft.live) { draft.isExample = false; draft.active = true; }
-if (backfillPrices()) LS.set('catalog', catalog);
-// área superior direita padronizada: Ajustes, nuvem e balão
-$('#topo').outerHTML = KitFacil.topo.html({ principal: true });
-// Ajustes é o último item da navegação (barra de baixo no celular, pé do trilho no computador)
-$('#tab-ajustes-lugar').outerHTML = KitFacil.nav.ajustes('nav', { role: 'tab', id: 'tab-ajustes' });
-$('#trilho-ajustes').outerHTML = KitFacil.nav.ajustes('trilho', { id: 'trilho-ajustes' });
-// link de "Conectar outro aparelho" (a chave vem depois do #, que não sai do aparelho)
-const linkSync = SY.tokenDoLink();
-if (linkSync) try { history.replaceState(null, '', location.pathname + location.search); } catch {}
-render();
-store.init();
-SY.iniciar({ token: linkSync, silencioso: true, textoConfirmar: 'O histórico e os cadastros deste aparelho se juntam aos da nuvem.' });
-window.addEventListener('hashchange', () => live.boot());
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('sw', e));
