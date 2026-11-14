@@ -3,6 +3,10 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.3.2 · 2026-11-14
+
+- **Início:** "Ver o guia" passou a vir antes de "Ver uma comanda de exemplo".
+
 ## 1.3.1 · 2026-11-14
 
 - **Presente:** as duas pontas da fita atravessavam a tampa na diagonal. O laço foi refeito: quatro alças em roseta e as pontas deitadas sobre a tampa, com corte em V, sem passar da beirada.

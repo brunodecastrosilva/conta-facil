@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.3.1** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.3.2** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). A versão 1.0 foi refeita com liberdade
 para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porquê está em [Exceções ao padrão](#exceções-ao-padrão).

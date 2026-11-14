@@ -146,8 +146,8 @@ const viewInicio = {
 
       ${d.isExample ? `<div class="lista card lista-card"><button type="button" class="lin" id="ini-ex-sair"><span class="lin-ic ambar">${I.exemplo}</span><span class="lin-tx"><b>Sair da comanda de exemplo</b><small>Nada do exemplo é salvo.</small></span>${I.next}</button></div>`
         : bills.length ? '' : `<div class="lista card lista-card">
-        <button type="button" class="lin" id="ini-ex"><span class="lin-ic ambar">${I.exemplo}</span><span class="lin-tx"><b>Ver uma comanda de exemplo</b><small>Uma mesa pronta para mexer à vontade.</small></span>${I.next}</button>
         <button type="button" class="lin" id="ini-guia"><span class="lin-ic">${I.livro}</span><span class="lin-tx"><b>Ver o guia</b><small>O app faz cada passo na tela e explica.</small></span>${I.next}</button>
+        <button type="button" class="lin" id="ini-ex"><span class="lin-ic ambar">${I.exemplo}</span><span class="lin-tx"><b>Ver uma comanda de exemplo</b><small>Uma mesa pronta para mexer à vontade.</small></span>${I.next}</button>
       </div>`}`;
   },
   bind(v) {
