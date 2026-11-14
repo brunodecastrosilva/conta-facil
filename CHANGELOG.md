@@ -3,6 +3,13 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.3.1 · 2026-11-14
+
+- **Presente:** as duas pontas da fita atravessavam a tampa na diagonal. O laço foi refeito: quatro alças em roseta e as pontas deitadas sobre a tampa, com corte em V, sem passar da beirada.
+- **Giro automático:** a tampinha e o presente voltam a girar sozinhos, devagar e no mesmo sentido, cerca de um segundo depois que a pessoa para de mexer.
+- **Ícone de Tampinhas:** tampinha vista de cima, com a mesma silhueta das tampinhas da coleção.
+- **Apresentação, terceira tela:** figura de QR code com os três cantos e módulos; o carimbo PAGO não cobre mais o valor; as linhas tracejadas do papel passaram a ser desenhadas como fundo e não mudam mais quando a animação termina (vale para os outros papéis do app).
+
 ## 1.3.0 · 2026-11-14
 
 Terceira rodada de ajustes pedidos pelo Bruno, mais uma rodada de testes com o guia inteiro gravado em vídeo.

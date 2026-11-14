@@ -2,7 +2,9 @@
 
 /* ---------- ícones: um desenho só (grade de 24, traço de 2, pontas e cantos redondos, sem preenchimento) ---------- */
 const ic = d => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
-const IC_TAMPA = '<path d="M4.500 12.500c0-3.700 3.300-6.200 7.500-6.200s7.500 2.500 7.500 6.200"/><path d="m4.500 12.500 1.400 4.300 2.100-2.800 2 3.200 2-3.200 2 3.200 2-3.200 2.100 2.800 1.400-4.300"/>';
+// tampinha vista de cima, com a mesma silhueta das tampinhas da coleção (borda de dentes boleados e o disco no meio)
+const IC_TAMPA = (() => { const n = 15, pt = (r, k) => { const a = Math.PI * k / n - Math.PI / 2; return (12 + r * Math.cos(a)).toFixed(2) + ' ' + (12 + r * Math.sin(a)).toFixed(2); };
+  let d = 'M' + pt(9.8, 0); for (let k = 1; k <= n * 2; k++) d += 'Q' + pt(k % 2 ? 9.7 : 8.85, k - 0.5) + ' ' + pt(k % 2 ? 8.7 : 9.8, k); return `<path d="${d}Z" stroke-width="1.700"/><circle cx="12" cy="12" r="5.200" stroke-width="1.700"/>`; })();
 Object.assign(I, {
   home: ic('<path d="M4 11.500 12 4l8 7.500"/><path d="M6 10v9.500h12V10"/><path d="M10 19.500v-5h4v5"/>'),
   receipt: ic('<path d="M6 3.500h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9.500 8.500h5M9.500 12.500h5"/>'),

@@ -140,6 +140,16 @@ const viewAjustes = {
 })();
 
 /* ---------- abertura (onboarding) ---------- */
+// figura de um QR code para a apresentação: os três cantos, as linhas de sincronia e um miolo de módulos (não é um código de verdade)
+const QR_FIGURA = (() => { const N = 25, on = new Set(), k = (x, y) => x + ',' + y, canto = (cx, cy) => { for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) if (x === 0 || x === 6 || y === 0 || y === 6 || (x > 1 && x < 5 && y > 1 && y < 5)) on.add(k(cx + x, cy + y)); };
+  const livre = (x, y) => !((x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9));
+  canto(0, 0); canto(N - 7, 0); canto(0, N - 7);
+  for (let i = 8; i < N - 8; i += 2) { on.add(k(i, 6)); on.add(k(6, i)); }
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) if (x === 0 || x === 4 || y === 0 || y === 4 || (x === 2 && y === 2)) on.add(k(N - 9 + x, N - 9 + y));
+  let s = 20261114; const rnd = () => (s = (s * 1103515245 + 12345) >>> 0, (s >>> 16) / 65536);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (livre(x, y) && x !== 6 && y !== 6 && !(x > N - 10 && x < N - 4 && y > N - 10 && y < N - 4) && rnd() < 0.47) on.add(k(x, y));
+  let d = ''; for (const p of on) { const [x, y] = p.split(','); d += `M${x} ${y}h1v1h-1z`; }
+  return `<svg class="ab-qr" viewBox="-2 -2 ${N + 4} ${N + 4}" aria-hidden="true" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${N + 4}" height="${N + 4}" rx="1.500" fill="#fff"/><path d="${d}" fill="#24221C"/></svg>`; })();
 let aberturaEl = null;
 const aberturaAtiva = () => !!aberturaEl;
 function aberturaAbrir({ rever = false } = {}) {
@@ -160,7 +170,7 @@ function aberturaAbrir({ rever = false } = {}) {
     { arte: () => demoHTML(), t: 'Marque quem consumiu', p: 'Experimente: toque num nome para tirar ou pôr alguém na divisão. A parte de cada um muda na hora.' },
     { arte: `<div class="ab-leque"><div class="papel ab-cupom c1"><span class="mono">Carla</span><span class="fp-linha"></span><span class="mono ab-l"><span>Total</span><span>99,67</span></span></div>
         <div class="papel ab-cupom c3"><span class="mono">Bruno</span><span class="fp-linha"></span><span class="mono ab-l"><span>Total</span><span>64,18</span></span><span class="fp-carimbo">PAGO</span></div>
-        <div class="papel ab-cupom c2"><span class="mono">Ana</span><span class="fp-linha"></span><span class="mono ab-l"><span>Total</span><span>77,09</span></span><span class="ab-qr" aria-hidden="true"></span><span class="mono ab-pix">Pix copia e cola</span></div></div>`,
+        <div class="papel ab-cupom c2"><span class="mono">Ana</span><span class="fp-linha"></span><span class="mono ab-l"><span>Total</span><span>77,09</span></span>${QR_FIGURA}<span class="mono ab-pix">Pix copia e cola</span></div></div>`,
       t: 'Um cupom para cada pessoa', p: 'Feche a comanda e mande o cupom de cada um, com o Pix copia e cola e o QR code. Marque quem já pagou.' },
     { arte: `<div class="ab-tampas">${['primeira', 'pix', 'mesa-cheia', 'ao-vivo', 'explorador'].map((id, k) => `<span class="ab-tampa" style="--i:${k}">${tampaSVG(TAMPINHAS.find(t => t.id === id))}</span>`).join('')}</div>`,
       t: veterano ? `Você já chega com ${plural(s.ganhas.length, 'tampinha', 'tampinhas')}` : 'Junte tampinhas pelo caminho',

@@ -280,9 +280,11 @@ function caixaRedonda(M, c, t, r, opc, k = 4) {
   }
 }
 // fita: uma curva no espaço com largura (três pontos de largura, para a luz correr de um lado ao outro)
-function fita(M, curva, n, opc) {
+function fita(M, curva, n, opc, corteV = 0) {
   const G = [];
   for (let i = 0; i <= n; i++) { const { p, w, n: nor } = curva(i / n); G.push([-1, 0, 1].map(s => [p[0] + w[0] * s + nor[0] * (1 - s * s) * 0.012, p[1] + w[1] * s + nor[1] * (1 - s * s) * 0.012, p[2] + w[2] * s + nor[2] * (1 - s * s) * 0.012])); }
+  // ponta em V: o meio da última fileira recua
+  if (corteV) { const u = G[n], a = G[n - 1], d = V3.norm(V3.sub(u[1], a[1])); u[1] = [u[1][0] - d[0] * corteV, u[1][1] - d[1] * corteV, u[1][2] - d[2] * corteV]; }
   grade(M, G, opc);
 }
 function malhaTampa(o) {
@@ -334,12 +336,12 @@ function malhaPresente() {
   };
   const d1 = [Math.cos(0.5), Math.sin(0.5)], d2 = [-Math.sin(0.5), Math.cos(0.5)];
   for (const s of [1, -1]) {
-    fita(M, alca([d1[0] * s, d1[1] * s], 0.5, 0.36, 0.34, 0.2), 28, { cor: (a, b) => LACO.map(v => v * (b === 1 ? 1 : 0.9)), mat: mf });
-    fita(M, alca([d2[0] * s, d2[1] * s], 0.34, 0.3, 0.85, 0.17), 24, { cor: (a, b) => LACO.map(v => v * (b === 1 ? 0.96 : 0.86)), mat: mf });
-    // ponta: sai do nó, corre sobre a tampa e cai pela beirada
-    const dir = [(d1[0] + d2[0] * 0.55) * s, (d1[1] + d2[1] * 0.55) * s], dl = Math.hypot(...dir), dn = [dir[0] / dl, dir[1] / dl];
-    const beira = TL / 2 / Math.max(Math.abs(dn[0]), Math.abs(dn[1])) + 0.02, comp = beira + 0.17;
-    fita(M, t => { const s2 = t * comp, x = Math.min(s2, beira), cai = Math.max(0, s2 - beira); return { p: [dn[0] * x, yt + 0.02 + 0.03 * Math.sin(Math.PI * Math.min(1, s2 / beira)) * (cai ? 0 : 1) - cai, dn[1] * x], w: [-dn[1] * 0.085, 0, dn[0] * 0.085], n: cai ? [dn[0], 0, dn[1]] : [0, 1, 0] }; }, 18, { cor: LACO.map(v => v * 0.9), mat: mf });
+    fita(M, alca([d1[0] * s, d1[1] * s], 0.5, 0.34, 0.36, 0.2), 28, { cor: (a, b) => LACO.map(v => v * (b === 1 ? 1 : 0.9)), mat: mf });
+    fita(M, alca([d2[0] * s, d2[1] * s], 0.4, 0.3, 0.5, 0.18), 26, { cor: (a, b) => LACO.map(v => v * (b === 1 ? 0.96 : 0.86)), mat: mf });
+    // ponta: sai do nó e fica deitada sobre a tampa, na diagonal, com uma onda leve; acaba antes da beirada, em V
+    const dir = [(d1[0] - d2[0]) * s, (d1[1] - d2[1]) * s], dl = Math.hypot(...dir), dn = [dir[0] / dl, dir[1] / dl], lg = 0.075;
+    const beira = TL / 2 / Math.max(Math.abs(dn[0]), Math.abs(dn[1])), comp = beira - lg * Math.min(Math.abs(dn[0] / dn[1]), Math.abs(dn[1] / dn[0])) - 0.07;
+    fita(M, t => { const x = t * comp; return { p: [dn[0] * x, yt + 0.016 + 0.028 * Math.sin(Math.PI * t) * Math.sin(Math.PI * t) + 0.02 * t * t * t, dn[1] * x], w: [-dn[1] * lg, 0, dn[0] * lg], n: [0, 1, 0] }; }, 16, { cor: LACO.map(v => v * 0.92), mat: mf }, 0.07);
   }
   caixaRedonda(M, [no[0], no[1] + 0.02, no[2]], [0.17, 0.12, 0.17], 0.055, { cor: LACO, mat: mf });
   return { M, textura: null, incl: 0.4, raio: 1.1, centro: [0, 0.07, 0] };
@@ -416,22 +418,24 @@ function girar3d(raiz, { auto = true, inicio = -0.5 } = {}) {
   medir();
   const ATRITO = 0.9955; // quanto do giro sobra a cada milissegundo
   let ang = inicio, vel = 0, arr = null, raf = 0, sozinho = auto && !parado, t0 = 0;
+  let mexeu = false, ocioso = 0, rampa = 1, sentido = 1; // depois que a pessoa solta e o objeto para, ele volta a girar sozinho, devagar
   // na tampinha o giro é em torno do eixo de pé; ângulo 0 mostra a frente
   const pintar = () => { o.dataset.ang = ang.toFixed(3); if (!G) return pintar3d(cv, cena, ang); if (GL3 !== G || !cv.isConnected) return; glPintar(G, cena, ang); };
   const quadro = t => {
     raf = 0; const dt = Math.min(48, t - (t0 || t)); t0 = t;
     if (arr) return;
-    if (Math.abs(vel) > 0.0004) { const f = Math.pow(ATRITO, dt); ang += vel * (1 - f) / -Math.log(ATRITO); vel *= f; }
-    else if (sozinho) ang += 0.0007 * dt;
+    if (Math.abs(vel) > 0.0004) { const f = Math.pow(ATRITO, dt); ang += vel * (1 - f) / -Math.log(ATRITO); vel *= f; if (mexeu) sentido = vel < 0 ? -1 : 1; ocioso = 0; }
+    else if (sozinho) { rampa = Math.min(1, rampa + dt / 900); ang += sentido * 0.0007 * dt * rampa * (2 - rampa); }
+    else if (mexeu && !parado) { vel = 0; ocioso += dt; if (ocioso > 900) { sozinho = true; rampa = 0; } }
     else { vel = 0; pintar(); return; }
     pintar(); if (o.isConnected) raf = requestAnimationFrame(quadro);
   };
   const andar = () => { if (!raf && o.isConnected) { t0 = 0; raf = requestAnimationFrame(quadro); } };
-  o.addEventListener('pointerdown', e => { if (e.button > 0) return; sozinho = false; arr = { x: e.clientX, t: performance.now(), v: 0 }; vel = 0; o.classList.add('pegou'); try { o.setPointerCapture(e.pointerId); } catch {} });
+  o.addEventListener('pointerdown', e => { if (e.button > 0) return; sozinho = false; mexeu = true; ocioso = 0; arr = { x: e.clientX, t: performance.now(), v: 0 }; vel = 0; o.classList.add('pegou'); try { o.setPointerCapture(e.pointerId); } catch {} });
   o.addEventListener('pointermove', e => { if (!arr) return; const agora = performance.now(), dx = e.clientX - arr.x, dt = Math.max(1, agora - arr.t); ang += dx * 0.0115; arr.v = arr.v * 0.6 + (dx * 0.0115 / dt) * 0.4; arr.x = e.clientX; arr.t = agora; pintar(); });
   const soltar = () => { if (!arr) return; vel = parado ? 0 : Math.max(-0.02, Math.min(0.02, arr.v)); arr = null; o.classList.remove('pegou'); andar(); };
   o.addEventListener('pointerup', soltar); o.addEventListener('pointercancel', soltar);
-  o.addEventListener('keydown', e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); sozinho = false; vel = 0; ang += e.key === 'ArrowRight' ? 0.3 : -0.3; pintar(); });
+  o.addEventListener('keydown', e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); sozinho = false; mexeu = true; ocioso = 0; sentido = e.key === 'ArrowRight' ? 1 : -1; vel = 0; ang += 0.3 * sentido; pintar(); andar(); });
   pintar(); andar();
   // dá um peteleco que faz o objeto dar `voltas` e parar de frente, um pouco de lado (no ângulo `fim`)
   const peteleco = (voltas = 2, fim = -0.4) => { sozinho = false; const total = voltas * 2 * Math.PI + fim - ang; vel = (total + 0.0004 / -Math.log(ATRITO)) * -Math.log(ATRITO); andar(); };

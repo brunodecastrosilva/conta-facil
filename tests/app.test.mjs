@@ -494,3 +494,19 @@ test('Início: excluir a comanda em andamento; nomes na mesa sem perder o foco; 
   assert.equal(await p.evaluate(() => draft.active && draft.people.length), 2);
   await a.fechar();
 });
+
+test('objetos 3D voltam a girar sozinhos depois que a pessoa para de mexer', async () => {
+  const a = await aparelho(amb);
+  const p = a.page;
+  await p.evaluate(() => tampaSheet(TAMPINHAS[0]));
+  const o3d = p.locator('.kf-dlg .o3d'); await o3d.waitFor();
+  const ang = () => p.evaluate(() => +document.querySelector('.kf-dlg .o3d').dataset.ang);
+  await o3d.focus(); await p.keyboard.press('ArrowRight');
+  const a0 = await ang(); await new Promise(r => setTimeout(r, 500));
+  assert.equal(await ang(), a0, 'logo depois de mexer, o objeto fica onde a pessoa deixou');
+  await new Promise(r => setTimeout(r, 2200));
+  assert.ok(await ang() > a0 + 0.2, 'depois de um instante parado, o objeto deveria voltar a girar, no mesmo sentido');
+  // o laço do presente não atravessa a caixa: as pontas ficam deitadas sobre a tampa, sem passar da beirada
+  assert.ok(await p.evaluate(() => { const M = malhaPresente().M; let ok = true; for (let i = 0; i < M.p.length; i += 3) { const x = M.p[i], y = M.p[i + 1], z = M.p[i + 2], fita = M.c[i] > 0.8 && M.m[(i / 3) * 4 + 2] > 0.2; if (fita && y > 0.36 && (Math.abs(x) > 0.56 || Math.abs(z) > 0.56)) ok = false; } return ok; }), 'há fita passando da beirada da tampa');
+  semErros(a); await a.fechar();
+});
