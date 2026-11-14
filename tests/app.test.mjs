@@ -189,9 +189,11 @@ test('tampinhas e níveis: nascem do histórico, a tampinha gira em 3D, o sortei
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.click('[data-tampa="primeira"]');
   const o3d = p.locator('.kf-dlg .o3d'); await o3d.waitFor();
-  // desenhada num canvas (sem camadas de CSS 3D, que piscavam no iPhone): tem tinta e não tem faces soltas na página
+  // malha 3D de verdade (WebGL; sem ele, canvas comum): tem tinta e não tem faces de CSS soltas na página, que piscavam no iPhone
   assert.equal(await p.locator('.kf-dlg .o3d-saia, .kf-dlg .o3d-eixo').count(), 0);
-  assert.ok(await p.evaluate(() => { const c = document.querySelector('.kf-dlg .o3d canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 200) n++; return n > c.width * c.height * 0.2; }), 'a tampinha deveria estar desenhada');
+  assert.match(await p.getAttribute('.kf-dlg .o3d', 'data-motor'), /^(webgl|canvas)$/);
+  assert.ok(await p.evaluate(() => { const c = document.querySelector('.kf-dlg .o3d canvas'), t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const g = t.getContext('2d'); g.drawImage(c, 0, 0);
+    const d = g.getImageData(0, 0, t.width, t.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 200) n++; return n > t.width * t.height * 0.2; }), 'a tampinha deveria estar desenhada');
   const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .o3d').dataset.ang);
   const g0 = await giro(), cx = await o3d.boundingBox();
   await p.mouse.move(cx.x + cx.width / 2 - 50, cx.y + cx.height / 2); await p.mouse.down(); await p.mouse.move(cx.x + cx.width / 2 + 60, cx.y + cx.height / 2, { steps: 6 }); await p.mouse.up();
@@ -328,11 +330,20 @@ test('guia: janela fixa num espaço só dela, do começo ao fim, sem tocar nos d
   assert.ok(await esperar(() => p.evaluate(() => guia.i >= 2 && draft.people.length === 4), 60000), 'o guia não montou a mesa');
   // com uma janela aberta, ela termina acima da janela do guia
   assert.ok(await esperar(() => p.evaluate(() => { const d = document.querySelector('.kf-dlg'), g = document.querySelector('#guia-doca'); return !!d && d.getBoundingClientRect().bottom <= g.getBoundingClientRect().top + 1; }), 30000), 'janela por baixo do guia');
-  // voltar um passo refaz o passo; depois, pulando, o guia chega ao fim sem tropeçar
+  // o destaque é um anel solto, por cima de tudo: não pode ser cortado pela caixa em que o alvo está
+  assert.deepEqual(await p.evaluate(() => { const a = document.querySelector('#guia-anel'), s = getComputedStyle(a); return [s.position, a.parentElement === document.body]; }), ['fixed', true]);
+  // voltar um passo refaz o passo inteiro, em qualquer ponto do guia; pulando, o guia chega ao fim sem tropeçar
   await p.click('#guia-volta');
   assert.ok(await esperar(() => p.evaluate(() => guia.fase === 'conta')));
-  const fim = Date.now() + 150000;
-  while (Date.now() < fim && await p.evaluate(() => !!guia)) { await p.evaluate(() => { if (guia && !guia.rapido) document.querySelector('#guia-pula').click(); }); await new Promise(r => setTimeout(r, 120)); }
+  const fim = Date.now() + 400000, voltou = new Set();
+  while (Date.now() < fim && await p.evaluate(() => !!guia)) {
+    const e = await p.evaluate(() => guia && { i: guia.i, fase: guia.fase, rapido: guia.rapido });
+    // ao chegar a cada passo, volta para o anterior (que é refeito do começo) e só então segue
+    if (e && e.fase === 'conta' && e.i >= 1 && !voltou.has(e.i)) { voltou.add(e.i); await p.evaluate(() => guia && document.querySelector('#guia-volta').click()); }
+    else await p.evaluate(() => { if (guia && !guia.rapido && guia.fase === 'conta') document.querySelector('#guia-pula').click(); });
+    await new Promise(r => setTimeout(r, 90));
+  }
+  assert.ok(voltou.size >= 30, 'o teste deveria ter voltado em todos os passos: ' + voltou.size);
   assert.equal(await p.evaluate(() => !!guia), false, 'o guia não chegou ao fim');
   assert.deepEqual(await p.evaluate(() => window.__avisos.filter(x => /guia/.test(x))), [], 'algum passo do guia falhou');
   assert.deepEqual(await p.evaluate(() => [bills.length, bills[0].place, catalog.people.length, tab, draft.active, semSalvar, !!dadosReais, !!jogo.flags.guia, JSON.parse(localStorage.getItem('contafacil.bills')).length, document.querySelectorAll('#guia-doca, #guia-escudo, #guia-dedo, .festa, .kf-dlg').length]),
@@ -377,7 +388,7 @@ test('ícones do alto na mesma cor; Mais sem repetições; presente em 3D que gi
   await p.keyboard.press('Escape');
   const proibidas = /chopp|cerveja|caipirinha|garrafa|boteco|vinho|cacha[çc]a|u[íi]sque|whisky|vodca|vodka|drinque|drink|bebida|rodada/i;
   for (const arq of ['app.js', 'jogo.js', 'telas.js', 'casca.js', 'index.html', 'manifest.webmanifest', 'estilo.css']) {
-    const txt = (await readFile(RAIZ + '/' + arq, 'utf8')).split('\n').filter(l => !/(flags|vistas)\.garrafa/.test(l)).join('\n');
+    const txt = await readFile(RAIZ + '/' + arq, 'utf8');
     const m = txt.match(proibidas); assert.equal(m, null, `${arq} ainda fala de "${m && m[0]}"`);
   }
   semErros(a); await a.fechar();

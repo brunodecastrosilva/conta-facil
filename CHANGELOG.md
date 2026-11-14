@@ -3,6 +3,18 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.3.0 · 2026-11-14
+
+Terceira rodada de ajustes pedidos pelo Bruno, mais uma rodada de testes com o guia inteiro gravado em vídeo.
+
+- **Guia que faz, não só aponta:** 34 passos, cada um executando a função na demonstração: alterar um pedido, somar unidade e marcar cortesia, tirar o serviço de alguém, ver o cupom e os detalhes, juntar e separar, "uma pessoa paga a conta de todos", marcar pago, ligar couvert e desconto, acertar a diferença de quem já pagou, fechar e salvar, girar a tampinha, repetir e excluir uma comanda, salvar chave Pix, criar turma, sortear, abrir os Ajustes, a nuvem, o balão e o presente. A comanda ao vivo é a única que só é mostrada (ligá-la gravaria no servidor).
+- **Guia, lista de quem dividiu:** ao lançar, a lista sobe para o alto da janela, e todos os nomes ficam à vista.
+- **Guia, voltar:** todo passo começa de tela limpa, então voltar refaz o passo inteiro, em qualquer ponto.
+- **Guia, destaque:** virou um anel solto, por cima de tudo; não é mais cortado pela caixa em que o botão está.
+- **Tampinhas e presente em 3D de verdade (WebGL):** malha lisa com ombro e 21 gomos, esmalte com brilho, avesso de metal com reflexo e forro; caixa de cantos boleados, papel de bolinhas, fita acetinada e laço. Sem WebGL, vale o desenho anterior.
+- **Fechar a comanda:** as setas e o contador de cupons formam uma barra só, com botões redondos.
+- **Por dentro:** saiu a conversão de dados da 1.0 (só o Bruno usa o app).
+
 ## 1.2.0 · 2026-11-14
 
 Segunda rodada de ajustes pedidos pelo Bruno depois de usar o app no iPhone.

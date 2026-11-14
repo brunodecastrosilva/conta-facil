@@ -4,9 +4,6 @@
 
 /* ---------- estado ---------- */
 let jogo = { flags: {}, vistas: {}, off: false, pronto: false, ...(LS.get('jogo', null) || {}) };
-// a 1.0 chamava o sorteio de outro nome
-if (jogo.flags.garrafa) { jogo.flags.sorteio = jogo.flags.garrafa; delete jogo.flags.garrafa; }
-if (jogo.vistas.garrafa) { jogo.vistas.sorteio = jogo.vistas.garrafa; delete jogo.vistas.garrafa; }
 const jogoSalvar = () => LS.set('jogo', jogo);
 const jogoLigado = () => !jogo.off;
 const semMovimento = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
@@ -15,7 +12,7 @@ const vibrar = p => { try { if (navigator.vibrate && (!navigator.userActivation 
 function jogoMarcar(flag) {
   if (jogo.flags[flag]) return;
   jogo.flags[flag] = Date.now(); jogoSalvar();
-  setTimeout(() => jogoConferir(), 400);
+  setTimeout(() => jogoConferir({ silencioso: typeof guiaAtivo === 'function' && guiaAtivo() }), 400); // no guia, a demonstração não abre janela de tampinha
 }
 
 /* ---------- níveis ---------- */
@@ -128,7 +125,7 @@ function jogoConferir({ silencioso = false } = {}) {
   return novas;
 }
 let tampaFila = [];
-function tampaFilaMostrar() { if (!tampaFila.length || festaAberta || KitFacil.dialogo.aberto()) return; const l = tampaFila; tampaFila = []; tampaNova(l); }
+function tampaFilaMostrar() { if (!tampaFila.length || festaAberta || KitFacil.dialogo.aberto() || (typeof guiaAtivo === 'function' && guiaAtivo())) return; const l = tampaFila; tampaFila = []; tampaNova(l); }
 
 /* ---------- objetos em 3D que giram com o dedo (tampinha e presente) ----------
    São desenhados num <canvas>, face por face, de trás para a frente, com a luz recalculada a cada giro.
@@ -248,16 +245,179 @@ function pintar3d(cv, cena, ang) {
     else { g.fillStyle = cor; g.fill(); g.strokeStyle = cor; g.lineWidth = 0.7; g.stroke(); } // o traço da mesma cor fecha as frestas entre as faces
   }
 }
+/* ---------- 3D de verdade (WebGL): malha lisa, luz por pixel, brilho e reflexo; a profundidade é do próprio hardware ----------
+   A tampinha e o presente são malhas geradas aqui mesmo. Se o aparelho não tiver WebGL, vale o desenho em canvas comum (acima). */
+const V3 = { sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], norm: a => { const m = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / m, a[1] / m, a[2] / m]; }, dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2] };
+const novaMalha = () => ({ p: [], n: [], c: [], m: [], u: [], i: [] });
+// junta à malha uma grade de pontos [linha][coluna]. As normais saem das faces (lisas) ou vêm prontas; "fecha" emenda a última coluna na primeira.
+function grade(M, G, { cor, mat = [0.3, 30, 0, 0], uv = null, normais = null, fecha = false } = {}) {
+  const L = G.length, K = G[0].length, base = M.p.length / 3, KK = fecha ? K : K - 1, col = j => (fecha ? j % K : j);
+  const N = normais || G.map(r => r.map(() => [0, 0, 0])), tris = [];
+  for (let a = 0; a < L - 1; a++) for (let b = 0; b < KK; b++) { const b2 = col(b + 1); tris.push([[a, b], [a + 1, b], [a, b2]], [[a, b2], [a + 1, b], [a + 1, b2]]); }
+  for (const t of tris) {
+    const [x, y, z] = t.map(([a, b]) => G[a][b]), n = V3.cross(V3.sub(y, x), V3.sub(z, x));
+    if (!normais) t.forEach(([a, b]) => { N[a][b][0] += n[0]; N[a][b][1] += n[1]; N[a][b][2] += n[2]; });
+    else if (V3.dot(n, N[t[0][0]][t[0][1]]) < 0) t.reverse(); // a frente do triângulo acompanha a normal dada
+    M.i.push(...t.map(([a, b]) => base + a * K + b));
+  }
+  for (let a = 0; a < L; a++) for (let b = 0; b < K; b++) {
+    M.p.push(...G[a][b]); M.n.push(...V3.norm(N[a][b]));
+    M.c.push(...(typeof cor === 'function' ? cor(a, b) : cor)); M.m.push(...mat); M.u.push(...(uv ? uv(a, b) : [-1, -1]));
+  }
+}
+// caixa de cantos arredondados, centrada em c, de tamanho t e raio r
+function caixaRedonda(M, c, t, r, opc, k = 4) {
+  const eixo = h => { const v = []; for (let i = 0; i <= k; i++) v.push(-h + r * (1 - Math.cos(i / k * Math.PI / 2))); for (let i = k; i >= 0; i--) v.push(h - r * (1 - Math.cos(i / k * Math.PI / 2))); return v; };
+  const h = [t[0] / 2, t[1] / 2, t[2] / 2], E = h.map(eixo);
+  for (let f = 0; f < 6; f++) {
+    const ax = f >> 1, s = f & 1 ? 1 : -1, a1 = (ax + 1) % 3, a2 = (ax + 2) % 3, G = [], Nn = [];
+    for (const va of E[a1]) { const lg = [], ln = []; for (const vb of E[a2]) {
+      const p = [0, 0, 0]; p[ax] = s * h[ax]; p[a1] = va; p[a2] = vb;
+      const q = p.map((v, i) => Math.max(-(h[i] - r), Math.min(h[i] - r, v))), d = V3.norm(V3.sub(p, q));
+      lg.push([c[0] + q[0] + d[0] * r, c[1] + q[1] + d[1] * r, c[2] + q[2] + d[2] * r]); ln.push(d);
+    } G.push(lg); Nn.push(ln); }
+    grade(M, G, { ...opc, normais: Nn });
+  }
+}
+// fita: uma curva no espaço com largura (três pontos de largura, para a luz correr de um lado ao outro)
+function fita(M, curva, n, opc) {
+  const G = [];
+  for (let i = 0; i <= n; i++) { const { p, w, n: nor } = curva(i / n); G.push([-1, 0, 1].map(s => [p[0] + w[0] * s + nor[0] * (1 - s * s) * 0.012, p[1] + w[1] * s + nor[1] * (1 - s * s) * 0.012, p[2] + w[2] * s + nor[2] * (1 - s * s) * 0.012])); }
+  grade(M, G, opc);
+}
+function malhaTampa(o) {
+  const t = TAMPINHAS.find(x => x.id === o.dataset.tampa) || TAMPINHAS[0], apagada = !!o.dataset.apagada;
+  const [h1, h2] = apagada ? ['#C9D1CC', '#98A49C'] : ESMALTES[t.cor] || ESMALTES.ambar, c1 = cor2rgb(h1).map(v => v / 255), c2 = cor2rgb(h2).map(v => v / 255);
+  const M = novaMalha(), GOMOS = 21, S = GOMOS * 12, T = 0.42, r0 = 0.73, r1 = 0.845, zt = T / 2, zo = zt - 0.115, zb = -T / 2, RM = 0.945, AMP = 0.05, E = 0.022;
+  const ang = j => 2 * Math.PI * j / S, anel = (r, z) => Array.from({ length: S }, (_, j) => [r * Math.cos(ang(j)), r * Math.sin(ang(j)), z]);
+  const ESM = [0.55, 46, 0.1, 0], METAL = [0.8, 70, 0.55, 0], FORRO = [0.25, 20, 0.04, 0];
+  // frente: o disco de esmalte leva a figura (textura)
+  grade(M, [anel(0, zt), anel(r0 * 0.5, zt), anel(r0, zt)], { cor: [1, 1, 1], mat: ESM, fecha: true, uv: (a, j) => { const r = [0, 0.5, 1][a] * 0.5; return [0.5 + r * Math.cos(ang(j)), 0.5 - r * Math.sin(ang(j))]; } });
+  // ombro arredondado e saia com os 21 gomos (a onda cresce do ombro até a borda)
+  const perfil = (fora, d = 0) => { const G = [];
+    for (let k = 0; k <= 6; k++) { const f = k / 6 * Math.PI / 2; G.push(anel(r0 + (r1 - r0) * Math.sin(f) - d, zt - (zt - zo) * (1 - Math.cos(f)) - d)); }
+    for (let k = 1; k <= 9; k++) { const u = k / 9, onda = AMP * u * u * (3 - 2 * u), rb = r1 + (RM - r1) * Math.pow(u, 0.85) - d; G.push(Array.from({ length: S }, (_, j) => { const r = rb + onda * Math.cos(GOMOS * ang(j)); return [r * Math.cos(ang(j)), r * Math.sin(ang(j)), zo + (zb - zo) * u - d * 0.4]; })); }
+    return G; };
+  const base = c1.map((v, i) => v * 0.62 + c2[i] * 0.38);
+  // nos vales dos gomos e perto da borda a tinta fica um pouco mais escura (sombra própria)
+  grade(M, perfil(true), { fecha: true, mat: ESM, cor: (a, j) => { const u = Math.max(0, (a - 6) / 9), k = (1 - 0.2 * u) * (1 - 0.13 * u * (1 - Math.cos(GOMOS * ang(j))) / 2); return base.map(v => v * k); } });
+  // avesso: metal, com a mesma forma por dentro, a beirada e o teto
+  const dentro = perfil(false, E);
+  grade(M, dentro, { fecha: true, mat: METAL, cor: (a, j) => { const u = Math.max(0, (a - 6) / 9), k = 0.74 + 0.12 * u; return [k, k * 1.02, k * 1.01]; } });
+  const fora = perfil(true); grade(M, [fora[fora.length - 1], dentro[dentro.length - 1]], { fecha: true, mat: METAL, cor: [0.8, 0.82, 0.81] });
+  grade(M, [anel(0, zt - E), anel(r0 - E, zt - E)], { fecha: true, mat: METAL, cor: [0.72, 0.74, 0.73] });
+  // forro de plástico claro no fundo, com a borda boleada
+  const zf = zt - E - 0.035, rf = r0 * 0.9;
+  grade(M, [anel(0, zf), anel(rf * 0.55, zf), anel(rf * 0.93, zf), anel(rf * 0.985, zf + 0.012), anel(rf, zf + 0.034)], { fecha: true, mat: FORRO, cor: (a) => (a < 3 ? [0.95, 0.955, 0.94] : [0.86, 0.87, 0.855]) });
+  // a figura da frente: esmalte, filetes e o ícone
+  const tx = document.createElement('canvas'); tx.width = tx.height = 512; const g = tx.getContext('2d'), cs = v => `rgb(${v.map(x => Math.round(x * 255)).join(',')})`;
+  const gr = g.createRadialGradient(256 - 70, 256 - 90, 20, 256, 256, 270); gr.addColorStop(0, cs(c1)); gr.addColorStop(1, cs(c2)); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 9; g.beginPath(); g.arc(256, 256, 241, 0, 7); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 5; g.setLineDash([9, 17]); g.beginPath(); g.arc(256, 256, 203, 0, 7); g.stroke(); g.setLineDash([]);
+  g.save(); g.translate(256 - 12 * 15, 256 - 12 * 15); g.scale(15, 15); g.strokeStyle = '#FFFDF5'; g.lineWidth = 1.75; g.lineCap = g.lineJoin = 'round'; caminhosDoIcone(TAMPA_IC[t.ic] || TAMPA_IC.estrela).forEach(c => g.stroke(c)); g.restore();
+  return { M, textura: tx, incl: 0.2, raio: 1.14, centro: [0, 0, 0] };
+}
+function malhaPresente() {
+  const M = novaMalha(), PAPEL = [0.105, 0.36, 0.235], TAMPA = [0.14, 0.44, 0.29], FITA = [0.95, 0.68, 0.2], LACO = [0.97, 0.72, 0.24];
+  const mp = [0.35, 28, 0.05, 1], mf = [0.6, 60, 0.22, 0], W = 1, A = 0.8, TL = 1.085, TA = 0.24, yb = -0.62, y0 = yb + A, yt = y0 + TA - 0.03, fw = 0.2, e = 0.012;
+  caixaRedonda(M, [0, yb + A / 2, 0], [W, A, W], 0.035, { cor: PAPEL, mat: mp });
+  caixaRedonda(M, [0, yt - TA / 2, 0], [TL, TA, TL], 0.04, { cor: TAMPA, mat: mp });
+  // fita em cruz: duas faixas na caixa e duas na tampa, um nada mais largas que o papel
+  for (const [tx, tz] of [[fw, W + 2 * e], [W + 2 * e, fw]]) caixaRedonda(M, [0, yb + A / 2, 0], [tx, A + 2 * e, tz], 0.012, { cor: FITA, mat: mf }, 2);
+  for (const [tx, tz] of [[fw, TL + 2 * e], [TL + 2 * e, fw]]) caixaRedonda(M, [0, yt - TA / 2, 0], [tx, TA + 2 * e, tz], 0.012, { cor: FITA, mat: mf }, 2);
+  // laço: duas alças grandes, duas menores e mais em pé, duas pontas caídas sobre a tampa e o nó
+  const no = [0, yt + 0.045, 0];
+  const alca = (dir, a, b, sobe, larg) => t => {
+    const f = 2 * Math.PI * t, x = a * (1 - Math.cos(f)) / 2, y = b / 2 * Math.sin(f) * Math.sin(f / 2) + x * sobe, lw = larg * (0.5 + 0.5 * Math.sin(f / 2));
+    const lado = [-dir[1], 0, dir[0]];
+    return { p: [no[0] + dir[0] * x, no[1] + y + 0.02, no[2] + dir[1] * x], w: lado.map(v => v * lw / 2), n: [dir[0] * Math.sin(f), Math.cos(f), dir[1] * Math.sin(f)] };
+  };
+  const d1 = [Math.cos(0.5), Math.sin(0.5)], d2 = [-Math.sin(0.5), Math.cos(0.5)];
+  for (const s of [1, -1]) {
+    fita(M, alca([d1[0] * s, d1[1] * s], 0.5, 0.36, 0.34, 0.2), 28, { cor: (a, b) => LACO.map(v => v * (b === 1 ? 1 : 0.9)), mat: mf });
+    fita(M, alca([d2[0] * s, d2[1] * s], 0.34, 0.3, 0.85, 0.17), 24, { cor: (a, b) => LACO.map(v => v * (b === 1 ? 0.96 : 0.86)), mat: mf });
+    // ponta: sai do nó, corre sobre a tampa e cai pela beirada
+    const dir = [(d1[0] + d2[0] * 0.55) * s, (d1[1] + d2[1] * 0.55) * s], dl = Math.hypot(...dir), dn = [dir[0] / dl, dir[1] / dl];
+    const beira = TL / 2 / Math.max(Math.abs(dn[0]), Math.abs(dn[1])) + 0.02, comp = beira + 0.17;
+    fita(M, t => { const s2 = t * comp, x = Math.min(s2, beira), cai = Math.max(0, s2 - beira); return { p: [dn[0] * x, yt + 0.02 + 0.03 * Math.sin(Math.PI * Math.min(1, s2 / beira)) * (cai ? 0 : 1) - cai, dn[1] * x], w: [-dn[1] * 0.085, 0, dn[0] * 0.085], n: cai ? [dn[0], 0, dn[1]] : [0, 1, 0] }; }, 18, { cor: LACO.map(v => v * 0.9), mat: mf });
+  }
+  caixaRedonda(M, [no[0], no[1] + 0.02, no[2]], [0.17, 0.12, 0.17], 0.055, { cor: LACO, mat: mf });
+  return { M, textura: null, incl: 0.4, raio: 1.1, centro: [0, 0.07, 0] };
+}
+const M4 = {
+  mul(a, b) { const o = new Float32Array(16); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3]; return o; },
+  persp(fov, asp, n, f) { const t = 1 / Math.tan(fov / 2), o = new Float32Array(16); o[0] = t / asp; o[5] = t; o[10] = (f + n) / (n - f); o[11] = -1; o[14] = 2 * f * n / (n - f); return o; },
+  mov(x, y, z) { const o = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]); return o; },
+  rx(a) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]); },
+  ry(a) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]); },
+};
+const GL_VS = `attribute vec3 aP,aN,aC;attribute vec4 aM;attribute vec2 aU;uniform mat4 uMVP,uMV;varying vec3 vN,vV,vC,vPo,vNo;varying vec4 vM;varying vec2 vU;
+void main(){vec4 q=uMV*vec4(aP,1.);vV=q.xyz;vN=mat3(uMV)*aN;vC=aC;vM=aM;vU=aU;vPo=aP;vNo=aN;gl_Position=uMVP*vec4(aP,1.);}`;
+const GL_FS = `precision highp float;uniform sampler2D uT;varying vec3 vN,vV,vC,vPo,vNo;varying vec4 vM;varying vec2 vU;
+void main(){vec3 N=normalize(vN);if(!gl_FrontFacing)N=-N;vec3 V=normalize(-vV);
+vec3 base=vU.x>=0.?texture2D(uT,vU).rgb:vC;
+if(vM.w>.5){vec3 a=abs(vNo);float pl=step(.92,max(a.x,max(a.y,a.z)));vec2 q=a.x>.6?vPo.zy:(a.y>.6?vPo.xz:vPo.xy);vec2 g=fract(q*6.5+.25)-.5;float bol=1.-smoothstep(.105,.135,length(g));base=mix(base,base*1.32+.035,bol*pl);}
+vec3 L1=normalize(vec3(-.5,.74,.62)),L2=normalize(vec3(.75,.15,.55)),L3=normalize(vec3(.2,.5,-.85));
+float d1=max(dot(N,L1),0.),d2=max(dot(N,L2),0.),d3=max(dot(N,L3),0.);
+vec3 amb=mix(vec3(.34,.35,.36),vec3(.58,.6,.62),N.y*.5+.5);
+vec3 H=normalize(L1+V);float sp=pow(max(dot(N,H),0.),vM.y)*vM.x;
+vec3 R=reflect(-V,N);float ceu=smoothstep(-.3,.9,R.y);float faixa=smoothstep(.35,.62,R.y)*(1.-smoothstep(.7,.98,R.y));
+float fr=pow(1.-max(dot(N,V),0.),3.);
+vec3 cor=base*(amb+d1*.72+d2*.2+d3*.12)+vec3(sp)+vM.z*(mix(base,vec3(1.),.55))*(ceu*.42+faixa*.7-.22)+fr*.07;
+gl_FragColor=vec4(clamp(cor,0.,1.),1.);}`;
+let GL3 = null; // { cv, gl, loc, bufs } · false quando o aparelho não tem WebGL
+function gl3() {
+  if (GL3 !== null) return GL3 || null;
+  try {
+    const cv = document.createElement('canvas'), gl = cv.getContext('webgl', { antialias: true, alpha: true, preserveDrawingBuffer: true });
+    if (!gl) { GL3 = false; return null; }
+    const sh = (tipo, src) => { const s = gl.createShader(tipo); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+    const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, GL_VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, GL_FS)); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    gl.useProgram(pr);
+    const loc = { aP: gl.getAttribLocation(pr, 'aP'), aN: gl.getAttribLocation(pr, 'aN'), aC: gl.getAttribLocation(pr, 'aC'), aM: gl.getAttribLocation(pr, 'aM'), aU: gl.getAttribLocation(pr, 'aU'), uMVP: gl.getUniformLocation(pr, 'uMVP'), uMV: gl.getUniformLocation(pr, 'uMV'), uT: gl.getUniformLocation(pr, 'uT') };
+    cv.setAttribute('aria-hidden', 'true');
+    cv.addEventListener('webglcontextlost', e => { e.preventDefault(); GL3 = null; }); // se o sistema tomar o contexto, o próximo giro monta outro
+    GL3 = { cv, gl, loc, n: 0, cena: null };
+    return GL3;
+  } catch (x) { console.warn('3d', x); GL3 = false; return null; }
+}
+// põe a malha da cena na placa de vídeo (uma cena por vez: só há um objeto 3D na tela)
+function glCena(G, cena) {
+  const { gl, loc } = G, M = cena.M;
+  const attr = (l, dados, n) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(dados), gl.STATIC_DRAW); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, 0, 0); return b; };
+  (G.lixo || []).forEach(b => gl.deleteBuffer(b)); if (G.tex) gl.deleteTexture(G.tex);
+  G.lixo = [attr(loc.aP, M.p, 3), attr(loc.aN, M.n, 3), attr(loc.aC, M.c, 3), attr(loc.aM, M.m, 4), attr(loc.aU, M.u, 2)];
+  const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(M.i), gl.STATIC_DRAW); G.lixo.push(ib);
+  G.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, G.tex);
+  if (cena.textura) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cena.textura); gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    const an = gl.getExtension('EXT_texture_filter_anisotropic'); if (an) gl.texParameterf(gl.TEXTURE_2D, an.TEXTURE_MAX_ANISOTROPY_EXT, 8); }
+  else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+  gl.uniform1i(loc.uT, 0); G.n = M.i.length; G.cena = cena;
+}
+function glPintar(G, cena, ang) {
+  const { gl, loc, cv } = G;
+  if (G.cena !== cena) glCena(G, cena);
+  gl.viewport(0, 0, cv.width, cv.height); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+  const fov = 0.5, dist = cena.raio / Math.sin(fov / 2) * 1.02, c = cena.centro;
+  const mv = M4.mul(M4.mov(0, 0, -dist), M4.mul(M4.rx(cena.incl), M4.mul(M4.ry(ang), M4.mov(-c[0], -c[1], -c[2]))));
+  gl.uniformMatrix4fv(loc.uMV, false, mv); gl.uniformMatrix4fv(loc.uMVP, false, M4.mul(M4.persp(fov, cv.width / cv.height, dist - cena.raio * 1.6, dist + cena.raio * 1.6), mv));
+  gl.drawElements(gl.TRIANGLES, G.n, gl.UNSIGNED_SHORT, 0);
+}
 // liga o giro: arrastar na horizontal, inércia ao soltar, setas do teclado
 function girar3d(raiz, { auto = true, inicio = -0.5 } = {}) {
   const o = raiz.matches && raiz.matches('.o3d') ? raiz : raiz.querySelector('.o3d'); if (!o || o.dataset.ligado) return null;
   o.dataset.ligado = '1';
-  const cv = o.querySelector('canvas'), cena = o.dataset.o3d === 'tampa' ? cenaTampa(o) : cenaPresente(o), parado = semMovimento();
+  const tampa = o.dataset.o3d === 'tampa', parado = semMovimento(), G = gl3();
+  let cv = o.querySelector('canvas'), cena;
+  if (G) { cena = tampa ? malhaTampa(o) : malhaPresente(); cv.replaceWith(G.cv); cv = G.cv; o.dataset.motor = 'webgl'; }
+  else { cena = tampa ? cenaTampa(o) : cenaPresente(o); o.dataset.motor = 'canvas'; }
   const medir = () => { const dpr = Math.min(3, window.devicePixelRatio || 1), w = o.clientWidth, h = o.clientHeight; cv._dpr = dpr; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); };
   medir();
   const ATRITO = 0.9955; // quanto do giro sobra a cada milissegundo
   let ang = inicio, vel = 0, arr = null, raf = 0, sozinho = auto && !parado, t0 = 0;
-  const pintar = () => { o.dataset.ang = ang.toFixed(3); pintar3d(cv, cena, ang); };
+  // na tampinha o giro é em torno do eixo de pé; ângulo 0 mostra a frente
+  const pintar = () => { o.dataset.ang = ang.toFixed(3); if (!G) return pintar3d(cv, cena, ang); if (GL3 !== G || !cv.isConnected) return; glPintar(G, cena, ang); };
   const quadro = t => {
     raf = 0; const dt = Math.min(48, t - (t0 || t)); t0 = t;
     if (arr) return;

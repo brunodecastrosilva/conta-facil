@@ -266,7 +266,7 @@ const GUIA_CANCELA = { cancelado: true };
 const dorme = ms => new Promise(r => setTimeout(r, ms));
 const quadro = () => new Promise(r => requestAnimationFrame(r));
 const guiaFoto = () => JSON.stringify({ draft, bills, catalog, jogo, tab, cadAba, pesAberto, itemAberto });
-function guiaLimparTela() { $('#festa-ok')?.click(); closeSheet(true); guiaDeixaTampa = false; tampaFila = []; $('#guia-dedo')?.classList.remove('ver'); }
+function guiaLimparTela() { $('#festa-ok')?.click(); closeSheet(true); guiaDeixaTampa = false; tampaFila = []; $('#guia-dedo')?.classList.remove('ver'); $('#guia-anel')?.classList.remove('ver'); }
 function guiaZerarTela() { pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; jogoMemo.chave = ''; cacheBills = new WeakMap(); }
 function guiaRestaurar(f) {
   guiaLimparTela(); if (tab === 'ajustes') sairDosAjustes();
@@ -292,7 +292,7 @@ function guiaParar({ concluiu = false } = {}) {
   const g = guia; if (!g) return;
   guia = null;
   guiaLimparTela(); if (tab === 'ajustes') sairDosAjustes();
-  ['#guia-doca', '#guia-escudo', '#guia-dedo'].forEach(q => $(q)?.remove());
+  ['#guia-doca', '#guia-escudo', '#guia-dedo', '#guia-anel'].forEach(q => $(q)?.remove());
   document.body.classList.remove('com-guia');
   document.removeEventListener('keydown', guiaTecla, true); removeEventListener('resize', guiaMoldura);
   const r = dadosReais; dadosReais = null; semSalvar = false;
@@ -321,7 +321,8 @@ function guiaMontar() {
         <button type="button" class="guia-b" id="guia-pula" aria-label="Pular para o próximo passo">${I.seguinte}</button>
         <button type="button" class="guia-b" id="guia-sai" aria-label="Sair do guia">${I.x}</button></div></div>`;
   const dedo = document.createElement('div'); dedo.id = 'guia-dedo'; dedo.className = 'guia-dedo'; dedo.setAttribute('aria-hidden', 'true');
-  document.body.append(esc0, doca, dedo);
+  const anel = document.createElement('div'); anel.id = 'guia-anel'; anel.className = 'guia-anel'; anel.setAttribute('aria-hidden', 'true');
+  document.body.append(esc0, doca, anel, dedo);
   $('#guia-volta').onclick = () => { const g = guia; if (!g) return; g.i = g.fase === 'acao' ? g.i : Math.max(0, g.i - 1); g.rapido = false; g.pausado = false; g.tk = {}; guiaRestaurar(g.fotos[g.i]); };
   $('#guia-pausa').onclick = () => { const g = guia; if (!g) return; g.pausado = !g.pausado; guiaPintar(); };
   $('#guia-pula').onclick = () => { const g = guia; if (!g) return; g.pausado = false; g.rapido = true; guiaPintar(); };
@@ -390,6 +391,8 @@ function guiaMaos(g, tk) {
     await levar(el); vivo();
     dedo.classList.add('toca'); await espera(170); vivo();
     if (clique && el.isConnected) el.click();
+    // no guia ninguém digita de verdade: o campo que ganhar o foco solta, para o teclado do celular não aparecer
+    const foco = document.activeElement; if (foco && foco.matches && foco.matches('input, textarea, select')) foco.blur();
     await espera(210); dedo.classList.remove('toca'); await espera(depois);
     return el;
   };
@@ -405,12 +408,26 @@ function guiaMaos(g, tk) {
     } finally { el.classList.remove('guia-escreve'); }
     await espera(280);
   };
+  // destaque: um anel que acompanha o alvo, desenhado por cima de tudo (nunca é cortado pela caixa em que o alvo está)
+  const anel = $('#guia-anel');
   const apontar = async (q, ms = 1400, o) => {
     const el = await acha(q, o); if (!el) return null;
-    await levar(el); el.classList.add('guia-olha');
-    try { await espera(ms); } finally { el.classList.remove('guia-olha'); }
+    await levar(el);
+    const segue = () => { if (!el.isConnected) return; const r = el.getBoundingClientRect(), f = 5, x = Math.max(3, r.left - f), y = Math.max(3, r.top - f), w = Math.min(innerWidth - 3, r.right + f) - x, h = r.bottom + f - y;
+      anel.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`; anel.style.width = w.toFixed(1) + 'px'; anel.style.height = h.toFixed(1) + 'px'; anel.style.borderRadius = Math.min(18, (parseFloat(getComputedStyle(el).borderRadius) || 8) + f) + 'px'; };
+    let vivoAnel = true; const laco = () => { if (!vivoAnel) return; segue(); requestAnimationFrame(laco); };
+    segue(); anel.classList.add('ver'); laco();
+    try { await espera(ms); } finally { vivoAnel = false; anel.classList.remove('ver'); }
     return el;
   };
+  // dentro de uma janela, traz um trecho para o alto da parte que rola (para a lista inteira caber à vista)
+  const rolar = async (q, folga = 8) => {
+    const el = await acha(q), cx = el.closest('.kf-dlg-corpo') || el.closest('.kf-dlg'); if (!cx) return;
+    const alvo = cx.scrollTop + el.getBoundingClientRect().top - cx.getBoundingClientRect().top - folga;
+    cx.scrollTo({ top: Math.max(0, alvo), behavior: suave() }); await espera(520);
+  };
+  // fecha a janela aberta pelo X, como a pessoa faria
+  const fechar = async () => { const x = await acha('.kf-dlg .kf-dlg-cab [data-kf-fechar], .kf-dlg [data-kf-fechar]', { opcional: true, prazo: 800 }); if (x) { await tocar(x, { depois: 200 }); await some('.kf-dlg'); } };
   // arrasta o dedo de lado sobre um objeto (é assim que a tampinha e o presente giram)
   const arrastar = async (q, dx, { dur = 1000 } = {}) => {
     const el = await acha(q); await levar(el); vivo();
@@ -424,13 +441,14 @@ function guiaMaos(g, tk) {
     } finally { ev('pointerup', x0 + dx); dedo.classList.remove('toca'); dedo.style.transition = ''; }
     await espera(900);
   };
-  return { espera, acha, some, tocar, digitar, apontar, arrastar, vivo, sumir: () => dedo.classList.remove('ver') };
+  return { espera, acha, some, tocar, digitar, apontar, arrastar, rolar, fechar, vivo, sumir: () => dedo.classList.remove('ver') };
 }
 async function guiaRodar() {
   const g = guia;
   while (guia === g && g.i < g.passos.length) {
     const tk = g.tk = {}, p = g.passos[g.i], m = guiaMaos(g, tk);
     try {
+      if ($('#festa-ok') || KitFacil.dialogo.aberto()) guiaLimparTela(); // todo passo termina com as janelas fechadas; isto é só garantia
       if (!g.fotos[g.i]) g.fotos[g.i] = guiaFoto();
       g.fase = 'conta'; guiaPintar();
       await guiaContagem(g, tk, p);
@@ -450,70 +468,95 @@ async function guiaRodar() {
 }
 const demoId = n => draft.people.find(p => p.name === n)?.id || '';
 const demoItem = n => draft.items.find(x => x.name === n)?.id || '';
+const demoUn = n => { const c = compute(draft); return c.unitOf[demoId(n)] || ''; };
 const navQ = t => `#tab-${t}, #trilho-${t}`;
+// abre a linha de uma pessoa (ou de um pedido) se ainda estiver fechada
+async function demoAbrir(m, q) { const sm = await m.acha(q); if (!sm.parentElement.open) { await m.tocar(sm); await m.espera(450); } }
 // lança um pedido na janela de lançar: nome, quantidade (pelo +), valor e a divisão
 async function demoLancar(m, { nome, mais = 0, preco, individual, fora, olhar }) {
   await m.tocar('#it-novo'); await m.acha('#pr-nome');
   await m.digitar('#pr-nome', nome);
   for (let k = 0; k < mais; k++) await m.tocar('[data-pr-step="1"]', { depois: 160 });
   await m.digitar('#pr-preco', preco, { ritmo: 110 });
+  // a lista de quem dividiu sobe para o alto da janela: assim todos os nomes ficam à vista
+  if (individual || fora || olhar) await m.rolar('#lc-modo', 34);
   if (olhar) await m.apontar(olhar, 1500);
   if (individual) { await m.tocar('[data-lc-modo="units"]'); for (const [n, q] of individual) for (let k = 0; k < q; k++) await m.tocar(`[data-lc-un="${demoId(n)}"][data-dir="1"]`, { depois: 200 }); }
-  for (const n of fora || []) await m.tocar(`[data-lc-ck="${demoId(n)}"]`, { depois: 240 });
-  await m.espera(500);
+  for (const n of fora || []) await m.tocar(`[data-lc-ck="${demoId(n)}"]`, { depois: 260 });
+  if (fora) await m.apontar('#lc-resumo', 1300);
+  await m.espera(400);
   await m.tocar('#lc-ok'); await m.some('#pr-nome'); await m.espera(700);
 }
+/* O roteiro. Todo passo faz a ação de verdade na demonstração (não só aponta) e termina com as janelas fechadas. */
 const GUIA = [
   { t: 'Comece pelo nome do lugar', d: 'No Início, escreva onde você está e toque em Abrir comanda.',
     acao: async m => { await m.digitar('#ini-local', 'Cantina da Praça'); await m.tocar('#ini-form button[type=submit]'); await m.acha('#add-pessoa'); } },
-  { t: 'Ponha as pessoas na mesa', d: 'Toque em Pessoa e escreva o nome de cada um. Quem já tem cadastro aparece como sugestão.',
-    acao: async m => { await m.tocar('#add-pessoa'); for (const n of ['Ana', 'Bruno', 'Carla', 'Diego']) { await m.digitar('#pn-nome', n, { ritmo: 70 }); await m.tocar('#pn-form button[type=submit]', { depois: 260 }); } await m.tocar('#pn-ok'); await m.some('#pn-nome'); } },
+  { t: 'Ponha as pessoas na mesa', d: 'Escreva o nome de cada um e toque em Adicionar. Quem tem cadastro é sugerido.',
+    acao: async m => { await m.tocar('#add-pessoa'); for (const n of ['Ana', 'Bruno', 'Carla', 'Diego']) { await m.digitar('#pn-nome', n, { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); } await m.tocar('#pn-ok'); await m.some('#pn-nome'); } },
   { t: 'Lance o primeiro pedido', d: 'Produto, quantidade e valor numa janela só. O item já entra dividido entre todos.',
     acao: async m => { await demoLancar(m, { nome: 'Porção de fritas', preco: '4200', olhar: '.kf-dlg .ck-list' }); } },
   { t: 'Consumo individual', d: 'Cada um pediu o seu? Escolha Individual e diga quantas unidades são de cada pessoa.',
     acao: async m => { await demoLancar(m, { nome: 'Suco de laranja', mais: 2, preco: '900', individual: [['Ana', 2], ['Bruno', 1]] }); } },
   { t: 'Só alguns dividiram', d: 'Desmarque quem ficou de fora. O valor é repartido só entre os marcados.',
     acao: async m => { await demoLancar(m, { nome: 'Pudim', preco: '1800', fora: ['Ana', 'Bruno'] }); } },
-  { t: 'Confira ou altere um pedido', d: 'Toque num pedido para ver quem dividiu. Em Alterar, mude o que precisar.',
-    acao: async m => { const it = demoItem('Porção de fritas'); await m.tocar(`[data-item="${it}"] .it-lin`); await m.espera(700); await m.apontar(`[data-item="${it}"] [data-it-alt]`); await m.tocar(`[data-item="${it}"] .it-lin`); } },
+  { t: 'Altere um pedido', d: 'Toque no pedido e em Alterar para corrigir o nome, o valor ou quem dividiu.',
+    acao: async m => { const it = demoItem('Porção de fritas'); await demoAbrir(m, `[data-item="${it}"] .it-lin`); await m.tocar(`[data-item="${it}"] [data-it-alt]`); await m.acha('#pr-preco'); await m.digitar('#pr-preco', '4500', { ritmo: 110 }); await m.espera(500); await m.tocar('#lc-ok'); await m.some('#pr-nome'); await m.apontar(`[data-item="${it}"] .it-lin`, 1200); await m.tocar(`[data-item="${it}"] .it-lin`); } },
+  { t: 'Mais uma unidade e cortesia', d: 'Com o pedido aberto, some unidades e marque cortesias. Depois, toque em Salvar.',
+    acao: async m => { const it = demoItem('Suco de laranja'); await demoAbrir(m, `[data-item="${it}"] .it-lin`); await m.tocar(`[data-it-u="${it}"][data-p="${demoId('Carla')}"][data-dir="1"]`); await m.tocar(`[data-it-fq="${it}"][data-dir="1"]`); await m.apontar(`[data-item="${it}"] .pending-bar`, 1500); await m.tocar(`[data-it-ok="${it}"]`); await m.espera(600); await m.tocar(`[data-item="${it}"] .it-lin`); } },
   { t: 'A parte de cada pessoa', d: 'A comanda soma na hora. Toque num nome para ver os atalhos dessa pessoa.',
-    acao: async m => { const u = demoId('Diego'); await m.tocar(`summary[data-unit="${u}"]`); await m.espera(500); await m.apontar(`[data-pa="${u}"] [data-pa-cupom]`); await m.apontar(`[data-pa="${u}"] [data-pa-mais]`, 1100); } },
+    acao: async m => { const u = demoUn('Diego'); await m.tocar(`summary[data-unit="${u}"]`); await m.espera(500); await m.apontar(`[data-pa="${u}"]`, 1700); } },
+  { t: 'Quem não paga o serviço', d: 'Desligue o serviço de alguém e escolha: ninguém paga a parte ou os outros dividem.',
+    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svc]`); await m.acha('[data-pol="redistribute"]'); await m.espera(900); await m.tocar('[data-pol="redistribute"]'); await m.some('[data-pol]'); await m.apontar(`summary[data-unit="${demoUn('Diego')}"]`, 1400); } },
+  { t: 'O cupom de cada um', d: 'Ver cupom mostra a conta da pessoa, pronta para compartilhar ou marcar como paga.',
+    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-cupom]`); await m.acha('#cp-share'); await m.apontar('.kf-dlg .cupom-1', 1700); await m.apontar('#cp-share', 1300); await m.fechar(); } },
+  { t: 'Detalhes da pessoa', d: 'Em Detalhes, veja item por item, lance só para ela ou combine outro valor.',
+    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-mais]`); await m.acha('.kf-dlg .cs'); await m.espera(900); await m.apontar('.kf-dlg [data-cs-lancar]', 1300, { opcional: true, prazo: 600 }); await m.apontar('.kf-dlg [data-cs-valor]', 1300, { opcional: true, prazo: 600 }); await m.fechar(); } },
   { t: 'Um cupom para duas pessoas', d: 'Juntar une os dois num cupom só. Arrastar um nome sobre o outro faz o mesmo.',
-    acao: async m => { const u = demoId('Diego'); await m.tocar(`[data-pa="${u}"] [data-pa-juntar]`); await m.tocar(`[data-pa="${u}"] [data-pa-alvo="p:${demoId('Carla')}"]`); await m.apontar('summary.dv-grupo', 1500); } },
-  { t: 'Marque quem já pagou', d: 'O carimbo PAGO aparece no nome, e o total mostra quanto ainda falta receber.',
-    acao: async m => { const u = demoId('Ana'); await m.tocar(`summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-pago]`); await m.apontar('#cmd-conta', 1500); } },
-  { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa e ligar ou ajustar cada um.',
-    acao: async m => { await m.tocar('#cm-pe'); await m.acha('#cm-ok'); for (const k of ['svc', 'cv', 'ds']) { const i = await m.acha(`[data-cm="${k}"]`); await m.apontar(i.closest('.cm-bloco'), 1200); } await m.tocar('#cm-ok'); await m.some('#cm-ok'); } },
-  { t: 'Comanda ao vivo', d: 'Compartilhe a comanda: cada pessoa lança os pedidos pelo próprio celular.', se: () => !!store.db,
-    acao: async m => { await m.apontar('#live-start', 2000, { opcional: true, prazo: 1200 }); } },
-  { t: 'Feche a comanda', d: 'Na hora de pagar, toque em Fechar. O primeiro cupom é o resumo da mesa.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1400); } },
-  { t: 'Um cupom para cada pessoa', d: 'Passe os cupons. Copie o texto com o Pix ou gere um PDF para mandar.',
-    acao: async m => { await m.tocar('#fc-prox', { depois: 1000 }); await m.tocar('#fc-prox', { depois: 1000 }); await m.apontar('[data-fc-copiar="2"]', 1200); await m.apontar('[data-fc-pdf="2"]', 1200); } },
+    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-juntar]`); await m.tocar(`[data-pa="${u}"] [data-pa-alvo="p:${demoId('Carla')}"]`); await m.apontar('summary.dv-grupo', 1600); } },
+  { t: 'Separe quando quiser', d: 'O cupom compartilhado mostra a parte de cada um. Separar desfaz a união.',
+    acao: async m => { const u = demoUn('Carla'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svcabre]`, { opcional: true, prazo: 600 }); await m.espera(900); await m.tocar(`[data-pa="${u}"] [data-pa-desfaz]`); await m.espera(900); } },
+  { t: 'Uma pessoa paga a conta de todos', d: 'Na conta da mesa, escolha quem paga tudo. Cada um paga o seu desfaz.',
+    acao: async m => { await m.tocar('#cm-pe'); await m.tocar('.kf-dlg [data-cm-todos]'); await m.acha(`.kf-dlg [data-pt="${demoId('Bruno')}"]`); await m.espera(700); await m.tocar(`.kf-dlg [data-pt="${demoId('Bruno')}"]`); await m.some('[data-pt]'); await m.apontar('#view summary.dv-grupo', 1600, { opcional: true }); await m.tocar('#cm-pe'); await m.tocar('.kf-dlg [data-cm-separar]'); await m.espera(700); await m.tocar('#cm-ok'); await m.some('#cm-ok'); } },
+  { t: 'Marque quem já pagou', d: 'O app guarda o valor pago, carimba PAGO e mostra quanto ainda falta receber.',
+    acao: async m => { const u = demoUn('Ana'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-pago]`); await m.apontar('#cmd-conta', 1600); } },
+  { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
+    acao: async m => { await m.tocar('#cm-pe'); await m.acha('#cm-ok'); await m.apontar((await m.acha('.kf-dlg [data-cm="svc"]')).closest('.cm-bloco'), 1200); await m.tocar('.kf-dlg [data-cm="cv"]'); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.tocar('#cm-ok'); await m.some('#cm-ok'); } },
+  { t: 'A conta de quem já pagou mudou', d: 'Ana pagou antes do couvert e do desconto. O app mostra a diferença para acertar.',
+    acao: async m => { await m.apontar('#view .aviso-pago', 2400); await m.tocar('#view [data-ap-acerta]'); await m.espera(900); } },
+  { t: 'Comanda ao vivo', d: 'Compartilhe a comanda: cada pessoa lança pelo próprio celular. Aqui, só o botão.', se: () => !!store.db,
+    acao: async m => { await m.apontar('#live-start', 2200, { opcional: true, prazo: 1200 }); } },
+  { t: 'Feche a comanda', d: 'Toque em Fechar na hora de pagar. Primeiro o cupom da mesa; depois, um por pessoa.',
+    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1300); await m.tocar('#fc-prox', { depois: 1000 }); await m.tocar('#fc-prox', { depois: 900 }); await m.apontar('[data-fc-copiar="2"]', 1300); await m.apontar('[data-fc-pdf="2"]', 1300); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
   { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.',
-    acao: async m => { await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3200); await m.apontar('.festa-xp', 1600); await m.tocar('#festa-ok'); } else await m.espera(1600); } },
+    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3400); await m.apontar('.festa-xp', 1600); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
   { t: 'Tampinhas e níveis', d: 'Cada comanda salva rende pontos. As tampinhas que você ganha ficam na coleção.', se: () => jogoLigado(),
     acao: async m => { await m.tocar(navQ('tampinhas')); await m.apontar('#view .nivel-card', 1700); await m.apontar('#view [data-tampa="primeira"]', 1300); } },
   { t: 'Gire a tampinha', d: 'Toque numa tampinha e deslize o dedo sobre ela: ela gira nas suas mãos.', se: () => jogoLigado(),
-    acao: async m => { await m.tocar('#view [data-tampa="primeira"]'); await m.acha('.kf-dlg .o3d'); await m.espera(600); await m.arrastar('.kf-dlg .o3d', 150); await m.arrastar('.kf-dlg .o3d', -230, { dur: 1300 }); await m.tocar('#tp-ok'); await m.some('#tp-ok'); } },
+    acao: async m => { await m.tocar(navQ('tampinhas')); await m.tocar('#view [data-tampa="primeira"]'); await m.acha('.kf-dlg .o3d'); await m.espera(600); await m.arrastar('.kf-dlg .o3d', 150); await m.arrastar('.kf-dlg .o3d', -230, { dur: 1300 }); await m.tocar('#tp-ok'); await m.some('#tp-ok'); } },
   { t: 'Histórico e gastos', d: 'As comandas salvas ficam aqui, mês a mês, com o resumo de quanto se gastou.',
     acao: async m => { await m.tocar(navQ('historico')); await m.apontar('#view .retro', 1700, { opcional: true }); await m.apontar('#view .hist-mes', 1500); } },
-  { t: 'Reabra uma comanda salva', d: 'Toque numa comanda para rever os cupons, mandar de novo ou corrigir.',
-    acao: async m => { await m.tocar('#view .hist-mes [data-bill]'); await m.acha('#sh-edit'); await m.espera(900); await m.apontar('#sh-pdf', 1100); await m.apontar('#sh-edit', 1100); await m.tocar('.kf-dlg [data-kf-fechar]'); await m.some('#sh-edit'); } },
-  { t: 'Cadastros', d: 'Em Mais, os Cadastros guardam as pessoas e a chave Pix de cada uma.',
-    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-ir="cadastros"]'); await m.apontar('#view .cad-card .lin', 1700, { opcional: true }); } },
-  { t: 'Turmas e produtos', d: 'Monte turmas para abrir a mesa de uma vez. Os preços ficam guardados por lugar.',
-    acao: async m => { await m.tocar('#view [data-cad="turmas"]'); await m.espera(1300); await m.tocar('#view [data-cad="produtos"]'); await m.apontar('#view .cad-card .lin, #view .cad-card li', 1700, { opcional: true }); } },
-  { t: 'Sorteie alguém da mesa', d: 'Quem escolhe o próximo lugar? O ponteiro gira e para num nome.',
+  { t: 'Repita uma comanda', d: 'Toque numa comanda salva para rever os cupons. Repetir abre outra igual.',
+    acao: async m => { await m.tocar(navQ('historico')); await m.tocar('#view .hist-mes [data-bill]'); await m.acha('#sh-reuse'); await m.espera(900); await m.apontar('.kf-dlg .receipts .cupom-1', 1500); await m.apontar('#sh-edit', 1100); await m.tocar('#sh-reuse'); await m.acha('#add-pessoa'); await m.espera(900); } },
+  { t: 'Exclua uma comanda', d: 'Abriu sem querer? No Início, Excluir esta comanda descarta a que está aberta.',
+    acao: async m => { await m.tocar(navQ('inicio')); await m.tocar('#ini-excluir'); await m.acha('#cf-ok'); await m.espera(800); await m.tocar('#cf-ok'); await m.some('#cf-ok'); await m.espera(900); } },
+  { t: 'Cadastros: pessoas e Pix', d: 'Em Mais, os Cadastros guardam as pessoas. Com a chave Pix, o cupom leva copia e cola.',
+    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-ir="cadastros"]'); await m.tocar('#view [data-pix-edit]'); await m.digitar('#px-in', 'ana@exemplo.com.br', { ritmo: 45 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#px-in'); await m.espera(900); } },
+  { t: 'Turmas', d: 'Monte uma turma com quem sai junto. Na próxima comanda, todos entram de uma vez.',
+    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-ir="cadastros"]'); await m.tocar('#view [data-cad="turmas"]'); await m.tocar('#cad-turma'); await m.digitar('#tg-nome', 'Amigos da praça', { ritmo: 50 }); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`.kf-dlg [data-tg="${n}"]`, { depois: 220 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#tg-nome'); await m.apontar('#view .cad-card .lin', 1500, { opcional: true }); } },
+  { t: 'Produtos e preços', d: 'O app lembra o preço de cada produto em cada lugar e sugere na hora de lançar.',
+    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-ir="cadastros"]'); await m.tocar('#view [data-cad="produtos"]'); await m.apontar('#view [data-pprod]', 1700, { opcional: true }); await m.apontar('#view .cad-card', 1200, { opcional: true }); } },
+  { t: 'Sorteie alguém da mesa', d: 'Quem escolhe o próximo lugar? Em Mais, o ponteiro gira e para num nome.',
     acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#ma-sorteio'); await m.tocar('#gf-go'); await m.espera(5600); await m.tocar('#gf-x'); await m.some('#gf-x'); } },
-  { t: 'Ajustes', d: 'Sincronização entre aparelhos, cópia de segurança, aparência e privacidade.',
-    acao: async m => { await m.tocar('#view [data-kf="ajustes"]'); await m.acha('#view [data-kf-aj-ir]'); await m.espera(600); for (const el of $$('#view .kf-aj-lista [data-kf-aj-ir]').filter(e => e.getClientRects().length).slice(0, 3)) await m.apontar(el, 900); } },
-  { t: 'No alto da tela', d: 'A nuvem sincroniza, o presente apoia o criador e o balão recebe a sua avaliação.',
-    acao: async m => { await m.apontar('#barra [data-kf-nuvem]', 1300); await m.apontar('#topo-presente', 1300, { opcional: true, prazo: 600 }); await m.apontar('#barra [data-kf="feedback"]', 1300); } },
-  { t: 'Um presente para o criador', d: 'O app é gratuito. Quem quiser apoiar manda um Pix. O presente também gira com o dedo.', se: () => KitFacil.apoio.ativo(),
-    acao: async m => { await m.tocar('#topo-presente'); await m.acha('.kf-dlg .o3d'); await m.espera(700); await m.arrastar('.kf-dlg .o3d', 190, { dur: 1300 }); await m.tocar('.kf-dlg [data-kf-fechar]'); await m.some('.kf-dlg .o3d'); } },
-  { t: 'Pronto, é isso', d: 'A demonstração some agora. Os seus dados continuam como estavam.',
-    acao: async m => { await m.tocar(navQ('inicio')); await m.espera(1600); } },
+  { t: 'Ajustes', d: 'Sincronização, cópia de segurança, aparência e privacidade. Toque para abrir.',
+    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-kf="ajustes"]'); await m.acha('#view [data-kf-aj-ir]'); await m.espera(700); const L = $$('#view .kf-aj-lista [data-kf-aj-ir]').filter(e => e.getClientRects().length); for (const el of L.slice(0, 2)) await m.apontar(el, 900); const ap = L.find(e => e.dataset.kfAjIr === 'aparencia') || L[2]; if (ap) { await m.tocar(ap); await m.espera(1600); } } },
+  { t: 'A nuvem', d: 'Mostra se os seus aparelhos estão sincronizados. Toque para ver os detalhes.',
+    acao: async m => { await m.tocar('#barra [data-kf-nuvem]'); await m.acha('.kf-dlg'); await m.espera(2000); await m.fechar(); } },
+  { t: 'Avaliação e problemas', d: 'O balão recebe a sua nota e os relatos de problema. Tudo chega ao criador do app.',
+    acao: async m => { await m.tocar('#barra [data-kf="feedback"]'); await m.acha('.kf-dlg'); await m.espera(2000); await m.fechar(); } },
+  { t: 'Um presente para o criador', d: 'O app é gratuito. Quem quiser apoiar manda um Pix. O presente gira com o dedo.', se: () => KitFacil.apoio.ativo(),
+    acao: async m => { await m.tocar('#topo-presente'); await m.acha('.kf-dlg .o3d'); await m.espera(700); await m.arrastar('.kf-dlg .o3d', 190, { dur: 1300 }); await m.arrastar('.kf-dlg .o3d', -140, { dur: 1000 }); await m.fechar(); } },
+  { t: 'Pronto, é isso', d: 'A demonstração some; os seus dados ficam. Para treinar, há a comanda de exemplo.',
+    acao: async m => { await m.tocar(navQ('inicio')); await m.espera(2000); } },
 ];
 
 /* ---------- arranque ---------- */

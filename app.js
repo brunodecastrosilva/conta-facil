@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.2.0';
+const VERSAO = '1.3.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -648,6 +648,12 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.3.0', itens: [
+    'Guia: cada passo agora faz a ação de verdade (alterar pedido, cortesia, serviço, cupom, juntar e separar, pago, couvert e desconto, repetir e excluir comanda, Pix, turma, sorteio).',
+    'Guia: voltar um passo refaz o passo inteiro, e o destaque não aparece mais cortado.',
+    'Tampinhas e presente em 3D de verdade: forma lisa, brilho e reflexo.',
+    'Fechar a comanda: setas novas para passar os cupons.',
+  ] },
   { versao: '1.2.0', itens: [
     'Quem já pagou: o app guarda o valor pago. Se a conta mudar depois (desconto, item novo, alguém que chegou), ele mostra quanto falta ou quanto devolver.',
     'Ao lançar um item, quem já pagou fica de fora, a menos que você marque.',
@@ -2167,7 +2173,7 @@ function fecharSheet() {
   const slides = [{ nome: 'Mesa', arq: 'mesa', r: null, rows: mesaRows(d, c), pago: false }, ...c.units.map(u => ({ nome: u.name, arq: u.name.replace(/ \+ /g, ' e '), r: u, rows: null, pago: contaPaga(d, u, c).estado === 'pago' }))];
   const pend = c.openItems.length + c.incomplete.length + c.unassigned.length;
   openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
-      <div class="fc-nav"><button type="button" class="btn ghost fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="btn ghost fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
+      <div class="fc-nav"><button type="button" class="fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
       <div class="fc-janela" id="fc-janela"><div class="fc-trilho" id="fc-trilho" tabindex="0" aria-label="Cupons: arraste para o lado">${slides.map((x, i) => `<div class="fc-slide" role="group" aria-roledescription="cupom" aria-label="${i + 1} de ${slides.length}: ${esc(x.nome)}"><div class="cupom-1 ${x.pago ? 'cupom-pago' : ''}">${receiptHTML(x.r, d, c, x.rows)}${x.pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>
         <div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}${i ? 'Copiar' : 'Copiar todos'}</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div></div>`).join('')}</div></div>
       <div class="fc-pontos" aria-hidden="true">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
