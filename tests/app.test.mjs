@@ -104,14 +104,18 @@ test('fluxo completo: mesa, pedidos numa janela só, pago, fechar, salvar com fe
   assert.match(await p.textContent('.cu-total'), /103,40/);
   // o item novo entra no fim da lista
   assert.match(await p.locator('.items > *').last().textContent(), /Pudim/);
-  // marcar a Ana como paga: o topo mostra o que falta
+  // com a comanda aberta não há como marcar pago: só depois de fechar
   const ana = await p.evaluate(() => draft.people[0].id);
-  await p.click(`[data-unit="${ana}"]`); await p.click(`[data-pa="${ana}"] [data-pa-pago]`);
-  assert.match(await p.textContent('.cu-falta'), /66,00/);
-  // fechar: a mesa primeiro, depois um cupom por pessoa
+  await p.click(`[data-unit="${ana}"]`);
+  assert.equal(await p.locator('#view [data-pa-pago]').count(), 0, 'marcar como pago só aparece depois de fechar a comanda');
+  // fechar: a mesa primeiro, depois um cupom por pessoa; no cupom da Ana, marcar como pago
   await p.click('#fechar-cmd');
   assert.match(await p.textContent('#fc-cont'), /1 de 4 · Mesa/);
   await p.click('#fc-prox'); assert.match(await p.textContent('#fc-cont'), /2 de 4 · Ana/);
+  await p.click('.fc-slide[aria-hidden="false"] [data-fc-pago="marcar"]');
+  assert.equal(await p.locator('.fc-slide[aria-hidden="false"] .selo-pago').count(), 1, 'o cupom ganha o carimbo na hora');
+  assert.match(await p.textContent('.fc-slide >> nth=0'), /FALTA PAGAR\s*R\$\s66,00/);
+  assert.match(await p.textContent('#view .cu-falta'), /66,00/);
   await p.click('#fc-salvar');
   await p.locator('.festa').waitFor();
   assert.match(await p.textContent('.festa'), /Conta fechada/);
@@ -440,8 +444,10 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
     d.items = [{ id: newId(), o: 1, name: 'Fritas', qty: 1, price: 6000, fq: 0, mode: 'equal', lk: true, a: { ...t } }]; commit(); });
   const estado = () => p.evaluate(() => { const c = compute(draft), u = c.units[0], x = contaPaga(draft, u, c); return [x.estado, x.pago, x.falta, x.troco, faltaReceber(draft, c), trocoDevolver(draft, c)]; });
   const ana = await p.evaluate(() => draft.people[0].id);
-  await p.click(`summary[data-unit="${ana}"]`); await p.click(`[data-pa="${ana}"] [data-pa-pago="marcar"]`);
+  await p.click('#fechar-cmd'); await p.click('#fc-prox'); await p.click('.fc-slide[aria-hidden="false"] [data-fc-pago="marcar"]'); await p.click('#fc-volta');
   assert.deepEqual(await estado(), ['pago', 2000, 0, 0, 4000, 0]);
+  await p.click(`summary[data-unit="${ana}"]`);
+  assert.equal(await p.locator(`[data-pa="${ana}"] [data-pa-pago="desmarcar"]`).count(), 1, 'quem já está marcado pode ser desmarcado pela comanda');
   // 1) desconto depois do pagamento: a conta de Ana cai e o app manda devolver
   await p.click('#cm-pe'); await p.locator('[data-cm="ds"]').click({ force: true });
   const campo = p.locator('.kf-dlg [data-exp="cm-ds"] input[data-money]'); await campo.click(); await campo.pressSequentially('900'); await p.keyboard.press('Tab');
@@ -508,5 +514,40 @@ test('objetos 3D voltam a girar sozinhos depois que a pessoa para de mexer', asy
   assert.ok(await ang() > a0 + 0.2, 'depois de um instante parado, o objeto deveria voltar a girar, no mesmo sentido');
   // o laço do presente não atravessa a caixa: as pontas ficam deitadas sobre a tampa, sem passar da beirada
   assert.ok(await p.evaluate(() => { const M = malhaPresente().M; let ok = true; for (let i = 0; i < M.p.length; i += 3) { const x = M.p[i], y = M.p[i + 1], z = M.p[i + 2], fita = M.c[i] > 0.8 && M.m[(i / 3) * 4 + 2] > 0.2; if (fita && y > 0.36 && (Math.abs(x) > 0.56 || Math.abs(z) > 0.56)) ok = false; } return ok; }), 'há fita passando da beirada da tampa');
+  semErros(a); await a.fechar();
+});
+
+test('teclado e guia: a janela não salta, continua por trás do teclado e nunca sobe para fora da tela; tampinha da Início centrada', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  // Início: a próxima tampinha fica centrada com o texto dela
+  const [cy, ty] = await p.evaluate(() => { const r = x => { const b = document.querySelector(x).getBoundingClientRect(); return b.top + b.height / 2; }; return [r('.nivel-prox .tampa-svg'), r('.nivel-prox > span:last-child')]; });
+  assert.ok(Math.abs(cy - ty) <= 1.5, `tampinha e texto com o mesmo centro (${cy} e ${ty})`);
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  const forcar = (lig, ok) => p.evaluate(([lig, ok]) => { const h = document.documentElement; h.style.setProperty('--kf-vv-top', '0px'); h.style.setProperty('--kf-vv-h', '430px'); h.classList.toggle('kf-teclado', lig); h.classList.toggle('com-ok', ok); }, [lig, ok]);
+  const caixa = () => p.evaluate(() => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')), r = d.getBoundingClientRect(), f = getComputedStyle(d, '::after'); return { topo: Math.round(r.top), base: Math.round(r.bottom), pe: getComputedStyle(d).paddingBottom, cont: f.content !== 'none' && parseFloat(f.height) > 300 && f.backgroundColor === getComputedStyle(d).backgroundColor }; });
+  // fora do guia: com o teclado, a janela encosta nele, continua por trás e cabe inteira (também com a barra do OK)
+  await p.click('#add-pessoa'); await p.locator('#pn-nome').waitFor();
+  for (const n of ['Ana', 'Bruno', 'Carla']) { await p.fill('#pn-nome', n); await p.press('#pn-nome', 'Enter'); }
+  await p.click('#pn-ok');
+  await p.click('#it-novo'); await p.locator('.kf-dlg input[data-money]').first().waitFor(); await p.waitForTimeout(400);
+  await forcar(true, false); await p.waitForTimeout(400);
+  let c = await caixa(); assert.equal(c.base, 430, 'a janela encosta no teclado'); assert.ok(c.topo >= 0, 'a janela cabe acima do teclado'); assert.ok(c.cont, 'a cor da janela continua por trás do teclado');
+  await forcar(true, true); await p.waitForTimeout(400);
+  c = await caixa(); assert.equal(c.base, 430 - 48, 'com a barra do OK, a janela termina acima dela'); assert.ok(c.topo >= 0, `o título não sobe para fora da tela (topo ${c.topo})`);
+  await forcar(false, false); await p.evaluate(() => closeSheet(true));
+  // no guia: ligar e desligar o "teclado" não mexe na janela
+  await p.evaluate(() => guiaIniciar());
+  await esperar(() => p.evaluate(() => guia && guia.i === 1 && !!document.querySelector('#pn-nome')), 30000);
+  await p.evaluate(() => { guia.pausado = true; });
+  await p.waitForTimeout(700);
+  await forcar(false, false); await p.waitForTimeout(350); const livre = await caixa();
+  await forcar(true, false); await p.waitForTimeout(350); const comT = await caixa();
+  await forcar(true, true); await p.waitForTimeout(350); const comOk = await caixa();
+  await forcar(false, false);
+  assert.deepEqual([comT.topo, comT.base, comT.pe], [livre.topo, livre.base, livre.pe], 'a janela do guia fica no mesmo lugar com o campo em foco');
+  assert.deepEqual([comOk.topo, comOk.base, comOk.pe], [livre.topo, livre.base, livre.pe], 'e também com campo de número');
+  assert.equal(livre.pe, '0px', 'no guia a janela não muda de pé conforme o teclado');
+  await p.evaluate(() => guiaParar());
   semErros(a); await a.fechar();
 });

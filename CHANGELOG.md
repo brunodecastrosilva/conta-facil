@@ -3,6 +3,17 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.3.3 · 2026-11-14
+
+- **Marcar como pago só depois de fechar:** o botão saiu da comanda aberta e do "Ver cupom". Agora fica em **Fechar a comanda**, embaixo do cupom de cada pessoa; ao tocar, o cupom ganha o carimbo PAGO ali mesmo, sem fechar a janela, e o Desfazer do aviso também atualiza o cupom. Quem já está marcado continua podendo ser acertado (falta ou troco) ou desmarcado pela comanda.
+- **Guia:** os passos seguem a nova ordem (Feche a comanda → Marque quem já pagou → Serviço, couvert e desconto → A conta de quem já pagou mudou → Salve no Histórico).
+- **Guia, pessoas na mesa:** a janela saltava a cada nome no iPhone. A causa era a área segura do pé da tela, que entrava e saía da janela cada vez que o campo ganhava ou perdia o foco. No guia a janela agora fica parada, e a barra do OK do teclado numérico não aparece.
+- **Teclado aberto:** a janela continua, na mesma cor, por trás do teclado e da barra de preenchimento (o teclado do iPhone é translúcido e mostrava uma faixa da comanda). Os espaços da janela apertam para Produto, Quantidade, Valor e Tipo de consumo caberem acima do teclado, e o rodapé ganha uma sombra quando há conteúdo rolando por baixo.
+- **Teclado numérico:** com a barra do OK, o título da janela podia subir para fora da tela em janelas altas. A janela agora desconta a altura da barra, e a barra tem a cor da janela.
+- **Campos:** os campos pedem ao iPhone para não oferecer preenchimento automático (o aviso "Preencher Automaticamente" não faz sentido em nome de produto). Depende do iOS respeitar o pedido.
+- **Início:** a próxima tampinha ficou centrada com o texto e alinhada com a bolacha do nível.
+- **Comanda:** os botões Juntar, Ver cupom e Detalhes não encostam mais na borda.
+
 ## 1.3.2 · 2026-11-14
 
 - **Início:** "Ver o guia" passou a vir antes de "Ver uma comanda de exemplo".

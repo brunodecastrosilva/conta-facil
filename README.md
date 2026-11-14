@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.3.2** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.3.3** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). A versão 1.0 foi refeita com liberdade
 para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porquê está em [Exceções ao padrão](#exceções-ao-padrão).
@@ -13,7 +13,7 @@ para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porqu�
 - **Lançar em uma janela:** produto, quantidade, preço e quem consumiu (compartilhado, entre todos ou entre alguns, ou individual, por unidade)
 - **Pessoas:** tocar num nome mostra os atalhos; segurar e arrastar um nome sobre outro junta os dois no mesmo cupom
 - **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, cortesias e "uma pessoa paga a conta de todos"
-- **Pago:** marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo, alguém que chegou), mostra quanto falta ou quanto devolver
+- **Pago:** só depois de fechar a comanda: em Fechar a comanda, no cupom de cada pessoa, marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo, alguém que chegou), mostra quanto falta ou quanto devolver
 - **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; salvar tem Desfazer
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai

@@ -287,7 +287,10 @@ button.lin{border-radius:0}
 .nivel-prox>span:last-child{display:flex;flex-direction:column;min-width:0}
 .nivel-prox small{color:var(--muted);font-size:13px}
 .nivel-prox b{font-weight:700;font-size:15.5px}
-.tampa-mini{width:38px;height:38px;flex:none;display:block}
+/* a tampinha fica centrada na coluna da bolacha do nível, e o texto dela alinha com o texto do nível */
+.nivel-prox{gap:16px}
+.tampa-mini{width:62px;height:42px;flex:none;display:grid;place-items:center}
+.tampa-mini .tampa-svg{width:42px;height:42px;display:block}
 .nivel-card.grande{gap:18px}
 .nivel-card.grande .nivel-tx b{font-size:24px}
 
@@ -582,6 +585,16 @@ body.com-guia .wrap{padding-bottom:calc(var(--pe-h) + var(--guia-h) + 48px)}
 body.com-guia .kf-nav.nav{z-index:94}
 body.com-guia .kf-ov{bottom:calc(var(--pe-h) + var(--guia-h));height:auto}
 body.com-guia .kf-dlg{max-height:calc(100dvh - var(--pe-h) - var(--guia-h) - 20px)}
+/* no guia nada é digitado de verdade: a janela não acompanha o "teclado" (a classe kf-teclado liga e desliga a cada campo
+   e, no iPhone, mexia na altura e no pé da janela — ela saltava a cada nome) */
+html body.com-guia .kf-ov{top:0!important;bottom:calc(var(--pe-h) + var(--guia-h))!important;height:auto!important}
+html body.com-guia .kf-dlg{max-height:calc(100dvh - var(--pe-h) - var(--guia-h) - 20px)!important}
+html body.com-guia .ok-teclado{display:none}
+html body.com-guia .kf-toast{top:auto;bottom:calc(var(--pe-h) + var(--guia-h) + 10px)}
+@media (max-width:719px){
+  html body.com-guia .kf-ov{padding:0!important;align-items:flex-end}
+  html body.com-guia .kf-dlg{padding-bottom:0!important;border-radius:var(--kf-r-lg) var(--kf-r-lg) 0 0}
+}
 body.com-guia .kf-toast{bottom:calc(var(--pe-h) + var(--guia-h) + 10px)}
 body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16px}
 @media (min-width:1024px){
@@ -626,3 +639,27 @@ body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16p
 .lc-pagou{margin:0;color:#5A3D00;background:#FFF1CC;padding:8px 10px;border-radius:10px}
 .ip-excluir{align-self:center;margin-top:2px;color:var(--paper-muted,#6E6858)}
 .ip-excluir .i{width:16px;height:16px}
+
+/* com o teclado aberto, a janela continua por baixo dele: pela fresta e pelo teclado translúcido do iPhone aparece
+   a cor da janela, e não um pedaço da tela de trás */
+@media (max-width:719px){
+  /* a janela continua para baixo, por trás do teclado: o teclado do iPhone é translúcido e deixava a comanda aparecer
+     numa faixa entre a janela e ele (e enquanto ele sobe ou desce) */
+  .kf-dlg::after{content:"";position:absolute;left:0;right:0;top:100%;height:120vh;background:inherit;pointer-events:none}
+  body.com-guia .kf-dlg::after{display:none}
+  /* com o teclado aberto sobra pouca altura: a janela aperta os espaços para o essencial caber sem cortar */
+  html.kf-teclado body:not(.com-guia) .kf-dlg-cab{padding-top:6px;padding-bottom:2px}
+  html.kf-teclado body:not(.com-guia) .kf-dlg-corpo{gap:8px;padding-bottom:10px}
+  html.kf-teclado body:not(.com-guia) .kf-dlg-pe{padding-top:8px;padding-bottom:10px;box-shadow:0 -10px 14px -12px rgba(16,40,28,.3)}
+}
+/* teclado numérico: a barra do OK tem a cor da janela e a janela desconta a altura dela (antes o título subia para fora da tela) */
+html.com-ok.kf-teclado .kf-dlg{max-height:calc(var(--kf-vv-h,100dvh) - 56px)}
+.ok-teclado{background:var(--kf-bg,var(--bg));border-top:0}
+
+/* fechar a comanda: o pagamento fica no cupom de cada pessoa */
+.fc-pago{margin-top:8px;display:flex;flex-direction:column;align-items:center}
+.fc-pago>.btn{margin-top:0;width:auto;min-width:210px}
+.fc-pago .pa-dif{text-align:center;margin:0 0 2px}
+.fc-pago .pa-acoes-2{width:100%;padding-top:8px}
+/* ações da pessoa na comanda: três botões cabem numa linha sem encostar na borda */
+.pa-acoes .btn{flex:1 1 auto;padding-inline:8px;min-width:0}

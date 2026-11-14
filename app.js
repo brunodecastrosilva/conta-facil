@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.3.2';
+const VERSAO = '1.3.3';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -648,6 +648,12 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.3.3', itens: [
+    'Marcar como pago agora fica em Fechar a comanda, no cupom de cada pessoa. O carimbo PAGO aparece na hora.',
+    'Com o teclado aberto, a janela continua por trás dele e aperta os espaços: nada da comanda aparece no meio.',
+    'No guia, a janela de pôr as pessoas na mesa não salta mais a cada nome.',
+    'Início: a próxima tampinha ficou centrada com o texto.',
+  ] },
   { versao: '1.3.2', itens: [
     'No Início, "Ver o guia" vem antes de "Ver uma comanda de exemplo".',
   ] },
@@ -825,6 +831,9 @@ document.addEventListener('keydown', e => {
 function prepFields(root) {
   $$('input:not([type=checkbox])', root).forEach(i => {
     if (!i.hasAttribute('enterkeyhint')) i.setAttribute('enterkeyhint', i.form && i.form.id !== 'rn-form' ? 'go' : 'done');
+    // nenhum campo do app é de dados de contato: o nome com "search" faz o Safari do iPhone não oferecer o preenchimento automático
+    if (!i.name && (i.type === 'text' || i.type === 'number')) i.name = 'search-' + (i.id || 'campo');
+    if (!i.hasAttribute('autocomplete')) i.setAttribute('autocomplete', 'off');
   });
 }
 
@@ -1871,7 +1880,7 @@ const fraseDiferenca = (u, p) => `${u.name} pagou ${BRL(p.pago)} e a conta agora
 // marca ou desmarca o pagamento de um cupom, com Desfazer; "acertar" registra que a diferença foi paga ou devolvida
 function alternarPago(u, modo) {
   const d = draft, c = compute(d), antes = clone(d.pagos || {}), p = contaPaga(d, u, c);
-  const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; commit({ anchor: false }); } };
+  const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; commit({ anchor: false }); fcRefazer?.(); } };
   if (modo === 'desmarcar') { marcarPago(d, u.members, false, c); commit({ anchor: false }); toast(`${u.name}: pagamento desmarcado.`, desfazer); return; }
   marcarPago(d, u.members, true, c); commit({ anchor: false });
   if (modo === 'acertar') { toast(p.estado === 'troco' ? `${u.name}: troco de ${BRL(p.troco)} devolvido.` : `${u.name}: diferença de ${BRL(p.falta)} recebida.`, desfazer); return; }
@@ -1881,8 +1890,8 @@ function alternarPago(u, modo) {
 // botões de pagamento de um cupom, conforme a situação
 function botoesPagoHTML(u, p, attr = 'data-pg') {
   const b = (modo, cls, txt) => `<button type="button" class="btn small ${cls}" ${attr}="${modo}">${txt}</button>`;
-  if (p.estado === 'aberto') return b('marcar', 'pa-pago', `${I.ok}Marcar como pago`);
-  if (p.estado === 'pago') return b('desmarcar', 'pa-pago on', `${I.x}Desmarcar pago`);
+  if (p.estado === 'aberto') return attr === 'data-fc-pago' ? b('marcar', 'pa-pago', `${I.ok}Marcar como pago`) : ''; // só se marca pago depois de fechar a comanda
+  if (p.estado === 'pago') return b('desmarcar', attr === 'data-fc-pago' ? 'ghost' : 'pa-pago on', `${I.x}Desmarcar pago`);
   const acerto = p.estado === 'troco' ? `${I.ok}Devolvi ${BRL(p.troco)}` : p.estado === 'parte' ? `${I.ok}Recebi o resto: ${BRL(p.falta)}` : `${I.ok}Recebi ${BRL(p.falta)}`;
   return `<p class="pa-dif" role="status">${p.estado === 'parte' ? `Parte deste cupom já foi paga (${BRL(p.pago)}). Falta ${BRL(p.falta)}.` : esc(fraseDiferenca(u, p))}</p><div class="pa-acoes pa-acoes-2">${b('acertar', 'pa-pago', acerto)}${b('desmarcar', 'ghost', `${I.x}Desmarcar pago`)}</div>`;
 }
@@ -1956,9 +1965,11 @@ function cupomSheet(pid) {
   const multi = u.members.length > 1, editar = () => multi ? grupoSheet(u.id) : consumoSheet(pid), pg = contaPaga(d, u, c), pago = pg.estado === 'pago', dif = pg.estado !== 'aberto' && !pago;
   const rotulo = pago ? `${I.x}Desmarcar pago` : pg.estado === 'troco' ? `${I.ok}Devolvi ${BRL(pg.troco)}` : dif ? `${I.ok}Recebi ${BRL(pg.falta)}` : `${I.ok}Marcar como pago`;
   openSheet({ title: multi ? 'Cupom compartilhado' : `Cupom de ${u.name}`, body: `${dif ? `<p class="pa-dif" role="status">${pg.estado === 'parte' ? `Parte deste cupom já foi paga (${BRL(pg.pago)}). Falta ${BRL(pg.falta)}.` : esc(fraseDiferenca(u, pg))}</p>` : ''}<div class="cupom-1 ${pago ? 'cupom-pago' : ''}">${receiptHTML(u, d, c)}${pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>`,
-    foot: `<button type="button" class="btn ghost" id="cp-editar" aria-label="Editar">${I.edit}</button><button type="button" class="btn ghost" id="cp-share" aria-label="Compartilhar">${I.share}</button><button type="button" class="btn" id="cp-pago" style="flex:1">${rotulo}</button>`, onMount: s => {
+    foot: pg.estado === 'aberto'
+      ? `<button type="button" class="btn ghost" id="cp-editar">${I.edit}Editar</button><button type="button" class="btn" id="cp-share">${I.share}Compartilhar</button>`
+      : `<button type="button" class="btn ghost" id="cp-editar" aria-label="Editar">${I.edit}</button><button type="button" class="btn ghost" id="cp-share" aria-label="Compartilhar">${I.share}</button><button type="button" class="btn" id="cp-pago" style="flex:1">${rotulo}</button>`, onMount: s => {
       $('#cp-editar', s).onclick = editar;
-      $('#cp-pago', s).onclick = () => { closeSheet(true); alternarPago(u, pago ? 'desmarcar' : dif ? 'acertar' : 'marcar'); };
+      $('#cp-pago', s)?.addEventListener('click', () => { closeSheet(true); alternarPago(u, pago ? 'desmarcar' : 'acertar'); });
       $('#cp-share', s).onclick = () => shareReceipt(u, d, c, () => cupomSheet(pid));
     } });
 }
@@ -2177,20 +2188,22 @@ function mesaRows(d, c) {
   return R;
 }
 // fechar: todos os cupons, um por tela, arrastando para o lado (a mesa primeiro)
-function fecharSheet() {
+let fcRefazer = null; // com Fechar a comanda aberto: refaz os cupons depois de marcar, acertar ou desfazer um pagamento
+function fecharSheet(abrirEm = 0) {
   const d = draft, c = compute(d);
-  const slides = [{ nome: 'Mesa', arq: 'mesa', r: null, rows: mesaRows(d, c), pago: false }, ...c.units.map(u => ({ nome: u.name, arq: u.name.replace(/ \+ /g, ' e '), r: u, rows: null, pago: contaPaga(d, u, c).estado === 'pago' }))];
+  const slides = [{ nome: 'Mesa', arq: 'mesa', r: null, rows: mesaRows(d, c), pago: false }, ...c.units.map(u => ({ nome: u.name, arq: u.name.replace(/ \+ /g, ' e '), r: u, rows: null, pg: contaPaga(d, u, c), pago: contaPaga(d, u, c).estado === 'pago' }))];
   const pend = c.openItems.length + c.incomplete.length + c.unassigned.length;
   openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
       <div class="fc-nav"><button type="button" class="fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
       <div class="fc-janela" id="fc-janela"><div class="fc-trilho" id="fc-trilho" tabindex="0" aria-label="Cupons: arraste para o lado">${slides.map((x, i) => `<div class="fc-slide" role="group" aria-roledescription="cupom" aria-label="${i + 1} de ${slides.length}: ${esc(x.nome)}"><div class="cupom-1 ${x.pago ? 'cupom-pago' : ''}">${receiptHTML(x.r, d, c, x.rows)}${x.pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>
-        <div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}${i ? 'Copiar' : 'Copiar todos'}</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div></div>`).join('')}</div></div>
+        <div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}${i ? 'Copiar' : 'Copiar todos'}</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div>
+        ${x.r ? `<div class="fc-pago" data-fc-u="${x.r.id}">${botoesPagoHTML(x.r, x.pg, 'data-fc-pago')}</div>` : ''}</div>`).join('')}</div></div>
       <div class="fc-pontos" aria-hidden="true">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
       ${pend ? `<div class="status warn">${I.warn}<span>Há ${plural(pend, 'item', 'itens')} sem divisão. Divida antes de salvar.</span></div>` : ''}
     </div>`,
     foot: `<button type="button" class="btn ghost" id="fc-volta">Voltar à comanda</button><button type="button" class="btn" id="fc-salvar">${I.save}Salvar no histórico</button>`, onMount: s => {
       const jan = $('#fc-janela', s), tr = $('#fc-trilho', s), pts = $$('.fc-pontos i', s), cont = $('#fc-cont', s), els = $$('.fc-slide', s);
-      let i = 0, arr = null;
+      let i = 0, arr = null, cAt = c; // cAt: a conta mais recente (muda quando alguém é marcado como pago aqui dentro)
       const W = () => jan.clientWidth, n = slides.length;
       const pos = (x, anim) => { const m = MV(); tr.style.transition = anim && !m.off ? `transform ${Math.round(m.ms * .7)}ms ${m.css}` : 'none'; tr.style.transform = `translate3d(${x}px,0,0)`; };
       const altura = anim => { const m = MV(), h = els[i].offsetHeight; jan.style.transition = anim && !m.off ? `height ${m.ms}ms ${m.css}` : 'none'; jan.style.height = h + 'px'; };
@@ -2213,18 +2226,36 @@ function fecharSheet() {
       $('#fc-ant', s).onclick = () => ir(i - 1);
       $('#fc-prox', s).onclick = () => ir(i + 1);
       addEventListener('resize', () => { pos(X(i), false); altura(false); });
+      // os cupons (e o da mesa) são refeitos no lugar, com o carimbo e os botões da situação de agora
+      const refazer = () => {
+        if (!tr.isConnected) { if (fcRefazer === refazer) fcRefazer = null; return; }
+        cAt = compute(d);
+        slides.forEach((x, k) => { const el = els[k], un = x.r ? cAt.U[x.r.id] : null; if (x.r && !un) return;
+          const pgk = un ? contaPaga(d, un, cAt) : null, pago = !!pgk && pgk.estado === 'pago', cup = $('.cupom-1', el);
+          if (un) x.r = un; else x.rows = mesaRows(d, cAt);
+          cup.className = 'cupom-1' + (pago ? ' cupom-pago' : ''); cup.innerHTML = receiptHTML(x.r, d, cAt, x.rows) + (pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : '');
+          if (un) $('.fc-pago', el).innerHTML = botoesPagoHTML(un, pgk, 'data-fc-pago'); });
+        altura(true);
+      };
+      fcRefazer = refazer;
       tr.addEventListener('click', async e => {
-        const cp = e.target.closest('[data-fc-copiar]'), pd = e.target.closest('[data-fc-pdf]');
-        if (cp) { const x = slides[+cp.dataset.fcCopiar]; if (!x.r) return copyText([receiptText(null, d, c, x.rows), ...c.units.map(u => receiptText(u, d, c))].join('\n\n'), 'Todos os cupons copiados.'); return copyText(receiptText(x.r, d, c, x.rows), `Cupom de ${x.nome} copiado.`); }
+        const cp = e.target.closest('[data-fc-copiar]'), pd = e.target.closest('[data-fc-pdf]'), pgb = e.target.closest('[data-fc-pago]');
+        // pagamento: marca, acerta ou desmarca; os cupons (e o da mesa) são refeitos no lugar, já com o carimbo
+        if (pgb) {
+          const u = cAt.U[pgb.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
+          alternarPago(u, pgb.dataset.fcPago); refazer(); return;
+        }
+        if (cp) { const x = slides[+cp.dataset.fcCopiar]; if (!x.r) return copyText([receiptText(null, d, cAt, x.rows), ...cAt.units.map(u => receiptText(u, d, cAt))].join('\n\n'), 'Todos os cupons copiados.'); return copyText(receiptText(x.r, d, cAt, x.rows), `Cupom de ${x.nome} copiado.`); }
         if (pd) {
           const x = slides[+pd.dataset.fcPdf];
           if (!(await downloadsNS())) { toast('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }
           pd.disabled = true;
-          try { await saveFile(`cupom-${slug(x.arq)}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(x.r, d, c, x.rows)])); } catch { toast('Não foi possível gerar o PDF agora.'); }
+          try { await saveFile(`cupom-${slug(x.arq)}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(x.r, d, cAt, x.rows)])); } catch { toast('Não foi possível gerar o PDF agora.'); }
           pd.disabled = false;
         }
       });
-      requestAnimationFrame(() => { pos(0, false); mostrar(false); });
+      i = Math.max(0, Math.min(n - 1, abrirEm));
+      requestAnimationFrame(() => { pos(X(i), false); mostrar(false); });
       $('#fc-volta', s).onclick = () => closeSheet();
       $('#fc-salvar', s).onclick = () => { closeSheet(true); saveBill(); };
     } });
@@ -2381,7 +2412,7 @@ const viewComanda = {
       if (e.pointerType !== 'mouse' || e.button) return;
       const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
     });
-    $('#fechar-cmd', v)?.addEventListener('click', fecharSheet);
+    $('#fechar-cmd', v)?.addEventListener('click', () => fecharSheet());
     // lembra o que está aberto, para a tela voltar igual depois de cada mudança
     v.addEventListener('kf-secao', e => {
       const el = e.target;
