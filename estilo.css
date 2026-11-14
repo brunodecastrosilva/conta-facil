@@ -492,7 +492,7 @@ body.com-abertura{overflow:hidden}
 }
 /* com a barra do OK, a janela termina acima dela */
 html.com-ok.kf-teclado .kf-ov{height:calc(var(--kf-vv-h,100dvh) - 48px)}
-html.com-ok .kf-toast{bottom:auto;top:calc(var(--kf-vv-top,0px) + 70px)}
+html.com-ok .kf-toast{bottom:auto!important;top:calc(var(--kf-vv-top,0px) + 70px)}
 /* telas estreitas (320 px, ou zoom de 400%) */
 .marca{min-width:0;flex:0 1 auto}
 .marca-nome{overflow:hidden;text-overflow:ellipsis}
@@ -663,3 +663,27 @@ html.com-ok.kf-teclado .kf-dlg{max-height:calc(var(--kf-vv-h,100dvh) - 56px)}
 .fc-pago .pa-acoes-2{width:100%;padding-top:8px}
 /* ações da pessoa na comanda: três botões cabem numa linha sem encostar na borda */
 .pa-acoes .btn{flex:1 1 auto;padding-inline:8px;min-width:0}
+
+/* ---------- 1.4.0 ---------- */
+/* comanda: excluir fica logo abaixo de Fechar comanda */
+.fim-acoes{flex-direction:column;align-items:stretch;gap:6px}
+.fim-acoes #cmd-excluir{align-self:center;margin-top:0;width:auto}
+/* fechar a comanda: o que fica embaixo de cada cupom */
+.fc-extra{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;margin-top:8px}
+.fc-extra:empty{display:none}
+.fc-pago{margin-top:0;width:100%;gap:8px}
+.fc-pago:empty{display:none}
+.fc-todos{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
+.fc-todos>.btn,.fc-pago>.btn{margin-top:0;width:auto;min-width:210px}
+.fc-todos.on{flex-direction:row;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:var(--r-sm,12px);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);text-align:left;font-size:15px}
+.fc-todos.on .btn{min-width:0;flex:none}
+.fc-quem{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%}
+.chip-b{min-height:44px;padding:0 16px;border:0;border-radius:99px;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line);font:inherit;font-weight:700;cursor:pointer}
+.chip-b:active{background:var(--surface-2)}
+.fc-valor{width:100%;display:flex;align-items:flex-end;gap:8px}
+.fc-valor .field{flex:1;min-width:0;text-align:left}
+.fc-valor .btn{margin-top:0;width:auto;flex:none;min-height:48px}
+.fc-trilho input{-webkit-user-select:text;user-select:text}
+/* cupom compartilhado: quem paga */
+.gs-lin{display:flex;align-items:center;gap:8px}
+.gs-lin .cs-tx{flex:1;min-width:0}

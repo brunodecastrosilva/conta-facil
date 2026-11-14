@@ -426,10 +426,10 @@ test('abrir e recolher: o título tocado fica à vista, uma linha aberta por vez
   await p.click('[data-pa-svcabre]');
   assert.equal(await p.locator('.exp-fantasma').count(), 1, 'ao recolher, o trecho encolhe antes de sumir');
   assert.ok(await esperar(async () => await p.locator('.exp-fantasma').count() === 0));
-  // "Ver cupom" só nos atalhos da pessoa: não se repete em Detalhes nem no cupom compartilhado
+  // "Ver cupom" só nos atalhos da pessoa: não se repete em Editar nem no cupom compartilhado
   await p.click(`[data-pa="${grupo}"] [data-pa-mais]`); await p.locator('.kf-dlg').waitFor();
   assert.equal(await p.locator('.kf-dlg >> text=Ver cupom').count(), 0);
-  await p.click('.kf-dlg [data-gs-p]'); await p.locator('.kf-dlg .cs-acoes, .kf-dlg .cs').first().waitFor();
+  await p.click('.kf-dlg [data-gs-p] >> nth=0'); await p.locator('#cs-nome').waitFor();
   assert.equal(await p.locator('.kf-dlg >> text=Ver cupom').count(), 0);
   await p.keyboard.press('Escape');
   assert.equal(await p.locator('#view >> text=Ver cupom >> visible=true').count(), 1);
@@ -549,5 +549,72 @@ test('teclado e guia: a janela não salta, continua por trás do teclado e nunca
   assert.deepEqual([comOk.topo, comOk.base, comOk.pe], [livre.topo, livre.base, livre.pe], 'e também com campo de número');
   assert.equal(livre.pe, '0px', 'no guia a janela não muda de pé conforme o teclado');
   await p.evaluate(() => guiaParar());
+  semErros(a); await a.fechar();
+});
+
+test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valor ficam em Fechar, sem juntar cupons; excluir abaixo de Fechar', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  await abrirMesa(p, 'Bar', ['Ana', 'Bruno', 'Carla']);
+  await lancar(p, 'Pizza', 9000);
+  const [ana, bruno] = await p.evaluate(() => draft.people.map(x => x.id));
+  // Editar: só o nome e Remover da mesa
+  await p.click(`[data-unit="${ana}"]`); await p.click(`[data-pa="${ana}"] [data-pa-mais]`); await p.locator('#cs-nome').waitFor();
+  assert.equal(await p.locator('.kf-dlg input, .kf-dlg .switch').count(), 1, 'a janela só tem o campo do nome');
+  assert.deepEqual(await p.locator('.kf-dlg button:not(.kf-fechar)').allTextContents().then(x => x.map(s => s.trim())), ['Remover da mesa', 'Salvar']);
+  await p.fill('#cs-nome', 'Aninha'); await p.click('#cs-ok');
+  assert.equal(await p.evaluate(() => draft.people[0].name), 'Aninha');
+  // Conta da mesa: sem "paga por todos" e sem excluir; as chaves abrem e fecham sem a janela tremer
+  await p.click('#cm-pe'); await p.locator('#cm-ok').waitFor(); await p.waitForTimeout(500);
+  assert.equal(await p.locator('.kf-dlg [data-cm-todos], .kf-dlg #cm-limpar, .kf-dlg >> text=/xcluir/').count(), 0);
+  const tremor = async sel => {
+    await p.evaluate(() => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); if (d) __q.push(d.getBoundingClientRect().top); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); });
+    await p.tap(sel); await p.waitForTimeout(900);
+    return p.evaluate(() => { __on = false; let inv = 0; for (let i = 2; i < __q.length; i++) { const x = __q[i - 1] - __q[i - 2], y = __q[i] - __q[i - 1]; if (x * y < -1) inv++; } return inv; });
+  };
+  for (const k of ['cv', 'ds', 'ds', 'svc', 'svc', 'cv']) assert.equal(await tremor(`.kf-dlg label:has([data-cm="${k}"]) .switch`), 0, `a janela não vai e volta ao tocar na chave ${k}`);
+  // valor digitado: ao sair do campo, o app não fica preso no modo "teclado aberto" nem com a barra do OK na tela
+  const modo = () => p.evaluate(() => [document.documentElement.classList.contains('kf-teclado'), document.documentElement.classList.contains('com-ok'), !!document.querySelector('.ok-teclado') && !document.querySelector('.ok-teclado').hidden, document.activeElement.id || document.activeElement.tagName]);
+  await p.tap('.kf-dlg label:has([data-cm="cv"]) .switch'); await p.waitForTimeout(500);
+  await p.tap('#cm-cv'); await p.waitForTimeout(250); assert.deepEqual(await modo(), [true, true, true, 'cm-cv']);
+  await p.keyboard.type('700'); await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(500);
+  assert.deepEqual(await modo(), [false, false, false, 'BODY']); assert.equal(await p.evaluate(() => draft.couvert.value), 700);
+  await p.tap('#cm-cv'); await p.waitForTimeout(250); await p.keyboard.type('900'); await p.tap('.ok-teclado button'); await p.waitForTimeout(500);
+  assert.deepEqual(await modo(), [false, false, false, 'BODY']); assert.equal(await p.evaluate(() => draft.couvert.value), 900);
+  // de um campo direto para outro: o segundo continua com o foco depois que a janela é refeita
+  await p.tap('#cm-cv'); await p.waitForTimeout(250); await p.keyboard.type('1100'); await p.tap('#cm-svc-pct'); await p.waitForTimeout(500);
+  assert.deepEqual(await modo(), [true, true, true, 'cm-svc-pct']); assert.equal(await p.evaluate(() => draft.couvert.value), 1100);
+  await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(450);
+  await p.tap('.kf-dlg label:has([data-cm="cv"]) .switch'); await p.waitForTimeout(400);
+  await p.click('#cm-ok');
+  // Excluir comanda fica logo abaixo de Fechar comanda
+  assert.equal(await p.evaluate(() => document.querySelector('#fechar-cmd').nextElementSibling?.id), 'cmd-excluir');
+  // Fechar: uma pessoa paga a conta de todos, e cada um continua com o seu cupom
+  const AQUI = '.fc-slide[aria-hidden="false"]';
+  await p.click('#fechar-cmd'); await p.click(`${AQUI} [data-fc-todos]`); await p.click(`${AQUI} [data-fc-quem="${bruno}"]`);
+  const s1 = await p.evaluate(([ana, bruno]) => { const c = compute(draft); return { cupons: c.units.length, payer: c.payer, anaPaga: c.per[ana].paid, brunoPaga: c.per[bruno].paid, total: c.total, deve: c.transfers.filter(x => x.to === bruno).length }; }, [ana, bruno]);
+  assert.deepEqual(s1, { cupons: 3, payer: bruno, anaPaga: 0, brunoPaga: s1.total, total: s1.total, deve: 2 });
+  assert.match(await p.textContent(`${AQUI} .cupom-1`), /Bruno paga a conta/);
+  await p.click('#fc-prox'); await p.waitForTimeout(500);
+  assert.match(await p.textContent(`${AQUI} .cupom-1`), /Paga para Bruno/);
+  await p.click('#fc-ant'); await p.waitForTimeout(500); await p.click(`${AQUI} [data-fc-cada]`);
+  assert.equal(await p.evaluate(() => compute(draft).payer), '');
+  // pagar outro valor, no cupom da pessoa
+  await p.click('#fc-prox'); await p.waitForTimeout(500);
+  await p.click(`${AQUI} [data-fc-valor]`); await p.locator(`${AQUI} [data-fc-custom]`).fill('1000'); await p.locator(`${AQUI} [data-fc-custom]`).blur();
+  assert.equal(await p.evaluate(ana => draft.custom[ana], ana), 1000);
+  assert.match(await p.textContent(`${AQUI} .cupom-1`), /Paga ao local\s*R\$\s10,00/);
+  await p.click(`${AQUI} [data-fc-conta]`);
+  assert.equal(await p.evaluate(ana => ana in draft.custom, ana), false);
+  await p.click('#fc-volta');
+  // iPhone: o toque num campo de uma janela dá o foco sem o Safari empurrar a tela (o campo volta ao lugar no quadro seguinte)
+  await p.evaluate(() => { window.CF_TESTE_IOS = true; });
+  await p.click('#add-pessoa'); await p.locator('#pn-nome').waitFor(); await p.evaluate(() => document.activeElement.blur());
+  await p.tap('#pn-nome'); await p.waitForTimeout(120);
+  assert.deepEqual(await p.evaluate(() => [document.activeElement.id, document.querySelector('#pn-nome').style.transform]), ['pn-nome', '']);
+  await p.evaluate(() => { window.CF_TESTE_IOS = false; closeSheet(true); });
+  // excluir pela comanda
+  await p.click('#cmd-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('#cf-ok');
+  assert.equal(await p.evaluate(() => draft.active), false);
   semErros(a); await a.fechar();
 });

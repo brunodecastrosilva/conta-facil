@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.3.3** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.4.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). A versão 1.0 foi refeita com liberdade
 para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porquê está em [Exceções ao padrão](#exceções-ao-padrão).
@@ -11,10 +11,10 @@ para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porqu�
 
 - **Uma comanda só, de papel:** quem está na mesa e quanto paga, os pedidos e o total ficam na mesma folha, montada em tempo real
 - **Lançar em uma janela:** produto, quantidade, preço e quem consumiu (compartilhado, entre todos ou entre alguns, ou individual, por unidade)
-- **Pessoas:** tocar num nome mostra os atalhos; segurar e arrastar um nome sobre outro junta os dois no mesmo cupom
-- **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, cortesias e "uma pessoa paga a conta de todos"
+- **Pessoas:** tocar num nome mostra os atalhos (serviço, couvert, Juntar, Ver cupom e Editar, que muda o nome ou tira da mesa); segurar e arrastar um nome sobre outro junta os dois no mesmo cupom
+- **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, e cortesias
 - **Pago:** só depois de fechar a comanda: em Fechar a comanda, no cupom de cada pessoa, marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo, alguém que chegou), mostra quanto falta ou quanto devolver
-- **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; salvar tem Desfazer
+- **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; ali também ficam "uma pessoa paga a conta de todos" (cada um continua com o seu cupom), "pagar outro valor" e marcar quem já pagou; salvar tem Desfazer
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai
 - **Cadastros:** pessoas e chaves Pix, turmas (quem sai junto entra na mesa com um toque) e preço de cada produto em cada lugar
@@ -112,7 +112,7 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 | Art. 68 (janelas e avisos só do Kit) | a abertura e a festa de fechamento são telas cheias do app | momentos de marca, com animação própria; foco preso, Esc e leitor de tela tratados |
 | Art. 72 (movimento só do Kit) | impressora, tampinha e presente em 3D, confete, carimbo e ponteiro do sorteio têm animação própria | pedido de app interativo e gamificado; movimento reduzido é respeitado em todas |
 | Arts. 75 e 76 (sem tela de primeiro uso; janela a cada abertura) | abertura de quatro telas, uma vez só, com Pular | pedido expresso de um onboarding; a janela a cada abertura cansava |
-| Arts. 77 a 79 (guia em dois níveis, do Kit) e Regras, Art. 13 | um guia só, do próprio app (não usa o guia do Kit): janela fixa num espaço só dela, acima da barra de baixo; antes de cada passo ela pisca e a moldura se esvazia como um relógio; 34 passos seguidos, na ordem de uso, cada um executando a função na demonstração | pedido do Bruno em 14/11/2026: a janela do Kit ficava sobre o conteúdo e mudava de lugar |
+| Arts. 77 a 79 (guia em dois níveis, do Kit) e Regras, Art. 13 | um guia só, do próprio app (não usa o guia do Kit): janela fixa num espaço só dela, acima da barra de baixo; antes de cada passo ela pisca e a moldura se esvazia como um relógio; 36 passos seguidos, na ordem de uso, cada um executando a função na demonstração | pedido do Bruno em 14/11/2026: a janela do Kit ficava sobre o conteúdo e mudava de lugar |
 | Art. 13, §§ 1º a 3º (presente do Kit, colorido, na barra) e Art. 57 | na barra de cima, o presente é um ícone de traço, da mesma cor da nuvem e do balão; a janela do apoio é do app, com um presente em 3D que gira com o dedo (mesmo texto, QR code e um só botão) | pedido do Bruno: ícones do alto na mesma cor e presente aperfeiçoado |
 | Art. 57 (ícones do Kit) | o app redesenha os próprios ícones num traço só (grade de 24, traço de 2, pontas redondas) | pedido de ícones uniformes |
 | Regras, Art. 11 (guia Comandas nos Ajustes) | a guia própria virou "Tampinhas e apresentação"; guia, comanda de exemplo e Cadastros ficam só em Mais; avaliação, presente e novidades saíram de Mais (ficam no alto da tela e em Sobre) | pedido do Bruno: tirar as repetições dentro e fora dos Ajustes |
@@ -123,7 +123,8 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 | Arts. 82, 84, 85 e 87 (perguntar antes, opções com desenho, textos só com "sim") | decisões de desenho e de texto tomadas sem perguntar | pedido de liberdade criativa total |
 | Anexo VII (testes comuns da moldura) | `npm test` roda os testes do Kit e os do app; a varredura de acessibilidade do Kit foi trocada por `tests/acessibilidade.test.mjs` | a varredura do Kit procura os Ajustes na barra do Kit, que mudou |
 | Regras, Art. 5º, parágrafo único (item novo no topo) | o item novo entra no fim da lista | fica ao lado do botão de lançar, como no Laboratório |
-| Regras, Arts. 6º e 7º (telas Fechar e Pagamento) | Fechar faz parte da comanda (uma janela com os cupons); marcar como pago fica nessa janela, no cupom de cada pessoa, e só existe depois de fechar; quem paga por todos fica na conta da mesa | conceito do Laboratório: uma folha só; pago só depois de fechar foi pedido do Bruno em 14/11/2026 |
+| Regras, Arts. 6º e 7º (telas Fechar e Pagamento) | Fechar faz parte da comanda (uma janela com os cupons); marcar como pago, pagar outro valor e "uma pessoa paga a conta de todos" ficam nessa janela | conceito do Laboratório: uma folha só; o que fica em Fechar foi pedido do Bruno em 14/11/2026 |
+| Regras, Art. 7º, V (quem paga por todos fica num cupom compartilhado) | "Uma pessoa paga a conta de todos" não junta ninguém: cada um continua com o seu cupom, que diz quanto pagar a quem pagou a conta | pedido do Bruno em 14/11/2026 |
 
 Continuam valendo, sem exceção: gratuidade (Art. 12), convite de apoio (Art. 13), português do Brasil (Art. 14), acessibilidade
 (Art. 16), repositório sem segredos e sem build (Arts. 19 e 21), dados no aparelho e sincronização opcional (Arts. 32 a 37),

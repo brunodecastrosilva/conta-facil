@@ -115,6 +115,41 @@ const viewAjustes = {
   },
 };
 
+/* ---------- iPhone: tocar num campo dentro de uma janela não empurra a tela ----------
+   Ao focar um campo, o Safari desloca a tela inteira para "mostrar" o campo, mesmo quando ele já está à vista: a janela
+   subia para fora da tela, o Kit corrigia um instante depois e ela descia de novo (o tranco ao abrir o teclado).
+   A saída conhecida: o app mesmo dá o foco, com o campo deslocado para o alto só naquele instante; o Safari acha que
+   não há o que mostrar e não mexe na tela. Depois que o teclado sobe, o campo é trazido à vista dentro da janela. */
+(() => {
+  const ios = () => window.CF_TESTE_IOS || /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const campo = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]):not([type=file]), textarea') && !el.disabled && !el.readOnly && el.closest('.kf-ov');
+  const vv = window.visualViewport;
+  // traz o campo para dentro da parte visível da janela, rolando só o corpo dela (nunca a página)
+  const aVista = el => {
+    const cx = el.closest('.kf-dlg-corpo'); if (!cx || !el.isConnected) return;
+    const r = el.getBoundingClientRect(), c = cx.getBoundingClientRect(), folga = 14;
+    if (r.bottom > c.bottom - folga) cx.scrollTop += r.bottom - (c.bottom - folga);
+    else if (r.top < c.top + folga) cx.scrollTop -= c.top + folga - r.top;
+  };
+  const depoisDoTeclado = el => { let feito = false; const f = () => { if (feito) return; feito = true; requestAnimationFrame(() => aVista(el)); }; if (vv) vv.addEventListener('resize', f, { once: true }); setTimeout(f, 420); };
+  const semEmpurrar = (el, focar) => {
+    const antes = el.style.transform; el.style.transform = 'translateY(-2000px)';
+    if (focar) { try { el.focus({ preventScroll: true }); } catch { el.focus(); } }
+    requestAnimationFrame(() => { el.style.transform = antes; depoisDoTeclado(el); });
+  };
+  let ini = null;
+  document.addEventListener('touchstart', e => { const t = e.touches[0]; ini = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY, t: Date.now(), el: e.target } : null; }, { passive: true, capture: true });
+  document.addEventListener('touchend', e => {
+    const i = ini; ini = null; if (!i || !ios() || guiaAtivo()) return;
+    const el = e.target.closest && e.target.closest('input, textarea'); if (!campo(el) || el !== (i.el.closest && i.el.closest('input, textarea'))) return;
+    if (el === document.activeElement) return; // já está com o foco: o toque só move o cursor
+    const t = e.changedTouches[0]; if (!t || Math.hypot(t.clientX - i.x, t.clientY - i.y) > 10 || Date.now() - i.t > 600) return; // foi um arrasto, não um toque
+    e.preventDefault(); semEmpurrar(el, true);
+  }, { passive: false, capture: true });
+  // foco que chega por outro caminho (tecla "seguinte", rótulo, o próprio app)
+  document.addEventListener('focus', e => { if (ios() && !guiaAtivo() && campo(e.target) && !/translateY\(-2000px\)/.test(e.target.style.transform)) semEmpurrar(e.target, false); }, true);
+})();
+
 /* ---------- teclado numérico do iPhone: não tem tecla de confirmar; uma barra com OK fica colada em cima dele ---------- */
 (() => {
   let toque = false; try { toque = matchMedia('(hover: none) and (pointer: coarse)').matches; } catch {}
@@ -137,6 +172,19 @@ const viewAjustes = {
   document.addEventListener('focusin', e => { if (numerico(e.target)) mostrar(e.target); else talvezEsconder(); });
   document.addEventListener('focusout', () => setTimeout(talvezEsconder, 60));
   if (vv) { vv.addEventListener('resize', pos); vv.addEventListener('scroll', pos); }
+  window.cfOkConferir = () => { if (!numerico(document.activeElement)) esconder(); };
+})();
+
+/* ---------- rede de segurança do teclado ----------
+   Quando um campo some da tela com o foco (a janela foi redesenhada), o navegador não avisa que o foco saiu: o Kit
+   continuava com a janela no modo "teclado aberto" e a barra do OK ficava na tela. Depois de cada toque, tecla ou
+   mudança, o app confere: sem campo em foco, sem modo teclado. */
+(() => {
+  const html = document.documentElement; let t = 0;
+  const campo = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]), textarea');
+  const conferir = () => { if (campo(document.activeElement)) return; if (html.classList.contains('kf-teclado')) html.classList.remove('kf-teclado'); if (html.classList.contains('com-ok')) window.cfOkConferir && window.cfOkConferir(); };
+  const marcar = () => { clearTimeout(t); t = setTimeout(conferir, 260); };
+  ['pointerup', 'touchend', 'keyup', 'change', 'focusout'].forEach(ev => document.addEventListener(ev, marcar, true));
 })();
 
 /* ---------- abertura (onboarding) ---------- */
@@ -276,8 +324,9 @@ const GUIA_CANCELA = { cancelado: true };
 const dorme = ms => new Promise(r => setTimeout(r, ms));
 const quadro = () => new Promise(r => requestAnimationFrame(r));
 const guiaFoto = () => JSON.stringify({ draft, bills, catalog, jogo, tab, cadAba, pesAberto, itemAberto });
-function guiaLimparTela() { $('#festa-ok')?.click(); closeSheet(true); guiaDeixaTampa = false; tampaFila = []; $('#guia-dedo')?.classList.remove('ver'); $('#guia-anel')?.classList.remove('ver'); }
-function guiaZerarTela() { pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; jogoMemo.chave = ''; cacheBills = new WeakMap(); }
+const guiaSemAviso = () => $$('.kf-toast').forEach(e => { e.hidden = true; });
+function guiaLimparTela() { $('#festa-ok')?.click(); closeSheet(true); guiaSemAviso(); guiaDeixaTampa = false; tampaFila = []; $('#guia-dedo')?.classList.remove('ver'); $('#guia-anel')?.classList.remove('ver'); }
+function guiaZerarTela() { pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; pesCv = false; if (drag.on) dragEnd(false); jogoMemo.chave = ''; cacheBills = new WeakMap(); }
 function guiaRestaurar(f) {
   guiaLimparTela(); if (tab === 'ajustes') sairDosAjustes();
   const o = JSON.parse(f);
@@ -451,7 +500,26 @@ function guiaMaos(g, tk) {
     } finally { ev('pointerup', x0 + dx); dedo.classList.remove('toca'); dedo.style.transition = ''; }
     await espera(900);
   };
-  return { espera, acha, some, tocar, digitar, apontar, arrastar, rolar, fechar, vivo, sumir: () => dedo.classList.remove('ver') };
+  // segura um nome e arrasta sobre outro cupom: o atalho de juntar, feito com o mesmo código do dedo de verdade
+  const arrastarAte = async (qDe, qPara) => {
+    const de = await acha(qDe); await levar(de); vivo();
+    const r = de.getBoundingClientRect(), x0 = r.left + Math.min(96, r.width / 3), y0 = r.top + r.height / 2;
+    por(x0, y0); await espera(320); vivo();
+    const src = dragSource(de); if (!src) throw new Error('guia: não deu para arrastar ' + qDe);
+    const escudo = $('#guia-escudo');
+    dedo.style.transition = 'opacity .2s'; dedo.classList.add('toca'); await espera(420); vivo(); // o toque demorado que levanta o cupom
+    if (escudo) escudo.style.pointerEvents = 'none'; // o destino é achado pelo ponto da tela: o escudo não pode ficar na frente
+    drag.pend = { ...src, x: x0, y: y0 }; dragStart(x0, y0);
+    try {
+      await espera(380);
+      const para = await acha(qPara), rp = para.getBoundingClientRect(), x1 = rp.left + Math.min(150, rp.width / 2), y1 = rp.top + rp.height / 2;
+      const n = g.rapido || semMovimento() ? 3 : 46;
+      for (let k = 1; k <= n; k++) { vivo(); const f = 0.5 - Math.cos(Math.PI * k / n) / 2, x = x0 + (x1 - x0) * f, y = y0 + (y1 - y0) * f; dragMove(x, y); por(x, y); await quadro(); }
+      await espera(520);
+    } finally { dragEnd(true); if (escudo) escudo.style.pointerEvents = ''; dedo.classList.remove('toca'); dedo.style.transition = ''; }
+    await dorme(380); vivo(); await espera(800);
+  };
+  return { espera, acha, some, tocar, digitar, apontar, arrastar, arrastarAte, rolar, fechar, vivo, sumir: () => dedo.classList.remove('ver') };
 }
 async function guiaRodar() {
   const g = guia;
@@ -497,6 +565,22 @@ async function demoLancar(m, { nome, mais = 0, preco, individual, fora, olhar })
   await m.espera(400);
   await m.tocar('#lc-ok'); await m.some('#pr-nome'); await m.espera(700);
 }
+// vai para uma tela da barra de baixo; se ela já está aberta, não toca de novo
+async function demoIr(m, t) { if (tab !== t || (t === 'mais' && !$('#view #ma-sorteio'))) await m.tocar(navQ(t)); }
+// abre os Cadastros (em Mais) na aba pedida, tocando só no que falta
+async function demoCadastros(m, aba) {
+  if (!$('#view [data-cad]')) { await demoIr(m, 'mais'); await m.tocar('#view [data-ir="cadastros"]'); }
+  if (aba && cadAba !== aba) await m.tocar(`#view [data-cad="${aba}"]`);
+}
+// abre Fechar a comanda no cupom de uma pessoa (ou no da mesa, sem nome)
+async function demoFechar(m, nome) {
+  await m.tocar('#fechar-cmd'); await m.acha('#fc-prox');
+  const k = nome ? compute(draft).units.findIndex(u => u.members.includes(demoId(nome))) + 1 : 0;
+  for (let i = 0; i < k; i++) await m.tocar('#fc-prox', { depois: i === k - 1 ? 700 : 260 });
+}
+const FC_AQUI = '.fc-slide[aria-hidden="false"]';
+// a parte do cupom à vista que diz como a pessoa paga
+const demoPagamento = () => { const s = $$(`${FC_AQUI} .rc-section`).filter(e => /PAGAMENTO/.test(e.textContent)).pop(); return (s && s.nextElementSibling) || `${FC_AQUI} .cupom-1`; };
 /* O roteiro. Todo passo faz a ação de verdade na demonstração (não só aponta) e termina com as janelas fechadas. */
 const GUIA = [
   { t: 'Comece pelo nome do lugar', d: 'No Início, escreva onde você está e toque em Abrir comanda.',
@@ -517,22 +601,28 @@ const GUIA = [
     acao: async m => { const u = demoUn('Diego'); await m.tocar(`summary[data-unit="${u}"]`); await m.espera(500); await m.apontar(`[data-pa="${u}"]`, 1700); } },
   { t: 'Quem não paga o serviço', d: 'Desligue o serviço de alguém e escolha: ninguém paga a parte ou os outros dividem.',
     acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svc]`); await m.acha('[data-pol="redistribute"]'); await m.espera(900); await m.tocar('[data-pol="redistribute"]'); await m.some('[data-pol]'); await m.apontar(`summary[data-unit="${demoUn('Diego')}"]`, 1400); } },
-  { t: 'O cupom de cada um', d: 'Ver cupom mostra a conta da pessoa, pronta para compartilhar por mensagem ou imagem.',
+  { t: 'O cupom de cada um', d: 'Ver cupom mostra a conta da pessoa, pronta para compartilhar.',
     acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-cupom]`); await m.acha('#cp-share'); await m.apontar('.kf-dlg .cupom-1', 1700); await m.apontar('#cp-share', 1300); await m.fechar(); } },
-  { t: 'Detalhes da pessoa', d: 'Em Detalhes, veja item por item, lance só para ela ou combine outro valor.',
-    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-mais]`); await m.acha('.kf-dlg .cs'); await m.espera(900); await m.apontar('.kf-dlg [data-cs-lancar]', 1300, { opcional: true, prazo: 600 }); await m.apontar('.kf-dlg [data-cs-valor]', 1300, { opcional: true, prazo: 600 }); await m.fechar(); } },
-  { t: 'Um cupom para duas pessoas', d: 'Juntar une os dois num cupom só. Arrastar um nome sobre o outro faz o mesmo.',
+  { t: 'Mude o nome ou tire da mesa', d: 'Chegou mais alguém? Em Editar, corrija o nome ou tire a pessoa da mesa.',
+    acao: async m => { await m.tocar('#add-pessoa'); await m.digitar('#pn-nome', 'Eva', { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); await m.tocar('#pn-ok'); await m.some('#pn-nome');
+      await demoAbrir(m, `summary[data-unit="${demoUn('Eva')}"]`); await m.tocar(`[data-pa="${demoUn('Eva')}"] [data-pa-mais]`); await m.digitar('#cs-nome', 'Evelyn', { ritmo: 70 }); await m.tocar('#cs-ok'); await m.some('#cs-nome'); await m.espera(700);
+      await demoAbrir(m, `summary[data-unit="${demoUn('Evelyn')}"]`); await m.tocar(`[data-pa="${demoUn('Evelyn')}"] [data-pa-mais]`); guiaSemAviso(); await m.tocar('#cs-rm'); await m.acha('#cf-ok'); await m.espera(700); await m.tocar('#cf-ok'); await m.some('#cf-ok'); await m.espera(600); } },
+  { t: 'Um cupom para duas pessoas', d: 'Juntar põe duas pessoas no mesmo cupom: bom para casal ou para quem divide tudo.',
     acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-juntar]`); await m.tocar(`[data-pa="${u}"] [data-pa-alvo="p:${demoId('Carla')}"]`); await m.apontar('summary.dv-grupo', 1600); } },
+  { t: 'Arraste para juntar', d: 'O atalho: segure um nome e arraste sobre outro. Os dois ficam no mesmo cupom.',
+    acao: async m => { await m.arrastarAte(`summary[data-unit="${demoUn('Bruno')}"]`, `[data-unit="${demoUn('Carla')}"]`); await m.apontar('summary.dv-grupo', 1500); } },
   { t: 'Separe quando quiser', d: 'O cupom compartilhado mostra a parte de cada um. Separar desfaz a união.',
     acao: async m => { const u = demoUn('Carla'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svcabre]`, { opcional: true, prazo: 600 }); await m.espera(900); await m.tocar(`[data-pa="${u}"] [data-pa-desfaz]`); await m.espera(900); } },
-  { t: 'Uma pessoa paga a conta de todos', d: 'Na conta da mesa, escolha quem paga tudo. Cada um paga o seu desfaz.',
-    acao: async m => { await m.tocar('#cm-pe'); await m.tocar('.kf-dlg [data-cm-todos]'); await m.acha(`.kf-dlg [data-pt="${demoId('Bruno')}"]`); await m.espera(700); await m.tocar(`.kf-dlg [data-pt="${demoId('Bruno')}"]`); await m.some('[data-pt]'); await m.apontar('#view summary.dv-grupo', 1600, { opcional: true }); await m.tocar('#cm-pe'); await m.tocar('.kf-dlg [data-cm-separar]'); await m.espera(700); await m.tocar('#cm-ok'); await m.some('#cm-ok'); } },
   { t: 'Comanda ao vivo', d: 'Compartilhe a comanda: cada pessoa lança pelo próprio celular. Aqui, só o botão.', se: () => !!store.db,
     acao: async m => { await m.apontar('#live-start', 2200, { opcional: true, prazo: 1200 }); } },
   { t: 'Feche a comanda', d: 'Toque em Fechar na hora de pagar. Primeiro o cupom da mesa; depois, um por pessoa.',
     acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1300); await m.tocar('#fc-prox', { depois: 1000 }); await m.tocar('#fc-prox', { depois: 900 }); await m.apontar('[data-fc-copiar="2"]', 1300); await m.apontar('[data-fc-pdf="2"]', 1300); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
-  { t: 'Marque quem já pagou', d: 'Com a comanda fechada, marque no cupom de cada um. O app guarda o valor e carimba PAGO.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.tocar('#fc-prox', { depois: 900 }); await m.tocar('.fc-slide[aria-hidden="false"] [data-fc-pago="marcar"]'); await m.espera(1300); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.apontar('#cmd-conta', 1500); } },
+  { t: 'Uma pessoa paga a conta de todos', d: 'No cupom da mesa, escolha quem paga tudo. Cada cupom diz quanto deve a ela.',
+    acao: async m => { await demoFechar(m); await m.tocar(`${FC_AQUI} [data-fc-todos]`); await m.espera(500); await m.tocar(`${FC_AQUI} [data-fc-quem="${demoId('Bruno')}"]`); await m.espera(900); await m.tocar('#fc-prox', { depois: 700 }); await m.apontar(demoPagamento(), 2000); await m.tocar('#fc-ant', { depois: 600 }); await m.tocar(`${FC_AQUI} [data-fc-cada]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
+  { t: 'Pague outro valor', d: 'Alguém vai pagar mais ou menos que a sua parte? Informe o valor no cupom da pessoa.',
+    acao: async m => { await demoFechar(m, 'Carla'); await m.tocar(`${FC_AQUI} [data-fc-valor]`); await m.digitar(`${FC_AQUI} [data-fc-custom]`, '4000', { ritmo: 120 }); await m.espera(600); await m.apontar(demoPagamento(), 2200); await m.tocar(`${FC_AQUI} [data-fc-conta]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
+  { t: 'Marque quem já pagou', d: 'Depois de fechar, marque no cupom de cada um. O app guarda o valor e carimba PAGO.',
+    acao: async m => { await demoFechar(m, 'Ana'); await m.tocar(`${FC_AQUI} [data-fc-pago="marcar"]`); await m.espera(1300); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.apontar('#cmd-conta', 1500); } },
   { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
     acao: async m => { await m.tocar('#cm-pe'); await m.acha('#cm-ok'); await m.apontar((await m.acha('.kf-dlg [data-cm="svc"]')).closest('.cm-bloco'), 1200); await m.tocar('.kf-dlg [data-cm="cv"]'); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.tocar('#cm-ok'); await m.some('#cm-ok'); } },
   { t: 'A conta de quem já pagou mudou', d: 'Ana pagou antes do couvert e do desconto. O app mostra a diferença para acertar.',
@@ -540,31 +630,31 @@ const GUIA = [
   { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.',
     acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3400); await m.apontar('.festa-xp', 1600); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
   { t: 'Tampinhas e níveis', d: 'Cada comanda salva rende pontos. As tampinhas que você ganha ficam na coleção.', se: () => jogoLigado(),
-    acao: async m => { await m.tocar(navQ('tampinhas')); await m.apontar('#view .nivel-card', 1700); await m.apontar('#view [data-tampa="primeira"]', 1300); } },
+    acao: async m => { await demoIr(m, 'tampinhas'); await m.apontar('#view .nivel-card', 1700); await m.apontar('#view [data-tampa="primeira"]', 1300); } },
   { t: 'Gire a tampinha', d: 'Toque numa tampinha e deslize o dedo sobre ela: ela gira nas suas mãos.', se: () => jogoLigado(),
-    acao: async m => { await m.tocar(navQ('tampinhas')); await m.tocar('#view [data-tampa="primeira"]'); await m.acha('.kf-dlg .o3d'); await m.espera(600); await m.arrastar('.kf-dlg .o3d', 150); await m.arrastar('.kf-dlg .o3d', -230, { dur: 1300 }); await m.tocar('#tp-ok'); await m.some('#tp-ok'); } },
+    acao: async m => { await demoIr(m, 'tampinhas'); await m.tocar('#view [data-tampa="primeira"]'); await m.acha('.kf-dlg .o3d'); await m.espera(600); await m.arrastar('.kf-dlg .o3d', 150); await m.arrastar('.kf-dlg .o3d', -230, { dur: 1300 }); await m.tocar('#tp-ok'); await m.some('#tp-ok'); } },
   { t: 'Histórico e gastos', d: 'As comandas salvas ficam aqui, mês a mês, com o resumo de quanto se gastou.',
-    acao: async m => { await m.tocar(navQ('historico')); await m.apontar('#view .retro', 1700, { opcional: true }); await m.apontar('#view .hist-mes', 1500); } },
+    acao: async m => { await demoIr(m, 'historico'); await m.apontar('#view .retro', 1700, { opcional: true }); await m.apontar('#view .hist-mes', 1500); } },
   { t: 'Repita uma comanda', d: 'Toque numa comanda salva para rever os cupons. Repetir abre outra igual.',
-    acao: async m => { await m.tocar(navQ('historico')); await m.tocar('#view .hist-mes [data-bill]'); await m.acha('#sh-reuse'); await m.espera(900); await m.apontar('.kf-dlg .receipts .cupom-1', 1500); await m.apontar('#sh-edit', 1100); await m.tocar('#sh-reuse'); await m.acha('#add-pessoa'); await m.espera(900); } },
-  { t: 'Exclua uma comanda', d: 'Abriu sem querer? No Início, Excluir esta comanda descarta a que está aberta.',
-    acao: async m => { await m.tocar(navQ('inicio')); await m.tocar('#ini-excluir'); await m.acha('#cf-ok'); await m.espera(800); await m.tocar('#cf-ok'); await m.some('#cf-ok'); await m.espera(900); } },
+    acao: async m => { await demoIr(m, 'historico'); await m.tocar('#view .hist-mes [data-bill]'); await m.acha('#sh-reuse'); await m.espera(900); await m.apontar('.kf-dlg .receipts .cupom-1', 1500); await m.apontar('#sh-edit', 1100); await m.tocar('#sh-reuse'); await m.acha('#add-pessoa'); await m.espera(900); } },
+  { t: 'Exclua uma comanda', d: 'Abriu sem querer? Excluir comanda fica logo abaixo de Fechar comanda.',
+    acao: async m => { await demoIr(m, 'comanda'); await m.tocar('#cmd-excluir'); await m.acha('#cf-ok'); await m.espera(800); await m.tocar('#cf-ok'); await m.some('#cf-ok'); await m.espera(900); } },
   { t: 'Cadastros: pessoas e Pix', d: 'Em Mais, os Cadastros guardam as pessoas. Com a chave Pix, o cupom leva copia e cola.',
-    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-ir="cadastros"]'); await m.tocar('#view [data-pix-edit]'); await m.digitar('#px-in', 'ana@exemplo.com.br', { ritmo: 45 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#px-in'); await m.espera(900); } },
+    acao: async m => { await demoCadastros(m, 'pessoas'); await m.tocar('#view [data-pix-edit]'); await m.digitar('#px-in', 'ana@exemplo.com.br', { ritmo: 45 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#px-in'); await m.espera(900); } },
   { t: 'Turmas', d: 'Monte uma turma com quem sai junto. Na próxima comanda, todos entram de uma vez.',
-    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-ir="cadastros"]'); await m.tocar('#view [data-cad="turmas"]'); await m.tocar('#cad-turma'); await m.digitar('#tg-nome', 'Amigos da praça', { ritmo: 50 }); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`.kf-dlg [data-tg="${n}"]`, { depois: 220 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#tg-nome'); await m.apontar('#view .cad-card .lin', 1500, { opcional: true }); } },
+    acao: async m => { await demoCadastros(m, 'turmas'); await m.tocar('#cad-turma'); await m.digitar('#tg-nome', 'Amigos da praça', { ritmo: 50 }); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`.kf-dlg [data-tg="${n}"]`, { depois: 220 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#tg-nome'); await m.apontar('#view .cad-card .lin', 1500, { opcional: true }); } },
   { t: 'Produtos e preços', d: 'O app lembra o preço de cada produto em cada lugar e sugere na hora de lançar.',
-    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-ir="cadastros"]'); await m.tocar('#view [data-cad="produtos"]'); await m.apontar('#view [data-pprod]', 1700, { opcional: true }); await m.apontar('#view .cad-card', 1200, { opcional: true }); } },
+    acao: async m => { await demoCadastros(m, 'produtos'); await m.apontar('#view [data-pprod]', 1700, { opcional: true }); await m.apontar('#view .cad-card', 1200, { opcional: true }); } },
   { t: 'Sorteie alguém da mesa', d: 'Quem escolhe o próximo lugar? Em Mais, o ponteiro gira e para num nome.',
-    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#ma-sorteio'); await m.tocar('#gf-go'); await m.espera(5600); await m.tocar('#gf-x'); await m.some('#gf-x'); } },
+    acao: async m => { await demoIr(m, 'mais'); await m.tocar('#ma-sorteio'); await m.tocar('#gf-go'); await m.espera(5600); await m.tocar('#gf-x'); await m.some('#gf-x'); } },
   { t: 'Ajustes', d: 'Sincronização, cópia de segurança, aparência e privacidade. Toque para abrir.',
-    acao: async m => { await m.tocar(navQ('mais')); await m.tocar('#view [data-kf="ajustes"]'); await m.acha('#view [data-kf-aj-ir]'); await m.espera(700); const L = $$('#view .kf-aj-lista [data-kf-aj-ir]').filter(e => e.getClientRects().length); for (const el of L.slice(0, 2)) await m.apontar(el, 900); const ap = L.find(e => e.dataset.kfAjIr === 'aparencia') || L[2]; if (ap) { await m.tocar(ap); await m.espera(1600); } } },
+    acao: async m => { await demoIr(m, 'mais'); await m.tocar('#view [data-kf="ajustes"]'); await m.acha('#view [data-kf-aj-ir]'); await m.espera(700); const L = $$('#view .kf-aj-lista [data-kf-aj-ir]').filter(e => e.getClientRects().length); for (const el of L.slice(0, 2)) await m.apontar(el, 900); const ap = L.find(e => e.dataset.kfAjIr === 'aparencia') || L[2]; if (ap) { await m.tocar(ap); await m.espera(1600); } } },
   { t: 'A nuvem', d: 'Mostra se os seus aparelhos estão sincronizados. Toque para ver os detalhes.',
     acao: async m => { await m.tocar('#barra [data-kf-nuvem]'); await m.acha('.kf-dlg'); await m.espera(2000); await m.fechar(); } },
   { t: 'Avaliação e problemas', d: 'O balão recebe a sua nota e os relatos de problema. Tudo chega ao criador do app.',
     acao: async m => { await m.tocar('#barra [data-kf="feedback"]'); await m.acha('.kf-dlg'); await m.espera(2000); await m.fechar(); } },
-  { t: 'Um presente para o criador', d: 'O app é gratuito. Quem quiser apoiar manda um Pix. O presente gira com o dedo.', se: () => KitFacil.apoio.ativo(),
-    acao: async m => { await m.tocar('#topo-presente'); await m.acha('.kf-dlg .o3d'); await m.espera(700); await m.arrastar('.kf-dlg .o3d', 190, { dur: 1300 }); await m.arrastar('.kf-dlg .o3d', -140, { dur: 1000 }); await m.fechar(); } },
+  { t: 'Um presente para o criador', d: 'O app é gratuito. Gostou? Mande um presente pelo Pix: QR code ou código.', se: () => KitFacil.apoio.ativo(),
+    acao: async m => { await m.tocar('#topo-presente'); await m.acha('#ap-qr'); await m.espera(900); await m.apontar('#ap-qr', 2200); await m.apontar('#ap-copiar', 1800); await m.fechar(); } },
   { t: 'Pronto, é isso', d: 'A demonstração some; os seus dados ficam. Para treinar, há a comanda de exemplo.',
     acao: async m => { await m.tocar(navQ('inicio')); await m.espera(2000); } },
 ];

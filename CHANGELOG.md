@@ -3,6 +3,18 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.4.0 · 2026-11-14
+
+- **Uma pessoa paga a conta de todos:** saiu da Conta da mesa e foi para **Fechar a comanda**, embaixo do cupom da mesa. Não junta mais ninguém: cada pessoa continua com o seu cupom, que passa a dizer "Paga para Fulano"; o cupom da mesa lista quem paga a conta e quanto cada um deve. "Cada um paga o seu" desfaz.
+- **Pagar outro valor:** foi para **Fechar a comanda**, embaixo do cupom de cada pessoa (campo "Vai pagar" e "Valor da conta" para voltar). O cupom mostra quanto ela paga ao local e os acertos com os outros.
+- **Editar (antes Detalhes):** a janela da pessoa agora só muda o nome ou tira a pessoa da mesa. O consumo se ajusta no pedido; serviço e couvert, nos atalhos da pessoa; pagamento, em Fechar a comanda. No cupom compartilhado, a janela mostra quem paga, com uma chave por pessoa, e o lápis para editar cada uma. "Juntar com" e "Pagar outro valor" saíram dali.
+- **Cupom compartilhado:** "Paga couvert" ganhou a mesma lista por pessoa que "Paga serviço" já tinha.
+- **Excluir comanda:** saiu da Conta da mesa e fica logo abaixo de Fechar comanda. As opções "Limpar os itens" e "Recomeçar do zero" foram retiradas.
+- **Chaves de serviço, couvert e desconto:** ao ligar ou desligar, a janela ia e voltava várias vezes (o app animava a altura e o Kit somava um deslize a cada quadro). Agora é um movimento só, e a chave tocada desliza até o lugar. O mesmo vale para os cupons de Fechar a comanda.
+- **Teclado no iPhone:** ao tocar num campo dentro de uma janela, o Safari empurrava a tela inteira para cima, a janela saía pelo alto e voltava. O app agora dá o foco de um jeito que o Safari não mexe na tela, e traz o campo à vista dentro da janela depois que o teclado sobe.
+- **Aviso com o teclado numérico:** o aviso de pé de tela podia esticar e cobrir a janela inteira; corrigido.
+- **Guia:** a lista de "Juntar" não nasce mais com o primeiro nome destacado; passo novo com o atalho de **segurar um nome e arrastar sobre outro**; passos novos para pagar a conta de todos e pagar outro valor, em Fechar; "Mude o nome ou tire da mesa" no lugar de Detalhes; o guia não toca mais na barra de baixo quando a tela pedida já está aberta; o passo do presente mostra o QR code e o botão de copiar o código Pix, sem girar o objeto. São 36 passos.
+
 ## 1.3.3 · 2026-11-14
 
 - **Marcar como pago só depois de fechar:** o botão saiu da comanda aberta e do "Ver cupom". Agora fica em **Fechar a comanda**, embaixo do cupom de cada pessoa; ao tocar, o cupom ganha o carimbo PAGO ali mesmo, sem fechar a janela, e o Desfazer do aviso também atualiza o cupom. Quem já está marcado continua podendo ser acertado (falta ou troco) ou desmarcado pela comanda.
