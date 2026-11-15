@@ -1,6 +1,6 @@
 # Proposta 4 para o Integrador
 
-Do Projeto Conta Fácil · 15/11/2026 · app 1.9.3 · Kit Fácil 0.8.0 · Código 0.8
+Do Projeto Conta Fácil · 15/11/2026 · app 1.9.4 · Kit Fácil 0.8.0 · Código 0.8
 
 Correções do Kit, nascidas dos ajustes 8 a 11 pedidos pelo Bruno em 15/11/2026 ("o design da janela de feedback está horrível e
 quebrando o padrão de design do app"). Os itens 1 e 2 não mudam artigo do Código; o item 3 pede uma frase nova no Art. 78.
@@ -59,4 +59,6 @@ estiver fechada, ou só anda até o cupom certo).
 **O que mudar no Código.** Art. 78, frase nova: "Passos seguidos que acontecem na mesma janela não a fecham e reabrem: a
 janela fica aberta de um passo para o outro."
 
-**Enquanto isso, no Conta Fácil.** Depende da decisão do Bruno (ver a conversa do ajuste 11).
+**Enquanto isso, no Conta Fácil.** O Bruno escolheu juntar os passos (1.9.4): os quatro passos da janela de Fechar a
+comanda viraram dois, e o guia passou de 36 para 34 passos. A janela ainda abre uma vez em cada um deles, uma vez no passo
+da conta que mudou e uma vez para salvar; com `continua: true`, essas aberturas seguidas viram uma só.

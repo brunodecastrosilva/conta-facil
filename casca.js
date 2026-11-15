@@ -293,6 +293,8 @@ async function demoFechar(m, nome) {
   for (let i = 0; i < k; i++) await m.tocar('#fc-prox', { depois: i === k - 1 ? 700 : 260 });
 }
 const FC_AQUI = '.fc-slide[aria-hidden="false"]';
+// toca e não deixa o aviso com Desfazer aparecer por cima do dedo: no guia, o aviso some assim que nasce
+async function demoTocarSemAviso(m, q, ms = 700) { await m.tocar(q, { depois: 0 }); for (let t = 0; t < ms; t += 60) { guiaSemAviso(); await m.espera(60); } guiaSemAviso(); }
 // a parte do cupom à vista que diz como a pessoa paga
 const demoPagamento = () => { const s = $$(`${FC_AQUI} .rc-section`).filter(e => /PAGAMENTO/.test(e.textContent)).pop(); return (s && s.nextElementSibling) || `${FC_AQUI} .cupom-1`; };
 /* O roteiro. Todo passo faz a ação de verdade na demonstração (não só aponta) e termina com as janelas fechadas. */
@@ -334,20 +336,23 @@ const GUIA = [
     acao: async m => { await m.apontar('#live-start', 2200, { opcional: true, prazo: 1200 }); } },
   { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
     acao: async m => { await m.tocar('#cm-pe'); await m.apontar((await m.acha('.kf-dlg [data-cm="svc"]')).closest('.cm-bloco'), 1200); await m.tocar('.kf-dlg [data-cm="cv"]'); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
-  { t: 'Feche a comanda', d: 'Toque em Fechar na hora de pagar. Primeiro o cupom da mesa; depois, um por pessoa.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1300); await m.tocar('#fc-prox', { depois: 1000 }); await m.tocar('#fc-prox', { depois: 900 }); await m.apontar('[data-fc-copiar="2"]', 1300); await m.apontar('[data-fc-pdf="2"]', 1300); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
-  { t: 'Uma pessoa paga a conta de todos', d: 'No cupom da mesa, escolha quem paga tudo. Cada cupom diz quanto deve a ela.',
-    acao: async m => { await demoFechar(m); await m.tocar(`${FC_AQUI} [data-fc-todos]`); await m.espera(500); await m.tocar(`${FC_AQUI} [data-fc-quem="${demoId('Bruno')}"]`); await m.espera(700); guiaSemAviso(); await m.apontar(demoPagamento(), 2200); await m.tocar('#fc-prox', { depois: 700 }); await m.apontar(demoPagamento(), 2200); await m.tocar('#fc-ant', { depois: 600 }); await m.tocar(`${FC_AQUI} [data-fc-cada]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
-  { t: 'Pague outro valor', d: 'Alguém paga mais ou menos que a parte dele? Informe o valor e quem cobre a diferença.',
-    acao: async m => { // um caminho só, sem ir e voltar: abre o campo, escreve o valor, escolhe quem cobre (tudo à vista, de cima para baixo),
-      // sobe uma vez para ver o cupom e desce uma vez para voltar ao valor da conta
-      await demoFechar(m, 'Carla'); await m.tocar(`${FC_AQUI} [data-fc-valor]`); await m.acha(`${FC_AQUI} [data-fc-custom]`); await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46);
+  // os dois passos seguintes juntam o que antes eram quatro (decisão do Bruno, 15/11/2026): a janela de Fechar a comanda
+  // abre uma vez em cada um, e tudo o que se faz nela acontece em seguida, sem fechar e reabrir
+  { t: 'Feche a comanda', d: 'Um cupom por pessoa, a mesa primeiro. No da mesa, uma pessoa pode pagar a conta de todos.',
+    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1300);
+      await m.tocar(`${FC_AQUI} [data-fc-todos]`); await m.espera(500); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-quem="${demoId('Bruno')}"]`); await m.apontar(demoPagamento(), 2200);
+      await m.tocar('#fc-prox', { depois: 800 }); await m.apontar(demoPagamento(), 2200); await m.apontar('[data-fc-copiar="1"]', 1200); await m.apontar('[data-fc-pdf="1"]', 1200);
+      await m.tocar('#fc-ant', { depois: 700 }); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-cada]`, 900); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
+  { t: 'O pagamento de cada um', d: 'No cupom da pessoa, marque quem já pagou. Vai pagar outro valor? Diga quem cobre a diferença.',
+    acao: async m => { await demoFechar(m, 'Ana'); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-pago="marcar"]`, 900); await demoTocarSemAviso(m, `${FC_AQUI} .fc-saiu .kf-chave`, 900);
+      // segue para o cupom da Carla, na mesma janela: abre o campo, escreve o valor, escolhe quem cobre, vê o cupom e volta ao valor da conta
+      await m.tocar('#fc-prox', { depois: 300 }); await m.tocar('#fc-prox', { depois: 800 });
+      await m.tocar(`${FC_AQUI} [data-fc-valor]`); await m.acha(`${FC_AQUI} [data-fc-custom]`); await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46);
       await m.digitar(`${FC_AQUI} [data-fc-custom]`, '4000', { ritmo: 120 }); await m.espera(700);
-      await m.tocar(`${FC_AQUI} [data-fc-cobre="${demoId('Bruno')}"]`); await m.espera(600); guiaSemAviso();
+      await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-cobre="${demoId('Bruno')}"]`, 600);
       await m.apontar(demoPagamento(), 2400);
-      await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46); await m.tocar(`${FC_AQUI} [data-fc-conta]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
-  { t: 'Marque quem já pagou', d: 'Depois de fechar, marque no cupom de cada um. Se a pessoa já saiu, o cupom dela trava.',
-    acao: async m => { await demoFechar(m, 'Ana'); await m.tocar(`${FC_AQUI} [data-fc-pago="marcar"]`); await m.espera(900); guiaSemAviso(); await m.tocar(`${FC_AQUI} .fc-saiu .kf-chave`); await m.espera(700); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.apontar(`summary[data-unit="${demoUn('Ana')}"]`, 1500); await m.apontar('#cmd-conta', 1300); } },
+      await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-conta]`, 800); await m.tocar('#fc-volta'); await m.some('#fc-prox');
+      await m.apontar(`summary[data-unit="${demoUn('Ana')}"]`, 1500); await m.apontar('#cmd-conta', 1300); } },
   { t: 'A conta de quem já pagou mudou', d: 'O desconto caiu depois que Ana pagou. Receba a diferença ou escolha quem cobre.',
     acao: async m => { await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
       await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await m.tocar(`${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`); await m.espera(700); guiaSemAviso(); await m.apontar(demoPagamento(), 2000); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(500); } },

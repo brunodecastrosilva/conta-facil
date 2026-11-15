@@ -3,6 +3,14 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.9.4 · 2026-11-15
+
+- **Guia com 34 passos (decisão do Bruno):** os quatro passos da janela de Fechar a comanda viraram dois, para ela não abrir e fechar o tempo todo.
+  - *Feche a comanda* (antes, "Feche a comanda" e "Uma pessoa paga a conta de todos"): abre a janela, mostra o cupom da mesa, põe uma pessoa para pagar a conta de todos, mostra quanto cada um deve a ela, aponta Copiar e PDF e volta a cada um pagar o seu.
+  - *O pagamento de cada um* (antes, "Pague outro valor" e "Marque quem já pagou"): no cupom da Ana, marca que ela pagou e que já saiu; segue para o cupom da Carla, na mesma janela, e mostra o outro valor com a escolha de quem cobre.
+- **Textos novos:** "Um cupom por pessoa, a mesa primeiro. No da mesa, uma pessoa pode pagar a conta de todos." e "No cupom da pessoa, marque quem já pagou. Vai pagar outro valor? Diga quem cobre a diferença."
+- **Regras do app:** o Art. 13 fala em 36 passos; o texto das Regras fica nas instruções do Projeto e precisa passar a dizer 34.
+
 ## 1.9.3 · 2026-11-15
 
 - **Quem chega depois não entra sozinho nos itens (regra do Bruno):** ao adicionar uma pessoa com itens já lançados, nenhum deles é atribuído a ela. Para pôr a pessoa num item, abra o item e marque o nome. Antes, ela entrava sozinha nos itens divididos "entre todos", com um aviso e um Desfazer. Na janela de lançar, o resumo diz só "Entre todos" (saiu "quem chegar depois também entra").
