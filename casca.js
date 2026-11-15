@@ -396,8 +396,19 @@ const GUIA = [
   }, true);
   const fim = e => { if (!p || e.pointerId !== p.id) return; soltar(e.type === 'pointerup' && (p.dy > Math.min(160, p.dlg.offsetHeight / 3) || (p.dy > 24 && p.v > .5))); };
   document.addEventListener('pointerup', fim, true); document.addEventListener('pointercancel', fim, true);
-  // o cabeçalho e o rodapé da janela nunca rolam a página
-  document.addEventListener('touchmove', e => { const t = e.target; if (p || (t.closest && real(t) && t.closest('.kf-dlg-cab, .kf-dlg-pe'))) e.preventDefault(); }, { passive: false, capture: true });
+  /* Com uma janela aberta, o dedo só move duas coisas: a janela, pela barrinha, e o conteúdo dela, quando ele é maior
+     que a janela (1.8.4). Arrastar em qualquer outro ponto não faz nada: o iPhone rolava a página por trás e levava a
+     janela junto. No fim da rolagem (em cima ou embaixo) o dedo também para ali, sem puxar a página. */
+  let ty = 0;
+  const rolavel = (t, dlg) => { for (let el = t; el && el !== dlg; el = el.parentElement) { if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return el; } return null; };
+  document.addEventListener('touchstart', e => { ty = e.touches[0] ? e.touches[0].clientY : 0; }, { passive: true, capture: true });
+  document.addEventListener('touchmove', e => {
+    if (p) return e.preventDefault();
+    const t = e.target, dlg = t.closest && real(t) && t.closest('.kf-dlg'); if (!dlg || (e.touches && e.touches.length > 1)) return;
+    const r = rolavel(t, dlg); if (!r) return e.preventDefault();
+    const y = e.touches && e.touches[0] ? e.touches[0].clientY : ty, desce = y > ty, sobe = y < ty;
+    if ((desce && r.scrollTop <= 0) || (sobe && r.scrollTop + r.clientHeight >= r.scrollHeight - 1)) e.preventDefault();
+  }, { passive: false, capture: true });
 })();
 
 /* ---------- arranque ---------- */

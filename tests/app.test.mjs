@@ -847,7 +847,20 @@ test('1.8.3: puxar a janela pelo cabeçalho: acompanha o dedo, volta se soltar a
   // o cabeçalho é a alça: não seleciona texto nem rola a página
   assert.deepEqual(await p.evaluate(() => { const c = getComputedStyle(document.querySelector('.kf-dlg-cab')), pe = getComputedStyle(document.querySelector('.kf-dlg-pe')), x = getComputedStyle(document.querySelector('.kf-dlg-cab .kf-fechar')); return [c.touchAction, c.userSelect || c.webkitUserSelect, pe.touchAction, x.touchAction]; }), ['none', 'none', 'none', 'manipulation']);
   assert.equal(await p.evaluate(() => { const e = new Event('touchmove', { bubbles: true, cancelable: true }); e.touches = e.changedTouches = [{ clientX: 0, clientY: 0, identifier: 1 }]; document.querySelector('.kf-dlg-cab h2').dispatchEvent(e); return e.defaultPrevented; }), true, 'arrastar no cabeçalho não rola a página');
-  assert.equal(await p.evaluate(() => { const e = new Event('touchmove', { bubbles: true, cancelable: true }); e.touches = e.changedTouches = [{ clientX: 0, clientY: 0, identifier: 1 }]; document.querySelector('.kf-dlg-corpo').dispatchEvent(e); return e.defaultPrevented; }), false, 'o conteúdo da janela continua rolando');
+  // 1.8.4: fora da barrinha o dedo não move nada; só rola o conteúdo maior que a janela, e para nas pontas
+  const mover = (sel, de, para, prep = '') => p.evaluate(([sel, de, para, prep]) => { if (prep) eval(prep); const el = document.querySelector(sel), t = y => [{ clientX: 50, clientY: y, identifier: 1 }];
+    const a = new Event('touchstart', { bubbles: true }); a.touches = a.changedTouches = t(de); el.dispatchEvent(a);
+    const e = new Event('touchmove', { bubbles: true, cancelable: true }); e.touches = e.changedTouches = t(para); el.dispatchEvent(e); return e.defaultPrevented; }, [sel, de, para, prep]);
+  const cabe = "(() => { const c = document.querySelector('.kf-dlg-corpo'); c.style.maxHeight = ''; c.style.flex = ''; })()", naoCabe = "(() => { const c = document.querySelector('.kf-dlg-corpo'); c.style.maxHeight = '120px'; c.style.flex = 'none'; c.scrollTop = 40; })()";
+  assert.equal(await p.evaluate(() => { const c = document.querySelector('.kf-dlg-corpo'); return c.scrollHeight <= c.clientHeight + 1; }), true, 'o conteúdo cabe na janela');
+  assert.equal(await mover('.kf-dlg-corpo label', 300, 380, cabe), true, 'conteúdo que cabe: arrastar num rótulo não move nada');
+  assert.equal(await mover('.kf-dlg-corpo', 300, 220), true, 'nem para cima');
+  assert.equal(await mover('.kf-dlg-pe', 300, 380), true, 'nem pelo rodapé');
+  assert.equal(await mover('.kf-dlg-corpo label', 300, 380, naoCabe), false, 'conteúdo maior que a janela: rola');
+  assert.equal(await mover('.kf-dlg-corpo label', 300, 220), false, 'rola nos dois sentidos');
+  assert.equal(await mover('.kf-dlg-corpo label', 300, 380, "document.querySelector('.kf-dlg-corpo').scrollTop = 0"), true, 'no começo, puxar para baixo não arrasta a página');
+  assert.equal(await mover('.kf-dlg-corpo label', 300, 220, "(() => { const c = document.querySelector('.kf-dlg-corpo'); c.scrollTop = c.scrollHeight; })()"), true, 'no fim, empurrar para cima não arrasta a página');
+  assert.equal(await mover('#view', 300, 380, cabe), false, 'fora da janela o app não mexe (o fundo é do Kit)');
   const puxar = (dy, passos = 8, ms = 30) => p.evaluate(async ([dy, passos, ms]) => {
     const h = document.querySelector('.kf-dlg-cab h2'), r = h.getBoundingClientRect(), x = r.left + 20, y = r.top + 5;
     const ev = (t, yy) => h.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: yy, button: t === 'pointermove' ? -1 : 0 }));
@@ -857,6 +870,7 @@ test('1.8.3: puxar a janela pelo cabeçalho: acompanha o dedo, volta se soltar a
   }, [dy, passos, ms]);
   const soltar = y => p.evaluate(y => document.querySelector('.kf-dlg-cab h2').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7, pointerType: 'touch', clientY: y })), y);
   const topo = () => p.evaluate(() => document.querySelector('.kf-dlg').getBoundingClientRect().top);
+  await p.waitForTimeout(750); await assentar(p);
   const t0 = await topo();
   // puxão curto e lento: acompanha o dedo e volta
   let y = await puxar(60, 8, 60);

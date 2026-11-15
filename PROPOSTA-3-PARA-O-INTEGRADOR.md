@@ -1,6 +1,6 @@
 # Proposta 3 para o Integrador
 
-Do Projeto Conta Fácil · 15/11/2026 · app 1.8.3 · Kit Fácil 0.7.0 · Código 0.7
+Do Projeto Conta Fácil · 15/11/2026 · app 1.8.4 · Kit Fácil 0.7.0 · Código 0.7
 
 Duas correções e uma peça nova do Kit, nascidas de três ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
 Código já diz; a segunda também alarga dois artigos do Código; a terceira pede um parágrafo novo.
@@ -52,10 +52,15 @@ máximo 160 px) ou num puxão rápido fecha, como o X; antes disso, a janela vol
 desce de onde o dedo deixou. Cabeçalho e rodapé têm `touch-action:none` e não selecionam texto. Vale abaixo de 1024 px,
 enquanto a barrinha aparece; fora do guia.
 
+Desde a 1.8.4, por regra do Bruno, **a janela só se move pela barrinha**: arrastar em qualquer outro ponto dela não faz
+nada, e só rola o conteúdo que for maior que a janela, parando no começo e no fim sem puxar a página (`touchmove` em
+`casca.js`).
+
 **O que mudar no Kit.** Levar o gesto para dentro de `janelas` em `comum/kit-facil.js` e a barrinha e as regras de toque
 para `comum/kit-facil.css`.
 
 **O que mudar no Código.** Art. 68, parágrafo novo: "No celular e no tablet, a janela tem uma barrinha no alto e pode
-ser puxada para baixo pelo cabeçalho: acompanha o dedo e fecha, ou volta ao lugar. O X e o Esc continuam (Art. 16, X)."
+ser puxada para baixo pelo cabeçalho: acompanha o dedo e fecha, ou volta ao lugar. Fora da barrinha, o dedo não move a
+janela; só rola o conteúdo que for maior que ela. O X e o Esc continuam (Art. 16, X)."
 
 **Impacto.** Todos os apps ganham o gesto quando receberem o Kit.

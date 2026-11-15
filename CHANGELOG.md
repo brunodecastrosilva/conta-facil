@@ -3,6 +3,12 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.4 · 2026-11-15
+
+- **A janela só se move pela barrinha (regra do Bruno):** arrastar o dedo em qualquer outro ponto da janela (um rótulo, um nome, o espaço entre os campos) não move mais nada. Antes, o iPhone rolava a página por trás e a janela subia junto.
+- **Rolagem:** quando o conteúdo é maior que a janela, ele rola normalmente; ao chegar ao começo ou ao fim, para ali, sem puxar a página.
+- **Não muda:** puxar pela barrinha para fechar, tocar em botões, campos e chaves, e arrastar o cupom de um lado para o outro.
+
 ## 1.8.3 · 2026-11-15
 
 - **Puxar a janela para baixo:** a barrinha no alto da janela agora funciona. Puxe pelo cabeçalho e a janela acompanha o dedo; soltou depois de um terço da altura, ou num puxão rápido, ela fecha, como no X; soltou antes, volta para o lugar. Vale para todas as janelas, no celular e no tablet. O X e o Esc continuam.
