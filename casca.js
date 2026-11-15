@@ -117,62 +117,141 @@ const viewAjustes = {
 };
 
 /* ---------- janelas: um mecanismo só para nascer, acompanhar o teclado, mudar de altura e trocar ----------
-   O desenho está na seção 17 do estilo.css: a posição da janela é uma conta só (pé da tela − guia − teclado) e toda
-   mudança é uma transição. Aqui ficam as três coisas que o CSS não faz sozinho:
-   1. medir o teclado (--cf-tk), pela área visível que o navegador informa;
-   2. fazer a janela nascer abaixo da tela (e, quando uma janela troca de lugar com outra, partir da altura da anterior);
-   3. quando o conteúdo muda de altura de uma vez (uma linha que entra, um aviso), deslizar até o novo lugar.
-   O deslize do Kit fica desligado em todas as janelas: ele somava um movimento a cada quadro e a janela tremia. */
+   A regra é sempre a mesma (FLIP): mede onde a janela está à vista, deixa o desenho mudar de uma vez, mede onde ela
+   ficou e anima só a diferença, com transform. Vale para nascer, para o teclado que abre ou fecha, para o conteúdo que
+   muda de altura e para uma janela que entra no lugar de outra. Como só existe um movimento, sempre medido na hora,
+   a janela não salta nem volta: se algo muda no meio do caminho, o movimento novo parte de onde ela está.
+   (Até a 1.6.0 a posição e a altura tinham transições de CSS separadas; no iPhone elas andavam em ritmos diferentes
+   e a janela dava um tranco ao abrir e ao fechar o teclado.) O deslize do Kit fica desligado em todas as janelas. */
 (() => {
   const html = document.documentElement, vv = window.visualViewport, anima = Element.prototype.animate;
+  const DUR = 320, CURVA = 'cubic-bezier(.32,.72,0,1)'; // a curva das folhas do iPhone
   const parado = () => (typeof semMovimento === 'function' && semMovimento()) || !anima;
   const campo = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]):not([type=file]), textarea') && !el.disabled && !el.readOnly;
+  const abertas = () => [...document.querySelectorAll('.kf-ov')].filter(o => !o.closest('#kf-saidas'));
+  const janela = () => { const o = abertas().pop(); return o ? o.querySelector('.kf-dlg') : null; };
   // traz o campo para dentro da parte visível da janela, rolando só o corpo dela (nunca a página)
-  const aVista = el => {
+  const aVista = (el, suave) => {
     const cx = el && el.closest && el.closest('.kf-dlg-corpo'); if (!cx || !el.isConnected) return;
     const r = el.getBoundingClientRect(), c = cx.getBoundingClientRect(), folga = 14;
-    if (r.bottom > c.bottom - folga) cx.scrollTop += r.bottom - (c.bottom - folga);
-    else if (r.top < c.top + folga) cx.scrollTop -= c.top + folga - r.top;
+    const d = r.bottom > c.bottom - folga ? r.bottom - (c.bottom - folga) : r.top < c.top + folga ? -(c.top + folga - r.top) : 0;
+    if (d) cx.scrollTo({ top: cx.scrollTop + d, behavior: suave && !parado() ? 'smooth' : 'instant' });
+  };
+  const sobe = y => `translateY(${Math.round(y * 10) / 10}px)`;
+  const parar = el => { if (el && el._cfFlip) { el._cfFlip.cancel(); el._cfFlip = null; } };
+  // anima um elemento do deslocamento dy até o lugar dele
+  const partir = (el, dy, dur = DUR) => {
+    parar(el);
+    if (parado() || Math.abs(dy) < 1) return;
+    const a = el._cfFlip = anima.call(el, [{ transform: sobe(dy) }, { transform: sobe(0) }], { duration: dur, easing: CURVA });
+    a.onfinish = a.oncancel = () => { if (el._cfFlip === a) el._cfFlip = null; };
   };
 
-  /* 1. o teclado */
-  let tk = 0, tkQuando = 0, tVista = 0;
-  const ms = () => parseFloat(getComputedStyle(html).getPropertyValue('--cf-jan-ms')) || 340;
+  /* 1. o teclado: a área visível que o navegador informa diz quanto do pé da tela ele cobre.
+     `tk` é o teclado de agora; `tkDesenho` é o teclado para o qual a janela está desenhada. Os dois só diferem
+     enquanto a janela acompanha o teclado (abaixo). */
+  let tk = 0, tkDesenho = 0, tkQuando = 0;
+  const celular = () => matchMedia('(max-width:719px)').matches;
+  const topoSeguro = () => parseFloat(getComputedStyle(document.getElementById('barra') || html).paddingTop) || 0;
+  const desenhar = v => {
+    tkDesenho = v; tkQuando = performance.now();
+    html.style.setProperty('--cf-tk', v + 'px'); html.classList.toggle('cf-tk', v > 0);
+    if (v) html.style.setProperty('--cf-max', Math.max(220, Math.round(vv.height - topoSeguro() - 10)) + 'px'); else html.style.removeProperty('--cf-max');
+  };
+  // onde cada parte da janela está à vista: a janela, o conteúdo, o rodapé e a borda de baixo do conteúdo
+  const partes = dlg => { const corpo = dlg.querySelector(':scope > .kf-dlg-corpo'); return { corpo, pe: dlg.querySelector(':scope > .kf-dlg-pe'), itens: corpo ? [...corpo.children] : [] }; };
+  const foto = (dlg, P) => {
+    const r = el => el.getBoundingClientRect(), rp = P.pe ? r(P.pe) : null, comPe = !!rp && rp.height > 0, capa = dlg._cfTk && dlg._cfTk.capa;
+    return { d: r(dlg).top, c: P.itens[0] ? r(P.itens[0]).top : 0, p: comPe ? rp.top : null, op: comPe ? +getComputedStyle(P.pe).opacity : 0,
+      e: capa ? r(capa).top : P.corpo ? r(P.corpo).bottom : r(dlg).bottom };
+  };
+  const soltar = dlg => {
+    const t = dlg._cfTk; if (!t) return; dlg._cfTk = null; clearTimeout(t.relogio);
+    t.lista.forEach(a => { a.onfinish = null; a.cancel(); });
+    if (t.capa) t.capa.remove();
+    if (t.pe) { t.pe.style.position = t.pePos; t.pe.style.zIndex = t.peZ; }
+  };
+  /* a janela acompanha o teclado. O desenho final (mais baixa, acima do teclado, ou de volta ao tamanho normal) só
+     pode entrar de uma vez; o que se vê no caminho é sempre o desenho MAIS ALTO dos dois, com tudo movido por transform
+     no mesmo relógio: a janela, o conteúdo (no lugar da rolagem), o rodapé e uma capa da cor da janela, que esconde o
+     que fica abaixo da borda de baixo. Ao abrir o teclado, o desenho final entra quando o movimento termina, e nada
+     muda de lugar nessa hora; ao fechar, ele entra no começo. Assim nada some, pula ou volta no caminho. */
+  const acompanhar = (dlg, v) => {
+    const P = partes(dlg), f = document.activeElement, noCampo = campo(f) && dlg.contains(f) ? f : null;
+    const antes = foto(dlg, P), rolAntes = P.corpo ? P.corpo.scrollTop : 0, kAntes = tkDesenho, encolhe = v > kAntes;
+    soltar(dlg); parar(dlg);
+    desenhar(v); if (v && noCampo) aVista(noCampo);
+    const fim = foto(dlg, P), rolFim = P.corpo ? P.corpo.scrollTop : 0;
+    let base = fim;
+    if (encolhe) { desenhar(kAntes); if (P.corpo) P.corpo.scrollTop = rolAntes; base = foto(dlg, P); }
+    // deslocamentos em relação ao desenho que fica na tela durante o movimento
+    const rel = X => { const d = X.d - base.d; return { d, c: X.c - base.c - d, e: X.e - base.e - d, p: X.p != null && base.p != null ? X.p - base.p - d : null }; };
+    const A = rel(antes), B = rel(fim); if (A.p == null) A.p = B.p || 0; if (B.p == null) B.p = A.p || 0;
+    const ops = { duration: DUR, easing: CURVA, fill: 'forwards' }, lista = [];
+    const an = (el, q0, q1) => { const a = anima.call(el, [q0, q1], ops); lista.push(a); return a; };
+    const T = dlg._cfTk = { lista, capa: null, pe: null, relogio: 0 };
+    an(dlg, { transform: sobe(A.d) }, { transform: sobe(B.d) });
+    if (Math.abs(A.c) > .5 || Math.abs(B.c) > .5) P.itens.forEach(el => {
+      // quem já tem transform próprio é movido por `translate`, que se soma a ele
+      if (getComputedStyle(el).transform === 'none') an(el, { transform: sobe(A.c) }, { transform: sobe(B.c) });
+      else an(el, { translate: `0 ${A.c}px` }, { translate: `0 ${B.c}px` });
+    });
+    if (Math.abs(A.e) > .5 || Math.abs(B.e) > .5) {
+      const capa = T.capa = document.createElement('div'); capa.setAttribute('aria-hidden', 'true');
+      capa.style.cssText = `position:absolute;left:0;right:0;top:${base.e - base.d}px;height:200vh;z-index:5;pointer-events:none;background:${getComputedStyle(dlg).backgroundColor}`;
+      dlg.appendChild(capa); an(capa, { transform: sobe(A.e) }, { transform: sobe(B.e) });
+    }
+    if (P.pe && base.p != null) {
+      T.pe = P.pe; T.pePos = P.pe.style.position; T.peZ = P.pe.style.zIndex; P.pe.style.position = 'relative'; P.pe.style.zIndex = '6';
+      an(P.pe, { transform: sobe(A.p), opacity: antes.p != null ? antes.op : 0 }, { transform: sobe(B.p), opacity: fim.p != null ? 1 : 0 });
+    }
+    const concluir = () => {
+      if (dlg._cfTk !== T) return;
+      if (encolhe) { desenhar(v); if (P.corpo && P.corpo.isConnected) { P.corpo.scrollTop = rolFim; const g = document.activeElement; if (campo(g) && dlg.contains(g)) aVista(g); } }
+      soltar(dlg);
+    };
+    lista[0].onfinish = concluir; T.relogio = setTimeout(concluir, DUR + 80);
+  };
   const medir = () => {
     if (!vv) return;
     let v = Math.max(0, Math.round(html.clientHeight - vv.height - vv.offsetTop)); if (v < 80) v = 0; // barras do navegador não contam
-    if (v === tk) return;
-    tk = v; tkQuando = performance.now();
-    html.style.setProperty('--cf-tk', v + 'px'); html.classList.toggle('cf-tk', v > 0);
-    clearTimeout(tVista); tVista = setTimeout(() => { if (campo(document.activeElement)) aVista(document.activeElement); }, ms() + 30);
+    if (v === tk) return; tk = v;
+    const dlg = janela();
+    if (dlg && !guiaAtivo() && !parado() && celular()) return acompanhar(dlg, v);
+    if (dlg) soltar(dlg);
+    desenhar(v);
+    const f = document.activeElement; if (v && dlg && campo(f) && dlg.contains(f)) aVista(f);
   };
-  if (vv) { vv.addEventListener('resize', medir); vv.addEventListener('scroll', medir); }
+  if (vv) {
+    vv.addEventListener('resize', medir); vv.addEventListener('scroll', medir);
+    // se, mesmo assim, o Safari empurrar a tela com uma janela aberta, ela volta para o lugar quando o teclado assenta
+    let tPan = 0;
+    vv.addEventListener('scroll', () => { clearTimeout(tPan); tPan = setTimeout(() => { if (tk > 0 && vv.offsetTop > 1 && janela() && !guiaAtivo()) window.scrollTo(0, 0); }, 140); });
+  }
   window.cfTeclado = () => tk;
+  // com o teclado já aberto, o campo que recebe o foco vem para a parte visível da janela
+  document.addEventListener('focusin', e => { const el = e.target; if (tk > 0 && tkDesenho === tk && campo(el) && el.closest('.kf-dlg')) requestAnimationFrame(() => requestAnimationFrame(() => { if (el === document.activeElement && tkDesenho === tk) aVista(el, true); })); });
 
-  /* 2 e 3. as janelas */
+  /* 2 e 3. as janelas: nascer, trocar e mudar de altura */
   let alturaAnterior = 0, ocupadaAte = 0;
   // enquanto o app anima a altura de um trecho da janela (abrir e recolher, cupons), ninguém mais desliza a janela
   window.cfJanelaOcupada = t => { ocupadaAte = Math.max(ocupadaAte, performance.now() + t + 140); };
-  const deslizar = (dlg, dy, dur = 260) => {
-    if (parado() || Math.abs(dy) < 2) return;
-    let resto = 0; if (dlg._cfDes) { try { resto = new DOMMatrix(getComputedStyle(dlg).transform).m42; } catch {} dlg._cfDes.cancel(); }
-    const a = dlg._cfDes = anima.call(dlg, [{ transform: `translateY(${dy + resto}px)` }, { transform: 'translateY(0)' }], { duration: dur, easing: 'cubic-bezier(.22,.9,.26,1)' });
-    a.onfinish = a.oncancel = () => { if (dlg._cfDes === a) dlg._cfDes = null; };
-  };
+  // desloca a partir de onde a janela está à vista agora (soma o que faltava do movimento anterior)
+  const deslizar = (dlg, dy, dur = 280) => { let resto = 0; if (dlg._cfFlip) { try { resto = new DOMMatrix(getComputedStyle(dlg).transform).m42; } catch {} } partir(dlg, dy + resto, dur); };
   const nascer = (ov, troca) => {
     const dlg = ov.querySelector('.kf-dlg'); if (!dlg || dlg._cfJanela) return; dlg._cfJanela = true;
     dlg.animate = null; // o deslize do Kit pula a janela que não tem `animate`
-    const celular = matchMedia('(max-width:719px)').matches;
+    if (tkDesenho !== tk) desenhar(tk); // a janela anterior saiu no meio do caminho do teclado
+    const noCelular = celular();
     if (troca) {
       // uma janela no lugar de outra: sem escurecer de novo; a borda de cima vai da altura antiga para a nova
       ov.classList.add('cf-troca');
-      if (celular && alturaAnterior) deslizar(dlg, dlg.offsetHeight - alturaAnterior, 280);
-      if (!parado()) anima.call(dlg, [{ opacity: .55 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' });
+      if (noCelular && alturaAnterior) deslizar(dlg, dlg.offsetHeight - alturaAnterior);
+      if (!parado()) anima.call(dlg.querySelector('.kf-dlg-corpo') || dlg, [{ opacity: .4 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
     } else if (!parado()) {
-      // nasce abaixo da tela (no computador, 28 px abaixo e apagada) e a transição do CSS leva ao lugar
-      dlg.style.transition = 'none'; dlg.style.translate = celular ? '0 100%' : '0 28px'; if (!celular) dlg.style.opacity = '.3';
-      void dlg.offsetHeight;
-      dlg.style.transition = ''; dlg.style.translate = ''; dlg.style.opacity = '';
+      // nasce abaixo da tela e sobe (no computador, 28 px abaixo e apagada)
+      if (noCelular) partir(dlg, Math.max(40, Math.round(innerHeight - dlg.getBoundingClientRect().top)), 440);
+      else anima.call(dlg, [{ transform: 'translateY(28px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 240, easing: 'ease-out' });
     }
     let h = dlg.offsetHeight, ultima = 0; alturaAnterior = h;
     if (!window.ResizeObserver) return;
@@ -180,13 +259,12 @@ const viewAjustes = {
       if (!dlg.isConnected) { obs.disconnect(); return; }
       const agora = performance.now(), nova = dlg.offsetHeight, d = nova - h; h = nova; alturaAnterior = nova;
       const seguido = agora - ultima < 130; ultima = agora;
-      // altura mudando quadro a quadro (o app ou o teclado estão animando): a janela já acompanha sozinha
-      if (!celular || seguido || agora < ocupadaAte || agora - tkQuando < ms() + 120) return;
+      // altura mudando quadro a quadro (o app está animando) ou por causa do teclado (já tratado acima): nada a fazer
+      if (!noCelular || seguido || dlg._cfTk || agora < ocupadaAte || agora - tkQuando < 200) return;
       deslizar(dlg, d);
     });
     obs.observe(dlg);
   };
-  const abertas = () => [...document.querySelectorAll('.kf-ov')].filter(o => !o.closest('#kf-saidas'));
   new MutationObserver(muts => {
     let saiu = false; const novas = [];
     for (const m of muts) {

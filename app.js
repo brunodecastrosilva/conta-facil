@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.6.0';
+const VERSAO = '1.6.1';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,10 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.6.1', itens: [
+    'Sem tranco ao abrir e fechar o teclado: a janela, o campo e os botões sobem e descem juntos, num movimento só.',
+    'Com o teclado aberto, o campo que você toca vem sozinho para a parte visível da janela.',
+  ] },
   { versao: '1.6.0', itens: [
     'Quem paga outro valor escolhe com quem fica a diferença: quem cobre o que faltou ou quem devolve o que sobrou.',
     'A conta de quem já pagou mudou? Além de receber ou devolver, outra pessoa pode ficar com a diferença.',

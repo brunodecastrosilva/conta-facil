@@ -3,6 +3,13 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.6.1 · 2026-11-14
+
+- **Tranco ao abrir e fechar o teclado:** no iPhone, a janela saltava para cima num quadro, passava do ponto e voltava (e o contrário ao fechar). A posição e a altura da janela mudavam por transições de CSS separadas, e o iPhone não as mantinha no mesmo ritmo: a posição andava na frente da altura, e o topo da janela ia além do lugar. Agora não há transição nenhuma: o desenho muda de uma vez, e o que se vê é um movimento só, feito com `transform` e num relógio só, para a janela, o conteúdo, o rodapé e a borda de baixo. Ao abrir, a janela fica com o desenho alto até o movimento terminar (nada some antes de o teclado cobrir); ao fechar, o desenho alto entra no começo. Se o teclado mudar de altura ou voltar no meio do caminho, o movimento continua de onde a janela está.
+- **Espaços iguais com e sem teclado:** o título, o conteúdo e o rodapé das janelas não apertam mais quando o teclado abre (era mais uma coisa mudando de lugar na hora). Em troca, com o teclado aberto cabe um pouco menos de conteúdo sem rolar.
+- **Campo à vista:** com o teclado já aberto, o campo que recebe o foco vem para a parte visível da janela.
+- **Rede de segurança:** se o Safari empurrar a tela com uma janela aberta, ela volta para o lugar quando o teclado assenta.
+
 ## 1.6.0 · 2026-11-14
 
 - **Quem fica com a diferença:** em Fechar a comanda, quem paga outro valor (a mais ou a menos) escolhe com quem fica a diferença: "Os outros dividem" (padrão) ou uma pessoa só. Quem cobre paga a mais ao local; quem devolve paga a menos ao local e acerta com a pessoa. O cupom de cada um mostra os acertos.

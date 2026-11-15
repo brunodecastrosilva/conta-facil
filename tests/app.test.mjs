@@ -676,11 +676,23 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, botões de Fechar c
   assert.match(await p.textContent(`${AQUI} .fc-cobre-t`), /Quem devolve\s*R\$\s7,00/);
   await p.click(`${AQUI} [data-fc-cobre="${carla}"]`);
   assert.deepEqual(await pagam(), [[4000, 3300, 2600], [['Carla', 'Ana', 700]]]);
-  // com o teclado aberto, Voltar e Salvar não sobem junto
-  await p.tap(`${AQUI} [data-fc-custom]`); await teclado(p, true); await p.waitForTimeout(600);
-  assert.ok(await p.evaluate(() => document.querySelector('.kf-dlg .kf-dlg-pe').getBoundingClientRect().height < 2), 'o rodapé se recolhe enquanto o teclado está aberto');
-  await p.evaluate(() => document.activeElement.blur()); await teclado(p, false); await p.waitForTimeout(600);
-  assert.ok(await p.evaluate(() => document.querySelector('.kf-dlg .kf-dlg-pe').getBoundingClientRect().height > 40));
+  // com o teclado aberto, Voltar e Salvar não sobem junto; a janela, o campo e o rodapé fazem um caminho só, sem ir e voltar,
+  // e no fim não sobra nada do movimento (capa, animações, estilo no rodapé)
+  const filmar = async acao => {
+    await p.evaluate(sel => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')), c = document.querySelector(sel); if (d && c) __q.push([d.getBoundingClientRect().top, c.getBoundingClientRect().top]); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); }, `${AQUI} [data-fc-custom]`);
+    await acao(); await p.waitForTimeout(700);
+    return p.evaluate(() => { __on = false; const inv = k => { let n = 0; for (let i = 2; i < __q.length; i++) { const x = __q[i - 1][k] - __q[i - 2][k], y = __q[i][k] - __q[i - 1][k]; if (x * y < -1) n++; } return n; };
+      const d = document.querySelector('.kf-dlg'), pe = d.querySelector(':scope > .kf-dlg-pe'), u = __q[__q.length - 1];
+      return { janela: inv(0), campo: inv(1), topo: [Math.round(__q[0][0]), Math.round(u[0])], campoFim: Math.round(u[1]), sobra: d.querySelectorAll(':scope > div[aria-hidden]').length + d.getAnimations({ subtree: true }).length, pe: pe.style.cssText, peAlt: Math.round(pe.getBoundingClientRect().height), tk: getComputedStyle(document.documentElement).getPropertyValue('--cf-tk').trim(), alt: innerHeight }; });
+  };
+  let fk = await filmar(async () => { await p.tap(`${AQUI} [data-fc-custom]`); await p.waitForTimeout(40); await teclado(p, true); });
+  assert.deepEqual([fk.janela, fk.campo, fk.sobra, fk.pe, fk.tk], [0, 0, 0, '', TECLADO + 'px'], 'ao abrir o teclado, a janela e o campo sobem num movimento só');
+  assert.ok(fk.topo[1] <= fk.topo[0] && fk.topo[1] >= 0, `a janela não sai da tela (${fk.topo})`);
+  assert.ok(fk.campoFim > 60 && fk.campoFim < fk.alt - TECLADO - 30, `o campo fica à vista, acima do teclado (${fk.campoFim})`);
+  assert.equal(fk.peAlt, 0, 'o rodapé se recolhe enquanto o teclado está aberto');
+  fk = await filmar(async () => { await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(30); await teclado(p, false); });
+  assert.deepEqual([fk.janela, fk.campo, fk.sobra, fk.pe, fk.tk], [0, 0, 0, '', '0px'], 'ao fechar o teclado, a janela e o campo descem num movimento só');
+  assert.ok(fk.peAlt > 40, 'e o rodapé volta');
   await p.click(`${AQUI} [data-fc-conta]`);
   assert.deepEqual(await p.evaluate(() => [Object.keys(draft.custom).length, Object.keys(draft.cover).length]), [0, 0]);
   // Bruno paga e vai embora: o cupom dele trava

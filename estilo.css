@@ -654,9 +654,6 @@ body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16p
 .fc-cobre-t{font-size:13.5px;font-weight:700;color:var(--muted);text-align:left}
 .fc-saiu{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:6px 12px;border-radius:var(--r-sm,12px);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font-weight:700;font-size:15px;cursor:pointer}
 .fc-trilho input{-webkit-user-select:text;user-select:text}
-/* com o teclado aberto, o rodapé de Fechar a comanda se recolhe: Voltar e Salvar não sobem junto com o teclado */
-.kf-dlg:has(.fc) .kf-dlg-pe{max-height:140px;overflow:hidden;transition:max-height var(--cf-jan-ms) var(--cf-jan-curva),padding var(--cf-jan-ms) var(--cf-jan-curva),opacity .2s ease,border-color .2s ease}
-html.cf-tk body:not(.com-guia) .kf-dlg:has(.fc) .kf-dlg-pe{max-height:0;padding-top:0;padding-bottom:0;opacity:0;border-color:transparent;pointer-events:none}
 /* sorteio: quem entra é escolha de quem sorteia */
 .gf-quem{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%}
 .gf-add{display:flex;gap:8px;width:min(100%,320px)}
@@ -674,24 +671,23 @@ html.cf-tk body:not(.com-guia) .kf-dlg:has(.fc) .kf-dlg-pe{max-height:0;padding-
 .gs-lin{display:flex;align-items:center;gap:8px}
 .gs-lin .cs-tx{flex:1;min-width:0}
 
-/* ---------- 17. janelas: um mecanismo só (1.5.0) ----------
-   Antes havia três coisas mexendo na janela ao mesmo tempo: a entrada do Kit (sobe 28 px), o reposicionamento do Kit
-   quando o teclado abre (a janela pulava de lugar num quadro só) e o deslize do Kit a cada mudança de altura. No iPhone
-   isso dava o tranco: a janela nascia embaixo, saltava para cima do teclado, passava do ponto e voltava.
-   Agora a posição da janela é uma conta só — pé da tela, menos o guia (--cf-pe), menos o teclado (--cf-tk) — e toda
-   mudança dessa conta é uma transição: a janela nasce abaixo da tela e sobe, e se o teclado abre no meio do caminho
-   ela continua subindo até o novo lugar, sem saltar nem voltar. O que o Kit faz com `kf-teclado` fica sem efeito. */
-:root{--cf-tk:0px;--cf-pe:0px;--cf-jan-ms:340ms;--cf-jan-curva:cubic-bezier(.22,.9,.26,1)}
-body.com-guia{--cf-pe:calc(var(--pe-h) + var(--guia-h));--cf-tk:0px}
+/* ---------- 17. janelas: um mecanismo só ----------
+   A posição da janela é uma conta só: pé da tela, menos o guia (--cf-pe), menos o teclado (--cf-tk). Nada aqui tem
+   transição nem muda de espaçamento com o teclado: o desenho muda de uma vez, e quem faz o movimento é o módulo das
+   janelas (casca.js), só com transform e num relógio só. No iPhone, as transições de posição e de altura andavam em
+   ritmos diferentes, e a janela dava um tranco para cima e voltava (1.5.0 e 1.6.0).
+   O que o Kit faz com `kf-teclado` fica sem efeito no celular. */
+:root{--cf-tk:0px;--cf-pe:0px}
+body.com-guia{--cf-pe:calc(var(--pe-h) + var(--guia-h));--cf-tk:0px;--cf-max:initial}
 .kf-ov::before{animation:kf-fade .22s ease-out}
 .kf-ov.cf-troca::before,#kf-saidas .kf-ov::before{animation:none}
-html .kf-dlg{animation:none;transition:translate var(--cf-jan-ms) var(--cf-jan-curva),opacity .18s ease-out}
+html .kf-dlg{animation:none}
 @media (max-width:719px){
   html .kf-ov,html.kf-teclado .kf-ov{top:0!important;bottom:var(--cf-pe)!important;height:auto!important;padding:0!important;align-items:flex-end}
+  /* --cf-max: a altura que cabe acima do teclado, medida pelo módulo das janelas (só existe com o teclado aberto) */
   html .kf-dlg,html .kf-dlg-x{translate:0 calc(-1 * var(--cf-tk));border-radius:var(--kf-r-lg) var(--kf-r-lg) 0 0;
-    max-height:min(92dvh,calc(100dvh - var(--cf-pe) - var(--cf-tk) - env(safe-area-inset-top,0px) - 10px))!important;
+    max-height:var(--cf-max,min(92dvh,calc(100dvh - var(--cf-pe) - env(safe-area-inset-top,0px) - 10px)))!important;
     padding-bottom:env(safe-area-inset-bottom,0px)!important}
-  html .kf-dlg{transition:translate var(--cf-jan-ms) var(--cf-jan-curva),max-height var(--cf-jan-ms) var(--cf-jan-curva),padding-bottom var(--cf-jan-ms) var(--cf-jan-curva)}
   /* com o teclado (ou o guia) logo abaixo, a janela não precisa da folga do pé da tela */
   html.cf-tk .kf-dlg,html.cf-tk .kf-dlg-x,body.com-guia .kf-dlg,body.com-guia .kf-dlg-x{padding-bottom:0!important}
   /* a janela continua para baixo, na mesma cor: o teclado do iPhone é translúcido, e enquanto ele sobe ou desce não
@@ -699,9 +695,6 @@ html .kf-dlg{animation:none;transition:translate var(--cf-jan-ms) var(--cf-jan-c
   .kf-dlg::after,.kf-dlg-x::after{content:"";position:absolute;left:0;right:0;top:100%;height:120vh;background:inherit;pointer-events:none}
   body.com-guia .kf-dlg::after,body.com-guia .kf-dlg-x::after{display:none}
   .kf-dlg-x{position:relative}
-  /* com o teclado aberto sobra pouca altura: os espaços apertam (também em transição) para o essencial caber */
-  .kf-dlg-cab,.kf-dlg-corpo,.kf-dlg-pe{transition:padding var(--cf-jan-ms) var(--cf-jan-curva),gap var(--cf-jan-ms) var(--cf-jan-curva),box-shadow var(--cf-jan-ms) ease}
-  html.cf-tk body:not(.com-guia) .kf-dlg-cab{padding-top:6px;padding-bottom:2px}
-  html.cf-tk body:not(.com-guia) .kf-dlg-corpo{gap:8px;padding-bottom:10px}
-  html.cf-tk body:not(.com-guia) .kf-dlg-pe{padding-top:8px;padding-bottom:10px;box-shadow:0 -10px 14px -12px rgba(16,40,28,.3)}
+  /* em Fechar a comanda, Voltar e Salvar não sobem com o teclado: ficam recolhidos enquanto ele está aberto */
+  html.cf-tk body:not(.com-guia) .kf-dlg:has(.fc) .kf-dlg-pe{display:none}
 }
