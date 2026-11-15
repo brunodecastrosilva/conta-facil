@@ -85,7 +85,9 @@ h1,h2,h3,p{margin:0}
 .topo-in{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:var(--kf-barra-h);max-width:1120px;margin:0 auto;padding:0 max(8px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px))}
 .marca{display:flex;align-items:center;gap:10px;border:0;background:none;padding:6px 8px 6px 2px;border-radius:14px;min-height:44px;color:var(--ink)}
 .marca-ic{width:36px;height:36px;display:grid;place-items:center;flex:none;filter:drop-shadow(0 2px 4px rgba(15,34,25,.18))}
-.marca-ic svg{width:36px;height:36px;display:block}
+.marca-ic svg,.marca-ic img{width:36px;height:36px;display:block}
+/* a marca é o ícone do app (o mesmo da tela de início do celular e de Sobre o aplicativo), com o canto do desenho antigo */
+.marca-ic img{border-radius:27.5%}
 .marca-nome{font-family:var(--f-display);font-weight:800;font-size:21px;letter-spacing:-.025em;white-space:nowrap}
 .kf-barra .marca{visibility:visible}
 .kf-topo .kf-topo-btn,.kf-topo .kf-topo-btn>.kf-i,.kf-topo .kf-nuvem[data-estado]>.kf-i{color:var(--ink)}
@@ -445,7 +447,7 @@ button.lin{border-radius:0}
 .marca-nome{overflow:hidden;text-overflow:ellipsis}
 .kf-topo{flex:none}
 @media (max-width:359px){
-  .marca{gap:7px;padding-right:2px}.marca-ic,.marca-ic svg{width:30px;height:30px}.marca-nome{font-size:17.5px}
+  .marca{gap:7px;padding-right:2px}.marca-ic,.marca-ic svg,.marca-ic img{width:30px;height:30px}.marca-nome{font-size:17.5px}
   .topo-in{padding-left:10px;padding-right:4px;gap:2px}
   .wrap{padding-inline:12px}
   .imp-saida{margin-inline:20px}

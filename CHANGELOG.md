@@ -3,6 +3,11 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.9.2 · 2026-11-15
+
+- **Um ícone só:** a marca no alto da tela (e no trilho lateral, no computador) passou a ser o ícone do app, o mesmo de Sobre o aplicativo: a comanda inclinada com o selo dourado. Antes era um desenho mais simples, só da comanda.
+- **Não muda:** o ícone da tela de início do celular, o do navegador e o da instalação já eram esse.
+
 ## 1.9.1 · 2026-11-15
 
 - **Janela de Avaliação e feedback redesenhada:** "Avaliar o app" e "Relatar um problema" eram duas pílulas com o texto encostado na borda e o apoio em negrito. Agora são duas linhas no padrão do app: ícone, título, apoio e seta, separadas por uma linha. O mesmo vale na guia Avaliação e feedback dos Ajustes.
