@@ -779,3 +779,36 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, botões de Fechar c
   assert.equal(await p.evaluate(() => catalog.me), 'Bruno');
   semErros(a); await a.fechar();
 });
+
+test('1.8.1: caixa de texto nunca é selecionada sozinha (turma na mesa, campo que falta, outro valor, código ao vivo)', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  const campo = () => p.evaluate(() => { const f = document.activeElement; return !!(f && f.matches('input:not([type=checkbox]):not([type=radio]), textarea')) && (f.id || f.name || 'campo'); });
+  // Início sem nome: o campo é apontado, não selecionado
+  await p.click('#ini-form button[type=submit]');
+  assert.equal(await campo(), false, 'local em branco: o campo não é selecionado');
+  assert.equal(await p.getAttribute('#ini-local', 'aria-invalid'), 'true', 'o campo que falta fica apontado');
+  // comanda ao vivo: abrir o trecho do código não seleciona o campo
+  if (await p.locator('#av-abre').count()) { await p.click('#av-abre'); await p.waitForTimeout(200); assert.equal(await campo(), false, 'código da comanda ao vivo: não é selecionado'); }
+  await p.evaluate(() => { catalog.groups = [{ id: 'g1', name: 'Pombo', members: ['Bruno', 'Letícia', 'Mateus', 'Rosana'] }]; store.saveCatalog(); });
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.click('#add-pessoa'); await p.locator('#pn-turma').waitFor({ state: 'attached' }); await assentar(p);
+  // pôr uma turma na mesa: as pessoas entram e o campo Nome continua sem seleção
+  await p.evaluate(() => { const s = document.querySelector('#pn-turma'); s.value = 'g1'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.waitForTimeout(300);
+  assert.equal(await p.evaluate(() => draft.people.length), 4);
+  assert.equal(await campo(), false, 'depois da turma, a caixa de texto não é selecionada');
+  // quem já estava digitando continua no campo
+  await p.click('#pn-nome'); await p.keyboard.type('Ana'); await p.keyboard.press('Enter');
+  assert.equal(await campo(), 'pn-nome', 'quem está digitando continua no campo');
+  await p.click('.kf-dlg [data-kf-fechar]'); await p.waitForTimeout(700);
+  // item sem nome: aponta, não seleciona
+  await p.evaluate(() => produtoSheet()); await p.locator('#pr-form').waitFor(); await assentar(p);
+  await p.evaluate(() => document.querySelector('#pr-form').requestSubmit());
+  assert.equal(await campo(), false, 'item sem nome: o campo não é selecionado');
+  // nenhum arquivo do app dá foco a campo por conta própria: só devolve o foco a quem já estava nele (casca.js e a conta da mesa)
+  const fs = await import('node:fs');
+  const focos = ['app.js', 'telas.js', 'casca.js', 'jogo.js'].flatMap(f => fs.readFileSync(new URL('../' + f, import.meta.url), 'utf8').split('\n').map((l, i) => [f, i + 1, l]).filter(x => /\.focus\(/.test(x[2]) && /(nome|preco|inp|campo|codigo|qtdEl|\bel)\??\.focus\(|\.select\??\.?\(\)/i.test(x[2])));
+  assert.deepEqual(focos.map(x => `${x[0]}:${x[1]}`), [], 'sobrou foco automático em caixa de texto');
+  await a.fechar?.();
+});

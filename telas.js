@@ -154,13 +154,13 @@ const viewInicio = {
     $('#ini-continuar', v)?.addEventListener('click', () => irPara('comanda'));
     const inp = $('#ini-local', v);
     if (inp) attachSuggest(inp, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })));
-    $('#ini-form', v)?.addEventListener('submit', e => { e.preventDefault(); const nome = inp.value.trim().replace(/\s+/g, ' '); if (!nome) { KitFacil.avisar('Digite o nome do local ou escolha um da lista.'); inp.focus(); return; } newBillAt(nome); });
+    $('#ini-form', v)?.addEventListener('submit', e => { e.preventDefault(); const nome = inp.value.trim().replace(/\s+/g, ' '); if (!nome) { KitFacil.avisar('Digite o nome do local ou escolha um da lista.'); apontar(inp); return; } newBillAt(nome); });
     $$('[data-ini-lugar]', v).forEach(b => b.addEventListener('click', () => newBillAt(b.dataset.iniLugar)));
-    $('#av-abre', v)?.addEventListener('click', () => { aoVivoAberto = true; render({ anchor: false }); requestAnimationFrame(() => $('#av-codigo')?.focus()); });
+    $('#av-abre', v)?.addEventListener('click', () => { aoVivoAberto = true; render({ anchor: false }); });
     $('#av-form', v)?.addEventListener('submit', e => { e.preventDefault(); entrarAoVivo($('#av-codigo', v).value); });
     $('#av-colar', v)?.addEventListener('click', async () => {
       try { const t = (await navigator.clipboard.readText()).trim(); if (!t) { KitFacil.avisar('Nada copiado.'); return; } $('#av-codigo', v).value = t; entrarAoVivo(t); }
-      catch { KitFacil.avisar('Não deu para colar. Toque e segure no campo e escolha Colar.'); $('#av-codigo', v)?.focus(); }
+      catch { KitFacil.avisar('Não deu para colar. Toque e segure no campo e escolha Colar.'); }
     });
     $('#ini-nivel', v)?.addEventListener('click', () => irPara('tampinhas'));
     $('#ini-hist', v)?.addEventListener('click', () => irPara('historico'));
@@ -271,7 +271,7 @@ function pessoaSheet() {
     $('#np-form', s).addEventListener('submit', e => {
       e.preventDefault();
       const nome = $('#np-nome', s).value.trim().replace(/\s+/g, ' '), pix = $('#np-pix', s).value.trim();
-      if (!nome) { KitFacil.avisar('Informe o nome.'); $('#np-nome', s).focus(); return; }
+      if (!nome) { KitFacil.avisar('Informe o nome.'); apontar($('#np-nome', s)); return; }
       if (catalog.people.some(p => norm(p.name) === norm(nome))) { KitFacil.avisar(`${nome} já está nos cadastros.`); return; }
       catalog.people.push({ name: nome, pix: '' });
       const eu = $('#np-eu', s).checked; if (eu) definirEu(nome);
@@ -299,7 +299,7 @@ function turmaSheet(g) {
     $('#tg-form', s).addEventListener('submit', e => {
       e.preventDefault();
       const nome = $('#tg-nome', s).value.trim().replace(/\s+/g, ' ');
-      if (!nome) { KitFacil.avisar('Dê um nome para a turma.'); $('#tg-nome', s).focus(); return; }
+      if (!nome) { KitFacil.avisar('Dê um nome para a turma.'); apontar($('#tg-nome', s)); return; }
       if (sel.size < 2) { KitFacil.avisar('Escolha ao menos duas pessoas.'); return; }
       if ((catalog.groups || []).some(x => x !== g && norm(x.name) === norm(nome))) { KitFacil.avisar(`Já existe a turma ${nome}.`); return; }
       const members = nomes.filter(n => sel.has(n));

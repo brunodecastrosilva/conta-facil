@@ -3,6 +3,16 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.1 · 2026-11-15
+
+- **Caixa de texto nunca é selecionada sozinha (regra do Bruno):** o teclado só sobe quando a pessoa toca no campo. A regra da 1.7.0 valia para a abertura das janelas; agora vale para o app inteiro.
+- **Pôr uma turma na mesa:** as pessoas entram e o campo Nome fica como estava; antes ele era selecionado e o teclado subia. Quem está digitando nomes continua no campo entre um nome e outro, como antes.
+- **Campo que falta preencher:** o aviso diz o que falta e o campo ganha um contorno vermelho, sem ser selecionado (local, nome do item, valor, nome da pessoa, nome da turma).
+- **Pagar outro valor** e **código da comanda ao vivo:** o campo aparece e espera o toque; antes já abria selecionado.
+- **Item no computador:** escolher um produto sugerido não leva mais o cursor para a quantidade.
+- **Não muda:** quando a tela é redesenhada com a pessoa digitando, o foco volta para o campo em que ela estava.
+- **Depende do Kit:** em Avaliação e feedback, "Relatar um problema" sem descrição ainda seleciona o campo; a correção é do Kit e vai como proposta ao Integrador.
+
 ## 1.8.0 · 2026-11-15
 
 - **Kit Fácil 0.7.0:** as peças do Conta Fácil foram para o Kit e o app passou a usar as do Kit, como os outros apps: o mecanismo único das janelas (nascer, acompanhar o teclado, mudar de altura, trocar e sair pelo pé), o relógio de 600 ms, a barra de baixo com a comanda no centro e o trilho com Mais e Ajustes no pé, a barra de cima com nuvem, presente e balão em traço, a janela do apoio com o presente em 3D, a abertura de quatro telas, o motor do guia, o campo com sugestões, os campos de dinheiro e porcentagem, a quantidade com − e +, a chave, os botões de escolha, a confirmação, o Pix de cobrança e o motor das tampinhas em 3D (`comum/kit-jogo.js`). Saíram do app: o ajuste provisório que trocava as durações do Kit, o próprio módulo das janelas e as cópias de código e de CSS dessas peças.

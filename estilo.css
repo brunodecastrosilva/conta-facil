@@ -571,3 +571,4 @@ body.kf-com-guia .festa{bottom:calc(var(--kf-pe-h) + var(--kf-gu-h));padding-bot
 .cmd-una .dv-pes,.cmd-una .item-d,.item-d>summary::after,.it-lin::after,.cmd-una .dv-lin::after,.cmd-una .item-d>.it-lin::after,.pa-seta,details.fold>summary::after,.join form{transition-duration:var(--kf-ms);transition-timing-function:var(--kf-curva)}
 /* o botão que divide a linha com um campo tem a altura do campo */
 .row>.btn{min-height:50px}
+[aria-invalid="true"]{outline:2px solid var(--danger);outline-offset:1px}

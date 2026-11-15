@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.8.0';
+const VERSAO = '1.8.1';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,10 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.8.1', itens: [
+    'Nenhuma caixa de texto é selecionada sozinha: o teclado só sobe quando você toca no campo.',
+    'Pôr uma turma na mesa não abre mais o teclado.',
+  ] },
   { versao: '1.8.0', itens: [
     'A janela do presente ficou mais clara: é opcional, e o app continua igual para todos, com presente ou sem.',
     'Em Mais, os Ajustes passaram para o fim, depois do guia e da comanda de exemplo.',
@@ -821,6 +825,10 @@ const fold = s => norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const lastPress = { target: null, at: 0 };
 document.addEventListener('pointerdown', e => { lastPress.target = e.target; lastPress.at = Date.now(); }, true);
 const attachSuggest = (input, getItems, onPick) => KitFacil.sugestoes(input, getItems, onPick);
+/* Regra do Bruno (15/11/2026): caixa de texto NUNCA é selecionada sozinha, em janela ou fora dela. Quem seleciona é o
+   toque da pessoa. O app só devolve o foco ao campo em que ela já estava digitando, quando a tela é redesenhada.
+   Campo que falta preencher é apontado (contorno e aria-invalid), sem receber o foco; o aviso diz o que fazer. */
+const apontar = el => { if (!el) return; el.setAttribute('aria-invalid', 'true'); el.addEventListener('input', () => el.removeAttribute('aria-invalid'), { once: true }); };
 
 /* ---------- toast & overlay ---------- */
 /* avisos e janelas são os do Kit Fácil (iguais nos três apps); mesmos nomes e parâmetros do Elétrica e do Estudo.
@@ -1623,10 +1631,11 @@ function pessoaNovaSheet() {
       ${turmas}<p class="hint" id="pn-mesa" role="status" style="margin:0">${naMesa()}</p></form>`,
     onMount: s => {
       const inp = $('#pn-nome', s);
-      const depois = () => { inp.value = ''; $('#pn-mesa', s).innerHTML = naMesa(); inp.focus({ preventScroll: true }); };
+      const depois = () => { inp.value = ''; $('#pn-mesa', s).innerHTML = naMesa(); };
       attachSuggest(inp, () => catalog.people.filter(p => !d.people.some(x => norm(x.name) === norm(p.name)))
         .sort((a, b) => (Uu.people[norm(b.name)] || 0) - (Uu.people[norm(a.name)] || 0) || (b.last || 0) - (a.last || 0)).map(p => ({ label: p.name })), x => { if (addPessoa(x.label)) depois(); });
       $('#pn-form', s).addEventListener('submit', e => { e.preventDefault(); if (addPessoa(inp.value)) depois(); });
+      // quem está digitando continua no campo (o foco não sai dele); quem não tocou no campo, como ao pôr uma turma, não ganha teclado.
       // depois do primeiro toque no campo o teclado fica aberto entre um nome e outro: Enter adiciona sem "enviar o formulário" (o que fecharia o teclado), e o botão Adicionar não tira o foco do campo
       inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && !e.defaultPrevented) { e.preventDefault(); if (addPessoa(inp.value)) depois(); } });
       $('#pn-add', s).addEventListener('pointerdown', e => e.preventDefault());
@@ -1673,15 +1682,15 @@ function produtoSheet(paraId, ed) {
       precoEl.addEventListener('input', () => { auto = false; dica.hidden = true; });
       attachSuggest(nomeEl, () => catalog.products.map(p => ({ p, i: priceInfo(p, d.place), n: Uu.products[norm(p.name)] || 0 }))
         .sort((a, b) => (!!b.i?.here - !!a.i?.here) || b.n - a.n || a.p.name.localeCompare(b.p.name, 'pt-BR'))
-        .map(({ p, i }) => ({ label: p.name, right: i ? BRL(i.price) + (i.here ? '' : ' · outro local') : '', dim: i && !i.here })), x => { preencher(x.label, true); if (!isTouch) qtdEl.focus(); });
+        .map(({ p, i }) => ({ label: p.name, right: i ? BRL(i.price) + (i.here ? '' : ' · outro local') : '', dim: i && !i.here })), x => preencher(x.label, true));
       // − e + são do Kit (passo a passo de quantidade): ele avisa com o evento input
       qtdEl.addEventListener('input', () => div?.atualizar());
       $('#pr-no', s).onclick = () => closeSheet();
       $('#pr-form', s).addEventListener('submit', e => {
         e.preventDefault();
         const name = nomeEl.value.trim().replace(/\s+/g, ' '), qty = Math.max(1, parseInt(qtdEl.value) || 1), price = parseMoney(precoEl.value);
-        if (!name) { KitFacil.avisar('Informe o nome do produto.'); nomeEl.focus(); return; }
-        if (price === null || price === 0) { KitFacil.avisar('Informe o valor unitário (por exemplo, 12,90).'); precoEl.focus(); return; }
+        if (!name) { KitFacil.avisar('Informe o nome do produto.'); apontar(nomeEl); return; }
+        if (price === null || price === 0) { KitFacil.avisar('Informe o valor unitário (por exemplo, 12,90).'); apontar(precoEl); return; }
         if (ed) {
           const cur = d.items.find(x => x.id === ed.id); if (!cur) { closeSheet(true); return; }
           if (div && !div.pronto()) { KitFacil.avisar(div.porque()); return; }
@@ -1889,8 +1898,8 @@ function editarPessoaSheet(pid) {
       $('#cs-nome-f', s).addEventListener('submit', e => {
         e.preventDefault();
         const el = $('#cs-nome', s), nome = el.value.trim().replace(/\s+/g, ' '), p = d.people.find(x => x.id === pid); if (!p) return closeSheet();
-        if (!nome) { KitFacil.avisar('Informe o nome.'); el.focus(); return; }
-        if (d.people.some(x => x.id !== pid && norm(x.name) === norm(nome))) { KitFacil.avisar(`Já há ${nome} na mesa. Use outro nome.`); el.focus(); return; }
+        if (!nome) { KitFacil.avisar('Informe o nome.'); apontar(el); return; }
+        if (d.people.some(x => x.id !== pid && norm(x.name) === norm(nome))) { KitFacil.avisar(`Já há ${nome} na mesa. Use outro nome.`); apontar(el); return; }
         if (nome === p.name) return closeSheet();
         const antigo = p.name; p.name = nome; closeSheet(true); commit({ anchor: false });
         KitFacil.avisar(`${antigo} agora é ${nome}${nome.endsWith('.') ? '' : '.'}`, { label: 'Desfazer', run: () => { const q = d.people.find(x => x.id === pid); if (q) { q.name = antigo; commit({ anchor: false }); } } });
@@ -2107,7 +2116,7 @@ function fecharSheet(abrirEm = 0) {
           KitFacil.avisar(`${d.people.find(p => p.id === pid).name} paga a conta de todos.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
         if (t('[data-fc-cada]')) { pagaTodos(d, ''); return mudar(); }
         // pagar outro valor
-        if (t('[data-fc-valor]')) { valorAberto = t('[data-fc-valor]').dataset.fcValor; refazer(); const campo = $(`[data-fc-custom="${valorAberto}"]`, tr); campo?.focus({ preventScroll: true }); campo?.select?.(); return; }
+        if (t('[data-fc-valor]')) { valorAberto = t('[data-fc-valor]').dataset.fcValor; refazer(); return; }
         if (t('[data-fc-conta]')) { const pid = t('[data-fc-conta]').dataset.fcConta; if (d.custom) delete d.custom[pid]; if (d.cover) delete d.cover[pid]; valorAberto = ''; return mudar(); }
         // com quem fica a diferença de quem paga outro valor
         if (t('[data-fc-cobre]')) { const b = t('[data-fc-cobre]'), pid = b.closest('[data-fc-u]') && cAt.U[b.closest('[data-fc-u]').dataset.fcU]?.payers[0]; if (!pid) return; d.cover = { ...(d.cover || {}) }; if (b.dataset.fcCobre) d.cover[pid] = b.dataset.fcCobre; else delete d.cover[pid]; return mudar(); }

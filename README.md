@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.7.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.8.1** · Kit Fácil 0.7.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
@@ -112,6 +112,10 @@ na mesma curva** (um relógio só: `MOVE` em `app.js`, `--cf-ms` e `--cf-curva` 
 do sistema segue o relógio do teclado) e **nenhuma janela abre com a caixa de texto selecionada**. O que isso muda no
 Código e no Kit está na [Proposta 2](PROPOSTA-2-PARA-O-INTEGRADOR.md), aprovada inteira no mesmo dia: o Código passou
 à versão 0.7, e as peças que ainda são do app entraram na lista do Anexo II.
+
+No mesmo dia, na 1.8.1, o Bruno alargou a segunda regra: **uma caixa de texto nunca é selecionada sozinha**, em
+janela ou fora dela. O teclado só sobe quando a pessoa toca no campo; campo que falta preencher é apontado com contorno,
+sem receber o foco (`apontar` em `app.js`). O app só devolve o foco ao campo em que a pessoa já estava digitando.
 
 Falta só o Kit Fácil 0.7.0 receber as peças que hoje são do app (relógio de 600 ms, janelas e teclado, barra de baixo com a comanda no
 centro, tela Mais, barra de cima em traço, ícones, presente em 3D, abertura, guia, seções, `comMovimento`, carrossel e
