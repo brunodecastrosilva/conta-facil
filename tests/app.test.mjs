@@ -601,7 +601,10 @@ test('janelas: nascem e acompanham o teclado num movimento só, sem saltar nem v
   const caixa = () => p.evaluate(() => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')), r = d.getBoundingClientRect(), f = getComputedStyle(d, '::after'); return { topo: Math.round(r.top), base: Math.round(r.bottom), pe: getComputedStyle(d).paddingBottom, cont: f.content !== 'none' && parseFloat(f.height) > 300 && f.backgroundColor === getComputedStyle(d).backgroundColor }; });
   // filma o topo da janela quadro a quadro durante uma ação e conta as vezes em que ela foi e voltou
   const filmar = async (acao, ms = 800) => {
-    await p.evaluate(() => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); if (d) __q.push(d.getBoundingClientRect().top); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); });
+    // No quadro em que uma animação acaba de começar (tempo 0), o Chrome às vezes devolve a posição SEM a animação, com
+    // a máquina carregada: a janela "aparece" no lugar final por um quadro só na medida, não na tela. Esses quadros ficam
+    // fora da conta; um vai e volta de verdade dura mais que o quadro de partida e continua sendo pego.
+    await p.evaluate(() => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); if (d && !d.getAnimations().some(a => a.pending || !(a.currentTime > 0))) __q.push(d.getBoundingClientRect().top); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); });
     await acao(); await p.waitForTimeout(ms);
     return p.evaluate(() => { __on = false; let inv = 0; for (let i = 2; i < __q.length; i++) { const x = __q[i - 1] - __q[i - 2], y = __q[i] - __q[i - 1]; if (x * y < -1) inv++; } return { inv, de: Math.round(__q[0]), n: __q.length }; });
   };
@@ -653,7 +656,10 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   await p.click('#cm-pe'); await p.locator('.kf-dlg [data-cm="svc"]').waitFor(); await p.waitForTimeout(500);
   assert.equal(await p.locator('.kf-dlg [data-cm-todos], .kf-dlg #cm-limpar, .kf-dlg >> text=/xcluir/').count(), 0);
   const tremor = async sel => {
-    await p.evaluate(() => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); if (d) __q.push(d.getBoundingClientRect().top); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); });
+    // No quadro em que uma animação acaba de começar (tempo 0), o Chrome às vezes devolve a posição SEM a animação, com
+    // a máquina carregada: a janela "aparece" no lugar final por um quadro só na medida, não na tela. Esses quadros ficam
+    // fora da conta; um vai e volta de verdade dura mais que o quadro de partida e continua sendo pego.
+    await p.evaluate(() => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); if (d && !d.getAnimations().some(a => a.pending || !(a.currentTime > 0))) __q.push(d.getBoundingClientRect().top); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); });
     await p.tap(sel); await p.waitForTimeout(900);
     return p.evaluate(() => { __on = false; let inv = 0; for (let i = 2; i < __q.length; i++) { const x = __q[i - 1] - __q[i - 2], y = __q[i] - __q[i - 1]; if (x * y < -1) inv++; } return inv; });
   };
