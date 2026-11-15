@@ -3,6 +3,17 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.7.0 · 2026-11-15
+
+- **Um relógio só (regra do Bruno):** tudo o que o app abre ou fecha dura 600 ms, na mesma curva (começa macio e pousa devagar): janelas, fundo escuro, linhas e trechos que abrem e recolhem, lista de sugestões, troca de tela, avisos, apresentação e festa. A duração está escrita num lugar só (`MOVE` em `app.js`, `--cf-ms` e `--cf-curva` no CSS). Antes havia 180, 220, 240, 260, 280, 440 e 560 ms espalhados, e a janela nascia numa curva que fazia quase todo o caminho no primeiro instante: era o "rápido demais" do vídeo.
+- **Janelas todas iguais:** um módulo só cuida de nascer, sair, trocar e mudar de altura, para qualquer janela, do app ou do Kit. A novidade é a saída: a janela desce pelo pé da tela em 600 ms e o fundo clareia junto (o Kit sumia com ela em 200 ms).
+- **Nenhuma janela abre com a caixa de texto selecionada:** o foco vai para a janela, e o teclado só sobe quando a pessoa toca no campo. Vale para todas as janelas do app, no celular e no computador.
+- **Quem está na mesa:** o botão Adicionar fica alinhado ao campo, com a mesma altura; a lista de sugestões abre abaixo da linha inteira. Saiu o botão "Pronto", que repetia o X e ocupava espaço; pelo mesmo motivo saiu o "Pronto" do cupom compartilhado e da conta da mesa.
+- **Teclado:** quando o teclado sobe com alguma coisa ainda abrindo dentro da janela (a lista de sugestões, o campo de "Pagar outro valor"), só a janela se move até ele assentar; a lista de sugestões abre em seguida. Corrigido também um quadro em que o conteúdo descia 23 px e voltava, bem no fim da subida do teclado (vinha da 1.6.1).
+- **Guia na ordem do app:** "Serviço, couvert e desconto" vem antes de "Feche a comanda". Em "A conta de quem já pagou mudou", o desconto cai depois que Ana pagou.
+- **O que ainda depende do Kit:** menus, listas e calendário do Kit fecham em 200 ms. Para o Kit 0.6.0 seguir os 600 ms sem mexer em `comum/`, o app acerta a duração das chamadas dele (Arts. 30-A e 93, § 1º). O que levar para o Código e para o Kit 0.7.0 está em `PROPOSTA-2-PARA-O-INTEGRADOR.md`.
+- **Não muda:** a janela acompanhando o teclado continua em cerca de 300 ms, porque quem abre o teclado é o iPhone e a janela precisa chegar junto com ele.
+
 ## 1.6.1 · 2026-11-14
 
 - **Tranco ao abrir e fechar o teclado:** no iPhone, a janela saltava para cima num quadro, passava do ponto e voltava (e o contrário ao fechar). A posição e a altura da janela mudavam por transições de CSS separadas, e o iPhone não as mantinha no mesmo ritmo: a posição andava na frente da altura, e o topo da janela ia além do lugar. Agora não há transição nenhuma: o desenho muda de uma vez, e o que se vê é um movimento só, feito com `transform` e num relógio só, para a janela, o conteúdo, o rodapé e a borda de baixo. Ao abrir, a janela fica com o desenho alto até o movimento terminar (nada some antes de o teclado cobrir); ao fechar, o desenho alto entra no começo. Se o teclado mudar de altura ou voltar no meio do caminho, o movimento continua de onde a janela está.

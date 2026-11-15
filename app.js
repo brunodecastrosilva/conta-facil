@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.6.1';
+const VERSAO = '1.7.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,13 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.7.0', itens: [
+    'Tudo o que abre e fecha no app agora tem o mesmo ritmo: mais calmo, sem aparecer de uma vez.',
+    'As janelas fecham descendo pelo pé da tela, do mesmo jeito que abrem.',
+    'Nenhuma janela abre com o teclado: ele só sobe quando você toca no campo.',
+    'Quem está na mesa: o botão Adicionar fica ao lado do campo, e a janela fecha no X.',
+    'Guia na ordem de uso: serviço, couvert e desconto vêm antes de fechar a comanda.',
+  ] },
   { versao: '1.6.1', itens: [
     'Sem tranco ao abrir e fechar o teclado: a janela, o campo e os botões sobem e descem juntos, num movimento só.',
     'Com o teclado aberto, o campo que você toca vem sozinho para a parte visível da janela.',
@@ -875,19 +882,42 @@ function attachSuggest(input, getItems, onPick) {
   const wrap = document.createElement('div'); wrap.className = 'sg-wrap';
   input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
   const box = document.createElement('div'); box.className = 'sg-box'; box.hidden = true; box.setAttribute('role', 'listbox');
-  wrap.appendChild(box);
+  // quando o campo divide a linha com um botão, a lista abre abaixo da linha inteira: o botão continua alinhado ao campo
+  const linha = input.closest('.row'); if (linha) { box.classList.add('sg-fora'); linha.after(box); } else wrap.appendChild(box);
   let items = [], active = -1;
-  const close = () => { box.hidden = true; box.innerHTML = ''; active = -1; };
+  // a lista abre e recolhe no relógio do app, como tudo o que abre e fecha
+  let saindo = null;
+  const mover = abrir => {
+    const m = MV(); if (m.off || !box.animate || !box.isConnected) return null;
+    alturaPorContaDoApp(box, m.ms);
+    const h = box.getBoundingClientRect().height + 'px', aberta = { height: h, opacity: 1 }, fechada = { height: '0px', opacity: 0, marginTop: '0px', borderTopWidth: '0px', borderBottomWidth: '0px' };
+    return box.animate(abrir ? [fechada, aberta] : [aberta, fechada], { duration: m.ms, easing: m.css });
+  };
+  const close = () => {
+    active = -1; if (box.hidden || saindo) return;
+    const fim = () => { saindo = null; box.hidden = true; box.innerHTML = ''; box.style.pointerEvents = ''; };
+    const a = mover(false); if (!a) return fim();
+    saindo = a; box.style.pointerEvents = 'none'; a.onfinish = fim; a.oncancel = () => { saindo = null; box.style.pointerEvents = ''; };
+  };
   const show = () => {
     const q = fold(input.value);
     items = getItems().filter(x => !q || fold(x.label).includes(q)).filter(x => fold(x.label) !== q).slice(0, 6);
     if (!items.length) return close();
+    const nova = box.hidden; if (saindo) saindo.cancel();
     box.innerHTML = items.map((x, i) => `<button type="button" class="sg-item ${i === active ? 'on' : ''}" data-i="${i}" role="option"><span>${esc(x.label)}</span>${x.right ? `<small class="${x.dim ? 'dim' : ''}">${esc(x.right)}</small>` : ''}</button>`).join('');
     box.hidden = false;
+    if (nova) mover(true);
   };
   const pick = i => { const x = items[i]; if (!x) return; input.value = x.label; close(); onPick && onPick(x); };
   input.addEventListener('input', () => { active = -1; show(); });
-  input.addEventListener('focus', show);
+  // no celular, o toque no campo faz o teclado subir e a janela acompanhar; a lista abre em seguida, para um movimento
+  // não atropelar o outro (se o teclado não vier, como num tablet com teclado físico, ela abre logo depois)
+  input.addEventListener('focus', () => {
+    const livre = () => !isTouch || !window.cfTecladoAssentado || window.cfTecladoAssentado() || guiaAtivo();
+    if (livre()) return show();
+    const t0 = Date.now(), esperar = () => { if (document.activeElement !== input) return; if (livre() || Date.now() - t0 > 700) return show(); setTimeout(esperar, 40); };
+    esperar();
+  });
   // ao sair do campo a lista fecha na hora; só espera o toque terminar quando ele foi num botão (para o botão não sair de baixo do dedo)
   input.addEventListener('blur', () => {
     const t = lastPress.target, onButton = t && Date.now() - lastPress.at < 600 && t.closest && t.closest('button, a, [role=button]') && !box.contains(t);
@@ -921,7 +951,12 @@ function attachSuggest(input, getItems, onPick) {
 function toast(msg, action) { KitFacil.avisar(msg, action); }
 function openSheet({ title, sub = '', body, foot = '', tall = false, wide = false, onMount, onClose }) {
   return KitFacil.dialogo.abrir({ titulo: title, sub, corpo: body, pe: foot, classe: [tall && 'kf-alto', wide && 'kf-largo'].filter(Boolean).join(' '),
-    aoFechar: onClose, aoMontar: dlg => { prepFields(dlg); onMount && onMount(dlg); } });
+    aoFechar: onClose, aoMontar: dlg => {
+      prepFields(dlg); onMount && onMount(dlg);
+      // nenhuma janela abre com a caixa de texto selecionada: o teclado só sobe quando a pessoa toca no campo
+      $$('input[autofocus], textarea[autofocus], select[autofocus]', dlg).forEach(x => x.removeAttribute('autofocus'));
+      const f = document.activeElement; if (f && f !== dlg && dlg.contains(f) && f.matches('input:not([type=checkbox]):not([type=radio]), textarea, select')) f.blur();
+    } });
 }
 function closeSheet(silent) { KitFacil.dialogo.fechar(silent); }
 function confirmSheet(title, text, okLabel, onOk, danger) {
@@ -1154,7 +1189,7 @@ function receiptText(r, b, calc, rows0) {
 async function copyText(text, okMsg) {
   try { await navigator.clipboard.writeText(text); toast(okMsg); return; } catch {}
   openSheet({ title: 'Copiar', body: `<textarea id="cp" readonly style="width:100%;min-height:220px;font-family:var(--f-mono);font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px">${esc(text)}</textarea><p class="hint">Toque e segure no texto e escolha Copiar.</p>`,
-    foot: `<button class="btn" id="cp-x">Fechar</button>`, onMount: s => { const t = $('#cp', s); t.focus(); t.select(); $('#cp-x', s).onclick = () => closeSheet(); } });
+    foot: `<button class="btn" id="cp-x">Fechar</button>`, onMount: s => { $('#cp-x', s).onclick = () => closeSheet(); } });
 }
 
 /* ---------- render ---------- */
@@ -1697,7 +1732,21 @@ function itemFechadoHTML(it, d) {
     </div></details>`;
 }
 // movimento do Kit (Anexo V); quem pede movimento reduzido vê a troca direta
-const MV = () => { const m = window.KitFacil?.movimento; return { ms: m?.ms || 560, css: m?.css || 'cubic-bezier(.45,0,.2,1)', off: !!(m?.reduzido ? m.reduzido() : matchMedia('(prefers-reduced-motion: reduce)').matches) }; };
+/* ---------- movimento: um relógio só ----------
+   Regra do Bruno (15/11/2026): tudo o que o app abre ou fecha dura 600 ms, na mesma curva (começa macio e pousa
+   devagar): janelas, o fundo escuro, linhas e trechos que abrem e recolhem, troca de tela, avisos e listas.
+   Nenhum outro arquivo escreve duração de abrir ou fechar: usa MOVE aqui e --cf-ms / --cf-curva no CSS. */
+const MOVE = { ms: 600, css: 'cubic-bezier(.45,0,.2,1)' };
+/* O Kit 0.6.0 ainda abre seções em 560 ms e troca telas e listas em 280 ms. Até o Kit 0.7.0 trazer os 600 ms, o app
+   acerta o relógio dessas chamadas do Kit sem mexer em comum/ (Código, Arts. 30-A e 93, § 1º). */
+(() => {
+  const nativo = Element.prototype.animate, K = window.KitFacil && KitFacil.movimento; if (!nativo || !K) return;
+  Element.prototype.animate = function (quadros, o) {
+    if (o && typeof o === 'object' && o.easing === K.css && (o.duration === K.ms || o.duration === K.curto)) o = { ...o, duration: MOVE.ms };
+    return nativo.call(this, quadros, o);
+  };
+})();
+const MV = () => { const m = window.KitFacil?.movimento; return { ms: MOVE.ms, css: MOVE.css, off: !!(m?.reduzido ? m.reduzido() : matchMedia('(prefers-reduced-motion: reduce)').matches) }; };
 // Enquanto o app anima a altura de um trecho de uma janela, avisa o mecanismo das janelas (casca.js) para não deslizar
 // a janela por cima: a altura já está mudando quadro a quadro.
 function alturaPorContaDoApp(el, ms) { if (el && el.closest && el.closest('.kf-dlg') && window.cfJanelaOcupada) window.cfJanelaOcupada(ms); }
@@ -1768,15 +1817,15 @@ function pessoaNovaSheet() {
   const naMesa = () => d.people.length ? `Na mesa: ${esc(d.people.map(p => p.name).join(', '))}` : 'Ninguém na mesa ainda.';
   const turmas = !d.isExample && (catalog.groups || []).length ? `<div class="field field-sel"><label for="pn-turma">Pôr uma turma na mesa</label><select id="pn-turma"><option value="">Escolher turma</option>${[...catalog.groups].sort(ordemNome).map(g => { const falta = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n))).length; return `<option value="${esc(g.id)}" ${falta ? '' : 'disabled'}>${esc(g.name)} · ${falta ? plural(falta, 'pessoa', 'pessoas') + ' a pôr' : 'todos já na mesa'}</option>`; }).join('')}</select></div>` : '';
   openSheet({ title: 'Quem está na mesa?', body: `<form id="pn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
-      <div class="row"><div class="field grow"><label for="pn-nome">Nome</label><input id="pn-nome" type="text" autocapitalize="words" autocomplete="off" enterkeyhint="next" autofocus></div><button class="btn" type="submit" id="pn-add">${I.plus}Adicionar</button></div>
+      <div class="row"><div class="field grow"><label for="pn-nome">Nome</label><input id="pn-nome" type="text" autocapitalize="words" autocomplete="off" enterkeyhint="next"></div><button class="btn" type="submit" id="pn-add">${I.plus}Adicionar</button></div>
       ${turmas}<p class="hint" id="pn-mesa" role="status" style="margin:0">${naMesa()}</p></form>`,
-    foot: `<button type="button" class="btn ghost" id="pn-ok">Pronto</button>`, onMount: s => {
+    onMount: s => {
       const inp = $('#pn-nome', s);
       const depois = () => { inp.value = ''; $('#pn-mesa', s).innerHTML = naMesa(); inp.focus({ preventScroll: true }); };
       attachSuggest(inp, () => catalog.people.filter(p => !d.people.some(x => norm(x.name) === norm(p.name)))
         .sort((a, b) => (Uu.people[norm(b.name)] || 0) - (Uu.people[norm(a.name)] || 0) || (b.last || 0) - (a.last || 0)).map(p => ({ label: p.name })), x => { if (addPessoa(x.label)) depois(); });
       $('#pn-form', s).addEventListener('submit', e => { e.preventDefault(); if (addPessoa(inp.value)) depois(); });
-      // a janela já abre com o cursor no nome (o teclado sobe junto); Enter adiciona sem "enviar o formulário" (o que fecharia o teclado), e o botão Adicionar não tira o foco do campo
+      // depois do primeiro toque no campo o teclado fica aberto entre um nome e outro: Enter adiciona sem "enviar o formulário" (o que fecharia o teclado), e o botão Adicionar não tira o foco do campo
       inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && !e.defaultPrevented) { e.preventDefault(); if (addPessoa(inp.value)) depois(); } });
       $('#pn-add', s).addEventListener('pointerdown', e => e.preventDefault());
       $('#pn-turma', s)?.addEventListener('change', e => {
@@ -1785,8 +1834,6 @@ function pessoaNovaSheet() {
         novos.forEach(n => addPessoa(n)); depois();
         toast(`${plural(novos.length, 'pessoa entrou', 'pessoas entraram')} na mesa: ${novos.join(', ')}.`);
       });
-      $('#pn-ok', s).addEventListener('click', () => closeSheet());
-      if (!isTouch) inp.focus();
     } });
 }
 function localSheet() {
@@ -1798,7 +1845,6 @@ function localSheet() {
       attachSuggest(inp, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })), x => salvar(x.label));
       $('#lo-no', s).onclick = () => closeSheet();
       $('#lo-form', s).addEventListener('submit', e => { e.preventDefault(); salvar(inp.value); });
-      if (!isTouch) inp.focus();
     } });
 }
 // produto, quantidade e preço; depois, a janela de dividir (ou direto para uma pessoa)
@@ -1861,7 +1907,6 @@ function produtoSheet(paraId, ed) {
         if (!div.pronto()) { toast(div.porque()); return; }
         const r = div.resultado(); closeSheet(true); lancar(r.a, r.todos, r.modo);
       });
-      if (!isTouch) nomeEl.focus();
     } });
 }
 // quem já acertou a sua parte na mesa (só neste aparelho, guardado junto com a comanda)
@@ -1987,7 +2032,7 @@ document.addEventListener('kf-secao', e => {
    As telas são redesenhadas inteiras; este ajudante compara o antes e o depois de um redesenho e anima o que mudou:
    [data-exp="chave"]  um trecho que aparece ou some (abre crescendo, fecha encolhendo);
    [data-morf="chave"] uma caixa cujo conteúdo troca (a altura desliza de uma para a outra). */
-const MOV_EXP = { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' };
+const MOV_EXP = { duration: MOVE.ms, easing: MOVE.css };
 function comMovimento(raiz, redesenhar) {
   if (!raiz || !raiz.animate || (typeof semMovimento === 'function' && semMovimento())) { redesenhar(); return; }
   const marca = el => el.id ? '#' + CSS.escape(el.id) : el.dataset.pa ? `[data-pa="${CSS.escape(el.dataset.pa)}"]` : el.dataset.item ? `[data-item="${CSS.escape(el.dataset.item)}"]` : el.dataset.pes ? `[data-pes="${CSS.escape(el.dataset.pes)}"]` : '';
@@ -2034,7 +2079,7 @@ function grupoSheet(uid) {
   };
   if (!corpo()) return;
   openSheet({ title: 'Cupom compartilhado', body: `<div id="gs-corpo" class="cs">${corpo()}</div>`,
-    foot: `<button type="button" class="btn" id="gs-ok">Pronto</button>`, onMount: s => {
+    onMount: s => {
       const box = $('#gs-corpo', s);
       box.addEventListener('click', e => { const b = e.target.closest('[data-gs-p]'); if (b) editarPessoaSheet(b.dataset.gsP); });
       box.addEventListener('change', e => {
@@ -2047,7 +2092,6 @@ function grupoSheet(uid) {
         d.groups = cleanGroups(d).map(x => x.id === g.id ? g : x); commit({ anchor: false });
         const tx = el.closest('.gs-lin')?.querySelector('.hint'); if (tx) tx.textContent = tx.textContent.replace(/· .*$/, '· ' + (el.checked ? 'paga' : 'não paga'));
       });
-      $('#gs-ok', s).onclick = () => closeSheet();
     } });
 }
 // o cupom de uma pessoa (ou do grupo dela), para ver e compartilhar
@@ -2115,7 +2159,7 @@ function contaSheet() {
   };
   const podeFechar = d.items.length && d.people.length;
   openSheet({ title: 'Conta da mesa', body: `<div id="cm-corpo" class="cs">${corpo()}</div>`,
-    foot: podeFechar ? `<button type="button" class="btn ghost" id="cm-ok">Pronto</button><button type="button" class="btn" id="cm-fechar">${I.receipt}Fechar comanda</button>` : `<button type="button" class="btn" id="cm-ok">Pronto</button>`, onMount: sh => {
+    foot: podeFechar ? `<button type="button" class="btn" id="cm-fechar">${I.receipt}Fechar comanda</button>` : '', onMount: sh => {
     $('#cm-fechar', sh)?.addEventListener('click', () => { closeSheet(true); fecharSheet(); });
     const box = $('#cm-corpo', sh);
     let chave = '';
@@ -2150,7 +2194,6 @@ function contaSheet() {
       if (t('[data-cm-copiar]')) return copyText(c.units.map(u => receiptText(u, d, c)).join('\n\n'), 'Todos os cupons copiados.');
       if (t('[data-cm-pdf]')) return shareAllPDF(d, c, t('[data-cm-pdf]'));
     });
-    $('#cm-ok', sh).onclick = () => closeSheet();
   } });
 }
 
@@ -2232,7 +2275,7 @@ function fecharSheet(abrirEm = 0) {
       const jan = $('#fc-janela', s), tr = $('#fc-trilho', s), pts = $$('.fc-pontos i', s), cont = $('#fc-cont', s), els = $$('.fc-slide', s);
       let i = 0, arr = null, cAt = c; // cAt: a conta mais recente (muda quando alguém é marcado como pago aqui dentro)
       const W = () => jan.clientWidth, n = slides.length;
-      const pos = (x, anim) => { const m = MV(); tr.style.transition = anim && !m.off ? `transform ${Math.round(m.ms * .7)}ms ${m.css}` : 'none'; tr.style.transform = `translate3d(${x}px,0,0)`; };
+      const pos = (x, anim) => { const m = MV(); tr.style.transition = anim && !m.off ? `transform ${m.ms}ms ${m.css}` : 'none'; tr.style.transform = `translate3d(${x}px,0,0)`; };
       const altura = anim => { const m = MV(), h = els[i].offsetHeight; if (Math.abs(h - jan.offsetHeight) < 1) return; if (anim && !m.off) alturaPorContaDoApp(jan, m.ms); jan.style.transition = anim && !m.off ? `height ${m.ms}ms ${m.css}` : 'none'; jan.style.height = h + 'px'; };
       const mostrar = anim => { cont.textContent = `${i + 1} de ${n} · ${slides[i].nome}`; pts.forEach((p, k) => p.classList.toggle('on', k === i)); $('#fc-ant', s).disabled = i === 0; $('#fc-prox', s).disabled = i === n - 1; els.forEach((e, k) => e.setAttribute('aria-hidden', k === i ? 'false' : 'true')); altura(anim); };
       const X = k => -(els[k]?.offsetLeft || 0);

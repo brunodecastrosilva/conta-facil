@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.6.1** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.7.0** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
@@ -106,6 +106,12 @@ Em 14/11/2026 o Bruno definiu que o Conta Fácil, mesmo ainda não finalizado, �
 está aqui é exceção, e tudo o que foi decidido neste app é regra. No mesmo dia, o Integrador aprovou a
 [proposta](PROPOSTA-PARA-O-INTEGRADOR.md) inteira, e o [Código do Projeto Fácil](comum/CODIGO.md) passou à versão 0.6
 com essas regras (Art. 93).
+
+Em 15/11/2026 vieram mais duas regras do Bruno, já valendo no app desde a 1.7.0: **tudo o que abre ou fecha dura 600 ms,
+na mesma curva** (um relógio só: `MOVE` em `app.js`, `--cf-ms` e `--cf-curva` no CSS; só a janela que acompanha o teclado
+do sistema segue o relógio do teclado) e **nenhuma janela abre com a caixa de texto selecionada**. O que isso muda no
+Código e no Kit está na [Proposta 2](PROPOSTA-2-PARA-O-INTEGRADOR.md), que também lista o que ainda é próprio do app e
+deve ir para o Kit.
 
 Falta só o Kit Fácil 0.7.0 receber as peças que hoje são do app (janelas e teclado, barra de baixo com a comanda no
 centro, tela Mais, barra de cima em traço, ícones, presente em 3D, abertura, guia, seções, `comMovimento`, carrossel e

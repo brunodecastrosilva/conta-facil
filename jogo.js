@@ -565,7 +565,8 @@ function festa(bill, antes, { desfazer } = {}) {
       <div class="festa-acoes"><button type="button" class="btn ambar bloco" id="festa-ok">Concluir</button>${desfazer ? `<button type="button" class="btn link" id="festa-des">Desfazer e voltar à comanda</button>` : ''}</div>
     </div></div>`;
   const cx = $('.festa', raiz), ant = document.activeElement;
-  const fechar = () => { festaAberta = false; raiz.innerHTML = ''; document.removeEventListener('keydown', tecla, true); try { ant && ant.focus && ant.focus({ preventScroll: true }); } catch {} };
+  // a festa fecha clareando, no relógio do app
+  const fechar = () => { if (!festaAberta) return; festaAberta = false; document.removeEventListener('keydown', tecla, true); cx.classList.add('sai'); cx.style.pointerEvents = 'none'; setTimeout(() => { if (cx.isConnected && !festaAberta) raiz.innerHTML = ''; }, semMovimento() ? 0 : MOVE.ms); try { ant && ant.focus && ant.focus({ preventScroll: true }); } catch {} };
   const tecla = e => { if (e.key === 'Escape') { e.preventDefault(); fechar(); }
     if (e.key === 'Tab') { const f = $$('button', cx); if (!f.length) return; const i = f.indexOf(document.activeElement); e.preventDefault(); f[(i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus(); } };
   document.addEventListener('keydown', tecla, true);

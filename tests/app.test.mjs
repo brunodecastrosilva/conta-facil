@@ -31,7 +31,7 @@ async function abrirMesa(p, local, nomes) {
   await p.fill('#ini-local', local); await p.click('#ini-form button[type=submit]');
   await p.click('#add-pessoa');
   for (const n of nomes) { await p.fill('#pn-nome', n); await p.click('#pn-form button[type=submit]'); }
-  await p.click('#pn-ok');
+  await p.click('.kf-dlg [data-kf-fechar]');
 }
 async function lancar(p, nome, centavos, { qtd, so, individual } = {}) {
   await p.click('#it-novo');
@@ -469,7 +469,7 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   await p.click('#cm-pe'); await assentar(p); await p.locator('[data-cm="ds"]').click({ force: true });
   const campo = p.locator('.kf-dlg [data-exp="cm-ds"] input[data-money]'); await campo.click(); await campo.pressSequentially('900'); await p.keyboard.press('Tab');
   assert.match(await p.textContent('.kf-dlg .aviso-pago'), /Ana pagou R\$\s20,00 e a conta agora é R\$\s17,00: devolver R\$\s3,00/);
-  await p.click('#cm-ok');
+  await p.click('.kf-dlg [data-kf-fechar]');
   assert.deepEqual(await estado(), ['troco', 2000, 0, 300, 3400, 300]);
   assert.match(await p.textContent('#view .aviso-pago'), /devolver R\$\s3,00/); assert.match(await p.textContent('#cmd-conta + .cu-falta, .cu-falta'), /devolver/);
   // salvar com diferença: o app pergunta antes
@@ -504,12 +504,15 @@ test('Início: excluir a comanda em andamento; nomes na mesa sem perder o foco; 
   const p = a.page;
   await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
   await p.click('#add-pessoa');
-  assert.ok(await esperar(() => p.evaluate(() => document.activeElement && document.activeElement.id === 'pn-nome')), 'o campo do nome já abre com o foco');
+  // nenhuma janela abre com a caixa de texto selecionada: o foco vai para a janela, e o teclado só sobe quando a pessoa toca no campo
+  await p.waitForTimeout(700);
+  assert.deepEqual(await p.evaluate(() => [document.activeElement.classList.contains('kf-dlg'), !!document.querySelector('.kf-dlg [autofocus]:is(input, textarea)'), !!document.querySelector('.kf-dlg > .kf-dlg-pe')]), [true, false, false], 'a janela abre sem campo selecionado e sem o botão Pronto');
+  await p.click('#pn-nome');
   for (const n of ['Ana', 'Bruno']) { await p.keyboard.type(n); await p.keyboard.press('Enter'); assert.equal(await p.evaluate(() => document.activeElement.id), 'pn-nome', 'o foco fica no campo entre um nome e outro'); }
   assert.equal(await p.evaluate(() => draft.people.length), 2);
   const esc = await p.evaluate(() => { const s = getComputedStyle(document.querySelector('.kf-ov'), '::before'); return [s.position, parseFloat(s.top) < 0, s.backgroundColor !== 'rgba(0, 0, 0, 0)']; });
   assert.deepEqual(esc, ['fixed', true, true]);
-  await p.click('#pn-ok');
+  await p.click('.kf-dlg [data-kf-fechar]');
   await nav(p, 'inicio');
   await p.click('#ini-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('#cf-ok');
   assert.equal(await p.evaluate(() => draft.active), false);
@@ -532,6 +535,56 @@ test('objetos 3D voltam a girar sozinhos depois que a pessoa para de mexer', asy
   // o laço do presente não atravessa a caixa: as pontas ficam deitadas sobre a tampa, sem passar da beirada
   assert.ok(await p.evaluate(() => { const M = malhaPresente().M; let ok = true; for (let i = 0; i < M.p.length; i += 3) { const x = M.p[i], y = M.p[i + 1], z = M.p[i + 2], fita = M.c[i] > 0.8 && M.m[(i / 3) * 4 + 2] > 0.2; if (fita && y > 0.36 && (Math.abs(x) > 0.56 || Math.abs(z) > 0.56)) ok = false; } return ok; }), 'há fita passando da beirada da tampa');
   semErros(a); await a.fechar();
+});
+
+test('1.7.0: tudo o que abre e fecha dura 600 ms, na mesma curva; nenhuma janela abre com a caixa de texto selecionada', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  const CURVA = 'cubic-bezier(0.45, 0, 0.2, 1)';
+  const anims = sel => p.evaluate(sel => { const e = document.querySelector(sel); return e ? e.getAnimations().map(x => { const t = x.effect.getTiming(); return [t.duration, String(t.easing)]; }) : null; }, sel);
+  const semCampo = () => p.evaluate(() => { const f = document.activeElement; return !(f && f.matches('input:not([type=checkbox]):not([type=radio]), textarea, select')); });
+  assert.deepEqual(await p.evaluate(() => [MOVE.ms, MOVE.css, getComputedStyle(document.documentElement).getPropertyValue('--cf-ms').trim(), getComputedStyle(document.documentElement).getPropertyValue('--cf-curva').trim()]), [600, 'cubic-bezier(.45,0,.2,1)', '600ms', 'cubic-bezier(.45,0,.2,1)'], 'um relógio só, igual no código e no CSS');
+  // janela da Início (nova comanda), do nome do local, das pessoas, do item e da conta: nenhuma abre com o campo selecionado
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.locator('#add-pessoa').waitFor();
+  for (const abre of ['pessoaNovaSheet', 'localSheet', 'produtoSheet', 'contaSheet']) {
+    await p.evaluate(f => window[f] ? window[f]() : eval(f + '()'), abre);
+    await p.locator('.kf-dlg').waitFor();
+    // nascer: 600 ms, na curva do app
+    const n = await anims('.kf-dlg');
+    assert.ok(n.length && n.every(x => x[0] === 600 && x[1] === CURVA), `${abre}: a janela nasce em 600 ms (${JSON.stringify(n)})`);
+    assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('.kf-ov'), '::before').animationDuration), '0.6s', `${abre}: o fundo escurece em 600 ms`);
+    await assentar(p);
+    assert.ok(await semCampo(), `${abre}: abre sem caixa de texto selecionada`);
+    // sair: a cópia que desce também leva 600 ms
+    await p.click('.kf-dlg [data-kf-fechar]');
+    const s = await anims('#cf-saidas .kf-dlg-x');
+    assert.ok(s && s.length === 1 && s[0][0] === 600 && s[0][1] === CURVA, `${abre}: a janela sai em 600 ms (${JSON.stringify(s)})`);
+    assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('#cf-saidas .kf-ov'), '::before').animationDuration), '0.6s');
+    await p.waitForFunction(() => !document.querySelector('#cf-saidas > *, #kf-saidas > .kf-ov'));
+  }
+  // Quem está na mesa: sem "Pronto"; o botão Adicionar fica alinhado ao campo, com a lista de sugestões abaixo da linha
+  await p.evaluate(() => { catalog.people = [{ id: 'x1', name: 'Rosana' }, { id: 'x2', name: 'Mateus' }]; });
+  await p.click('#add-pessoa'); await assentar(p);
+  assert.equal(await p.locator('.kf-dlg > .kf-dlg-pe').count(), 0, 'sem botão Pronto: o X fecha');
+  await p.click('#pn-nome');
+  // no celular a lista espera o teclado assentar; aqui o teclado não vem, e ela abre logo depois
+  await p.waitForFunction(() => !document.querySelector('.sg-box').hidden);
+  const lista = await p.evaluate(() => document.querySelector('.sg-box').getAnimations().map(x => x.effect.getTiming().duration));
+  assert.deepEqual(lista, [600], 'a lista de sugestões abre em 600 ms');
+  await p.waitForFunction(() => !document.querySelector('.sg-box').getAnimations().length);
+  const al = await p.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect(), i = r('#pn-nome'), b = r('#pn-add'), l = r('.sg-box'); return { topo: Math.abs(i.top - b.top), base: Math.abs(i.bottom - b.bottom), listaAbaixo: l.top >= i.bottom && l.top >= b.bottom, larg: Math.round(l.width) > Math.round(i.width) }; });
+  assert.ok(al.topo <= 1 && al.base <= 1 && al.listaAbaixo && al.larg, `Adicionar alinhado ao campo, lista abaixo da linha (${JSON.stringify(al)})`);
+  await p.keyboard.type('Ana'); await p.keyboard.press('Enter'); await p.keyboard.type('Bruno'); await p.keyboard.press('Enter');
+  await p.click('.kf-dlg [data-kf-fechar]'); await p.waitForFunction(() => !document.querySelector('.kf-dlg'));
+  // linha que abre e recolhe, troca de tela e aviso: o mesmo relógio
+  await p.click('summary[data-unit]');
+  const lin = await p.evaluate(() => document.querySelector('details:has(> summary[data-unit])').getAnimations().map(x => x.effect.getTiming().duration));
+  assert.ok(lin.length && lin.every(x => x === 600), `a linha abre em 600 ms (${lin})`);
+  await p.evaluate(() => irPara('historico'));
+  assert.deepEqual((await anims('#view')).map(x => x[0]), [600], 'a tela troca em 600 ms');
+  await p.evaluate(() => toast('Teste.'));
+  assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('.kf-toast')).animationDuration), '0.6s', 'o aviso aparece em 600 ms');
 });
 
 test('janelas: nascem e acompanham o teclado num movimento só, sem saltar nem voltar; no guia ficam paradas; tampinha da Início centrada', async () => {
@@ -557,7 +610,7 @@ test('janelas: nascem e acompanham o teclado num movimento só, sem saltar nem v
   for (const n of ['Ana', 'Bruno', 'Carla']) { await p.fill('#pn-nome', n); await p.press('#pn-nome', 'Enter'); }
   f = await filmar(async () => { await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(30); await teclado(p, false); });
   assert.equal(f.inv, 0, 'ao fechar o teclado, a janela desce de uma vez'); c = await caixa(); assert.equal(c.base, H);
-  await p.click('#pn-ok');
+  await p.click('.kf-dlg [data-kf-fechar]');
   // janela alta com o teclado: cabe inteira acima dele
   await p.click('#it-novo'); await p.locator('.kf-dlg input[data-money]').first().waitFor(); await assentar(p);
   f = await filmar(async () => { await p.tap('#pr-nome'); await p.waitForTimeout(40); await teclado(p, true); });
@@ -594,7 +647,7 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   await p.fill('#cs-nome', 'Aninha'); await p.click('#cs-ok');
   assert.equal(await p.evaluate(() => draft.people[0].name), 'Aninha');
   // Conta da mesa: sem "paga por todos" e sem excluir; as chaves abrem e fecham sem a janela tremer
-  await p.click('#cm-pe'); await p.locator('#cm-ok').waitFor(); await p.waitForTimeout(500);
+  await p.click('#cm-pe'); await p.locator('.kf-dlg [data-cm="svc"]').waitFor(); await p.waitForTimeout(500);
   assert.equal(await p.locator('.kf-dlg [data-cm-todos], .kf-dlg #cm-limpar, .kf-dlg >> text=/xcluir/').count(), 0);
   const tremor = async sel => {
     await p.evaluate(() => { window.__q = []; window.__on = true; const f = () => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); if (d) __q.push(d.getBoundingClientRect().top); if (__on) requestAnimationFrame(f); }; requestAnimationFrame(f); });
@@ -615,7 +668,7 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   assert.deepEqual(await modo(), [true, 0, 'cm-svc-pct']); assert.equal(await p.evaluate(() => draft.couvert.value), 1100);
   await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(450);
   await p.tap('.kf-dlg label:has([data-cm="cv"]) .switch'); await p.waitForTimeout(400);
-  await p.click('#cm-ok');
+  await p.click('.kf-dlg [data-kf-fechar]');
   // Excluir comanda fica logo abaixo de Fechar comanda
   assert.equal(await p.evaluate(() => document.querySelector('#fechar-cmd').nextElementSibling?.id), 'cmd-excluir');
   // Fechar: uma pessoa paga a conta de todos, e cada um continua com o seu cupom

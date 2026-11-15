@@ -122,13 +122,17 @@ const viewAjustes = {
    muda de altura e para uma janela que entra no lugar de outra. Como só existe um movimento, sempre medido na hora,
    a janela não salta nem volta: se algo muda no meio do caminho, o movimento novo parte de onde ela está.
    (Até a 1.6.0 a posição e a altura tinham transições de CSS separadas; no iPhone elas andavam em ritmos diferentes
-   e a janela dava um tranco ao abrir e ao fechar o teclado.) O deslize do Kit fica desligado em todas as janelas. */
+   e a janela dava um tranco ao abrir e ao fechar o teclado.) O deslize do Kit fica desligado em todas as janelas.
+   Relógio: nascer, sair, trocar e mudar de altura duram MOVE.ms (600 ms), na curva do app, iguais em TODAS as janelas
+   (as do app e as do Kit: o módulo vê a janela chegar e sair, não importa quem abriu). Só acompanhar o teclado tem
+   relógio próprio, porque quem abre o teclado é o iPhone, em cerca de 300 ms: a janela precisa chegar junto com ele. */
 (() => {
   const html = document.documentElement, vv = window.visualViewport, anima = Element.prototype.animate;
-  const DUR = 320, CURVA = 'cubic-bezier(.32,.72,0,1)'; // a curva das folhas do iPhone
+  const MS = MOVE.ms, CURVA = MOVE.css;                       // tudo o que abre e fecha
+  const TK_MS = 320, TK_CURVA = 'cubic-bezier(.32,.72,0,1)';  // acompanhar o teclado do sistema
   const parado = () => (typeof semMovimento === 'function' && semMovimento()) || !anima;
   const campo = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]):not([type=file]), textarea') && !el.disabled && !el.readOnly;
-  const abertas = () => [...document.querySelectorAll('.kf-ov')].filter(o => !o.closest('#kf-saidas'));
+  const abertas = () => [...document.querySelectorAll('.kf-ov')].filter(o => !o.closest('#kf-saidas, #cf-saidas'));
   const janela = () => { const o = abertas().pop(); return o ? o.querySelector('.kf-dlg') : null; };
   // traz o campo para dentro da parte visível da janela, rolando só o corpo dela (nunca a página)
   const aVista = (el, suave) => {
@@ -140,7 +144,7 @@ const viewAjustes = {
   const sobe = y => `translateY(${Math.round(y * 10) / 10}px)`;
   const parar = el => { if (el && el._cfFlip) { el._cfFlip.cancel(); el._cfFlip = null; } };
   // anima um elemento do deslocamento dy até o lugar dele
-  const partir = (el, dy, dur = DUR) => {
+  const partir = (el, dy, dur = MS) => {
     parar(el);
     if (parado() || Math.abs(dy) < 1) return;
     const a = el._cfFlip = anima.call(el, [{ transform: sobe(dy) }, { transform: sobe(0) }], { duration: dur, easing: CURVA });
@@ -180,6 +184,9 @@ const viewAjustes = {
     const P = partes(dlg), f = document.activeElement, noCampo = campo(f) && dlg.contains(f) ? f : null;
     const antes = foto(dlg, P), rolAntes = P.corpo ? P.corpo.scrollTop : 0, kAntes = tkDesenho, encolhe = v > kAntes;
     soltar(dlg); parar(dlg);
+    // o que estiver abrindo ou recolhendo dentro da janela chega já ao fim (a foto de antes guarda onde tudo estava à
+    // vista): daqui até o teclado assentar só há um movimento, o da janela, e as medidas de chegada não mudam no caminho
+    dlg.getAnimations({ subtree: true }).forEach(a => { try { if (isFinite(a.effect.getComputedTiming().endTime)) a.finish(); } catch {} });
     desenhar(v); if (v && noCampo) aVista(noCampo);
     const fim = foto(dlg, P), rolFim = P.corpo ? P.corpo.scrollTop : 0;
     let base = fim;
@@ -187,7 +194,7 @@ const viewAjustes = {
     // deslocamentos em relação ao desenho que fica na tela durante o movimento
     const rel = X => { const d = X.d - base.d; return { d, c: X.c - base.c - d, e: X.e - base.e - d, p: X.p != null && base.p != null ? X.p - base.p - d : null }; };
     const A = rel(antes), B = rel(fim); if (A.p == null) A.p = B.p || 0; if (B.p == null) B.p = A.p || 0;
-    const ops = { duration: DUR, easing: CURVA, fill: 'forwards' }, lista = [];
+    const ops = { duration: TK_MS, easing: TK_CURVA, fill: 'forwards' }, lista = [];
     const an = (el, q0, q1) => { const a = anima.call(el, [q0, q1], ops); lista.push(a); return a; };
     const T = dlg._cfTk = { lista, capa: null, pe: null, relogio: 0 };
     an(dlg, { transform: sobe(A.d) }, { transform: sobe(B.d) });
@@ -207,10 +214,12 @@ const viewAjustes = {
     }
     const concluir = () => {
       if (dlg._cfTk !== T) return;
-      if (encolhe) { desenhar(v); if (P.corpo && P.corpo.isConnected) { P.corpo.scrollTop = rolFim; const g = document.activeElement; if (campo(g) && dlg.contains(g)) aVista(g); } }
+      if (encolhe) { desenhar(v); if (P.corpo && P.corpo.isConnected) P.corpo.scrollTop = rolFim; }
       soltar(dlg);
+      // só depois de soltar os movimentos: com eles valendo, a medida do campo sairia deslocada
+      if (encolhe) { const g = document.activeElement; if (campo(g) && dlg.contains(g)) aVista(g); }
     };
-    lista[0].onfinish = concluir; T.relogio = setTimeout(concluir, DUR + 80);
+    lista[0].onfinish = concluir; T.relogio = setTimeout(concluir, TK_MS + 80);
   };
   const medir = () => {
     if (!vv) return;
@@ -229,6 +238,8 @@ const viewAjustes = {
     vv.addEventListener('scroll', () => { clearTimeout(tPan); tPan = setTimeout(() => { if (tk > 0 && vv.offsetTop > 1 && janela() && !guiaAtivo()) window.scrollTo(0, 0); }, 140); });
   }
   window.cfTeclado = () => tk;
+  // o teclado já subiu e a janela já chegou ao lugar dela (a lista de sugestões espera por isso para abrir)
+  window.cfTecladoAssentado = () => { const d = janela(); return tk > 0 && tkDesenho === tk && !(d && d._cfTk); };
   // com o teclado já aberto, o campo que recebe o foco vem para a parte visível da janela
   document.addEventListener('focusin', e => { const el = e.target; if (tk > 0 && tkDesenho === tk && campo(el) && el.closest('.kf-dlg')) requestAnimationFrame(() => requestAnimationFrame(() => { if (el === document.activeElement && tkDesenho === tk) aVista(el, true); })); });
 
@@ -237,7 +248,7 @@ const viewAjustes = {
   // enquanto o app anima a altura de um trecho da janela (abrir e recolher, cupons), ninguém mais desliza a janela
   window.cfJanelaOcupada = t => { ocupadaAte = Math.max(ocupadaAte, performance.now() + t + 140); };
   // desloca a partir de onde a janela está à vista agora (soma o que faltava do movimento anterior)
-  const deslizar = (dlg, dy, dur = 280) => { let resto = 0; if (dlg._cfFlip) { try { resto = new DOMMatrix(getComputedStyle(dlg).transform).m42; } catch {} } partir(dlg, dy + resto, dur); };
+  const deslizar = (dlg, dy, dur = MS) => { let resto = 0; if (dlg._cfFlip) { try { resto = new DOMMatrix(getComputedStyle(dlg).transform).m42; } catch {} } partir(dlg, dy + resto, dur); };
   const nascer = (ov, troca) => {
     const dlg = ov.querySelector('.kf-dlg'); if (!dlg || dlg._cfJanela) return; dlg._cfJanela = true;
     dlg.animate = null; // o deslize do Kit pula a janela que não tem `animate`
@@ -247,11 +258,11 @@ const viewAjustes = {
       // uma janela no lugar de outra: sem escurecer de novo; a borda de cima vai da altura antiga para a nova
       ov.classList.add('cf-troca');
       if (noCelular && alturaAnterior) deslizar(dlg, dlg.offsetHeight - alturaAnterior);
-      if (!parado()) anima.call(dlg.querySelector('.kf-dlg-corpo') || dlg, [{ opacity: .4 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+      if (!parado()) anima.call(dlg.querySelector('.kf-dlg-corpo') || dlg, [{ opacity: .4 }, { opacity: 1 }], { duration: MS, easing: CURVA });
     } else if (!parado()) {
       // nasce abaixo da tela e sobe (no computador, 28 px abaixo e apagada)
-      if (noCelular) partir(dlg, Math.max(40, Math.round(innerHeight - dlg.getBoundingClientRect().top)), 440);
-      else anima.call(dlg, [{ transform: 'translateY(28px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 240, easing: 'ease-out' });
+      if (noCelular) partir(dlg, Math.max(40, Math.round(innerHeight - dlg.getBoundingClientRect().top)));
+      else anima.call(dlg, [{ transform: 'translateY(28px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: MS, easing: CURVA });
     }
     let h = dlg.offsetHeight, ultima = 0; alturaAnterior = h;
     if (!window.ResizeObserver) return;
@@ -265,13 +276,29 @@ const viewAjustes = {
     });
     obs.observe(dlg);
   };
+  /* 4. a janela que fecha desce para fora da tela, no mesmo relógio e na mesma curva de quando nasceu. O Kit deixa
+     uma cópia da janela que some em 200 ms; o app põe no lugar uma cópia sua, que faz o caminho inteiro. */
+  document.addEventListener('scroll', e => { const t = e.target; if (t && t.classList && t.classList.contains('kf-dlg-corpo')) t._cfRol = t.scrollTop; }, true);
+  const caixaSaidas = () => { let cx = document.getElementById('cf-saidas'); if (!cx) { cx = document.createElement('div'); cx.id = 'cf-saidas'; cx.setAttribute('aria-hidden', 'true'); cx.setAttribute('inert', ''); document.body.appendChild(cx); } return cx; };
+  const sair = (doKit, original) => {
+    const copia = doKit.cloneNode(true); doKit.remove();
+    const dlg = copia.querySelector('.kf-dlg-x'); if (!dlg || parado()) return;
+    caixaSaidas().appendChild(copia);
+    const de = original && original.querySelector('.kf-dlg-corpo'), para = dlg.querySelector('.kf-dlg-corpo'); if (de && para && de._cfRol) para.scrollTop = de._cfRol;
+    const q = celular() ? [{ transform: sobe(0) }, { transform: sobe(Math.max(40, Math.round(innerHeight - dlg.getBoundingClientRect().top))) }] : [{ transform: 'none', opacity: 1 }, { transform: 'translateY(28px)', opacity: 0 }];
+    const a = anima.call(dlg, q, { duration: MS, easing: CURVA, fill: 'forwards' }), fim = () => copia.remove();
+    a.onfinish = a.oncancel = fim; setTimeout(fim, MS + 150);
+  };
   new MutationObserver(muts => {
-    let saiu = false; const novas = [];
+    let saiu = null; const novas = [], copias = [];
     for (const m of muts) {
-      for (const n of m.removedNodes) if (n.nodeType === 1 && n.classList.contains('kf-ov')) saiu = true;
-      for (const n of m.addedNodes) if (n.nodeType === 1 && n.classList.contains('kf-ov') && !n.closest('#kf-saidas')) novas.push(n);
+      const resto = m.target.id === 'kf-saidas' || m.target.id === 'cf-saidas';
+      for (const n of m.removedNodes) if (n.nodeType === 1 && n.classList.contains('kf-ov') && !resto) saiu = n;
+      for (const n of m.addedNodes) if (n.nodeType === 1 && n.classList.contains('kf-ov')) { if (m.target.id === 'kf-saidas') copias.push(n); else if (!resto) novas.push(n); }
     }
-    novas.forEach(o => nascer(o, saiu));
+    novas.forEach(o => nascer(o, !!saiu));
+    // janela trocada por outra: a nova assume o lugar, sem saída; janela que só fecha: sai pelo pé da tela
+    copias.forEach(k => { if (!k.isConnected) return; if (novas.length) k.remove(); else sair(k, saiu); });
     if (!abertas().length) alturaAnterior = 0;
   }).observe(document.body, { childList: true, subtree: true });
 
@@ -369,7 +396,7 @@ function aberturaAbrir({ rever = false } = {}) {
     jogoSalvar(); jogoConferir({ silencioso: true });
     document.removeEventListener('keydown', tecla, true);
     el.classList.add('sai'); document.body.classList.remove('com-abertura');
-    setTimeout(() => { el.remove(); }, semMovimento() ? 0 : 260);
+    setTimeout(() => { el.remove(); }, semMovimento() ? 0 : MOVE.ms);
     aberturaEl = null; render({ anchor: false });
     try { ant && ant.focus && ant.focus({ preventScroll: true }); } catch {}
     // quem disse o nome na apresentação já vê a primeira tampinha ("Prazer, eu"); o que vinha depois espera a janela fechar
@@ -700,7 +727,7 @@ const GUIA = [
   { t: 'Comece pelo nome do lugar', d: 'No Início, escreva onde você está e toque em Abrir comanda.',
     acao: async m => { await m.digitar('#ini-local', 'Cantina da Praça'); await m.tocar('#ini-form button[type=submit]'); await m.acha('#add-pessoa'); } },
   { t: 'Ponha as pessoas na mesa', d: 'Escreva o nome de cada um e toque em Adicionar. Quem tem cadastro é sugerido.',
-    acao: async m => { await m.tocar('#add-pessoa'); for (const n of ['Ana', 'Bruno', 'Carla', 'Diego']) { await m.digitar('#pn-nome', n, { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); } await m.tocar('#pn-ok'); await m.some('#pn-nome'); } },
+    acao: async m => { await m.tocar('#add-pessoa'); for (const n of ['Ana', 'Bruno', 'Carla', 'Diego']) { await m.digitar('#pn-nome', n, { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); } await m.fechar(); await m.some('#pn-nome'); } },
   { t: 'Lance o primeiro pedido', d: 'Produto, quantidade e valor numa janela só. O item já entra dividido entre todos.',
     acao: async m => { await demoLancar(m, { nome: 'Porção de fritas', preco: '4200', olhar: '.kf-dlg .ck-list' }); } },
   { t: 'Consumo individual', d: 'Cada um pediu o seu? Escolha Individual e diga quantas unidades são de cada pessoa.',
@@ -718,7 +745,7 @@ const GUIA = [
   { t: 'O cupom de cada um', d: 'Ver cupom mostra a conta da pessoa, pronta para compartilhar.',
     acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-cupom]`); await m.acha('#cp-share'); await m.apontar('.kf-dlg .cupom-1', 1700); await m.apontar('#cp-share', 1300); await m.fechar(); } },
   { t: 'Mude o nome ou tire da mesa', d: 'Chegou mais alguém? Em Editar, corrija o nome ou tire a pessoa da mesa.',
-    acao: async m => { await m.tocar('#add-pessoa'); await m.digitar('#pn-nome', 'Eva', { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); await m.tocar('#pn-ok'); await m.some('#pn-nome');
+    acao: async m => { await m.tocar('#add-pessoa'); await m.digitar('#pn-nome', 'Eva', { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); await m.fechar(); await m.some('#pn-nome');
       await demoAbrir(m, `summary[data-unit="${demoUn('Eva')}"]`); await m.tocar(`[data-pa="${demoUn('Eva')}"] [data-pa-mais]`); await m.digitar('#cs-nome', 'Evelyn', { ritmo: 70 }); await m.tocar('#cs-ok'); await m.some('#cs-nome'); await m.espera(700);
       await demoAbrir(m, `summary[data-unit="${demoUn('Evelyn')}"]`); await m.tocar(`[data-pa="${demoUn('Evelyn')}"] [data-pa-mais]`); guiaSemAviso(); await m.tocar('#cs-rm'); await m.acha('#cf-ok'); await m.espera(700); await m.tocar('#cf-ok'); await m.some('#cf-ok'); await m.espera(600); } },
   { t: 'Um cupom para duas pessoas', d: 'Juntar põe duas pessoas no mesmo cupom: bom para casal ou para quem divide tudo.',
@@ -730,6 +757,8 @@ const GUIA = [
       for (const n of ['Bruno', 'Carla', 'Diego']) await m.apontar(`summary[data-unit="${demoUn(n)}"]`, 800); } },
   { t: 'Comanda ao vivo', d: 'Compartilhe a comanda: cada pessoa lança pelo próprio celular. Aqui, só o botão.', se: () => !!store.db,
     acao: async m => { await m.apontar('#live-start', 2200, { opcional: true, prazo: 1200 }); } },
+  { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
+    acao: async m => { await m.tocar('#cm-pe'); await m.apontar((await m.acha('.kf-dlg [data-cm="svc"]')).closest('.cm-bloco'), 1200); await m.tocar('.kf-dlg [data-cm="cv"]'); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
   { t: 'Feche a comanda', d: 'Toque em Fechar na hora de pagar. Primeiro o cupom da mesa; depois, um por pessoa.',
     acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1300); await m.tocar('#fc-prox', { depois: 1000 }); await m.tocar('#fc-prox', { depois: 900 }); await m.apontar('[data-fc-copiar="2"]', 1300); await m.apontar('[data-fc-pdf="2"]', 1300); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
   { t: 'Uma pessoa paga a conta de todos', d: 'No cupom da mesa, escolha quem paga tudo. Cada cupom diz quanto deve a ela.',
@@ -739,10 +768,9 @@ const GUIA = [
       await m.tocar(`${FC_AQUI} [data-fc-cobre="${demoId('Bruno')}"]`); await m.espera(500); await m.apontar(demoPagamento(), 2000); await m.tocar(`${FC_AQUI} [data-fc-conta]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
   { t: 'Marque quem já pagou', d: 'Depois de fechar, marque no cupom de cada um. Se a pessoa já saiu, o cupom dela trava.',
     acao: async m => { await demoFechar(m, 'Ana'); await m.tocar(`${FC_AQUI} [data-fc-pago="marcar"]`); await m.espera(900); guiaSemAviso(); await m.tocar(`${FC_AQUI} .fc-saiu .switch`); await m.espera(700); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.apontar(`summary[data-unit="${demoUn('Ana')}"]`, 1500); await m.apontar('#cmd-conta', 1300); } },
-  { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
-    acao: async m => { await m.tocar('#cm-pe'); await m.acha('#cm-ok'); await m.apontar((await m.acha('.kf-dlg [data-cm="svc"]')).closest('.cm-bloco'), 1200); await m.tocar('.kf-dlg [data-cm="cv"]'); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.tocar('#cm-ok'); await m.some('#cm-ok'); } },
-  { t: 'A conta de quem já pagou mudou', d: 'Ana pagou antes do couvert e do desconto. Receba a diferença ou escolha quem cobre.',
-    acao: async m => { await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await m.tocar(`${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`); await m.espera(700); guiaSemAviso(); await m.apontar(demoPagamento(), 2000); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(500); } },
+  { t: 'A conta de quem já pagou mudou', d: 'O desconto caiu depois que Ana pagou. Receba a diferença ou escolha quem cobre.',
+    acao: async m => { await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
+      await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await m.tocar(`${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`); await m.espera(700); guiaSemAviso(); await m.apontar(demoPagamento(), 2000); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(500); } },
   { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.',
     acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3400); await m.apontar('.festa-xp', 1600); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
   { t: 'Tampinhas e níveis', d: 'Cada comanda salva rende pontos. As tampinhas que você ganha ficam na coleção.', se: () => jogoLigado(),

@@ -89,7 +89,6 @@ function novaComandaSheet() {
       $$('[data-nc-turma]', s).forEach(b => b.onclick = () => { turma = turma === b.dataset.ncTurma ? '' : b.dataset.ncTurma; $$('[data-nc-turma]', s).forEach(x => x.setAttribute('aria-pressed', String(x.dataset.ncTurma === turma))); });
       $('#nc-no', s).onclick = () => closeSheet();
       $('#nc-form', s).addEventListener('submit', e => { e.preventDefault(); abrir(inp.value); });
-      if (!isTouch) inp.focus();
     } });
 }
 function entrarAoVivo(valor) {
@@ -269,7 +268,6 @@ function pessoaSheet() {
       <label class="aj-chave"><span class="lin-tx"><b>Sou eu</b></span><span class="switch"><input type="checkbox" id="np-eu"><span class="track"></span></span></label>
     </form>`, foot: `<button type="button" class="btn ghost" id="np-no">Cancelar</button><button type="submit" form="np-form" class="btn">${I.save}Salvar pessoa</button>`, onMount: s => {
     $('#np-no', s).onclick = () => closeSheet();
-    if (!isTouch) setTimeout(() => $('#np-nome', s)?.focus(), 60);
     $('#np-form', s).addEventListener('submit', e => {
       e.preventDefault();
       const nome = $('#np-nome', s).value.trim().replace(/\s+/g, ' '), pix = $('#np-pix', s).value.trim();

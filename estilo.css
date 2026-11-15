@@ -677,10 +677,14 @@ body.com-guia .festa{bottom:calc(var(--pe-h) + var(--guia-h));padding-bottom:16p
    janelas (casca.js), só com transform e num relógio só. No iPhone, as transições de posição e de altura andavam em
    ritmos diferentes, e a janela dava um tranco para cima e voltava (1.5.0 e 1.6.0).
    O que o Kit faz com `kf-teclado` fica sem efeito no celular. */
-:root{--cf-tk:0px;--cf-pe:0px}
+:root{--cf-tk:0px;--cf-pe:0px;--cf-ms:600ms;--cf-curva:cubic-bezier(.45,0,.2,1)}
 body.com-guia{--cf-pe:calc(var(--pe-h) + var(--guia-h));--cf-tk:0px;--cf-max:initial}
-.kf-ov::before{animation:kf-fade .22s ease-out}
+/* o fundo escurece e clareia no relógio da janela */
+.kf-ov::before{animation:kf-fade var(--cf-ms) var(--cf-curva)}
 .kf-ov.cf-troca::before,#kf-saidas .kf-ov::before{animation:none}
+#cf-saidas > .kf-ov{position:fixed;inset:0;z-index:86;pointer-events:none}
+#cf-saidas .kf-ov::before{animation:cf-apaga var(--cf-ms) var(--cf-curva) forwards}
+@keyframes cf-apaga{to{opacity:0}}
 html .kf-dlg{animation:none}
 @media (max-width:719px){
   html .kf-ov,html.kf-teclado .kf-ov{top:0!important;bottom:var(--cf-pe)!important;height:auto!important;padding:0!important;align-items:flex-end}
@@ -698,3 +702,17 @@ html .kf-dlg{animation:none}
   /* em Fechar a comanda, Voltar e Salvar não sobem com o teclado: ficam recolhidos enquanto ele está aberto */
   html.cf-tk body:not(.com-guia) .kf-dlg:has(.fc) .kf-dlg-pe{display:none}
 }
+
+/* ---------- 18. um relógio só ----------
+   Regra do Bruno (15/11/2026): tudo o que abre ou fecha dura 600 ms, na mesma curva (--cf-ms e --cf-curva, iguais a
+   MOVE em app.js). As janelas estão na seção 17; aqui ficam as outras aberturas e fechamentos do app e os do Kit que
+   o CSS alcança (o Kit 0.6.0 usa 280 ms). Ficam de fora o que não abre nem fecha: toque no botão, chaves, arrastar. */
+.kf-toast:not([hidden]),.festa,.abertura,.av-form,.ab-slide.vem-dir,.ab-slide.vem-esq,.kf-esc-lista:not([hidden]),.kf-cal:not([hidden]){animation-duration:var(--cf-ms);animation-timing-function:var(--cf-curva)}
+.abertura.sai,.festa.sai{opacity:0;transition:opacity var(--cf-ms) var(--cf-curva)}
+/* a seta gira e o fundo da linha muda junto com a linha que abre ou recolhe */
+.cmd-una .dv-pes,.cmd-una .item-d,.item-d>summary::after,.it-lin::after,.cmd-una .dv-lin::after,.cmd-una .item-d>.it-lin::after,.pa-seta,details.fold>summary::after,.join form{transition-duration:var(--cf-ms);transition-timing-function:var(--cf-curva)}
+/* a doca do guia aparece no lugar dela, sem passar por cima da barra de baixo */
+.guia-doca{animation:kf-fade var(--cf-ms) var(--cf-curva)}
+@media (prefers-reduced-motion:reduce){.guia-doca,#cf-saidas .kf-ov::before{animation:none}}
+/* o botão que divide a linha com um campo tem a altura do campo */
+.row>.btn{min-height:50px}
