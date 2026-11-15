@@ -93,7 +93,9 @@ A configuração web do Firebase em `config.js` é pública por natureza (não �
 
 ## Publicação
 
-GitHub Pages a partir da branch `main`, pasta raiz. Antes de publicar: `npm test`, e confira o app no celular e no computador,
+GitHub Pages a partir da branch `main`, pasta raiz. Antes de publicar: `npm run verificar` e os testes da parte que mudou
+(regra do Bruno, de 14/11/2026: roda-se só o que a mudança toca, e o relatório diz o que foi pulado). O guia inteiro só roda
+quando a mudança mexe no guia; a bateria completa (`npm test`), quando mexe nas contas. Confira o app no celular e no computador,
 no claro e no escuro. Se o app abrir com erro no ar, desfaça o envio na hora (`git revert`) e só depois investigue.
 O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -119,6 +121,7 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 | Regras, Art. 11 (guia Comandas nos Ajustes) | a guia própria virou "Tampinhas e apresentação"; guia, comanda de exemplo e Cadastros ficam só em Mais; avaliação, presente e novidades saíram de Mais (ficam no alto da tela e em Sobre) | pedido do Bruno: tirar as repetições dentro e fora dos Ajustes |
 | Regras, Art. 1º (ideia visual: comanda de boteco) | o app não tem nenhuma referência a bebida alcoólica: exemplos, textos, o sorteio (no lugar da garrafa) e os nomes dos níveis foram trocados | pedido do Bruno em 14/11/2026 |
 | Anexo II (o app não redefine os tokens do Kit) | cantos maiores e altura da navegação redefinidos; títulos em Bricolage Grotesque | identidade própria; a fonte de caráter nos títulos é permitida pelo Art. 56, IV |
+| Art. 23, I (verificação e todos os testes antes de publicar) | a cada versão rodam a verificação do padrão e só os testes da parte alterada; o guia inteiro só roda quando a mudança mexe no guia, e a bateria completa, quando mexe nas contas; o relatório de cada versão diz o que foi pulado | regra do Bruno em 14/11/2026: as rodadas demoravam demais (só o guia leva 9 minutos) |
 | Art. 22 (versão 0.x na fase de testes) | versão 1.0.0 | pedido de app pronto para a publicação oficial |
 | Art. 24 (publicar direto na `main`) | a 1.0.0 passou primeiro por um ramo (`claude/conta-facil-novo`) e foi para a `main` em 14/11/2026, a pedido do Bruno | troca grande demais para ir ao ar sem aviso |
 | Arts. 82, 84, 85 e 87 (perguntar antes, opções com desenho, textos só com "sim") | decisões de desenho e de texto tomadas sem perguntar | pedido de liberdade criativa total |

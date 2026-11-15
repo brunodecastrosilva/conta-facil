@@ -9,6 +9,7 @@ com `0.`, o app está em fase de testes (rascunho).
 - **Espaços iguais com e sem teclado:** o título, o conteúdo e o rodapé das janelas não apertam mais quando o teclado abre (era mais uma coisa mudando de lugar na hora). Em troca, com o teclado aberto cabe um pouco menos de conteúdo sem rolar.
 - **Campo à vista:** com o teclado já aberto, o campo que recebe o foco vem para a parte visível da janela.
 - **Rede de segurança:** se o Safari empurrar a tela com uma janela aberta, ela volta para o lugar quando o teclado assenta.
+- **Regra de trabalho (não muda o app):** a partir daqui, antes de publicar rodam a verificação e só os testes da parte alterada; o guia inteiro e a bateria completa ficam para quando a mudança mexe neles. Exceção ao Art. 23, I do Código, registrada no README.
 
 ## 1.6.0 · 2026-11-14
 
