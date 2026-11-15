@@ -5,9 +5,8 @@ Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviç
 Versão **1.6.1** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
-**o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O que isso muda no
-[Código do Projeto Fácil](comum/CODIGO.md) (versão 0.5) está em [O novo padrão](#o-novo-padrão) e na
-[Proposta para o Integrador](PROPOSTA-PARA-O-INTEGRADOR.md).
+**o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
+[Código do Projeto Fácil](comum/CODIGO.md) 0.6 já traz essas regras: veja [O novo padrão](#o-novo-padrão).
 
 ## O que o app faz
 
@@ -104,42 +103,14 @@ O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
 ## O novo padrão
 
 Em 14/11/2026 o Bruno definiu que o Conta Fácil, mesmo ainda não finalizado, é o novo padrão do Projeto Fácil: nada do que
-está aqui é exceção, e tudo o que foi decidido neste app é regra. A tabela mostra, artigo por artigo, onde o Código (versão 0.5)
-e as Regras do Conta Fácil ainda dizem outra coisa e qual é a regra que vale. O Código, o Kit Fácil e a skill só mudam no
-projeto Integrador (Arts. 7º a 9º): o texto pronto para levar para lá está em
-[`PROPOSTA-PARA-O-INTEGRADOR.md`](PROPOSTA-PARA-O-INTEGRADOR.md). Até o Kit ser atualizado, `npm run verificar` acusa duas
-falhas esperadas (barra de cima e Ajustes fora da barra de baixo), porque ainda confere o padrão antigo.
+está aqui é exceção, e tudo o que foi decidido neste app é regra. No mesmo dia, o Integrador aprovou a
+[proposta](PROPOSTA-PARA-O-INTEGRADOR.md) inteira, e o [Código do Projeto Fácil](comum/CODIGO.md) passou à versão 0.6
+com essas regras (Art. 93).
 
-| O que o Código 0.5 ou as Regras antigas dizem | A regra que vale (como é no Conta Fácil) | Por quê |
-|---|---|---|
-| Arts. 59 e 60 (navegação) e Regras, Art. 10 | barra de baixo colada ao pé da tela, baixa, com a comanda no centro; "Mais" é uma tela, e os Ajustes ficam dentro dela (no computador, no pé do trilho) | a comanda é a ação principal da noite e fica sempre sob o polegar; cinco destinos sem encolher os nomes |
-| Art. 64, II (um só jeito de criar) | a comanda nova nasce no Início e no botão do centro da barra | o botão do centro vale em qualquer tela; o campo do Início serve a quem acabou de abrir o app |
-| Art. 65 (componentes do Kit) | carrossel dos cupons, arrastar e soltar e seções da comanda são do app (as linhas de pessoas e pedidos usam a seção do Kit sem o modo "grupo", que rolava a tela e escondia o título; o app fecha as irmãs e segura o título no lugar); os trechos redesenhados animam com um ajudante do app (`comMovimento`); Cadastros usa segmento no lugar das guias | são as peças afinadas no Laboratório, dentro do papel; trocá-las mudaria o comportamento já testado |
-| Art. 66 (uma cor de botão principal) | verde para a ação principal e âmbar para abrir comanda e sortear | o âmbar marca o começo da comanda e dá identidade; os dois têm contraste AA |
-| Art. 67 (nada lado a lado) | tiras das últimas comandas, grade de tampinhas e três pódios lado a lado no computador | são coleções para ver de relance, não dados para comparar linha a linha |
-| Art. 68 (janelas e avisos só do Kit) | a abertura e a festa de fechamento são telas cheias do app | momentos de marca, com animação própria; foco preso, Esc e leitor de tela tratados |
-| Arts. 68 e 72 e Art. 16, IX (janelas, movimento e teclado pelo Kit) | o app cuida sozinho da posição e do movimento das janelas (nascer, acompanhar o teclado, mudar de altura, trocar); o deslize do Kit e o que ele faz com o teclado ficam sem efeito no celular; desde a 1.6.1 o movimento é só com `transform`, num relógio só, sem transições de CSS; a pasta `comum/` não foi alterada | pedido do Bruno em 14/11/2026: os três movimentos do Kit se somavam e a janela saltava no iPhone; quando houver conflito, o Kit não é prioridade |
-| Art. 72 (movimento só do Kit) | impressora, tampinha e presente em 3D, confete, carimbo e ponteiro do sorteio têm animação própria | pedido de app interativo e gamificado; movimento reduzido é respeitado em todas |
-| Arts. 75 e 76 (sem tela de primeiro uso; janela a cada abertura) | abertura de quatro telas, uma vez só, com Pular | pedido expresso de um onboarding; a janela a cada abertura cansava |
-| Arts. 77 a 79 (guia em dois níveis, do Kit) e Regras, Art. 13 | um guia só, do próprio app (não usa o guia do Kit): janela fixa num espaço só dela, acima da barra de baixo; antes de cada passo ela pisca e a moldura se esvazia como um relógio; 36 passos seguidos, na ordem de uso, cada um executando a função na demonstração | pedido do Bruno em 14/11/2026: a janela do Kit ficava sobre o conteúdo e mudava de lugar |
-| Art. 13, §§ 1º a 3º (presente do Kit, colorido, na barra) e Art. 57 | na barra de cima, o presente é um ícone de traço, da mesma cor da nuvem e do balão; a janela do apoio é do app, com um presente em 3D que gira com o dedo (mesmo texto, QR code e um só botão) | pedido do Bruno: ícones do alto na mesma cor e presente aperfeiçoado |
-| Art. 57 (ícones do Kit) | o app redesenha os próprios ícones num traço só (grade de 24, traço de 2, pontas redondas) | pedido de ícones uniformes |
-| Regras, Art. 11 (guia Comandas nos Ajustes) | a guia própria virou "Tampinhas e apresentação"; guia, comanda de exemplo e Cadastros ficam só em Mais; avaliação, presente e novidades saíram de Mais (ficam no alto da tela e em Sobre) | pedido do Bruno: tirar as repetições dentro e fora dos Ajustes |
-| Regras, Art. 1º (ideia visual: comanda de boteco) | o app não tem nenhuma referência a bebida alcoólica: exemplos, textos, o sorteio (no lugar da garrafa) e os nomes dos níveis foram trocados | pedido do Bruno em 14/11/2026 |
-| Anexo II (o app não redefine os tokens do Kit) | cantos maiores e altura da navegação redefinidos; títulos em Bricolage Grotesque | identidade própria; a fonte de caráter nos títulos é permitida pelo Art. 56, IV |
-| Art. 23, I (verificação e todos os testes antes de publicar) | a cada versão rodam a verificação do padrão e só os testes da parte alterada; o guia inteiro só roda quando a mudança mexe no guia, e a bateria completa, quando mexe nas contas; o relatório de cada versão diz o que foi pulado | regra do Bruno em 14/11/2026: as rodadas demoravam demais (só o guia leva 9 minutos) |
-| Art. 22 (versão 0.x na fase de testes) | versão 1.0.0 | pedido de app pronto para a publicação oficial |
-| Art. 24 (publicar direto na `main`) | a 1.0.0 passou primeiro por um ramo (`claude/conta-facil-novo`) e foi para a `main` em 14/11/2026, a pedido do Bruno | troca grande demais para ir ao ar sem aviso |
-| Arts. 82, 84, 85 e 87 (perguntar antes, opções com desenho, textos só com "sim") | decisões de desenho e de texto tomadas sem perguntar | pedido de liberdade criativa total |
-| Anexo VII (testes comuns da moldura) | `npm test` roda os testes do Kit e os do app; a varredura de acessibilidade do Kit foi trocada por `tests/acessibilidade.test.mjs` | a varredura do Kit procura os Ajustes na barra do Kit, que mudou |
-| Regras, Art. 5º, parágrafo único (item novo no topo) | o item novo entra no fim da lista | fica ao lado do botão de lançar, como no Laboratório |
-| Regras, Arts. 6º e 7º (telas Fechar e Pagamento) | Fechar faz parte da comanda (uma janela com os cupons); marcar como pago, pagar outro valor e "uma pessoa paga a conta de todos" ficam nessa janela | conceito do Laboratório: uma folha só; o que fica em Fechar foi pedido do Bruno em 14/11/2026 |
-| Regras, Art. 7º, V (quem paga por todos fica num cupom compartilhado) | "Uma pessoa paga a conta de todos" não junta ninguém: cada um continua com o seu cupom, que diz quanto pagar a quem pagou a conta | pedido do Bruno em 14/11/2026 |
-
-Do Código 0.5, continuam valendo como estão: gratuidade (Art. 12), convite de apoio (Art. 13), português do Brasil (Art. 14), acessibilidade
-(Art. 16), repositório sem segredos e sem build (Arts. 19 e 21), dados no aparelho e sincronização opcional (Arts. 32 a 37),
-prazos de guarda (Art. 39), segurança (Arts. 43 a 50: CSP sem script na página, SRI, texto de fora sempre protegido), avaliação
-(Arts. 51 a 54), modo escuro e pasta `comum/` intacta (Art. 30).
+Falta só o Kit Fácil 0.7.0 receber as peças que hoje são do app (janelas e teclado, barra de baixo com a comanda no
+centro, tela Mais, barra de cima em traço, ícones, presente em 3D, abertura, guia, seções, `comMovimento`, carrossel e
+arrastar e soltar; lista no Anexo II, "Peças a levar ao Kit"). Até lá, o app usa as suas próprias peças (Arts. 30-A e
+93, § 1º) e `npm run verificar` acusa duas falhas esperadas (barra de cima e Ajustes dentro de Mais).
 
 ## Uso do código
 

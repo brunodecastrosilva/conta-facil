@@ -2,6 +2,9 @@
 
 Origem: Projeto Conta Fácil, versão 1.6.1 · 14/11/2026 · Código em vigor: 0.5 (rascunho) · Kit Fácil 0.6.0
 
+**Situação: aprovada inteira pelo Bruno no Integrador em 14/11/2026, com as três leituras do Claude. Entrou no Código
+0.6 (rascunho). Falta só o Kit 0.7.0 receber as peças da seção 4 (Painel do Integrador). Este arquivo agora é histórico.**
+
 ## 1. A decisão
 
 Decisão do Bruno, em 14/11/2026, no Projeto Conta Fácil:
