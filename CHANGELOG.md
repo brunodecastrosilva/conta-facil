@@ -3,6 +3,22 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.9.3 · 2026-11-15
+
+- **Quem chega depois não entra sozinho nos itens (regra do Bruno):** ao adicionar uma pessoa com itens já lançados, nenhum deles é atribuído a ela. Para pôr a pessoa num item, abra o item e marque o nome. Antes, ela entrava sozinha nos itens divididos "entre todos", com um aviso e um Desfazer. Na janela de lançar, o resumo diz só "Entre todos" (saiu "quem chegar depois também entra").
+- **Consequência:** a chegada de alguém não mexe mais na conta de quem já pagou.
+- **Guia, passo a passo:**
+  - *Quem não paga o serviço:* destaca as duas opções antes de escolher.
+  - *O cupom de cada um:* o cartão do Diego se recolhe no fim.
+  - *Mude o nome ou tire da mesa:* ao adicionar Eva não aparece mais o aviso com Desfazer por cima do dedo (ele deixou de existir com a regra acima).
+  - *Comanda ao vivo:* saiu "Aqui, só o botão.".
+  - *Pague outro valor:* um caminho só, de cima para baixo: abre o campo, escreve o valor, escolhe quem cobre, sobe uma vez para ver o cupom e desce uma vez para voltar ao valor da conta. O dedo não para mais em cima de "Salvar no histórico".
+  - *Salve no Histórico:* não destaca mais o nível.
+  - *Produtos e preços:* não destaca mais o preço.
+  - *Sorteie alguém da mesa:* depois de tocar em Sortear, o dedo sai da frente e a roda vem para o alto da janela; vê-se o ponteiro girar e o nome que saiu.
+- **Erro do Kit corrigido por cima (Art. 30-A):** o guia só conferia se o alvo cabia na tela. Numa janela, o alvo podia estar escondido atrás do pé dela, e o dedo tocava em cima de um botão do pé. Agora, no guia do app, o alvo vem para a parte visível da janela antes do toque. Está na Proposta 4.
+- **Testes:** como a mudança mexe nas contas, rodou a bateria completa.
+
 ## 1.9.2 · 2026-11-15
 
 - **Um ícone só:** a marca no alto da tela (e no trilho lateral, no computador) passou a ser o ícone do app, o mesmo de Sobre o aplicativo: a comanda inclinada com o selo dourado. Antes era um desenho mais simples, só da comanda.

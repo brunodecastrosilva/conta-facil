@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.9.2** · Kit Fácil 0.8.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.9.3** · Kit Fácil 0.8.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
@@ -14,7 +14,7 @@ Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e
 - **Lançar em uma janela:** produto, quantidade, preço e quem consumiu (compartilhado, entre todos ou entre alguns, ou individual, por unidade)
 - **Pessoas:** tocar num nome mostra os atalhos (serviço, couvert, Juntar, Ver cupom e Editar, que muda o nome ou tira da mesa); segurar e arrastar um nome sobre outro junta os dois no mesmo cupom
 - **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, e cortesias
-- **Pago:** só depois de fechar a comanda: em Fechar a comanda, no cupom de cada pessoa, marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo, alguém que chegou), mostra quanto falta ou quanto devolver
+- **Pago:** só depois de fechar a comanda: em Fechar a comanda, no cupom de cada pessoa, marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo), mostra quanto falta ou quanto devolver
 - **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; ali também ficam "uma pessoa paga a conta de todos" (cada um continua com o seu cupom), "pagar outro valor" (com a escolha de quem cobre ou devolve a diferença), marcar quem já pagou e "já saiu da mesa" (trava o cupom); salvar tem Desfazer
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai

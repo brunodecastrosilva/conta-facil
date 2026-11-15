@@ -221,7 +221,21 @@ function guiaIniciar() {
     // na comanda, o cabeçalho de papel também fica preso no alto
     cabecalhoFixo: () => $('#view .cu-cab'),
     // segura um nome e arrasta sobre outro cupom: o atalho de juntar, feito com o mesmo código do dedo de verdade
-    maos: m => ({
+    maos: m => {
+      /* O Kit 0.8.0 só confere se o alvo cabe na tela; numa janela, o alvo pode estar "na tela" e mesmo assim escondido
+         atrás do pé dela (o conteúdo rola por baixo). O dedo ia então parar em cima de um botão do pé, como "Salvar no
+         histórico". Antes de tocar, apontar ou escrever, o alvo vem para a parte visível do conteúdo da janela. */
+      const naJanela = async el => {
+        const cx = el && el.closest && el.closest('.kf-dlg-corpo'); if (!cx) return;
+        const r = el.getBoundingClientRect(), c = cx.getBoundingClientRect(), folga = 14;
+        if (r.top >= c.top + folga && r.bottom <= c.bottom - folga) return;
+        const alvo = r.height > c.height - 2 * folga ? r.top - c.top - folga : r.top + r.height / 2 - (c.top + c.height / 2);
+        cx.scrollTo({ top: Math.max(0, cx.scrollTop + alvo), behavior: m.rapido() || semMovimento() ? 'instant' : 'smooth' }); await m.espera(520);
+      };
+      const comAlvo = f => async (q, ...resto) => { const o = resto.find(x => x && typeof x === 'object') || {}; const el = await m.acha(q, o); if (!el) return null; await naJanela(el); return f(el, ...resto); };
+      const { tocar, apontar, digitar } = m;
+      return {
+      tocar: comAlvo(tocar), apontar: comAlvo(apontar), digitar: comAlvo(digitar),
       arrastarAte: async (qDe, qPara) => {
         const de = await m.acha(qDe); await m.levar(de); m.vivo();
         const r = de.getBoundingClientRect(), x0 = r.left + Math.min(96, r.width / 3), y0 = r.top + r.height / 2;
@@ -240,7 +254,8 @@ function guiaIniciar() {
         } finally { dragEnd(true); if (escudo) escudo.style.pointerEvents = ''; m.dedo.classList.remove('kf-toca'); m.dedo.style.transition = ''; }
         await dorme(380); m.vivo(); await m.espera(800);
       },
-    }),
+      };
+    },
   });
 }
 const demoId = n => draft.people.find(p => p.name === n)?.id || '';
@@ -299,11 +314,13 @@ const GUIA = [
   { t: 'A parte de cada pessoa', d: 'A comanda soma na hora. Toque num nome para ver os atalhos dessa pessoa.',
     acao: async m => { const u = demoUn('Diego'); await m.tocar(`summary[data-unit="${u}"]`); await m.espera(500); await m.apontar(`[data-pa="${u}"]`, 1700); } },
   { t: 'Quem não paga o serviço', d: 'Desligue o serviço de alguém e escolha: ninguém paga a parte ou os outros dividem.',
-    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svc]`); await m.acha('[data-pol="redistribute"]'); await m.espera(900); await m.tocar('[data-pol="redistribute"]'); await m.some('[data-pol]'); await m.apontar(`summary[data-unit="${demoUn('Diego')}"]`, 1400); } },
+    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svc]`); await m.acha('[data-pol="redistribute"]'); await m.espera(500); await m.apontar('[data-pol="discount"]', 1300); await m.apontar('[data-pol="redistribute"]', 1300); await m.tocar('[data-pol="redistribute"]'); await m.some('[data-pol]'); await m.apontar(`summary[data-unit="${demoUn('Diego')}"]`, 1400); } },
   { t: 'O cupom de cada um', d: 'Ver cupom mostra a conta da pessoa, pronta para compartilhar.',
-    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-cupom]`); await m.acha('#cp-share'); await m.apontar('.kf-dlg .cupom-1', 1700); await m.apontar('#cp-share', 1300); await m.fechar(); } },
+    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-cupom]`); await m.acha('#cp-share'); await m.apontar('.kf-dlg .cupom-1', 1700); await m.apontar('#cp-share', 1300); await m.fechar(); await m.some('#cp-share');
+      // o cartão do Diego se recolhe antes do próximo passo
+      const sm = await m.acha(`summary[data-unit="${demoUn('Diego')}"]`); if (sm.parentElement.open) { await m.tocar(sm); await m.espera(500); } } },
   { t: 'Mude o nome ou tire da mesa', d: 'Chegou mais alguém? Em Editar, corrija o nome ou tire a pessoa da mesa.',
-    acao: async m => { await m.tocar('#add-pessoa'); await m.digitar('#pn-nome', 'Eva', { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); await m.fechar(); await m.some('#pn-nome');
+    acao: async m => { await m.tocar('#add-pessoa'); await m.digitar('#pn-nome', 'Eva', { ritmo: 70 }); await m.tocar('#pn-add', { depois: 260 }); guiaSemAviso(); await m.fechar(); await m.some('#pn-nome');
       await demoAbrir(m, `summary[data-unit="${demoUn('Eva')}"]`); await m.tocar(`[data-pa="${demoUn('Eva')}"] [data-pa-mais]`); await m.digitar('#cs-nome', 'Evelyn', { ritmo: 70 }); await m.tocar('#cs-ok'); await m.some('#cs-nome'); await m.espera(700);
       await demoAbrir(m, `summary[data-unit="${demoUn('Evelyn')}"]`); await m.tocar(`[data-pa="${demoUn('Evelyn')}"] [data-pa-mais]`); guiaSemAviso(); await m.tocar('#cs-rm'); await m.acha('.kf-dlg [data-kf-ok]'); await m.espera(700); await m.tocar('.kf-dlg [data-kf-ok]'); await m.some('.kf-dlg [data-kf-ok]'); await m.espera(600); } },
   { t: 'Um cupom para duas pessoas', d: 'Juntar põe duas pessoas no mesmo cupom: bom para casal ou para quem divide tudo.',
@@ -313,7 +330,7 @@ const GUIA = [
   { t: 'Separe quando quiser', d: 'O cupom compartilhado mostra a parte de cada um. Separar desfaz a união.',
     acao: async m => { const u = demoUn('Carla'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.apontar(`summary[data-unit="${u}"]`, 1300); await m.tocar(`[data-pa="${u}"] [data-pa-desfaz]`); await m.espera(500); guiaSemAviso();
       for (const n of ['Bruno', 'Carla', 'Diego']) await m.apontar(`summary[data-unit="${demoUn(n)}"]`, 800); } },
-  { t: 'Comanda ao vivo', d: 'Compartilhe a comanda: cada pessoa lança pelo próprio celular. Aqui, só o botão.', se: () => !!store.db,
+  { t: 'Comanda ao vivo', d: 'Compartilhe a comanda: cada pessoa lança pelo próprio celular.', se: () => !!store.db,
     acao: async m => { await m.apontar('#live-start', 2200, { opcional: true, prazo: 1200 }); } },
   { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
     acao: async m => { await m.tocar('#cm-pe'); await m.apontar((await m.acha('.kf-dlg [data-cm="svc"]')).closest('.cm-bloco'), 1200); await m.tocar('.kf-dlg [data-cm="cv"]'); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
@@ -322,15 +339,20 @@ const GUIA = [
   { t: 'Uma pessoa paga a conta de todos', d: 'No cupom da mesa, escolha quem paga tudo. Cada cupom diz quanto deve a ela.',
     acao: async m => { await demoFechar(m); await m.tocar(`${FC_AQUI} [data-fc-todos]`); await m.espera(500); await m.tocar(`${FC_AQUI} [data-fc-quem="${demoId('Bruno')}"]`); await m.espera(700); guiaSemAviso(); await m.apontar(demoPagamento(), 2200); await m.tocar('#fc-prox', { depois: 700 }); await m.apontar(demoPagamento(), 2200); await m.tocar('#fc-ant', { depois: 600 }); await m.tocar(`${FC_AQUI} [data-fc-cada]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
   { t: 'Pague outro valor', d: 'Alguém paga mais ou menos que a parte dele? Informe o valor e quem cobre a diferença.',
-    acao: async m => { await demoFechar(m, 'Carla'); await m.tocar(`${FC_AQUI} [data-fc-valor]`); await m.digitar(`${FC_AQUI} [data-fc-custom]`, '4000', { ritmo: 120 }); await m.espera(600); await m.apontar(demoPagamento(), 1800);
-      await m.tocar(`${FC_AQUI} [data-fc-cobre="${demoId('Bruno')}"]`); await m.espera(500); await m.apontar(demoPagamento(), 2000); await m.tocar(`${FC_AQUI} [data-fc-conta]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
+    acao: async m => { // um caminho só, sem ir e voltar: abre o campo, escreve o valor, escolhe quem cobre (tudo à vista, de cima para baixo),
+      // sobe uma vez para ver o cupom e desce uma vez para voltar ao valor da conta
+      await demoFechar(m, 'Carla'); await m.tocar(`${FC_AQUI} [data-fc-valor]`); await m.acha(`${FC_AQUI} [data-fc-custom]`); await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46);
+      await m.digitar(`${FC_AQUI} [data-fc-custom]`, '4000', { ritmo: 120 }); await m.espera(700);
+      await m.tocar(`${FC_AQUI} [data-fc-cobre="${demoId('Bruno')}"]`); await m.espera(600); guiaSemAviso();
+      await m.apontar(demoPagamento(), 2400);
+      await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46); await m.tocar(`${FC_AQUI} [data-fc-conta]`); await m.espera(800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
   { t: 'Marque quem já pagou', d: 'Depois de fechar, marque no cupom de cada um. Se a pessoa já saiu, o cupom dela trava.',
     acao: async m => { await demoFechar(m, 'Ana'); await m.tocar(`${FC_AQUI} [data-fc-pago="marcar"]`); await m.espera(900); guiaSemAviso(); await m.tocar(`${FC_AQUI} .fc-saiu .kf-chave`); await m.espera(700); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.apontar(`summary[data-unit="${demoUn('Ana')}"]`, 1500); await m.apontar('#cmd-conta', 1300); } },
   { t: 'A conta de quem já pagou mudou', d: 'O desconto caiu depois que Ana pagou. Receba a diferença ou escolha quem cobre.',
     acao: async m => { await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
       await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await m.tocar(`${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`); await m.espera(700); guiaSemAviso(); await m.apontar(demoPagamento(), 2000); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(500); } },
   { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3400); await m.apontar('.festa-xp', 1600); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
+    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(4200); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
   { t: 'Tampinhas e níveis', d: 'Cada comanda salva rende pontos. As tampinhas que você ganha ficam na coleção.', se: () => jogoLigado(),
     acao: async m => { await demoIr(m, 'tampinhas'); await m.apontar('#view .nivel-card', 1700); await m.apontar('#view [data-tampa="primeira"]', 1300); } },
   { t: 'Gire a tampinha', d: 'Toque numa tampinha e deslize o dedo sobre ela: ela gira nas suas mãos.', se: () => jogoLigado(),
@@ -346,9 +368,11 @@ const GUIA = [
   { t: 'Turmas', d: 'Monte uma turma com quem sai junto. Na próxima comanda, todos entram de uma vez.',
     acao: async m => { await demoCadastros(m, 'turmas'); await m.tocar('#cad-turma'); await m.digitar('#tg-nome', 'Amigos da praça', { ritmo: 50 }); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`.kf-dlg [data-tg="${n}"]`, { depois: 220 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#tg-nome'); await m.apontar('#view .cad-card .lin', 1500, { opcional: true }); } },
   { t: 'Produtos e preços', d: 'O app lembra o preço de cada produto em cada lugar e sugere na hora de lançar.',
-    acao: async m => { await demoCadastros(m, 'produtos'); await m.apontar('#view [data-pprod]', 1700, { opcional: true }); await m.apontar('#view .cad-card', 1200, { opcional: true }); } },
+    acao: async m => { await demoCadastros(m, 'produtos'); await m.apontar('#view .cad-card', 2200, { opcional: true }); } },
   { t: 'Sorteie alguém da mesa', d: 'Quem escolhe o próximo lugar? Marque quem entra e o ponteiro para num nome.',
-    acao: async m => { await demoIr(m, 'mais'); await m.tocar('#ma-sorteio'); await m.acha('#gf-quem'); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`[data-gf-n="${n}"][aria-pressed="false"]`, { depois: 220, opcional: true, prazo: 500 }); await m.tocar('#gf-go'); await m.espera(5600); await m.tocar('#gf-x'); await m.some('#gf-x'); } },
+    acao: async m => { await demoIr(m, 'mais'); await m.tocar('#ma-sorteio'); await m.acha('#gf-quem'); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`[data-gf-n="${n}"][aria-pressed="false"]`, { depois: 220, opcional: true, prazo: 500 }); await m.tocar('#gf-go', { depois: 0 });
+      // o dedo sai da frente e a roda vem para o alto da janela: o que se vê é o ponteiro girando até parar num nome
+      m.sumir(); await m.rolar('#gf-mesa', 6); await m.espera(5200); await m.apontar('#gf-res', 1800); await m.tocar('#gf-x'); await m.some('#gf-x'); } },
   { t: 'Ajustes', d: 'Seu nome, sincronização, cópia de segurança, aparência e privacidade.',
     acao: async m => { await demoIr(m, 'mais'); await m.tocar('#view [data-kf="ajustes"]'); await m.acha('#view [data-kf-aj-ir]'); await m.espera(700); const L = $$('#view .kf-aj-lista [data-kf-aj-ir]').filter(e => e.getClientRects().length); for (const el of L.slice(0, 4)) await m.apontar(el, 850); } },
   { t: 'A nuvem', d: 'Mostra se os seus aparelhos estão sincronizados. Toque para ver os detalhes.',

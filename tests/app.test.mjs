@@ -488,8 +488,11 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   assert.match(await p.textContent(`summary[data-unit="${ana}"]`), /pagou 17,00 · falta/);
   await p.click(`[data-pa="${ana}"] [data-pa-pago="acertar"]`);
   assert.equal((await estado())[0], 'pago');
-  // 3) pessoa nova num item "entre todos": a parte de quem pagou cai e vira troco
+  // 3) pessoa nova: não entra sozinha em item já lançado, e a conta de quem pagou não muda (1.9.3)
   await p.evaluate(() => { addPessoa('Diego'); });
+  assert.equal((await estado())[0], 'pago');
+  // quando ela é marcada num item dividido, a parte de quem pagou cai e vira troco
+  await p.evaluate(() => { const dg = draft.people.find(x => x.name === 'Diego').id; draft.items.filter(i => i.mode === 'equal').forEach(i => { i.a[dg] = 1; }); commit(); });
   assert.equal((await estado())[0], 'troco');
   // 4) registros antigos (só "pago", sem valor) passam a guardar o valor
   await p.evaluate(() => { draft.pagos = { [draft.people[1].id]: true }; commit(); });
@@ -761,9 +764,14 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, botões de Fechar c
   assert.ok(await p.locator(`[data-lc-ck="${bruno}"]`).isDisabled()); assert.equal(await p.getAttribute(`[data-lc-ck="${bruno}"]`, 'aria-pressed'), 'false');
   await p.fill('#pr-nome', 'Suco'); await p.fill('#pr-preco', '600'); await p.locator('#pr-preco').blur(); await p.click('#lc-ok'); await p.waitForTimeout(500);
   const suco = await p.evaluate(() => { const it = draft.items.find(i => i.name === 'Suco'); return [Object.keys(it.a).length, !!it.auto]; });
-  assert.deepEqual(suco, [2, true]);
-  // chega mais alguém: entra nos itens de todos; a conta de quem já pagou muda, e outra pessoa pode ficar com a diferença
+  assert.deepEqual(suco, [2, false]);
+  // chega mais alguém: não entra sozinho em item já lançado (1.9.3) e nenhum aviso de "entrou na divisão" aparece
+  const antes = await p.evaluate(() => draft.items.map(i => Object.keys(i.a).length));
   await p.evaluate(() => addPessoa('Davi')); await p.waitForTimeout(400);
+  assert.deepEqual(await p.evaluate(() => draft.items.map(i => Object.keys(i.a).length)), antes, 'quem chega não entra nos itens já lançados');
+  assert.equal(await p.evaluate(() => [...document.querySelectorAll('.kf-toast')].filter(t => !t.hidden && /entrou na divis/.test(t.textContent)).length), 0);
+  // quando a pessoa é posta nos itens, a conta de quem já pagou muda, e outra pessoa pode ficar com a diferença
+  await p.evaluate(() => { const dv = draft.people.find(x => x.name === 'Davi').id; draft.items.forEach(i => { i.a[dv] = 1; }); commit(); }); await p.waitForTimeout(400);
   assert.deepEqual(await p.evaluate(() => draft.items.map(i => Object.keys(i.a).length)), [4, 3]);
   await p.locator('#view .aviso-pago [data-ap-cobre]').waitFor();
   assert.match(await p.textContent('#view .aviso-pago'), /Bruno pagou R\$\s33,00 e a conta agora é R\$\s24,75/);

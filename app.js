@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.9.2';
+const VERSAO = '1.9.3';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,10 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.9.3', itens: [
+    'Quem chega depois não entra mais sozinho nos itens já lançados: você marca em quais ela entra.',
+    'Guia revisado: mostra as duas opções do serviço, o sorteio girando e não toca mais no botão errado.',
+  ] },
   { versao: '1.9.2', itens: [
     'A marca no alto da tela agora é o ícone do app, o mesmo de Sobre o aplicativo.',
   ] },
@@ -748,7 +752,7 @@ const NOVIDADES = [
     'Fechar a comanda: setas novas para passar os cupons.',
   ] },
   { versao: '1.2.0', itens: [
-    'Quem já pagou: o app guarda o valor pago. Se a conta mudar depois (desconto, item novo, alguém que chegou), ele mostra quanto falta ou quanto devolver.',
+    'Quem já pagou: o app guarda o valor pago. Se a conta mudar depois (desconto, item novo), ele mostra quanto falta ou quanto devolver.',
     'Ao lançar um item, quem já pagou fica de fora, a menos que você marque.',
     'Abrir uma pessoa ou um pedido não esconde mais o título, e tudo que abre e recolhe tem movimento.',
     'As tampinhas e o presente em 3D não piscam mais ao girar.',
@@ -1424,7 +1428,7 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
   const pagou = id => !!(d.pagos && d.pagos[id]), semPagos = aqui.filter(id => !pagou(id)), novos = !ini && semPagos.length && semPagos.length < ids.length ? semPagos : aqui;
   const todosMarcados = () => aqui.length > 0 && aqui.every(id => marcados.has(id));
   const nomeDe = id => d.people.find(p => p.id === id).name;
-  const marcados = new Set(ini && ini.mode !== 'units' ? (ids.filter(id => (ini.a[id] || 0) > 0).length && !ini.auto ? ids.filter(id => (ini.a[id] || 0) > 0) : ids) : novos), un = {};
+  const marcados = new Set(ini && ini.mode !== 'units' ? (ids.filter(id => (ini.a[id] || 0) > 0).length ? ids.filter(id => (ini.a[id] || 0) > 0) : ids) : novos), un = {};
   if (ini && ini.mode === 'units') ids.forEach(id => { if (ini.a[id] > 0) un[id] = ini.a[id]; });
   const soma = () => Object.values(un).reduce((a, b) => a + b, 0);
   const falta = () => getIt().qty - soma();
@@ -1444,7 +1448,7 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
     const n = marcados.size;
     if (!n) return 'Marque quem dividiu.';
     if (n === 1) return `Só ${esc(d.people.find(p => marcados.has(p.id)).name)} marcado: vira consumo individual.`;
-    const quem = todosMarcados() ? 'Entre todos (quem chegar depois também entra)' : `Entre ${n}`;
+    const quem = todosMarcados() ? 'Entre todos' : `Entre ${n}`;
     return total ? `${quem} · ${BRL(Math.round(total / n))} cada` : quem;
   };
   const atualizar = () => {
@@ -1641,14 +1645,11 @@ function addPessoa(name) {
   name = String(name || '').trim().replace(/\s+/g, ' ');
   if (!name) return false;
   if (d.people.some(p => norm(p.name) === norm(name))) { KitFacil.avisar(`${name} já está na comanda.`); return false; }
-  const p = newPerson(name), prevCount = d.people.length;
+  const p = newPerson(name);
   d.people.push(p);
-  // só entra sozinho em itens divididos entre todos (quem chega depois também entra)
-  const entrou = [];
-  const naMesa = d.people.filter(x => x.id !== p.id && !saiu(d, x.id));
-  d.items.forEach(it => { if ((!it.lk || it.auto) && it.mode === 'equal' && prevCount && naMesa.length && naMesa.every(x => (it.a[x.id] || 0) > 0)) { it.a[p.id] = 1; entrou.push(it); } });
+  // regra do Bruno (1.9.3): quem chega depois não entra sozinho em nenhum item já lançado; para pôr a pessoa num item,
+  // abre-se o item e marca-se o nome dela (Código, Art. 64-C: o app não decide pela pessoa)
   commit();
-  if (entrou.some(it => it.lk)) setTimeout(() => KitFacil.avisar(`${p.name} entrou na divisão de ${plural(entrou.length, 'item', 'itens')} já lançados.`, { label: 'Desfazer', run: () => { entrou.forEach(it => { delete it.a[p.id]; }); commit(); } }), 60);
   return true;
 }
 function pessoaNovaSheet() {
@@ -1725,7 +1726,7 @@ function produtoSheet(paraId, ed) {
           if (div && !div.pronto()) { KitFacil.avisar(div.porque()); return; }
           cur.name = name; cur.price = price; cur.qty = qty; cur.fq = Math.min(cur.fq || 0, qty);
           // a divisão só muda se a pessoa mexeu nela (preserva partes desiguais feitas em outro lugar)
-          if (div && div.tocou()) { const r = div.resultado(); cur.a = r.a; cur.mode = r.modo; cur.auto = r.todos; cur.lk = true; }
+          if (div && div.tocou()) { const r = div.resultado(); cur.a = r.a; cur.mode = r.modo; cur.auto = false; cur.lk = true; }
           else if (cur.mode === 'units') { const tot = Object.values(cur.a).reduce((x, y) => x + y, 0); cur.lk = tot === qty; }
           delete pending[cur.id]; delete itPend[cur.id];
           closeSheet(true); itemAberto = cur.id; commit(); KitFacil.avisar(cur.mode === 'units' && !cur.lk ? `${cur.name}: distribua as unidades e confirme.` : 'Item alterado.');
@@ -1741,7 +1742,7 @@ function produtoSheet(paraId, ed) {
         }
         const lancar = (a, todos, modo = 'equal') => {
           const id = newId();
-          d.items.push({ id, o: nextOrder(), name, qty, price, fq: 0, mode: modo, lk: d.people.length > 0, auto: !!todos && d.people.length > 0, a });
+          d.items.push({ id, o: nextOrder(), name, qty, price, fq: 0, mode: modo, lk: d.people.length > 0, auto: false, a });
           itemAberto = null; itensAbertos = true; itemNovo = id; commit();
         };
         if (!div) { closeSheet(true); return lancar(Object.fromEntries(d.people.map(p => [p.id, 1])), true); }
