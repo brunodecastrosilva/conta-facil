@@ -354,10 +354,10 @@ const GUIA = [
     acao: async m => { await m.apontar('#live-start', 2200, { opcional: true, prazo: 1200 }); } },
   { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
     acao: async m => { const bloco = async k => (await m.acha(`.kf-dlg [data-cm="${k}"]`)).closest('.cm-bloco');
-      // cada opção é destacada, já à vista na janela, antes de receber o valor
+      // liga a chave, espera a opção abrir e só então a destaca inteira, já à vista na janela; depois escreve o valor
       await m.tocar('#cm-pe'); await m.apontar(await bloco('svc'), 1500);
-      await m.apontar(await bloco('cv'), 1500); await m.tocar('.kf-dlg [data-cm="cv"]'); await m.acha('#cm-cv'); await m.espera(500); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.espera(500);
-      await m.apontar(await bloco('ds'), 1500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.acha('#cm-ds'); await m.espera(500); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
+      await m.tocar('.kf-dlg [data-cm="cv"]'); await m.acha('#cm-cv'); await m.espera(750); await m.apontar(await bloco('cv'), 1600); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.espera(500);
+      await m.tocar('.kf-dlg [data-cm="ds"]'); await m.acha('#cm-ds'); await m.espera(750); await m.apontar(await bloco('ds'), 1600); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
   // os dois passos seguintes juntam o que antes eram quatro (decisão do Bruno, 15/11/2026): a janela de Fechar a comanda
   // abre uma vez em cada um, e tudo o que se faz nela acontece em seguida, sem fechar e reabrir
   { t: 'Feche a comanda', d: 'Um cupom por pessoa, a mesa primeiro. No da mesa, uma pessoa pode pagar a conta de todos.',
@@ -376,7 +376,7 @@ const GUIA = [
       await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-conta]`, 800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(600); } },
   { t: 'A conta de quem já pagou mudou', d: 'O desconto caiu depois que Ana pagou. Receba a diferença ou escolha quem cobre.',
     acao: async m => { await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
-      await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await m.tocar(`${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`); await m.espera(700); guiaSemAviso(); await m.apontar(demoPagamento(), 2000); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(500); } },
+      await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`, 700); await demoPagamentoInteiro(m, 2600); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(500); } },
   { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.',
     acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3600);
       // o botão de continuar vem para a parte livre da tela, acima da janela do guia, antes do toque
@@ -401,9 +401,8 @@ const GUIA = [
   { t: 'Sorteie alguém da mesa', d: 'Quem escolhe o próximo lugar? Marque quem entra e o ponteiro para num nome.',
     acao: async m => { await demoIr(m, 'mais'); await m.tocar('#ma-sorteio'); await m.acha('#gf-quem'); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`[data-gf-n="${n}"][aria-pressed="false"]`, { depois: 220, opcional: true, prazo: 500 }); await m.tocar('#gf-go', { depois: 0 });
       // o dedo sai da frente e a roda vem para o alto da janela: o que se vê é o ponteiro girando até parar num nome
-      // a roda fica inteira à vista, com o nome do alto (o primeiro da lista) e a linha do resultado; o destaque abraça só o texto "Saiu …"
-      m.sumir(); await m.rolar('#gf-mesa', 52); await m.espera(5200);
-      await demoArea(m, '#gf-res', () => { const r = document.createRange(); r.selectNodeContents($('#gf-res')); return [...r.getClientRects()]; }, 2000); await m.tocar('#gf-x'); await m.some('#gf-x'); } },
+      // a roda fica inteira à vista, com o nome do alto (o primeiro da lista) e a linha do resultado; o guia não destaca quem saiu
+      m.sumir(); await m.rolar('#gf-mesa', 52); await m.espera(5200); await m.espera(2000); await m.tocar('#gf-x'); await m.some('#gf-x'); } },
   { t: 'Ajustes', d: 'Seu nome, sincronização, cópia de segurança, aparência e privacidade.',
     acao: async m => { await demoIr(m, 'mais'); await m.tocar('#view [data-kf="ajustes"]'); await m.acha('#view [data-kf-aj-ir]'); await m.espera(700); const L = $$('#view .kf-aj-lista [data-kf-aj-ir]').filter(e => e.getClientRects().length); for (const el of L.slice(0, 4)) await m.apontar(el, 850); } },
   { t: 'A nuvem', d: 'Mostra se os seus aparelhos estão sincronizados. Toque para ver os detalhes.',

@@ -3,6 +3,13 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.9.6 · 2026-11-15
+
+- **Guia, passo a passo:**
+  - *16, Serviço, couvert e desconto:* a ordem mudou. O guia liga a chave, espera a opção abrir e só então a destaca inteira, já à vista na janela; depois escreve o valor. Antes, destacava a opção ainda fechada.
+  - *19, A conta de quem já pagou mudou:* o destaque abraça toda a área de PAGAMENTO do cupom, como nos passos 17 e 18.
+  - *29, Sorteie alguém da mesa:* o guia não destaca mais quem saiu; a roda e a linha "Saiu …" continuam à vista.
+
 ## 1.9.5 · 2026-11-15
 
 - **Guia, passo a passo (numeração nova, de 34 passos):**
