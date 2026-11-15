@@ -1,9 +1,12 @@
 # Proposta 4 para o Integrador
 
-Do Projeto Conta Fácil · 15/11/2026 · app 1.9.5 · Kit Fácil 0.8.0 · Código 0.8
+Do Projeto Conta Fácil · 15/11/2026 · app 1.9.6 · Kit Fácil 0.8.0 · Código 0.8
 
-Correções do Kit, nascidas dos ajustes 8 a 11 pedidos pelo Bruno em 15/11/2026 ("o design da janela de feedback está horrível e
-quebrando o padrão de design do app"). Os itens 1 e 2 não mudam artigo do Código; o item 3 pede uma frase nova no Art. 78.
+**Situação: entregue ao Integrador em 15/11/2026**, numa conversa nova do projeto ("Proposta 4 do Conta Fácil"), a pedido
+do Bruno. Aguarda a análise e o sim dele lá.
+
+Correções do Kit, nascidas dos ajustes 8 a 11 e das revisões do guia pedidos pelo Bruno em 15/11/2026. Os itens 1, 2 e 4
+não mudam artigo do Código; o item 3 pede uma frase nova no Art. 78.
 
 ## 1. Janela de Avaliação e feedback: classe repetida e desenho fora do padrão
 
