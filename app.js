@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.8.7';
+const VERSAO = '1.9.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,9 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.9.0', itens: [
+    'O app passou a usar as peças novas do Kit Fácil 0.8.0, que nasceram aqui. Para você, tudo continua igual.',
+  ] },
   { versao: '1.8.7', itens: [
     'Todos os botões de excluir, remover e apagar agora são vermelhos, inclusive o da confirmação.',
   ] },
@@ -847,7 +850,7 @@ const attachSuggest = (input, getItems, onPick) => KitFacil.sugestoes(input, get
 /* Regra do Bruno (15/11/2026): caixa de texto NUNCA é selecionada sozinha, em janela ou fora dela. Quem seleciona é o
    toque da pessoa. O app só devolve o foco ao campo em que ela já estava digitando, quando a tela é redesenhada.
    Campo que falta preencher é apontado (contorno e aria-invalid), sem receber o foco; o aviso diz o que fazer. */
-const apontar = el => { if (!el) return; el.setAttribute('aria-invalid', 'true'); el.addEventListener('input', () => el.removeAttribute('aria-invalid'), { once: true }); };
+const apontar = el => KitFacil.apontar(el);   // do Kit desde o 0.8.0
 
 /* ---------- toast & overlay ---------- */
 /* avisos e janelas são os do Kit Fácil (iguais nos três apps); mesmos nomes e parâmetros do Elétrica e do Estudo.
@@ -858,8 +861,8 @@ function openSheet({ title, sub = '', body, foot = '', tall = false, wide = fals
 }
 function closeSheet(silent) { KitFacil.dialogo.fechar(silent); }
 // confirmação do Kit (Código, Art. 65, VIII): o botão nomeia a ação
-// regra do Bruno (1.8.7): todo botão de exclusão é vermelho; a confirmação que exclui, remove ou apaga também
-const confirmSheet = (title, text, okLabel, onOk, danger) => KitFacil.dialogo.confirmar({ titulo: title, texto: text, ok: okLabel, perigo: !!danger || /^(Excluir|Remover|Apagar)/.test(okLabel), aoConfirmar: onOk });
+// todo botão de exclusão é vermelho; a confirmação que exclui, remove ou apaga já vem vermelha do Kit (0.8.0)
+const confirmSheet = (title, text, okLabel, onOk, danger) => KitFacil.dialogo.confirmar({ titulo: title, texto: text, ok: okLabel, perigo: !!danger, aoConfirmar: onOk });
 
 /* ---------- cupom ---------- */
 function serviceLabel(b) { return b.service.mode === 'fixed' ? 'Serviço' : `Serviço (${pctStr(b.service.pct)}%)`; }

@@ -3,6 +3,12 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.9.0 · 2026-11-15
+
+- **Kit Fácil 0.8.0:** o app passou a usar as peças novas do Kit, que vieram dele mesmo (Proposta 3, aprovada no Integrador): puxar a janela pela barrinha, cursor só com a janela parada, pé da janela recolhido com o teclado, campo apontado sem foco e o vermelho de excluir. Para quem usa, tudo continua igual.
+- **Janela que fecha:** o conserto do pulo ao fechar uma janela com lista de escolha agora é do Kit; o remendo próprio do app saiu (`comanda.css`).
+- **Por dentro:** saíram do app o gesto de puxar e o cursor parado (`casca.js`), as regras de toque, da barrinha, do pé recolhido e do contorno do campo apontado (`estilo.css`) e o vermelho próprio `--cf-excluir` (agora `--kf-perigo-fundo`, do Kit).
+
 ## 1.8.7 · 2026-11-15
 
 - **Todo botão de exclusão é vermelho (regra do Bruno):** "Excluir esta comanda" (Início), "Remover da mesa" (Editar pessoa), "Remover" (item da comanda, lançado ou ainda por dividir), "Excluir" (comanda do histórico) e "Restaurar padrões de fábrica" (Ajustes) ficaram vermelhos e cheios, como "Excluir comanda".

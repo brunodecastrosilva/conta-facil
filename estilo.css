@@ -180,22 +180,14 @@ button.lin{border-radius:0}
 /* ---------- 5. Kit Fácil com a identidade nova (janelas, avisos, Ajustes) ---------- */
 .kf-dlg{border-radius:var(--kf-r-lg) var(--kf-r-lg) 0 0;box-shadow:var(--shadow-alto)}
 .kf-dlg-cab h2,.kf-dlg h2{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em}
-.kf-dlg-cab{padding-top:18px}
-.kf-dlg-cab::before{content:"";position:absolute;left:50%;top:8px;width:40px;height:4px;margin-left:-20px;border-radius:99px;background:var(--line-2)}
-.kf-dlg{position:relative}
+.kf-dlg-cab::before{background:var(--line-2)}
 .kf-dlg-pe .btn,.kf-dlg-pe .kf-btn{flex:1 1 140px}
 .kf-toast{border-radius:16px;font-weight:700;background:#0F2219;color:#F2F7F3;box-shadow:0 12px 34px rgba(0,0,0,.34)}
 .kf-toast button{color:var(--ambar)!important}
 .kf-aj-h{font-family:var(--f-display);font-weight:800;letter-spacing:-.03em}
 .kf-aj-sec-h h2{font-family:var(--f-display);letter-spacing:-.02em}
-/* puxar a janela para baixo (casca.js): o cabeçalho é a alça; não seleciona texto, não abre o menu do iPhone e não rola a página */
-.kf-dlg-cab,.kf-dlg-pe{touch-action:none}
-.kf-dlg-cab{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.kf-dlg-cab .kf-fechar,.kf-dlg-pe button,.kf-dlg-pe a{touch-action:manipulation}
-body.cf-puxando{-webkit-user-select:none;user-select:none}
-/* o cursor do campo some enquanto a janela se move e volta com ela parada (casca.js) */
-.cf-sem-cursor{caret-color:transparent!important}
-@media (min-width:1024px){.kf-dlg{border-radius:var(--kf-r-lg)}.kf-dlg-cab::before{display:none}}
+/* puxar a janela, a barrinha, o cursor parado e o pé recolhido com o teclado são do Kit desde o 0.8.0 */
+@media (min-width:1024px){.kf-dlg{border-radius:var(--kf-r-lg)}}
 @media (min-width:1024px){.kf-toast{bottom:28px}}
 
 /* ---------- 6. Início ---------- */
@@ -520,8 +512,8 @@ body.kf-com-guia .festa{bottom:calc(var(--kf-pe-h) + var(--kf-gu-h));padding-bot
 /* regra do Bruno (1.8.7): todo botão de exclusão é vermelho (Código, Art. 66, § 1º). Um vermelho só, igual no claro e
    no escuro, com texto branco (contraste 5,9:1); vale também para os botões de perigo do Kit e para a comanda de papel.
    Botão só com ícone (lixeira dos cadastros) fica com o ícone vermelho. */
-:root{--cf-excluir:#B3362B}
-.btn.danger,.cmd-una .btn.danger,.cmd-mesa .btn.danger,.kf-btn.kf-perigo,.kf-btn.kf-perigo-sec{background:var(--cf-excluir)!important;color:#fff!important;box-shadow:none!important}
+/* o vermelho é o do Kit (--kf-perigo-fundo, Kit 0.8.0); os botões de perigo do Kit já vêm assim */
+.btn.danger,.cmd-una .btn.danger,.cmd-mesa .btn.danger{background:var(--kf-perigo-fundo)!important;color:#fff!important;box-shadow:none!important}
 .ic-btn.del,.ic-btn.del:hover{color:var(--danger)}
 
 
@@ -571,9 +563,7 @@ body.kf-com-guia .festa{bottom:calc(var(--kf-pe-h) + var(--kf-gu-h));padding-bot
 
 /* ---------- 17. janelas: o mecanismo único é o do Kit (Art. 68, § 3º) ---------- */
 /* em Fechar a comanda, Voltar e Salvar não sobem com o teclado: ficam recolhidos enquanto ele está aberto */
-/* regra do Bruno (1.8.6): com o teclado aberto, nenhum botão do pé da janela sobe para cima dele; o pé se recolhe em
-   toda janela e volta quando o teclado fecha (antes, só em Fechar a comanda) */
-html.kf-tk body:not(.kf-com-guia) .kf-dlg .kf-dlg-pe{display:none}
+/* com o teclado aberto, o pé de toda janela se recolhe: é do Kit desde o 0.8.0 (Código, Art. 68, § 3º) */
 
 /* ---------- 18. um relógio só ----------
    Regra do Bruno (15/11/2026): tudo o que abre ou fecha dura 600 ms, na mesma curva (--kf-ms e --kf-curva, iguais a
@@ -585,4 +575,3 @@ html.kf-tk body:not(.kf-com-guia) .kf-dlg .kf-dlg-pe{display:none}
 .cmd-una .dv-pes,.cmd-una .item-d,.item-d>summary::after,.it-lin::after,.cmd-una .dv-lin::after,.cmd-una .item-d>.it-lin::after,.pa-seta,details.fold>summary::after,.join form{transition-duration:var(--kf-ms);transition-timing-function:var(--kf-curva)}
 /* o botão que divide a linha com um campo tem a altura do campo */
 .row>.btn{min-height:50px}
-[aria-invalid="true"]{outline:2px solid var(--danger);outline-offset:1px}

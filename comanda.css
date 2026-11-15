@@ -634,8 +634,3 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .pol-row>span{flex:1;min-width:0}
 .pol-row .btn{flex:none}
 
-/* Janela que fecha (1.8.2): o que desce é uma cópia sem os atributos data-. O Kit 0.7.0 toma a <select> (ou o campo de
-   data e de hora) da cópia por um campo novo e monta outra lista logo depois dele; a cópia ganhava uma linha e a janela
-   pulava para cima ao fechar no X. A lista repetida não é desenhada: a cópia sai com a altura da janela.
-   Kit passado por cima (Código, Art. 30-A); o conserto no Kit está na Proposta 3. */
-#kf-saidas [hidden] + .kf-esc + .kf-esc{display:none}

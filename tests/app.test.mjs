@@ -915,7 +915,7 @@ test('1.8.5: o cursor do campo fica invisível enquanto a janela sobe com o tecl
   assert.deepEqual(await cursor(), [true, false], 'com a janela parada o cursor aparece');
   // sem foco não sobra marca
   await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(50);
-  assert.equal(await p.evaluate(() => document.querySelectorAll('.cf-sem-cursor').length), 0);
+  assert.equal(await p.evaluate(() => document.querySelectorAll('.kf-sem-cursor').length), 0);
   semErros(a); await a.fechar();
 });
 

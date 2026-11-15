@@ -2,6 +2,10 @@
 
 Do Projeto Conta Fácil · 15/11/2026 · app 1.8.7 · Kit Fácil 0.7.0 · Código 0.7
 
+**Situação: aprovada inteira pelo Bruno no Integrador em 15/11/2026.** Entrou no Código 0.8 (Arts. 16, IX e X; 66, § 1º;
+68, §§ 3º, 5º e 6º) e no Kit Fácil 0.8.0, publicado nos quatro apps no mesmo dia. O Conta Fácil 1.9.0 deixou as suas
+versões próprias e usa as do Kit. Este arquivo agora é histórico.
+
 Três correções, uma peça nova e uma regra nova do Kit, nascidas de seis ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
 Código já diz; a segunda também alarga dois artigos do Código; a terceira pede um parágrafo novo; a quarta é só do Kit; a quinta pede uma frase nova no Código.
 

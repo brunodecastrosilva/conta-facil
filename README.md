@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.8.7** · Kit Fácil 0.7.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.9.0** · Kit Fácil 0.8.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
@@ -115,12 +115,13 @@ Código e no Kit está na [Proposta 2](PROPOSTA-2-PARA-O-INTEGRADOR.md), aprovad
 
 No mesmo dia, na 1.8.1, o Bruno alargou a segunda regra: **uma caixa de texto nunca é selecionada sozinha**, em
 janela ou fora dela. O teclado só sobe quando a pessoa toca no campo; campo que falta preencher é apontado com contorno,
-sem receber o foco (`apontar` em `app.js`). O app só devolve o foco ao campo em que a pessoa já estava digitando.
+sem receber o foco (`KitFacil.apontar`). O app só devolve o foco ao campo em que a pessoa já estava digitando.
 
-Falta só o Kit Fácil 0.7.0 receber as peças que hoje são do app (relógio de 600 ms, janelas e teclado, barra de baixo com a comanda no
-centro, tela Mais, barra de cima em traço, ícones, presente em 3D, abertura, guia, seções, `comMovimento`, carrossel e
-arrastar e soltar; lista no Anexo II, "Peças a levar ao Kit"). Até lá, o app usa as suas próprias peças (Arts. 30-A e
-93, § 1º) e `npm run verificar` acusa duas falhas esperadas (barra de cima e Ajustes dentro de Mais).
+Da 1.8.2 à 1.8.7 vieram mais seis regras do Bruno (janela que fecha sem pulo, puxar a janela pela barrinha, cursor só com
+a janela parada, nenhum botão acima do teclado e todo botão de exclusão vermelho). Elas foram à
+[Proposta 3](PROPOSTA-3-PARA-O-INTEGRADOR.md), aprovada inteira no Integrador em 15/11/2026: entraram no Código 0.8 e no
+Kit Fácil 0.8.0, e na 1.9.0 o app deixou as suas versões próprias e passou a usar as do Kit. Nenhuma peça do Kit está
+passada por cima (Art. 30-A).
 
 ## Uso do código
 
