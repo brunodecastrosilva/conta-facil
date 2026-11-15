@@ -6,7 +6,7 @@ Versão **1.9.1** · Kit Fácil 0.8.0 · app web em <https://brunodecastrosilva.
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
-[Código do Projeto Fácil](comum/CODIGO.md) 0.6 já traz essas regras: veja [O novo padrão](#o-novo-padrão).
+[Código do Projeto Fácil](comum/CODIGO.md) 0.8 já traz essas regras: veja [O novo padrão](#o-novo-padrão).
 
 ## O que o app faz
 
@@ -60,7 +60,7 @@ npm start                         # abre em http://localhost:8080/conta-facil/
 npm install                       # primeira vez: instala o Playwright e o axe, usados nos testes
 npx playwright install chromium   # primeira vez: baixa o navegador dos testes
 npm test                          # testes do Kit Fácil e do app, sem internet
-npm run verificar                 # segredos, versão, service worker, CSP e SRI (duas falhas esperadas: veja O novo padrão)
+npm run verificar                 # segredos, versão, service worker, CSP e SRI
 ```
 
 Os testes simulam o GitHub (sincronização) e o Firebase (avaliações); nada toca nos dados reais.
@@ -120,8 +120,12 @@ sem receber o foco (`KitFacil.apontar`). O app só devolve o foco ao campo em qu
 Da 1.8.2 à 1.8.7 vieram mais seis regras do Bruno (janela que fecha sem pulo, puxar a janela pela barrinha, cursor só com
 a janela parada, nenhum botão acima do teclado e todo botão de exclusão vermelho). Elas foram à
 [Proposta 3](PROPOSTA-3-PARA-O-INTEGRADOR.md), aprovada inteira no Integrador em 15/11/2026: entraram no Código 0.8 e no
-Kit Fácil 0.8.0, e na 1.9.0 o app deixou as suas versões próprias e passou a usar as do Kit. Nenhuma peça do Kit está
-passada por cima (Art. 30-A).
+Kit Fácil 0.8.0, e na 1.9.0 o app deixou as suas versões próprias e passou a usar as do Kit.
+
+**Peça do Kit passada por cima (Art. 30-A), desde a 1.9.1:** a janela de Avaliação e feedback. No Kit 0.8.0 as duas opções
+saíam amassadas, porque a classe `.kf-escolha` tem dois donos; o `estilo.css` do app as desenha como linhas do app, tira o
+"Fechar" do pé e iguala a caixa de texto grande aos outros campos. O conserto no Kit está na
+[Proposta 4](PROPOSTA-4-PARA-O-INTEGRADOR.md).
 
 ## Uso do código
 
