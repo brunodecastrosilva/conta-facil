@@ -2,7 +2,9 @@
 
 Origem: Projeto Conta Fácil, versão 1.7.0 · 15/11/2026 · Código em vigor: 0.6 (rascunho) · Kit Fácil 0.6.0
 
-**Situação: aguardando o Integrador.** Complementa a [primeira proposta](PROPOSTA-PARA-O-INTEGRADOR.md), já aprovada.
+**Situação: aprovada inteira pelo Bruno no Integrador em 15/11/2026.** Entrou no Código 0.7 (Arts. 16, IX; 65, XII e
+XIII; 68, §§ 1º, 3º e 5º; 72, §§ 1º e 2º; 77) e nos Anexos II, V e VII. Falta o Kit 0.7.0 receber as peças (Painel do
+Integrador, D13). Este arquivo agora é histórico.
 
 ## 1. As decisões do Bruno (15/11/2026)
 
