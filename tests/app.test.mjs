@@ -897,3 +897,24 @@ test('1.8.3: puxar a janela pelo cabeçalho: acompanha o dedo, volta se soltar a
   assert.equal(await p.evaluate(() => document.querySelectorAll('.kf-ov').length - document.querySelectorAll('#kf-saidas .kf-ov').length), 0, 'puxão rápido fecha');
   semErros(a); await a.fechar();
 });
+
+test('1.8.5: o cursor do campo fica invisível enquanto a janela sobe com o teclado e volta com ela parada', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.locator('#add-pessoa').waitFor();
+  await p.evaluate(() => produtoSheet()); await p.locator('#pr-form').waitFor(); await assentar(p);
+  const campo = await p.evaluate(() => document.querySelector('#pr-form input[type=text], #pr-form input:not([type])').id);
+  const cursor = () => p.evaluate(id => { const el = document.getElementById(id); return [document.activeElement === el, getComputedStyle(el).caretColor === 'rgba(0, 0, 0, 0)']; }, campo);
+  // toque no campo: enquanto o teclado não chega e a janela sobe, o cursor não é desenhado
+  await p.tap('#' + campo); await p.waitForTimeout(40);
+  assert.deepEqual(await cursor(), [true, true], 'logo depois do toque o cursor está invisível');
+  await teclado(p, true); await p.waitForTimeout(120);
+  assert.deepEqual(await cursor(), [true, true], 'com a janela subindo o cursor continua invisível');
+  await p.waitForTimeout(700);
+  assert.deepEqual(await cursor(), [true, false], 'com a janela parada o cursor aparece');
+  // sem foco não sobra marca
+  await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(50);
+  assert.equal(await p.evaluate(() => document.querySelectorAll('.cf-sem-cursor').length), 0);
+  semErros(a); await a.fechar();
+});

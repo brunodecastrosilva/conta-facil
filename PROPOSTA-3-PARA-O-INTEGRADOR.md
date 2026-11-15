@@ -1,9 +1,9 @@
 # Proposta 3 para o Integrador
 
-Do Projeto Conta Fácil · 15/11/2026 · app 1.8.4 · Kit Fácil 0.7.0 · Código 0.7
+Do Projeto Conta Fácil · 15/11/2026 · app 1.8.5 · Kit Fácil 0.7.0 · Código 0.7
 
-Duas correções e uma peça nova do Kit, nascidas de três ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
-Código já diz; a segunda também alarga dois artigos do Código; a terceira pede um parágrafo novo.
+Três correções e uma peça nova do Kit, nascidas de cinco ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
+Código já diz; a segunda também alarga dois artigos do Código; a terceira pede um parágrafo novo; a quarta é só do Kit.
 
 ## 1. A cópia da janela que fecha não pode ser religada (Arts. 68, § 3º, e 72-A)
 
@@ -64,3 +64,17 @@ ser puxada para baixo pelo cabeçalho: acompanha o dedo e fecha, ou volta ao lug
 janela; só rola o conteúdo que for maior que ela. O X e o Esc continuam (Art. 16, X)."
 
 **Impacto.** Todos os apps ganham o gesto quando receberem o Kit.
+
+## 4. O cursor do campo só aparece com a janela parada (Arts. 68, § 3º, e 72-A)
+
+**O que acontecia.** No iPhone, o cursor do campo é desenhado pelo sistema e não acompanha uma janela que se move por
+`transform`. Ao tocar num campo, a janela sobe com o teclado e o cursor ficava para trás, fora da caixa, até ela parar.
+
+**O que o Conta Fácil faz desde a 1.8.5 (`casca.js` e `estilo.css`).** Enquanto a janela do campo em foco está a caminho
+(o teclado vai subir, a janela está subindo com ele ou há animação em quem contém o campo), o campo recebe
+`caret-color:transparent`; com a janela parada, o cursor volta.
+
+**O que mudar no Kit.** Levar isso para dentro de `janelas` em `comum/kit-facil.js`, que já sabe quando a janela está a
+caminho (`_kfTk`, `partir`), sem precisar olhar quadro a quadro.
+
+**Impacto.** Todos os apps com campo em janela têm o mesmo cursor atrasado no iPhone.

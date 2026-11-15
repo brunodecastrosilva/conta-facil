@@ -193,6 +193,8 @@ button.lin{border-radius:0}
 .kf-dlg-cab{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .kf-dlg-cab .kf-fechar,.kf-dlg-pe button,.kf-dlg-pe a{touch-action:manipulation}
 body.cf-puxando{-webkit-user-select:none;user-select:none}
+/* o cursor do campo some enquanto a janela se move e volta com ela parada (casca.js) */
+.cf-sem-cursor{caret-color:transparent!important}
 @media (min-width:1024px){.kf-dlg{border-radius:var(--kf-r-lg)}.kf-dlg-cab::before{display:none}}
 @media (min-width:1024px){.kf-toast{bottom:28px}}
 

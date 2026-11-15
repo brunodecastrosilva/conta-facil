@@ -3,6 +3,12 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.5 · 2026-11-15
+
+- **Cursor fora da caixa de texto:** ao tocar num campo, a janela sobe com o teclado, e o cursor azul ficava para trás, abaixo do campo, até a janela parar. Quem desenha o cursor é o iPhone, e ele não acompanha a janela em movimento. Agora o cursor só aparece com a janela parada, já dentro da caixa (cerca de um terço de segundo depois do toque). O que se digita aparece normalmente.
+- **Vale também** quando a janela muda de altura com um campo em foco.
+- **Própria do app, a levar ao Kit:** está em `casca.js` e no `estilo.css`; entra na Proposta 3.
+
 ## 1.8.4 · 2026-11-15
 
 - **A janela só se move pela barrinha (regra do Bruno):** arrastar o dedo em qualquer outro ponto da janela (um rótulo, um nome, o espaço entre os campos) não move mais nada. Antes, o iPhone rolava a página por trás e a janela subia junto.

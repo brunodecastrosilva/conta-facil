@@ -411,6 +411,35 @@ const GUIA = [
   }, { passive: false, capture: true });
 })();
 
+/* ---------- o cursor só aparece com a janela parada (1.8.5) ----------
+   No iPhone, o cursor azul do campo é desenhado pelo sistema e não acompanha a janela enquanto ela se move por
+   `transform` (ao subir com o teclado, ao mudar de altura): ficava para trás, fora da caixa de texto, e só depois
+   alcançava o campo. Enquanto a janela está a caminho, o cursor do campo em foco fica invisível; ele aparece com a
+   janela parada, já dentro da caixa. O que a pessoa digita aparece normalmente. */
+(() => {
+  const toque = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch { return false; } })();
+  const texto = el => !!(el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]), textarea'));
+  let alvo = null, raf = 0, t0 = 0;
+  const aCaminho = el => {
+    const dlg = el.closest('.kf-dlg'); if (!dlg) return false;
+    const tk = KitFacil.janela.teclado(), dt = performance.now() - t0;
+    if (toque && tk === 0 && dt < 450) return true;                            // o teclado ainda vai subir
+    if (tk > 0 && !KitFacil.janela.tecladoAssentado() && dt < 1500) return true;   // a janela está subindo com ele
+    return dlg.closest('.kf-ov').getAnimations({ subtree: true }).some(a => a.playState === 'running' && a.effect && !a.effect.pseudoElement && a.effect.target && a.effect.target.contains(el));
+  };
+  const parar = () => { cancelAnimationFrame(raf); raf = 0; if (alvo) alvo.classList.remove('cf-sem-cursor'); alvo = null; };
+  const olhar = () => {
+    raf = 0; const el = alvo; if (!el || !el.isConnected || document.activeElement !== el) return parar();
+    el.classList.toggle('cf-sem-cursor', aCaminho(el));
+    raf = requestAnimationFrame(olhar);
+  };
+  document.addEventListener('focusin', e => {
+    const el = e.target; if (!texto(el) || !el.closest('.kf-ov') || el.closest('#kf-saidas')) return;
+    parar(); alvo = el; t0 = performance.now(); olhar();
+  }, true);
+  document.addEventListener('focusout', e => { if (e.target === alvo) parar(); }, true);
+})();
+
 /* ---------- arranque ---------- */
 if (draft.live) { draft.isExample = false; draft.active = true; }
 if (backfillPrices()) LS.set('catalog', catalog);
