@@ -3,6 +3,14 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.9.1 · 2026-11-15
+
+- **Janela de Avaliação e feedback redesenhada:** "Avaliar o app" e "Relatar um problema" eram duas pílulas com o texto encostado na borda e o apoio em negrito. Agora são duas linhas no padrão do app: ícone, título, apoio e seta, separadas por uma linha. O mesmo vale na guia Avaliação e feedback dos Ajustes.
+- **A causa:** no Kit, duas peças diferentes usam o mesmo nome de classe (`.kf-escolha`): a opção do feedback e a pílula de escolher um valor. A regra da pílula vinha depois e amassava as opções do feedback.
+- **Sem "Fechar" no pé:** a janela que só precisa ser fechada fecha no X (Código, Art. 68, § 1º). Saiu o botão "Fechar" dessa janela e das outras janelas do Kit em que ele era o único botão do pé.
+- **Formulários de avaliar e de relatar:** a caixa de texto grande ficou igual aos outros campos do app (antes era branca, com outra borda), e "O que é enviado e para onde" abre com a mesma seta das outras linhas, no lugar do triângulo do navegador.
+- **Kit passado por cima (Art. 30-A):** tudo no `estilo.css` do app; o conserto no Kit está na `PROPOSTA-4-PARA-O-INTEGRADOR.md`.
+
 ## 1.9.0 · 2026-11-15
 
 - **Kit Fácil 0.8.0:** o app passou a usar as peças novas do Kit, que vieram dele mesmo (Proposta 3, aprovada no Integrador): puxar a janela pela barrinha, cursor só com a janela parada, pé da janela recolhido com o teclado, campo apontado sem foco e o vermelho de excluir. Para quem usa, tudo continua igual.
