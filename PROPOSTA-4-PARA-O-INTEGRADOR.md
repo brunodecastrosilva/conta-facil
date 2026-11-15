@@ -1,6 +1,6 @@
 # Proposta 4 para o Integrador
 
-Do Projeto Conta Fácil · 15/11/2026 · app 1.9.4 · Kit Fácil 0.8.0 · Código 0.8
+Do Projeto Conta Fácil · 15/11/2026 · app 1.9.5 · Kit Fácil 0.8.0 · Código 0.8
 
 Correções do Kit, nascidas dos ajustes 8 a 11 pedidos pelo Bruno em 15/11/2026 ("o design da janela de feedback está horrível e
 quebrando o padrão de design do app"). Os itens 1 e 2 não mudam artigo do Código; o item 3 pede uma frase nova no Art. 78.
@@ -62,3 +62,15 @@ janela fica aberta de um passo para o outro."
 **Enquanto isso, no Conta Fácil.** O Bruno escolheu juntar os passos (1.9.4): os quatro passos da janela de Fechar a
 comanda viraram dois, e o guia passou de 36 para 34 passos. A janela ainda abre uma vez em cada um deles, uma vez no passo
 da conta que mudou e uma vez para salvar; com `continua: true`, essas aberturas seguidas viram uma só.
+
+## 4. Guia: destacar uma área e tela cheia do app (Arts. 78 e 79)
+
+**O que faltava no Kit (ajustes do Bruno nas etapas 17, 18, 20 e 29).**
+
+- `apontar` só abraça um elemento. Para destacar um bloco sem caixa própria (o PAGAMENTO do cupom: título e linhas) ou só
+  o texto de uma linha, o Conta Fácil cria um elemento invisível do tamanho da área (`demoArea`, em `casca.js`).
+- Numa tela cheia do app (a festa de "Conta fechada"), `mostrar` rola a página, que está parada: o botão ficava escondido
+  atrás da janela do guia. O app rola a própria tela e, no guia, deixa livre o pé dela (`body.kf-com-guia .festa`).
+
+**O que mudar no Kit.** `apontar` aceitar uma lista de elementos ou um `Range` e abraçar a união; `mostrar` rolar o
+ancestral que rola (janela, tela cheia ou página) e contar a janela do guia como área ocupada.

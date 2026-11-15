@@ -3,6 +3,16 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.9.5 · 2026-11-15
+
+- **Guia, passo a passo (numeração nova, de 34 passos):**
+  - *16, Serviço, couvert e desconto:* cada opção é destacada, já à vista na janela, antes de receber o valor: serviço; couvert, e só então liga e escreve; desconto, e só então liga e escreve.
+  - *17, Feche a comanda:* o destaque abraça toda a área de PAGAMENTO do cupom (o título e todas as linhas), e não só a linha do Bruno. Saiu o destaque de Copiar e PDF.
+  - *18, O pagamento de cada um:* o destaque abraça toda a área de PAGAMENTO, e não só "Paga ao local". Ao voltar para a comanda, o guia não destaca mais nada.
+  - *20, Salve no Histórico:* a tela de "Conta fechada" rola até o botão Concluir antes do toque; no guia, ela deixa livre o pé da tela, onde fica a janela do guia. Antes, o botão ficava escondido atrás dela.
+  - *29, Sorteie alguém da mesa:* a roda fica inteira à vista, com o nome do alto (Ana), e o destaque abraça só o texto "Saiu …", na altura certa.
+- **Por dentro:** o guia do app ganhou o destaque de área (`demoArea` em `casca.js`): um anel só em volta de vários elementos seguidos ou do texto de uma linha.
+
 ## 1.9.4 · 2026-11-15
 
 - **Guia com 34 passos (decisão do Bruno):** os quatro passos da janela de Fechar a comanda viraram dois, para ela não abrir e fechar o tempo todo.

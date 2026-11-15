@@ -399,6 +399,8 @@ button.lin{border-radius:0}
 .festa-tampa small{font-weight:700;font-size:12.5px;line-height:1.2}
 @keyframes pousar{from{opacity:0;transform:translateY(-60px) rotate(-180deg) scale(.5)}to{opacity:1;transform:none}}
 .festa-acoes{width:100%;display:flex;flex-direction:column;gap:4px;margin-top:6px}
+/* no guia, a festa deixa livre o pé da tela, onde fica a janela do guia: o botão de continuar não fica escondido atrás dela */
+body.kf-com-guia .festa{padding-bottom:calc(var(--kf-pe,0px) + 20px)}
 .festa-acoes .btn.link{color:#CFE3D6}
 
 /* ---------- 11. abertura (onboarding) ---------- */
