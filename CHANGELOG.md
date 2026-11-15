@@ -3,6 +3,14 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.0 · 2026-11-15
+
+- **Kit Fácil 0.7.0:** as peças do Conta Fácil foram para o Kit e o app passou a usar as do Kit, como os outros apps: o mecanismo único das janelas (nascer, acompanhar o teclado, mudar de altura, trocar e sair pelo pé), o relógio de 600 ms, a barra de baixo com a comanda no centro e o trilho com Mais e Ajustes no pé, a barra de cima com nuvem, presente e balão em traço, a janela do apoio com o presente em 3D, a abertura de quatro telas, o motor do guia, o campo com sugestões, os campos de dinheiro e porcentagem, a quantidade com − e +, a chave, os botões de escolha, a confirmação, o Pix de cobrança e o motor das tampinhas em 3D (`comum/kit-jogo.js`). Saíram do app: o ajuste provisório que trocava as durações do Kit, o próprio módulo das janelas e as cópias de código e de CSS dessas peças.
+- **Janela do presente:** o texto diz "É opcional: o Conta Fácil continua igual para todos, com presente ou sem." (antes: "o app continua igual para todos").
+- **Mais:** os Ajustes passaram para o fim da tela, depois do guia e da comanda de exemplo (Código, Art. 60, II).
+- **Leitores de tela (WCAG 2.5.3):** o nome que o leitor de tela fala começa pelo texto que está na tela, nas linhas de pessoas e pedidos da comanda, no local, na conta da mesa, nos botões −1 e +1 e nas tampinhas da coleção. O que só o leitor de tela ouve ("Mostrar atalhos", "Na coleção") vem depois. A varredura de acessibilidade passa em todas as telas, nos dois temas.
+- **Segurança:** o QR code do Pix de cobrança agora carrega a biblioteca com a impressão digital (SRI), como o do apoio; antes o app a buscava sem conferência.
+
 ## 1.7.0 · 2026-11-15
 
 - **Um relógio só (regra do Bruno):** tudo o que o app abre ou fecha dura 600 ms, na mesma curva (começa macio e pousa devagar): janelas, fundo escuro, linhas e trechos que abrem e recolhem, lista de sugestões, troca de tela, avisos, apresentação e festa. A duração está escrita num lugar só (`MOVE` em `app.js`, `--cf-ms` e `--cf-curva` no CSS). Antes havia 180, 220, 240, 260, 280, 440 e 560 ms espalhados, e a janela nascia numa curva que fazia quase todo o caminho no primeiro instante: era o "rápido demais" do vídeo.

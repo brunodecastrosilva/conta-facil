@@ -25,19 +25,19 @@ for (const tema of ['light', 'dark']) {
     const a = await aparelho(amb, { viewport: { width: 390, height: 844 }, antes: () => { window.CF_TESTE_ABERTURA = true; } });
     const p = a.page, nome = tema === 'light' ? 'claro' : 'escuro';
     await p.emulateMedia({ colorScheme: tema, reducedMotion: 'reduce' });
-    await p.locator('.abertura').waitFor();
+    await p.locator('.kf-abertura').waitFor();
     await varrer(p, `abertura (${nome})`);
-    await p.click('#ab-pular'); await p.locator('.abertura').waitFor({ state: 'detached' });
+    await p.click('#kf-ab-pular'); await p.locator('.kf-abertura').waitFor({ state: 'detached' });
     await varrer(p, `Início (${nome})`);
     await p.click('#ini-ex'); await p.locator('.cmd-una').waitFor();
     await varrer(p, `Comanda (${nome})`);
     await p.click('#fechar-cmd'); await p.locator('.fc-slide').first().waitFor();
     await varrer(p, `Fechar a comanda (${nome})`);
     await p.click('#fc-volta');
-    for (const [id, tela] of [['historico', 'Histórico'], ['tampinhas', 'Tampinhas'], ['mais', 'Mais']]) { await p.click('#tab-' + id); await p.waitForTimeout(300); await varrer(p, `${tela} (${nome})`); }
+    for (const [id, tela] of [['historico', 'Histórico'], ['tampinhas', 'Tampinhas'], ['mais', 'Mais']]) { await p.click('#kf-nav-' + id); await p.waitForTimeout(300); await varrer(p, `${tela} (${nome})`); }
     await p.locator('#view [data-ir="cadastros"]').click(); await p.waitForTimeout(300);
     await varrer(p, `Cadastros (${nome})`);
-    await p.click('#tab-mais'); await p.locator('#view [data-kf="ajustes"]').click(); await p.locator('.kf-aj-h').waitFor();
+    await p.click('#kf-nav-mais'); await p.locator('#view [data-kf="ajustes"]').click(); await p.locator('.kf-aj-h').waitFor();
     await varrer(p, `Ajustes (${nome})`);
     await a.fechar();
   });

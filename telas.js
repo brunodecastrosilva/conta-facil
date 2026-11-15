@@ -93,8 +93,8 @@ function novaComandaSheet() {
 }
 function entrarAoVivo(valor) {
   const code = String(valor || '').toLowerCase().replace(/^.*#m/, '').replace(/[^a-z0-9]/g, '');
-  if (!/^[a-z0-9]{6,16}$/.test(code)) { toast('Código inválido. Ele tem 10 letras e números.'); return false; }
-  if (!store.db) { toast(store.ready ? 'A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.' : 'Conectando… tente de novo em instantes.'); return false; }
+  if (!/^[a-z0-9]{6,16}$/.test(code)) { KitFacil.avisar('Código inválido. Ele tem 10 letras e números.'); return false; }
+  if (!store.db) { KitFacil.avisar(store.ready ? 'A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.' : 'Conectando… tente de novo em instantes.'); return false; }
   live.browserOk = true;
   if (location.hash === '#m' + code) live.boot(); else location.hash = '#m' + code;
   return true;
@@ -131,13 +131,13 @@ const viewInicio = {
     return `<p class="saudacao">${oi}${catalog.me ? ', ' + esc(primeiroNome(catalog.me)) : ''}.</p>
       <section class="imp" aria-label="${d.active && !d.isExample ? 'Comanda aberta' : 'Nova comanda'}"><div class="imp-boca" aria-hidden="true"></div><div class="imp-saida"><div class="papel imp-papel ${anima}">${papel}</div></div></section>
 
-      ${d.active && !d.isExample ? '' : `<div class="aovivo ${aoVivoAberto ? 'aberto' : ''}" id="ini-aovivo" data-morf="aovivo">
+      ${d.active && !d.isExample ? '' : `<div class="aovivo ${aoVivoAberto ? 'aberto' : ''}" id="ini-aovivo" data-kf-morf="aovivo">
         ${aoVivoAberto ? `<form id="av-form" class="av-form" autocomplete="off"><label class="so-leitor" for="av-codigo">Código da comanda ao vivo</label><input id="av-codigo" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="Código de 10 letras" maxlength="60" data-keep>
           <button type="button" class="ic-btn" id="av-colar" aria-label="Colar o código">${I.paste}</button><button type="submit" class="btn small">Entrar</button></form>`
         : `<button type="button" class="av-abre" id="av-abre"><span class="av-pulso" aria-hidden="true"></span><span><b>Entrar numa comanda ao vivo</b><small>Alguém da mesa já abriu? Use o código.</small></span>${I.next}</button>`}</div>`}
 
-      ${jogoLigado() ? `<button type="button" class="card nivel-card" id="ini-nivel" aria-label="Nível ${s.nivel}, ${esc(s.nivelNome)}. ${s.ganhas.length} de ${TAMPINHAS.length} tampinhas. Ver a coleção">${bolachaHTML(s)}${nivelHTML(s)}
-        ${proxima ? `<span class="nivel-prox"><span class="tampa-mini">${tampaSVG(proxima, { apagada: true })}</span><span><small>Próxima tampinha</small><b>${esc(proxima.nome)}</b></span></span>` : ''}</button>` : ''}
+      ${jogoLigado() ? `<button type="button" class="card nivel-card" id="ini-nivel"><span class="so-leitor">Nível ${s.nivel}: </span>${bolachaHTML(s)}${nivelHTML(s)}
+        ${proxima ? `<span class="nivel-prox"><span class="tampa-mini">${tampaSVG(proxima, { apagada: true })}</span><span><small>Próxima tampinha</small><b>${esc(proxima.nome)}</b></span></span>` : ''}<span class="so-leitor">. ${s.ganhas.length} de ${TAMPINHAS.length} tampinhas. Ver a coleção</span></button>` : ''}
 
       ${bills.length ? `<div class="sec-cab"><h2 class="sec-t">Últimas comandas</h2><button type="button" class="btn link small" id="ini-hist">Ver histórico</button></div>
         ${doMes.length ? `<p class="mes-linha">${usaEu ? 'Seu gasto' : 'Gasto'} neste mês: <b>${BRL(gastoMes)}</b> em ${plural(doMes.length, 'comanda', 'comandas')}.</p>` : ''}
@@ -154,13 +154,13 @@ const viewInicio = {
     $('#ini-continuar', v)?.addEventListener('click', () => irPara('comanda'));
     const inp = $('#ini-local', v);
     if (inp) attachSuggest(inp, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })));
-    $('#ini-form', v)?.addEventListener('submit', e => { e.preventDefault(); const nome = inp.value.trim().replace(/\s+/g, ' '); if (!nome) { toast('Digite o nome do local ou escolha um da lista.'); inp.focus(); return; } newBillAt(nome); });
+    $('#ini-form', v)?.addEventListener('submit', e => { e.preventDefault(); const nome = inp.value.trim().replace(/\s+/g, ' '); if (!nome) { KitFacil.avisar('Digite o nome do local ou escolha um da lista.'); inp.focus(); return; } newBillAt(nome); });
     $$('[data-ini-lugar]', v).forEach(b => b.addEventListener('click', () => newBillAt(b.dataset.iniLugar)));
     $('#av-abre', v)?.addEventListener('click', () => { aoVivoAberto = true; render({ anchor: false }); requestAnimationFrame(() => $('#av-codigo')?.focus()); });
     $('#av-form', v)?.addEventListener('submit', e => { e.preventDefault(); entrarAoVivo($('#av-codigo', v).value); });
     $('#av-colar', v)?.addEventListener('click', async () => {
-      try { const t = (await navigator.clipboard.readText()).trim(); if (!t) { toast('Nada copiado.'); return; } $('#av-codigo', v).value = t; entrarAoVivo(t); }
-      catch { toast('Não deu para colar. Toque e segure no campo e escolha Colar.'); $('#av-codigo', v)?.focus(); }
+      try { const t = (await navigator.clipboard.readText()).trim(); if (!t) { KitFacil.avisar('Nada copiado.'); return; } $('#av-codigo', v).value = t; entrarAoVivo(t); }
+      catch { KitFacil.avisar('Não deu para colar. Toque e segure no campo e escolha Colar.'); $('#av-codigo', v)?.focus(); }
     });
     $('#ini-nivel', v)?.addEventListener('click', () => irPara('tampinhas'));
     $('#ini-hist', v)?.addEventListener('click', () => irPara('historico'));
@@ -195,7 +195,7 @@ function retrospectivaHTML() {
   const podio = (id, titulo, lista, valor, fmt) => {
     const L = lista.sort((a, b) => valor(b) - valor(a)).slice(0, 5); if (!L.length) return '';
     const mx = Math.max(...L.map(valor), 1), aberto = histPod[id], ver = aberto ? L : L.slice(0, 3);
-    return `<div class="podio" data-morf="podio-${id}"><h3>${titulo}</h3><ol>${ver.map((x, i) => `<li><span class="podio-n">${i + 1}</span><span class="podio-tx"><b>${esc(x.name)}</b><small>${fmt(x)}</small><span class="podio-barra"><i style="width:${Math.max(6, Math.round(valor(x) / mx * 100))}%"></i></span></span></li>`).join('')}</ol>
+    return `<div class="podio" data-kf-morf="podio-${id}"><h3>${titulo}</h3><ol>${ver.map((x, i) => `<li><span class="podio-n">${i + 1}</span><span class="podio-tx"><b>${esc(x.name)}</b><small>${fmt(x)}</small><span class="podio-barra"><i style="width:${Math.max(6, Math.round(valor(x) / mx * 100))}%"></i></span></span></li>`).join('')}</ol>
       ${L.length > 3 ? `<button type="button" class="btn link small" data-podio="${id}" aria-expanded="${aberto}">${aberto ? 'Mostrar menos' : 'Mostrar os 5'}</button>` : ''}</div>`;
   };
   return `<section class="card retro" aria-labelledby="retro-t"><h2 class="so-leitor" id="retro-t">Resumo dos gastos</h2>
@@ -245,7 +245,7 @@ function openBill(id) {
     $('#sh-del', s).onclick = () => confirmSheet('Excluir esta comanda?', 'Ela sai do histórico e das estatísticas. Pessoas e produtos cadastrados continuam, e dá para desfazer logo em seguida.', 'Excluir comanda', () => {
       const gone = bills.find(x => x.id === id);
       bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(true); if (draft.id === id) draft.savedAt = null; saveDraft(); render();
-      toast('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
+      KitFacil.avisar('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
     }, true);
     const replace = fn => confirmReplace(() => { if (draft.live) live.end(); pending = {}; itPend = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(true); commit(); window.scrollTo({ top: 0 }); });
     $('#sh-edit', s).onclick = () => replace(() => migrate({ ...clone(b), savedAt: b.closedAt, isExample: false, live: null }));
@@ -265,19 +265,19 @@ function pessoaSheet() {
   openSheet({ title: 'Nova pessoa', body: `<form id="np-form" class="pilha" autocomplete="off">
       <div class="field"><label for="np-nome">Nome</label><input id="np-nome" type="text" autocapitalize="words" maxlength="40" placeholder="Nome ou apelido"></div>
       <div class="field"><label for="np-pix">Chave Pix (opcional)</label><input id="np-pix" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="CPF, celular, e-mail ou chave aleatória"></div>
-      <label class="aj-chave"><span class="lin-tx"><b>Sou eu</b></span><span class="switch"><input type="checkbox" id="np-eu"><span class="track"></span></span></label>
+      <label class="aj-chave"><span class="lin-tx"><b>Sou eu</b></span><span class="kf-chave"><input type="checkbox" id="np-eu"><span class="kf-chave-trilho"></span></span></label>
     </form>`, foot: `<button type="button" class="btn ghost" id="np-no">Cancelar</button><button type="submit" form="np-form" class="btn">${I.save}Salvar pessoa</button>`, onMount: s => {
     $('#np-no', s).onclick = () => closeSheet();
     $('#np-form', s).addEventListener('submit', e => {
       e.preventDefault();
       const nome = $('#np-nome', s).value.trim().replace(/\s+/g, ' '), pix = $('#np-pix', s).value.trim();
-      if (!nome) { toast('Informe o nome.'); $('#np-nome', s).focus(); return; }
-      if (catalog.people.some(p => norm(p.name) === norm(nome))) { toast(`${nome} já está nos cadastros.`); return; }
+      if (!nome) { KitFacil.avisar('Informe o nome.'); $('#np-nome', s).focus(); return; }
+      if (catalog.people.some(p => norm(p.name) === norm(nome))) { KitFacil.avisar(`${nome} já está nos cadastros.`); return; }
       catalog.people.push({ name: nome, pix: '' });
       const eu = $('#np-eu', s).checked; if (eu) definirEu(nome);
       store.saveCatalog(); closeSheet(true); if (eu) setTimeout(() => jogoConferir(), 400);
-      if (pix) savePixKey(nome, pix, () => { render(); toast(`${nome} cadastrado com a chave Pix.`); });
-      else { render(); toast(`${nome} cadastrado.`); }
+      if (pix) savePixKey(nome, pix, () => { render(); KitFacil.avisar(`${nome} cadastrado com a chave Pix.`); });
+      else { render(); KitFacil.avisar(`${nome} cadastrado.`); }
     });
   } });
 }
@@ -285,7 +285,7 @@ function pixEditSheet(name) {
   openSheet({ title: `Chave Pix de ${name}`, body: `<form id="px-form" class="pilha" autocomplete="off"><div class="field"><label for="px-in">Chave Pix</label><input id="px-in" type="text" value="${esc(pixOf(name))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocapitalize="off" autocorrect="off" spellcheck="false"></div></form>`,
     foot: `<button type="button" class="btn ghost" id="px-no">Cancelar</button><button type="submit" form="px-form" class="btn">${I.save}Salvar chave</button>`, onMount: s => {
     $('#px-no', s).onclick = () => closeSheet();
-    $('#px-form', s).addEventListener('submit', e => { e.preventDefault(); const val = $('#px-in', s).value; closeSheet(true); savePixKey(name, val, k => { render(); toast(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); }); });
+    $('#px-form', s).addEventListener('submit', e => { e.preventDefault(); const val = $('#px-in', s).value; closeSheet(true); savePixKey(name, val, k => { render(); KitFacil.avisar(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); }); });
   } });
 }
 function turmaSheet(g) {
@@ -299,12 +299,12 @@ function turmaSheet(g) {
     $('#tg-form', s).addEventListener('submit', e => {
       e.preventDefault();
       const nome = $('#tg-nome', s).value.trim().replace(/\s+/g, ' ');
-      if (!nome) { toast('Dê um nome para a turma.'); $('#tg-nome', s).focus(); return; }
-      if (sel.size < 2) { toast('Escolha ao menos duas pessoas.'); return; }
-      if ((catalog.groups || []).some(x => x !== g && norm(x.name) === norm(nome))) { toast(`Já existe a turma ${nome}.`); return; }
+      if (!nome) { KitFacil.avisar('Dê um nome para a turma.'); $('#tg-nome', s).focus(); return; }
+      if (sel.size < 2) { KitFacil.avisar('Escolha ao menos duas pessoas.'); return; }
+      if ((catalog.groups || []).some(x => x !== g && norm(x.name) === norm(nome))) { KitFacil.avisar(`Já existe a turma ${nome}.`); return; }
       const members = nomes.filter(n => sel.has(n));
       if (g) Object.assign(g, { name: nome, members }); else catalog.groups.push({ id: newId(), name: nome, members });
-      store.saveCatalog(); closeSheet(true); render(); toast(g ? 'Turma atualizada.' : `Turma ${nome} criada.`);
+      store.saveCatalog(); closeSheet(true); render(); KitFacil.avisar(g ? 'Turma atualizada.' : `Turma ${nome} criada.`);
     });
   } });
 }
@@ -332,8 +332,8 @@ const viewCadastros = {
       corpo = prods.length ? `<div class="prods">${prods.map((p, i) => {
         const entries = Object.entries(p.prices || {}).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
         return `<div class="prod"><div class="prod-cab"><span class="lin-tx"><b>${esc(p.name)}</b><small>${used(pc(p))}</small></span><button type="button" class="ic-btn del" data-del-prod="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>
-          ${entries.length ? entries.map(([k, e]) => `<div class="preco-lin"><label for="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">${esc(e.place)}</label><input type="text" inputmode="numeric" data-money value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}"><button type="button" class="ic-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar o preço de ${esc(p.name)} em ${esc(e.place)}">${I.x}</button></div>`).join('')
-          : `<div class="preco-lin"><label for="pp-${i}-x" class="hint">Sem local</label><input type="text" inputmode="numeric" data-money value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" id="pp-${i}-x"><span></span></div>`}</div>`; }).join('')}</div>`
+          ${entries.length ? entries.map(([k, e]) => `<div class="preco-lin"><label for="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">${esc(e.place)}</label><input type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}"><button type="button" class="ic-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar o preço de ${esc(p.name)} em ${esc(e.place)}">${I.x}</button></div>`).join('')
+          : `<div class="preco-lin"><label for="pp-${i}-x" class="hint">Sem local</label><input type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" id="pp-${i}-x"><span></span></div>`}</div>`; }).join('')}</div>`
         : `<div class="vazio">${ILU.produtos}<b>Nenhum produto cadastrado</b><p>Os produtos e os preços de cada lugar entram aqui quando você salva uma comanda.</p></div>`;
     }
     return `<header class="tela-cab">${voltarMaisHTML()}<h1 class="tela-t">Cadastros</h1><p class="tela-sub">Pessoas, chaves Pix, turmas e o preço de cada produto em cada lugar.</p></header>
@@ -350,7 +350,7 @@ const viewCadastros = {
     $$('[data-turma-del]', v).forEach(b => b.addEventListener('click', () => {
       const idx = catalog.groups.findIndex(g => g.id === b.dataset.turmaDel); if (idx < 0) return;
       const [gone] = catalog.groups.splice(idx, 1); store.saveCatalog(); render();
-      toast(`Turma ${gone.name} excluída.`, { label: 'Desfazer', run: () => { catalog.groups.splice(idx, 0, gone); store.saveCatalog(); render(); } });
+      KitFacil.avisar(`Turma ${gone.name} excluída.`, { label: 'Desfazer', run: () => { catalog.groups.splice(idx, 0, gone); store.saveCatalog(); render(); } });
     }));
     $$('[data-pix-edit]', v).forEach(b => b.addEventListener('click', () => pixEditSheet(b.dataset.pixEdit)));
     $$('[data-del-person]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delPerson} do cadastro?`, 'A pessoa deixa de aparecer nas sugestões. As comandas do histórico não mudam.', 'Excluir pessoa', () => {
@@ -358,23 +358,23 @@ const viewCadastros = {
       const [gone] = catalog.people.splice(idx, 1), wasMe = norm(catalog.me) === norm(gone.name);
       if (wasMe) catalog.me = '';
       store.saveCatalog(); render();
-      toast(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.people.splice(idx, 0, gone); if (wasMe) catalog.me = gone.name; store.saveCatalog(); render(); } });
+      KitFacil.avisar(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.people.splice(idx, 0, gone); if (wasMe) catalog.me = gone.name; store.saveCatalog(); render(); } });
     }, true)));
     $$('[data-del-prod]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delProd} do cadastro?`, 'O produto e os preços guardados por local saem das sugestões. As comandas do histórico não mudam, e dá para recuperar o produto a partir delas.', 'Excluir produto', () => {
       const idx = catalog.products.findIndex(p => p.name === b.dataset.delProd); if (idx < 0) return;
       const [gone] = catalog.products.splice(idx, 1);
       store.saveCatalog(); render();
-      toast(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.products.splice(idx, 0, gone); store.saveCatalog(); render(); } });
+      KitFacil.avisar(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.products.splice(idx, 0, gone); store.saveCatalog(); render(); } });
     }, true)));
     $$('[data-pdel]', v).forEach(b => b.addEventListener('click', () => {
       const p = catalog.products.find(x => x.name === b.dataset.pdel); if (!p) return;
-      delete p.prices[b.dataset.pk]; store.saveCatalog(); render(); toast('Preço do local apagado.');
+      delete p.prices[b.dataset.pk]; store.saveCatalog(); render(); KitFacil.avisar('Preço do local apagado.');
     }));
     $$('[data-pprod]', v).forEach(i => i.addEventListener('change', () => {
       const c = parseMoney(i.value), p = catalog.products.find(x => x.name === i.dataset.pprod);
-      if (!c || !p) { toast('Valor inválido. Digite, por exemplo, 12,90.'); render(); return; }
+      if (!c || !p) { KitFacil.avisar('Valor inválido. Digite, por exemplo, 12,90.'); render(); return; }
       if (i.dataset.pk && p.prices[i.dataset.pk]) Object.assign(p.prices[i.dataset.pk], { price: c, edited: true }); else p.price = c;
-      store.saveCatalog(); i.value = moneyInput(c); toast('Preço atualizado.');
+      store.saveCatalog(); i.value = moneyInput(c); KitFacil.avisar('Preço atualizado.');
     }));
   },
 };
@@ -388,11 +388,13 @@ const viewMais = {
       <div class="card lista lista-card">
         ${lin('data-ir="cadastros"', I.users, 'Cadastros', `${plural(catalog.people.length, 'pessoa', 'pessoas')}, ${plural((catalog.groups || []).length, 'turma', 'turmas')} e ${plural(catalog.products.length, 'produto', 'produtos')}`)}
         ${lin('id="ma-sorteio"', I.sorteio, 'Sortear alguém da mesa', 'Um ponteiro gira e para num nome')}
-        ${lin('data-kf="ajustes"', I.ajustes, 'Ajustes', 'Sincronização, aparência, privacidade e sobre o app')}
       </div>
       <div class="card lista lista-card">
         ${lin('id="ma-guia"', I.livro, 'Ver o guia', 'O app faz cada passo na tela e explica', 'ambar')}
         ${lin('id="ma-exemplo"', I.exemplo, 'Abrir a comanda de exemplo', 'Uma mesa pronta para mexer à vontade', 'ambar')}
+      </div>
+      <div class="card lista lista-card">
+        ${lin('data-kf="ajustes"', I.ajustes, 'Ajustes', 'Sincronização, aparência, privacidade e sobre o app')}
       </div>`;
   },
   bind(v) {

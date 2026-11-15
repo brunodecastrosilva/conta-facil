@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.7.0';
+const VERSAO = '1.8.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -360,18 +360,18 @@ const live = {
       if (isTouch && !isStandalone() && !this.browserOk) return openInAppSheet(code);
       try {
         const snap = await this.ref(code).get();
-        if (!snap.exists) { toast('Essa comanda ao vivo não foi encontrada.'); return draft.live && this.subscribe(); }
+        if (!snap.exists) { KitFacil.avisar('Essa comanda ao vivo não foi encontrada.'); return draft.live && this.subscribe(); }
         const data = snap.data();
-        if (data.closed) { toast('Essa comanda ao vivo já foi encerrada.'); return draft.live && this.subscribe(); }
-        const join = () => { this.stop(); draft = fromShared(data, { ...blankDraft(), active: true, live: { code, host: false } }); this.last = toShared(draft); tab = 'comanda'; saveDraft(); render(); this.subscribe(); toast('Você entrou na comanda ao vivo.'); };
+        if (data.closed) { KitFacil.avisar('Essa comanda ao vivo já foi encerrada.'); return draft.live && this.subscribe(); }
+        const join = () => { this.stop(); draft = fromShared(data, { ...blankDraft(), active: true, live: { code, host: false } }); this.last = toShared(draft); tab = 'comanda'; saveDraft(); render(); this.subscribe(); KitFacil.avisar('Você entrou na comanda ao vivo.'); };
         draft.live ? join() : confirmReplace(join);
-      } catch (e) { console.warn(e); toast('Não foi possível abrir a comanda ao vivo.'); }
+      } catch (e) { console.warn(e); KitFacil.avisar('Não foi possível abrir a comanda ao vivo.'); }
     } else if (draft.live && store.db) this.subscribe();
   },
   async start() {
-    if (!store.db) { toast('A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.'); return; }
+    if (!store.db) { KitFacil.avisar('A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.'); return; }
     const code = Array.from({ length: 10 }, () => 'abcdefghjkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 31)]).join('');
-    if (draft.isExample) { toast('No exemplo, a comanda ao vivo fica desligada.'); return; }
+    if (draft.isExample) { KitFacil.avisar('No exemplo, a comanda ao vivo fica desligada.'); return; }
     draft.live = { code, host: true };
     // hostUid: só o aparelho que criou a comanda pode apagá-la (regra do Firestore)
     const body = { ...toShared(draft), closed: false, v: 1, ...(store.db.uid ? { hostUid: store.db.uid } : {}) };
@@ -381,7 +381,7 @@ const live = {
       this.last = toShared(draft);
       saveDraft(); render(); this.subscribe(); window.scrollTo({ top: 0 });
       inviteSheet(); jogoMarcar('aoVivo');
-    } catch (e) { console.warn(e); draft.live = null; render(); toast('Não foi possível criar a comanda ao vivo agora. Tente de novo em instantes.'); }
+    } catch (e) { console.warn(e); draft.live = null; render(); KitFacil.avisar('Não foi possível criar a comanda ao vivo agora. Tente de novo em instantes.'); }
   },
   async subscribe() {
     if (!draft.live || !store.db || this.unsub) return;
@@ -398,7 +398,7 @@ const live = {
       const nextShared = toShared(next);
       if (JSON.stringify(nextShared) === JSON.stringify(toShared(draft)) && this.last) { this.last = nextShared; if (wasClosed !== this.closed) render({ preserve: true }); else paintPresence(); return; }
       draft = next; this.last = nextShared; saveDraft(); render({ preserve: true });
-    }, err => { console.warn('live', err); this.unsub = null; toast('A conexão com a comanda ao vivo caiu. Toque em Reconectar.'); render({ preserve: true }); });
+    }, err => { console.warn('live', err); this.unsub = null; KitFacil.avisar('A conexão com a comanda ao vivo caiu. Toque em Reconectar.'); render({ preserve: true }); });
     this.startBeats();
     render({ preserve: true });
   },
@@ -411,8 +411,8 @@ const live = {
     const code = draft.live.code;
     store.queue(() => this.ref(code).update(patch), e => {
       console.warn('live write', e);
-      if (e && e.code === 'permission-denied') toast('Esta comanda ao vivo não aceita mais alterações.');
-      else toast('Não deu para enviar a alteração. Ela será reenviada na próxima mudança.');
+      if (e && e.code === 'permission-denied') KitFacil.avisar('Esta comanda ao vivo não aceita mais alterações.');
+      else KitFacil.avisar('Não deu para enviar a alteração. Ela será reenviada na próxima mudança.');
       this.last = null;
     });
   },
@@ -547,13 +547,13 @@ let draft = loadRealDraft();
 const saveDraft = () => { if (!draft.isExample) LS.set('draft', draft); };
 function enterExample(semGuia = false) {
   semGuia = semGuia === true;
-  if (draft.live) { toast('Saia da comanda ao vivo antes de abrir o exemplo.'); return; }
+  if (draft.live) { KitFacil.avisar('Saia da comanda ao vivo antes de abrir o exemplo.'); return; }
   pending = {}; draft = exampleDraft(); tab = 'comanda'; render(); window.scrollTo({ top: 0 });
   // 0.3.0: o exemplo não abre mais o guia sozinho; o guia em vídeo tem a própria demonstração
 }
 function exitExample() {
   if (!draft.isExample) return;
-  if (typeof guiaParar === 'function') guiaParar(); pending = {}; draft = loadRealDraft();
+  KitFacil.guia.pararDemonstracao(); pending = {}; draft = loadRealDraft();
 }
 const fixCatalog = c => ({ me: '', people: [], products: [], groups: [], ...c, groups: Array.isArray(c?.groups) ? c.groups : [], products: (c?.products || []).map(p => ({ prices: {}, ...p })) });
 let catalog = fixCatalog(LS.get('catalog', {}));
@@ -655,6 +655,11 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.8.0', itens: [
+    'A janela do presente ficou mais clara: é opcional, e o app continua igual para todos, com presente ou sem.',
+    'Em Mais, os Ajustes passaram para o fim, depois do guia e da comanda de exemplo.',
+    'Leitores de tela: cada linha da comanda diz primeiro o que está escrito nela.',
+  ] },
   { versao: '1.7.0', itens: [
     'Tudo o que abre e fecha no app agora tem o mesmo ritmo: mais calmo, sem aparecer de uma vez.',
     'As janelas fecham descendo pelo pé da tela, do mesmo jeito que abrem.',
@@ -768,7 +773,7 @@ SY = KitFacil.sync.criar({
 SNAP_SYNC = registrosSync();
 
 function commit(opts = {}) {
-  if (draft.live && live.readOnly) { toast('Você só pode acompanhar esta comanda.'); if (live.last) draft = fromShared(live.last, draft); render(); return; }
+  if (draft.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); if (live.last) draft = fromShared(live.last, draft); render(); return; }
   saveDraft();
   if (draft.live) live.push();
   render(opts);
@@ -780,6 +785,7 @@ function commit(opts = {}) {
 
 /* ---------- teclado no celular ---------- */
 const isTouch = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch { return false; } })();
+const isField = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]), textarea, select');
 /* 1.0: o item recém-lançado entra no fim da lista; a tela rola até ele, no movimento do Kit, e ele pisca uma vez */
 let itemNovo = null;
 function mostrarItemNovo() {
@@ -802,168 +808,30 @@ function mostrarItemNovo() {
     requestAnimationFrame(passo);
   });
 }
-const isField = el => el && el.matches && el.matches('input:not([type=checkbox]):not([type=radio]), textarea, select');
-// tocar no fundo recolhe o teclado e não deixa o iPhone pular para outro campo
-const INTERACTIVE = 'input,textarea,select,label,button,a,summary,[role=button],[tabindex]:not([tabindex="-1"])';
-let tapStart = null;
-document.addEventListener('touchstart', e => { const t = e.touches[0]; tapStart = t ? { x: t.clientX, y: t.clientY, target: e.target } : null; }, { passive: true, capture: true });
-document.addEventListener('touchend', e => {
-  const st = tapStart; tapStart = null;
-  if (!st || !isField(document.activeElement)) return;
-  const t = e.changedTouches[0]; if (!t || Math.hypot(t.clientX - st.x, t.clientY - st.y) > 10) return;
-  if (st.target.closest && st.target.closest(INTERACTIVE)) return;
-  e.preventDefault();
-  document.activeElement.blur();
-  setTimeout(() => { if (isField(document.activeElement)) document.activeElement.blur(); }, 60);
-}, { passive: false, capture: true });
-document.addEventListener('mousedown', e => {
-  const a = document.activeElement;
-  if (isField(a) && !(e.target.closest && e.target.closest(INTERACTIVE))) a.blur();
-}, true);
-// garante que o valor digitado é salvo ao sair do campo, mesmo quando o iPhone não dispara o evento de mudança
-// (acontece quando o campo é formatado durante a digitação, como nos valores em R$)
-document.addEventListener('focusin', e => { const el = e.target; if (isField(el) && el.tagName === 'INPUT') { el._startValue = el.value; el._changed = false; } });
-document.addEventListener('change', e => { if (e.target && e.target.tagName === 'INPUT') e.target._changed = true; }, true);
-document.addEventListener('focusout', e => {
-  const el = e.target;
-  if (!isField(el) || el.tagName !== 'INPUT' || el._changed || el.form) return;
-  if (el._startValue !== undefined && el.value !== el._startValue) { el._changed = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
-});
-// máscara de valor: só números, a vírgula dos centavos entra sozinha (R$ 1.234,56)
-function maskMoney(el) {
-  const digits = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 9);
-  el.value = digits ? BRL(parseInt(digits, 10)) : '';
-  try { const n = el.value.length; el.setSelectionRange(n, n); } catch {}
-}
-// percentual com a mesma digitação: 1 → 0,01%, 1000 → 10,00%; o símbolo fica sempre no fim
-const pctFmt = h => (h / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+/* campos: dinheiro, porcentagem e o comportamento comum (tocar no fundo recolhe o teclado, Enter num campo solto
+   confirma, o valor é salvo ao sair do campo) vêm do Kit Fácil 0.7.0 (KitFacil.campo) */
+KitFacil.campo.ligar();
+const pctFmt = h => KitFacil.campo.porcento.formatar(h);
 const pctInput = p => pctFmt(Math.round((p || 0) * 100));
-const parsePct = s => { const dg = String(s ?? '').replace(/\D/g, ''); return dg ? Math.min(10000, parseInt(dg, 10)) / 100 : null; };
-function maskPct(el) {
-  const digits = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 5);
-  el.value = digits ? pctFmt(Math.min(10000, parseInt(digits, 10))) : '';
-  caretEnd(el);
-}
-const caretEnd = el => { try { const n = el.value.length - (el.matches('[data-pct]') && el.value.endsWith('%') ? 1 : 0); el.setSelectionRange(n, n); } catch {} };
-document.addEventListener('input', e => {
-  const el = e.target; if (!el.matches || !el.matches('[data-money],[data-pct]')) return;
-  // o primeiro número digitado depois de tocar no campo substitui o valor sugerido
-  if (el.dataset.fresh === '1' && e.inputType && e.inputType.startsWith('insert') && e.data && /\d/.test(e.data)) el.value = e.data;
-  el.dataset.fresh = '';
-  // apagar o % apaga o último número
-  if (el.matches('[data-pct]') && e.inputType === 'deleteContentBackward' && el.value && !el.value.endsWith('%')) el.value = el.value.replace(/\d(?=\D*$)/, '');
-  if (el.matches('[data-pct]')) maskPct(el); else maskMoney(el);
-}, true);
-['focusin', 'click'].forEach(ev => document.addEventListener(ev, e => {
-  const el = e.target; if (!el.matches || !el.matches('[data-money],[data-pct]')) return;
-  if (ev === 'focusin') el.dataset.fresh = '1';
-  setTimeout(() => caretEnd(el), 0);
-}));
-// "OK"/Enter em campo solto confirma e fecha o teclado
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter' || !isField(e.target) || e.target.form) return;
-  e.preventDefault(); e.target.blur();
-});
-function prepFields(root) {
-  $$('input:not([type=checkbox])', root).forEach(i => {
-    if (!i.hasAttribute('enterkeyhint')) i.setAttribute('enterkeyhint', i.form && i.form.id !== 'rn-form' ? 'go' : 'done');
-    // nenhum campo do app é de dados de contato: o nome com "search" faz o Safari do iPhone não oferecer o preenchimento automático
-    if (!i.name && (i.type === 'text' || i.type === 'number')) i.name = 'search-' + (i.id || 'campo');
-    if (!i.hasAttribute('autocomplete')) i.setAttribute('autocomplete', 'off');
-  });
-}
+const parsePct = s => KitFacil.campo.porcento.ler(s);
+const prepFields = root => KitFacil.campo.preparar(root);
 
-/* ---------- sugestões ao digitar (no lugar da lista do navegador, que no iPhone ficava presa na tela) ---------- */
+/* ---------- sugestões ao digitar: campo com sugestões do Kit (no lugar da lista do navegador) ---------- */
 const fold = s => norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const lastPress = { target: null, at: 0 };
 document.addEventListener('pointerdown', e => { lastPress.target = e.target; lastPress.at = Date.now(); }, true);
-function attachSuggest(input, getItems, onPick) {
-  if (!input) return;
-  const wrap = document.createElement('div'); wrap.className = 'sg-wrap';
-  input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
-  const box = document.createElement('div'); box.className = 'sg-box'; box.hidden = true; box.setAttribute('role', 'listbox');
-  // quando o campo divide a linha com um botão, a lista abre abaixo da linha inteira: o botão continua alinhado ao campo
-  const linha = input.closest('.row'); if (linha) { box.classList.add('sg-fora'); linha.after(box); } else wrap.appendChild(box);
-  let items = [], active = -1;
-  // a lista abre e recolhe no relógio do app, como tudo o que abre e fecha
-  let saindo = null;
-  const mover = abrir => {
-    const m = MV(); if (m.off || !box.animate || !box.isConnected) return null;
-    alturaPorContaDoApp(box, m.ms);
-    const h = box.getBoundingClientRect().height + 'px', aberta = { height: h, opacity: 1 }, fechada = { height: '0px', opacity: 0, marginTop: '0px', borderTopWidth: '0px', borderBottomWidth: '0px' };
-    return box.animate(abrir ? [fechada, aberta] : [aberta, fechada], { duration: m.ms, easing: m.css });
-  };
-  const close = () => {
-    active = -1; if (box.hidden || saindo) return;
-    const fim = () => { saindo = null; box.hidden = true; box.innerHTML = ''; box.style.pointerEvents = ''; };
-    const a = mover(false); if (!a) return fim();
-    saindo = a; box.style.pointerEvents = 'none'; a.onfinish = fim; a.oncancel = () => { saindo = null; box.style.pointerEvents = ''; };
-  };
-  const show = () => {
-    const q = fold(input.value);
-    items = getItems().filter(x => !q || fold(x.label).includes(q)).filter(x => fold(x.label) !== q).slice(0, 6);
-    if (!items.length) return close();
-    const nova = box.hidden; if (saindo) saindo.cancel();
-    box.innerHTML = items.map((x, i) => `<button type="button" class="sg-item ${i === active ? 'on' : ''}" data-i="${i}" role="option"><span>${esc(x.label)}</span>${x.right ? `<small class="${x.dim ? 'dim' : ''}">${esc(x.right)}</small>` : ''}</button>`).join('');
-    box.hidden = false;
-    if (nova) mover(true);
-  };
-  const pick = i => { const x = items[i]; if (!x) return; input.value = x.label; close(); onPick && onPick(x); };
-  input.addEventListener('input', () => { active = -1; show(); });
-  // no celular, o toque no campo faz o teclado subir e a janela acompanhar; a lista abre em seguida, para um movimento
-  // não atropelar o outro (se o teclado não vier, como num tablet com teclado físico, ela abre logo depois)
-  input.addEventListener('focus', () => {
-    const livre = () => !isTouch || !window.cfTecladoAssentado || window.cfTecladoAssentado() || guiaAtivo();
-    if (livre()) return show();
-    const t0 = Date.now(), esperar = () => { if (document.activeElement !== input) return; if (livre() || Date.now() - t0 > 700) return show(); setTimeout(esperar, 40); };
-    esperar();
-  });
-  // ao sair do campo a lista fecha na hora; só espera o toque terminar quando ele foi num botão (para o botão não sair de baixo do dedo)
-  input.addEventListener('blur', () => {
-    const t = lastPress.target, onButton = t && Date.now() - lastPress.at < 600 && t.closest && t.closest('button, a, [role=button]') && !box.contains(t);
-    if (!onButton) return close();
-    let done = false; const fin = () => { if (done) return; done = true; document.removeEventListener('click', fin, true); setTimeout(close, 0); };
-    document.addEventListener('click', fin, true);
-    setTimeout(fin, 450);
-  });
-  input.addEventListener('keydown', e => {
-    if (box.hidden) return;
-    if (e.key === 'ArrowDown') { active = Math.min(items.length - 1, active + 1); show(); e.preventDefault(); }
-    else if (e.key === 'ArrowUp') { active = Math.max(0, active - 1); show(); e.preventDefault(); }
-    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); e.stopPropagation(); pick(active); }
-    else if (e.key === 'Escape') close();
-  });
-  // pointerdown evita que o campo perca o foco antes da escolha
-  let press = null;
-  box.addEventListener('pointerdown', e => { e.preventDefault(); const b = e.target.closest('[data-i]'); press = b ? { i: +b.dataset.i, x: e.clientX, y: e.clientY, id: e.pointerId } : null; });
-  box.addEventListener('pointerup', e => {
-    const p = press; press = null; if (!p || p.id !== e.pointerId) return;
-    const b = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-i]');
-    if (b && +b.dataset.i === p.i && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12) pick(p.i);
-  });
-  box.addEventListener('pointercancel', () => { press = null; });
-  box.addEventListener('click', e => e.preventDefault());
-}
+const attachSuggest = (input, getItems, onPick) => KitFacil.sugestoes(input, getItems, onPick);
 
 /* ---------- toast & overlay ---------- */
 /* avisos e janelas são os do Kit Fácil (iguais nos três apps); mesmos nomes e parâmetros do Elétrica e do Estudo.
    Os botões de ação ficam no pé da janela (foot). onClose roda quando a pessoa fecha (X, Esc, toque fora). */
-function toast(msg, action) { KitFacil.avisar(msg, action); }
 function openSheet({ title, sub = '', body, foot = '', tall = false, wide = false, onMount, onClose }) {
   return KitFacil.dialogo.abrir({ titulo: title, sub, corpo: body, pe: foot, classe: [tall && 'kf-alto', wide && 'kf-largo'].filter(Boolean).join(' '),
-    aoFechar: onClose, aoMontar: dlg => {
-      prepFields(dlg); onMount && onMount(dlg);
-      // nenhuma janela abre com a caixa de texto selecionada: o teclado só sobe quando a pessoa toca no campo
-      $$('input[autofocus], textarea[autofocus], select[autofocus]', dlg).forEach(x => x.removeAttribute('autofocus'));
-      const f = document.activeElement; if (f && f !== dlg && dlg.contains(f) && f.matches('input:not([type=checkbox]):not([type=radio]), textarea, select')) f.blur();
-    } });
+    aoFechar: onClose, aoMontar: dlg => { prepFields(dlg); onMount && onMount(dlg); } });
 }
 function closeSheet(silent) { KitFacil.dialogo.fechar(silent); }
-function confirmSheet(title, text, okLabel, onOk, danger) {
-  openSheet({ title, body: `<p class="hint" style="font-size:15px">${esc(text)}</p>`,
-    foot: `<button class="btn ghost" id="cf-no">Cancelar</button><button class="btn ${danger ? 'danger' : ''}" id="cf-ok">${esc(okLabel)}</button>`,
-    onMount: s => { $('#cf-no', s).onclick = () => closeSheet(); $('#cf-ok', s).onclick = () => { closeSheet(true); onOk(); }; $('#cf-ok', s).focus(); } });
-}
+// confirmação do Kit (Código, Art. 65, VIII): o botão nomeia a ação
+const confirmSheet = (title, text, okLabel, onOk, danger) => KitFacil.dialogo.confirmar({ titulo: title, texto: text, ok: okLabel, perigo: !!danger, aoConfirmar: onOk });
 
 /* ---------- cupom ---------- */
 function serviceLabel(b) { return b.service.mode === 'fixed' ? 'Serviço' : `Serviço (${pctStr(b.service.pct)}%)`; }
@@ -1015,7 +883,7 @@ function pixAmbiguous(k) {
 }
 // guarda a chave já no formato do Pix (CPF só dígitos, celular com +55); se não der para saber, pergunta
 function savePixKey(name, key, done) {
-  if (draft.isExample) { toast('No exemplo, nada é salvo.'); return; }
+  if (draft.isExample) { KitFacil.avisar('No exemplo, nada é salvo.'); return; }
   key = String(key || '').trim();
   const finish = k => { setPix(name, k); done && done(k); };
   if (!pixAmbiguous(key)) return finish(key ? normPixKey(key) : '');
@@ -1032,38 +900,9 @@ function setPix(name, key) {
   p.pix = key.trim(); store.saveCatalog();
 }
 // Pix copia e cola (BR Code estático do Banco Central) com o valor já preenchido
-const pixField = (id, v) => id + String(v.length).padStart(2, '0') + v;
-function crc16(str) {
-  let crc = 0xFFFF;
-  for (let i = 0; i < str.length; i++) { crc ^= str.charCodeAt(i) << 8; for (let j = 0; j < 8; j++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF; }
-  return crc.toString(16).toUpperCase().padStart(4, '0');
-}
-const asciiUp = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9 ]/g, '').replace(/\s+/g, ' ').toUpperCase().trim();
-function cpfValid(d) {
-  if (!/^\d{11}$/.test(d) || /^(\d)\1{10}$/.test(d)) return false;
-  const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
-  return dv(9) === +d[9] && dv(10) === +d[10];
-}
-function normPixKey(k) {
-  k = String(k || '').trim();
-  if (k.includes('@')) return k.toLowerCase();
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(k)) return k.toLowerCase();
-  const dig = k.replace(/\D/g, '');
-  if (k.startsWith('+')) return '+' + dig;
-  if (dig.length === 14) return dig;
-  const phoneish = /[()]/.test(k) || /^\d{2}\s*9\d{4}-\d{4}$/.test(k);
-  if (dig.length === 11 && !phoneish && cpfValid(dig)) return dig;
-  if (dig.length === 10 || dig.length === 11) return '+55' + dig;
-  if (dig.length === 13 && dig.startsWith('55')) return '+' + dig;
-  return k;
-}
-function pixPayload(key, name, amount) {
-  const mai = pixField('00', 'br.gov.bcb.pix') + pixField('01', normPixKey(key));
-  let p = pixField('00', '01') + pixField('26', mai) + pixField('52', '0000') + pixField('53', '986')
-    + (amount > 0 ? pixField('54', (amount / 100).toFixed(2)) : '') + pixField('58', 'BR')
-    + pixField('59', (asciiUp(name) || 'RECEBEDOR').slice(0, 25)) + pixField('60', 'BRASIL') + pixField('62', pixField('05', '***')) + '6304';
-  return p + crc16(p);
-}
+// Pix copia e cola de cobrança (Kit: KitFacil.pix), com a chave do jeito que o Banco Central espera
+const normPixKey = k => KitFacil.pix.chave(k);
+const pixPayload = (key, name, amount) => KitFacil.pix.codigo({ chave: normPixKey(key), nome: name || 'RECEBEDOR', cidade: 'BRASIL', valor: amount });
 // o que cada pessoa deve, para quem e com qual chave
 function pixDebts(c) {
   return c.transfers.map(t => {
@@ -1071,38 +910,10 @@ function pixDebts(c) {
     return key ? { unit: c.unitOf[t.from], pid: t.from, value: t.value, toName, key } : null;
   }).filter(Boolean);
 }
-let qrReady;
-function loadQR() {
-  if (window.qrcode) return Promise.resolve(window.qrcode);
-  if (!qrReady) qrReady = new Promise((res, rej) => {
-    const sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
-    sc.onload = () => window.qrcode ? res(window.qrcode) : rej(new Error('qr'));
-    sc.onerror = () => { qrReady = null; rej(new Error('qr')); };
-    document.head.appendChild(sc);
-  });
-  return qrReady;
-}
-async function qrMatrix(text) {
-  const q = await loadQR(); const qr = q(0, 'M'); qr.addData(text); qr.make();
-  const n = qr.getModuleCount(); return { n, dark: (r, c) => qr.isDark(r, c) };
-}
-function drawQR(ctx, m, x, y, size, bg = '#FFFFFF', ink = '#000000') {
-  const quiet = 2, cell = size / (m.n + quiet * 2);
-  ctx.fillStyle = bg; ctx.fillRect(x, y, size, size); ctx.fillStyle = ink;
-  for (let r = 0; r < m.n; r++) for (let c = 0; c < m.n; c++) if (m.dark(r, c)) ctx.fillRect(Math.floor(x + (c + quiet) * cell), Math.floor(y + (r + quiet) * cell), Math.ceil(cell), Math.ceil(cell));
-}
-function pixSheet(debt, back) {
-  const code = pixPayload(debt.key, debt.toName, debt.value);
-  // back: fechar volta para a janela de onde veio (cupom ou comanda do histórico)
-  openSheet({ title: `Pix para ${debt.toName}`, sub: BRL(debt.value), onClose: back, body: `<div class="qr-wrap"><canvas id="px-qr" width="480" height="480" aria-label="QR code do Pix"></canvas><span class="hint" id="px-qr-msg">Gerando QR code…</span></div>
-    <div class="field"><span class="eyebrow">Pix copia e cola</span><textarea class="pix-code" readonly rows="4">${esc(code)}</textarea></div>
-`, foot: `<button class="btn" id="px-copy">${I.copy}Copiar Pix copia e cola</button>`, onMount: async s => {
-    $('#px-copy', s).onclick = () => copyText(code, 'Pix copia e cola copiado.');
-    try { const m = await qrMatrix(code); const cv = $('#px-qr'); if (cv) { drawQR(cv.getContext('2d'), m, 0, 0, 480); $('#px-qr-msg').hidden = true; } }
-    catch { const msg = $('#px-qr-msg'); if (msg) msg.textContent = 'Não deu para gerar o QR code agora. Use o Pix copia e cola.'; const cv = $('#px-qr'); if (cv) cv.hidden = true; }
-  } });
-}
+const qrMatrix = texto => KitFacil.pix.matriz(texto);
+const drawQR = (...a) => KitFacil.pix.desenhar(...a);
+// back: fechar volta para a janela de onde veio (cupom ou comanda do histórico)
+const pixSheet = (debt, back) => KitFacil.pix.janela({ titulo: `Pix para ${debt.toName}`, sub: BRL(debt.value), codigo: pixPayload(debt.key, debt.toName, debt.value), aoFechar: back });
 const couvertLabel = r => 'Couvert artístico' + (r.cvPayers > 1 ? ` (${r.cvPayers}×)` : '');
 // o cupom é montado uma vez e desenhado igual na tela, na imagem, no PDF e no texto
 function receiptRows(r, b, calc) {
@@ -1187,7 +998,7 @@ function receiptText(r, b, calc, rows0) {
   return L.join('\n');
 }
 async function copyText(text, okMsg) {
-  try { await navigator.clipboard.writeText(text); toast(okMsg); return; } catch {}
+  try { await navigator.clipboard.writeText(text); KitFacil.avisar(okMsg); return; } catch {}
   openSheet({ title: 'Copiar', body: `<textarea id="cp" readonly style="width:100%;min-height:220px;font-family:var(--f-mono);font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px">${esc(text)}</textarea><p class="hint">Toque e segure no texto e escolha Copiar.</p>`,
     foot: `<button class="btn" id="cp-x">Fechar</button>`, onMount: s => { $('#cp-x', s).onclick = () => closeSheet(); } });
 }
@@ -1224,7 +1035,7 @@ function liveCardHTML() {
   }
   const main = closed ? '' : connected ? `<button class="btn mustard" id="live-invite">${I.share}Convidar</button>`
     : store.ready ? `<button class="btn mustard" id="live-reconnect">${I.refresh}Reconectar</button>` : '';
-  return `<section class="live-panel" id="live-card" data-morf="live-card" aria-label="Comanda ao vivo">
+  return `<section class="live-panel" id="live-card" data-kf-morf="live-card" aria-label="Comanda ao vivo">
     <div class="lp-head">
       <span class="lp-status ${st[0]}"><span class="lp-dot" aria-hidden="true"></span>${st[1]}</span>
       ${closed ? '' : `<button class="lp-code" id="live-code" aria-label="Código ${esc(draft.live.code.split('').join(' '))}. Mostrar convite">${esc(codeShort(draft.live.code))}${I.qr}</button>`}
@@ -1315,11 +1126,11 @@ function recoverSheet() {
     $('#rc-ok', s).onclick = () => {
       const pick = $$('[data-rp]', s).filter(x => x.checked).map(x => mp[+x.dataset.rp]);
       const pickU = $$('[data-ru]', s).filter(x => x.checked).map(x => mu[+x.dataset.ru]);
-      if (!pick.length && !pickU.length) { toast('Marque ao menos um item para recuperar.'); return; }
+      if (!pick.length && !pickU.length) { KitFacil.avisar('Marque ao menos um item para recuperar.'); return; }
       pick.forEach(p => catalog.products.push(clone(p)));
       pickU.forEach(p => catalog.people.push({ name: p.name, last: p.last }));
       store.saveCatalog(); closeSheet(true); render();
-      toast(`Recuperado: ${[pick.length ? plural(pick.length, 'produto', 'produtos') : '', pickU.length ? plural(pickU.length, 'pessoa', 'pessoas') : ''].filter(Boolean).join(' e ')}.`);
+      KitFacil.avisar(`Recuperado: ${[pick.length ? plural(pick.length, 'produto', 'produtos') : '', pickU.length ? plural(pickU.length, 'pessoa', 'pessoas') : ''].filter(Boolean).join(' e ')}.`);
     };
   } });
 }
@@ -1468,12 +1279,12 @@ async function canvasesToPDF(cvs) {
 }
 async function saveFile(filename, blob) {
   const dl = await downloadsNS();
-  if (!dl) { toast('Salvar arquivo não está disponível aqui. Toque e segure a imagem para salvar.'); return false; }
+  if (!dl) { KitFacil.avisar('Salvar arquivo não está disponível aqui. Toque e segure a imagem para salvar.'); return false; }
   try { await dl.save({ filename, data: blob }); return true; }
   catch (e) {
     if (e?.code === 'declined') return false;
-    if (e?.code === 'again') toast('Arquivo pronto.', { label: 'Compartilhar', run: () => { const f = pendingFile; pendingFile = null; if (f) navigator.share({ files: [f] }).catch(() => {}); } });
-    else toast('Não foi possível gerar o arquivo agora.');
+    if (e?.code === 'again') KitFacil.avisar('Arquivo pronto.', { label: 'Compartilhar', run: () => { const f = pendingFile; pendingFile = null; if (f) navigator.share({ files: [f] }).catch(() => {}); } });
+    else KitFacil.avisar('Não foi possível gerar o arquivo agora.');
     return false;
   }
 }
@@ -1498,17 +1309,17 @@ async function shareReceipt(r, b, calc, back) {
   $('#sr-png', s)?.addEventListener('click', async () => saveFile(name + '.png', await canvasBlob(cv)));
   $('#sr-pdf', s)?.addEventListener('click', async e => {
     const btn = e.currentTarget; btn.disabled = true;
-    try { await saveFile(name + '.pdf', await canvasesToPDF([cv])); } catch { toast('Não foi possível gerar o PDF agora.'); }
+    try { await saveFile(name + '.pdf', await canvasesToPDF([cv])); } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
     btn.disabled = false;
   });
 }
 async function shareAllPDF(b, calc, btn) {
-  if (!(await downloadsNS())) { toast('Salvar arquivo não está disponível aqui. Use Compartilhar em cada cupom.'); return; }
+  if (!(await downloadsNS())) { KitFacil.avisar('Salvar arquivo não está disponível aqui. Use Compartilhar em cada cupom.'); return; }
   if (btn) btn.disabled = true;
   try {
     const cvs = []; for (const u of calc.units) cvs.push(await receiptCanvas(u, b, calc));
     await saveFile(`cupons-${slug(b.place)}.pdf`, await canvasesToPDF(cvs));
-  } catch { toast('Não foi possível gerar o PDF agora.'); }
+  } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
   if (btn) btn.disabled = false;
 }
 
@@ -1533,7 +1344,7 @@ function deleteCurrent(ask) {
     const backup = { draft: clone(draft), bill: bills.find(b => b.id === d.id) || null };
     if (backup.bill) { bills = bills.filter(b => b.id !== d.id); store.deleteBill(d.id); }
     draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 });
-    toast('Comanda excluída.', { label: 'Desfazer', run: () => {
+    KitFacil.avisar('Comanda excluída.', { label: 'Desfazer', run: () => {
       draft = migrate(backup.draft); draft.active = true; draft.live = null;
       if (backup.bill) { bills = [backup.bill, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(backup.bill); }
       tab = 'comanda'; saveDraft(); render(); window.scrollTo({ top: 0 });
@@ -1563,7 +1374,7 @@ function renameSheet(it) { return produtoSheet(null, it); }
 // 1.0: a divisão do item fica na mesma janela do produto (uma janela só para lançar)
 function divisaoHTML(d) {
   return `<div class="field"><span class="eyebrow">Tipo de consumo</span><span id="lc-modo"></span></div>
-      <div id="lc-lista" data-morf="lc-lista"></div>
+      <div id="lc-lista" data-kf-morf="lc-lista"></div>
       <p class="share" id="lc-resumo" role="status" style="margin:0"></p>
       <p class="hint lc-pagou" id="lc-pagou" role="status" hidden></p>`;
 }
@@ -1588,7 +1399,7 @@ function divisaoLigar(s, d, getIt, setQty, ini) {
   const listaInd = () => `<div class="units">${d.people.map(p => `
       <div class="unit-row" data-lc-linha="${p.id}"><span class="who-name">${avatar(p.name)}<span>${esc(p.name)}</span></span>
         <span class="unit-count"><span class="num" data-lc-n="${p.id}">0</span></span>
-        <span class="unit-btns"><button type="button" class="minus" data-lc-un="${p.id}" data-dir="-1" aria-label="Uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-lc-un="${p.id}" data-dir="1" ${fora(p.id) ? 'disabled' : ''} aria-label="Uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`).join('')}</div>`;
+        <span class="unit-btns"><button type="button" class="minus" data-lc-un="${p.id}" data-dir="-1" aria-label="−1: uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-lc-un="${p.id}" data-dir="1" ${fora(p.id) ? 'disabled' : ''} aria-label="+1: uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`).join('')}</div>`;
   const pronto = () => modo === 'units' ? falta() === 0 : marcados.size > 0;
   const resumo = () => {
     const it = getIt(), total = (it.price || 0) * it.qty;
@@ -1689,13 +1500,13 @@ function itemPendenteHTML(it, d) {
   let corpo;
   if (it.mode === 'units') {
     corpo = d.people.map(p => { const u = it.a[p.id] || 0; return `<div class="ip-lin ${u ? 'on' : ''}"><span class="ip-nome">${esc(p.name)}</span><span class="ip-n">${u}</span>
-      <span class="unit-btns"><button type="button" class="minus" data-unit="${p.id}" data-dir="-1" ${u ? '' : 'disabled'} aria-label="Uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-unit="${p.id}" data-dir="1" ${left > 0 ? '' : 'disabled'} aria-label="Uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`; }).join('')
+      <span class="unit-btns"><button type="button" class="minus" data-unit="${p.id}" data-dir="-1" ${u ? '' : 'disabled'} aria-label="−1: uma unidade a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-unit="${p.id}" data-dir="1" ${left > 0 ? '' : 'disabled'} aria-label="+1: uma unidade a mais para ${esc(p.name)}">+1</button></span></div>`; }).join('')
       + `<p class="ip-status ${left === 0 ? 'ok' : ''}">${left === 0 ? `${it.qty} de ${it.qty} distribuídas` : left > 0 ? `Faltam ${plural(left, 'unidade', 'unidades')} · ${units} de ${it.qty}` : `${plural(-left, 'unidade', 'unidades')} a mais`}</p>`;
   } else {
     const todos = n === ids.length && n > 0;
     corpo = d.people.map(p => { const on = (it.a[p.id] || 0) > 0; return `<button type="button" class="ip-lin ip-ck ${on ? 'on' : ''}" data-toggle="${p.id}" aria-pressed="${on}"><span class="ip-box" aria-hidden="true">${on ? '✓' : ''}</span><span class="ip-nome">${esc(p.name)}</span><span class="ip-v">${on ? val(p.id) : ''}</span></button>`; }).join('')
       + (ids.length > 1 ? `<button type="button" class="it-novo ip-todos" data-all="${todos ? 'none' : 'all'}"><span class="it-q">${todos ? '−' : '+'}</span><span>${todos ? 'Desmarcar todos' : 'Marcar todos'}</span><span></span></button>` : '')
-      + `<div class="ip-lin ip-qtd"><span class="ip-nome">Quantidade</span><span class="ip-n">${it.qty}</span><span class="unit-btns"><button type="button" class="minus" data-q="-1" ${it.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade a menos">−1</button><button type="button" class="plus" data-q="1" aria-label="Uma unidade a mais">+1</button></span></div>`
+      + `<div class="ip-lin ip-qtd"><span class="ip-nome">Quantidade</span><span class="ip-n">${it.qty}</span><span class="unit-btns"><button type="button" class="minus" data-q="-1" ${it.qty > 1 ? '' : 'disabled'} aria-label="−1: uma unidade a menos">−1</button><button type="button" class="plus" data-q="1" aria-label="+1: uma unidade a mais">+1</button></span></div>`
       + `<p class="ip-status ${n ? 'ok' : ''}">${n ? `÷ ${n === ids.length ? 'todos' : n} · ${brl(Math.round((it.qty - Math.min(it.fq || 0, it.qty)) * it.price / n))} cada` : 'Marque quem consumiu'}</p>`;
   }
   return `<div class="item item-p" data-item="${it.id}">
@@ -1714,20 +1525,20 @@ function itemFechadoHTML(it, d) {
   const linhas = cur.mode === 'units'
     ? d.people.map(p => { const u = cur.a[p.id] || 0, x = div.find(y => y.id === p.id);
         return `<div class="div-lin ${u ? '' : 'cs-zero'}"><span class="who-name">${avatar(p.name)}<span>${esc(p.name)}</span><span class="hint num">· ${u}</span></span>
-          <span class="div-dir"><span class="num">${u ? BRL(x ? x.val : 0) : ''}</span><span class="unit-btns"><button type="button" class="minus" data-it-u="${it.id}" data-p="${p.id}" data-dir="-1" ${u && cur.qty > 1 && !saiu(d, p.id) ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-it-u="${it.id}" data-p="${p.id}" data-dir="1" ${saiu(d, p.id) ? 'disabled' : ''} aria-label="Mais uma unidade de ${esc(it.name)} para ${esc(p.name)}">+1</button></span></span></div>`; }).join('')
+          <span class="div-dir"><span class="num">${u ? BRL(x ? x.val : 0) : ''}</span><span class="unit-btns"><button type="button" class="minus" data-it-u="${it.id}" data-p="${p.id}" data-dir="-1" ${u && cur.qty > 1 && !saiu(d, p.id) ? '' : 'disabled'} aria-label="−1: uma unidade de ${esc(it.name)} a menos para ${esc(p.name)}">−1</button><button type="button" class="plus" data-it-u="${it.id}" data-p="${p.id}" data-dir="1" ${saiu(d, p.id) ? 'disabled' : ''} aria-label="+1: mais uma unidade de ${esc(it.name)} para ${esc(p.name)}">+1</button></span></span></div>`; }).join('')
     : div.map(x => `<div class="div-lin"><span class="who-name">${avatar(x.nome)}<span>${esc(x.nome)}</span>${x.txt ? `<span class="hint">· ${x.txt}</span>` : ''}</span><span class="num">${BRL(x.val)}</span></div>`).join('')
       + `<div class="div-lin"><span class="cs-tx"><span>Quantidade</span><span class="hint">${cur.qty} × ${BRL(cur.price)} = ${BRL(cur.qty * cur.price)}</span></span>
-        <span class="div-dir"><span class="num fq-n">${cur.qty}</span><span class="unit-btns"><button type="button" class="minus" data-it-q="${it.id}" data-dir="-1" ${cur.qty > 1 ? '' : 'disabled'} aria-label="Uma unidade de ${esc(it.name)} a menos">−1</button><button type="button" class="plus" data-it-q="${it.id}" data-dir="1" aria-label="Mais uma unidade de ${esc(it.name)}">+1</button></span></span></div>`;
+        <span class="div-dir"><span class="num fq-n">${cur.qty}</span><span class="unit-btns"><button type="button" class="minus" data-it-q="${it.id}" data-dir="-1" ${cur.qty > 1 ? '' : 'disabled'} aria-label="−1: uma unidade de ${esc(it.name)} a menos">−1</button><button type="button" class="plus" data-it-q="${it.id}" data-dir="1" aria-label="+1: mais uma unidade de ${esc(it.name)}">+1</button></span></span></div>`;
   const resumo = () => { const dq = cur.qty - it.qty, df = fq - (it.fq || 0), t = [];
     if (dq) t.push(`${dq > 0 ? '+' : ''}${plural(dq, 'unidade', 'unidades')}`); if (df) t.push(`cortesia ${it.fq || 0} → ${fq}`);
     if (!dq && cur.mode === 'units' && JSON.stringify(cur.a) !== JSON.stringify(it.a)) t.push('divisão'); return t.join(' · '); };
   return `<details class="item-d ${sujo ? 'sujo' : ''}" data-kf-secao data-item="${it.id}" ${aberto ? 'open' : ''}>
-    <summary class="it-lin" aria-label="${esc(`${it.qty} ${it.name}, ${BRL(it.qty * it.price)}, ${tipoItem(it, d)}${it.fq ? ', ' + plural(it.fq, 'cortesia', 'cortesias') : ''}`)}"><span class="it-q">${it.qty}×</span><span class="it-nome"><span>${esc(it.name)}</span><span class="it-tipo">${BRL(it.price).replace('R$', '').trim()} cada · ${esc(tipoItem(it, d))}${it.fq ? ` · ${plural(it.fq, 'cortesia', 'cortesias')}` : ''}</span></span><span class="it-v">${BRL(it.qty * it.price).replace('R$', '').trim()}</span></summary>
+    <summary class="it-lin"><span class="it-q">${it.qty}×</span><span class="it-nome"><span>${esc(it.name)}</span><span class="it-tipo">${BRL(it.price).replace('R$', '').trim()} cada · ${esc(tipoItem(it, d))}${it.fq ? ` · ${plural(it.fq, 'cortesia', 'cortesias')}` : ''}</span></span><span class="it-v">${BRL(it.qty * it.price).replace('R$', '').trim()}</span></summary>
     <div class="item-corpo">
       <div class="div-lista">${linhas}</div>
       <div class="div-lin fq-lin"><span class="cs-tx"><span>Cortesia</span></span>
-        <span class="div-dir"><span class="num fq-n" aria-label="${fq} de ${cur.qty} sem cobrança">${fq}<small>/${cur.qty}</small></span><span class="unit-btns"><button type="button" class="minus" data-it-fq="${it.id}" data-dir="-1" ${fq ? '' : 'disabled'} aria-label="Uma cortesia a menos em ${esc(it.name)}">−1</button><button type="button" class="plus" data-it-fq="${it.id}" data-dir="1" ${fq < cur.qty ? '' : 'disabled'} aria-label="Uma cortesia a mais em ${esc(it.name)}">+1</button></span></span></div>
-      ${sujo ? `<div class="pending-bar" data-exp="pend:${it.id}"><span><b>Alteração não salva</b> · ${esc(resumo())} · <span class="num">${BRL((it.qty - (it.fq || 0)) * it.price)} → ${BRL((cur.qty - fq) * cur.price)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-it-desc="${it.id}">Descartar</button><button type="button" class="btn small" data-it-ok="${it.id}">${I.save}Salvar</button></span></div>`
+        <span class="div-dir"><span class="num fq-n" aria-label="${fq} de ${cur.qty} sem cobrança">${fq}<small>/${cur.qty}</small></span><span class="unit-btns"><button type="button" class="minus" data-it-fq="${it.id}" data-dir="-1" ${fq ? '' : 'disabled'} aria-label="−1: uma cortesia a menos em ${esc(it.name)}">−1</button><button type="button" class="plus" data-it-fq="${it.id}" data-dir="1" ${fq < cur.qty ? '' : 'disabled'} aria-label="+1: uma cortesia a mais em ${esc(it.name)}">+1</button></span></span></div>
+      ${sujo ? `<div class="pending-bar" data-kf-exp="pend:${it.id}"><span><b>Alteração não salva</b> · ${esc(resumo())} · <span class="num">${BRL((it.qty - (it.fq || 0)) * it.price)} → ${BRL((cur.qty - fq) * cur.price)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-it-desc="${it.id}">Descartar</button><button type="button" class="btn small" data-it-ok="${it.id}">${I.save}Salvar</button></span></div>`
         : `<div class="grp item-acoes"><button class="btn small ghost" data-it-alt="${it.id}">${I.edit}Alterar</button><button class="btn small ghost del-btn" data-it-del="${it.id}">${I.trash}Remover</button></div>`}
     </div></details>`;
 }
@@ -1736,25 +1547,16 @@ function itemFechadoHTML(it, d) {
    Regra do Bruno (15/11/2026): tudo o que o app abre ou fecha dura 600 ms, na mesma curva (começa macio e pousa
    devagar): janelas, o fundo escuro, linhas e trechos que abrem e recolhem, troca de tela, avisos e listas.
    Nenhum outro arquivo escreve duração de abrir ou fechar: usa MOVE aqui e --cf-ms / --cf-curva no CSS. */
-const MOVE = { ms: 600, css: 'cubic-bezier(.45,0,.2,1)' };
-/* O Kit 0.6.0 ainda abre seções em 560 ms e troca telas e listas em 280 ms. Até o Kit 0.7.0 trazer os 600 ms, o app
-   acerta o relógio dessas chamadas do Kit sem mexer em comum/ (Código, Arts. 30-A e 93, § 1º). */
-(() => {
-  const nativo = Element.prototype.animate, K = window.KitFacil && KitFacil.movimento; if (!nativo || !K) return;
-  Element.prototype.animate = function (quadros, o) {
-    if (o && typeof o === 'object' && o.easing === K.css && (o.duration === K.ms || o.duration === K.curto)) o = { ...o, duration: MOVE.ms };
-    return nativo.call(this, quadros, o);
-  };
-})();
+const MOVE = { ms: KitFacil.movimento.ms, css: KitFacil.movimento.css };
 const MV = () => { const m = window.KitFacil?.movimento; return { ms: MOVE.ms, css: MOVE.css, off: !!(m?.reduzido ? m.reduzido() : matchMedia('(prefers-reduced-motion: reduce)').matches) }; };
 // Enquanto o app anima a altura de um trecho de uma janela, avisa o mecanismo das janelas (casca.js) para não deslizar
 // a janela por cima: a altura já está mudando quadro a quadro.
-function alturaPorContaDoApp(el, ms) { if (el && el.closest && el.closest('.kf-dlg') && window.cfJanelaOcupada) window.cfJanelaOcupada(ms); }
+function alturaPorContaDoApp(el, ms) { if (el && el.closest && el.closest('.kf-dlg')) KitFacil.janela.ocupada(ms); }
 // atalhos de uma pessoa (ou de um cupom compartilhado), abertos ao tocar no nome
 function atalhosPessoaHTML(u, calc, d) {
   const aqui = pesAberto === u.id, juntando = aqui && pesJuntando, svcAberto = aqui && pesSvc, cvAberto = aqui && pesCv;
   const multi = u.members.length > 1, pid = u.members[0], p = calc.per[pid].person;
-  const sw = (attr, on, label, valor) => `<label class="pa-lin"><span class="pa-tx"><span>${label}</span>${valor ? `<span class="pa-v">${valor}</span>` : ''}</span><span class="switch"><input type="checkbox" ${attr} ${on ? 'checked' : ''} aria-label="${esc(label)}"><span class="track"></span></span></label>`;
+  const sw = (attr, on, label, valor) => `<label class="pa-lin"><span class="pa-tx"><span>${label}</span>${valor ? `<span class="pa-v">${valor}</span>` : ''}</span><span class="kf-chave"><input type="checkbox" ${attr} ${on ? 'checked' : ''} aria-label="${esc(label)}"><span class="kf-chave-trilho"></span></span></label>`;
   const outros = calc.units.filter(x => x.id !== u.id && !cupomSaiu(d, x));
   if (cupomSaiu(d, u)) return `<div class="dv-atalhos" data-pa="${u.id}"><div class="pa-acoes"><button type="button" class="btn small" data-pa-cupom>${I.file}Ver cupom</button></div></div>`;
   let h = '';
@@ -1763,21 +1565,21 @@ function atalhosPessoaHTML(u, calc, d) {
     const nao = u.members.filter(m => !calc.per[m].person.payService), nm = m => calc.per[m].person.name;
     const resumo = !nao.length ? 'todos pagam' : nao.length === u.members.length ? 'ninguém paga' : `${u.members.length - nao.length} de ${u.members.length} · ${nao.length === 1 ? `${esc(nm(nao[0]))} não paga` : `${nao.length} não pagam`}`;
     h += `<button type="button" class="pa-lin pa-res" data-pa-svcabre aria-expanded="${svcAberto}"><span class="pa-tx"><span>Paga serviço</span><span class="pa-v">${resumo}</span></span><span class="pa-seta" aria-hidden="true"></span></button>`;
-    if (svcAberto) h += `<div class="pa-sub" data-exp="svc:${u.id}">${u.members.map(m => { const q = calc.per[m].person; return sw(`data-pa-svc="${m}"`, q.payService, esc(q.name), q.payService ? BRL(calc.per[m].service) : 'não paga'); }).join('')}</div>`;
+    if (svcAberto) h += `<div class="pa-sub" data-kf-exp="svc:${u.id}">${u.members.map(m => { const q = calc.per[m].person; return sw(`data-pa-svc="${m}"`, q.payService, esc(q.name), q.payService ? BRL(calc.per[m].service) : 'não paga'); }).join('')}</div>`;
   }
   if (!multi && d.couvert.enabled) h += sw(`data-pa-cv="${pid}"`, p.payCouvert, 'Paga couvert', p.payCouvert ? BRL(calc.per[pid].couvert) : 'não paga');
   if (multi && d.couvert.enabled) {
     const nao = u.members.filter(m => !calc.per[m].person.payCouvert), nm = m => calc.per[m].person.name;
     const resumo = !nao.length ? 'todos pagam' : nao.length === u.members.length ? 'ninguém paga' : `${u.members.length - nao.length} de ${u.members.length} · ${nao.length === 1 ? `${esc(nm(nao[0]))} não paga` : `${nao.length} não pagam`}`;
     h += `<button type="button" class="pa-lin pa-res" data-pa-cvabre aria-expanded="${cvAberto}"><span class="pa-tx"><span>Paga couvert</span><span class="pa-v">${resumo}</span></span><span class="pa-seta" aria-hidden="true"></span></button>`;
-    if (cvAberto) h += `<div class="pa-sub" data-exp="cv:${u.id}">${u.members.map(m => { const q = calc.per[m].person; return sw(`data-pa-cv="${m}"`, q.payCouvert, esc(q.name), q.payCouvert ? BRL(calc.per[m].couvert) : 'não paga'); }).join('')}</div>`;
+    if (cvAberto) h += `<div class="pa-sub" data-kf-exp="cv:${u.id}">${u.members.map(m => { const q = calc.per[m].person; return sw(`data-pa-cv="${m}"`, q.payCouvert, esc(q.name), q.payCouvert ? BRL(calc.per[m].couvert) : 'não paga'); }).join('')}</div>`;
   }
   h += botoesPagoHTML(u, contaPaga(d, u, calc), 'data-pa-pago');
   const botoes = `<div class="pa-acoes">
       ${multi ? `<button type="button" class="btn small" data-pa-desfaz>${I.x}Separar</button>` : outros.length ? `<button type="button" class="btn small" data-pa-juntar aria-expanded="${juntando}">${I.users}Juntar</button>` : ''}
       <button type="button" class="btn small" data-pa-cupom>${I.file}Ver cupom</button>
       <button type="button" class="btn small" data-pa-mais aria-label="Editar ${esc(u.name)}">${I.edit}Editar</button></div>`;
-  const junta = !multi && juntando ? `<div class="pa-junta" data-exp="junta:${u.id}" role="group" aria-label="Juntar ${esc(u.name)} com"><p class="pa-junta-t">Juntar ${esc(u.name)} com:</p>${outros.map(x => `<button type="button" class="pa-alvo" data-pa-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${I.users}${esc(x.name)}</span><span>${BRL(x.total)}${I.next}</span></button>`).join('')}</div>` : '';
+  const junta = !multi && juntando ? `<div class="pa-junta" data-kf-exp="junta:${u.id}" role="group" aria-label="Juntar ${esc(u.name)} com"><p class="pa-junta-t">Juntar ${esc(u.name)} com:</p>${outros.map(x => `<button type="button" class="pa-alvo" data-pa-alvo="${x.members.length > 1 ? 'g:' : 'p:'}${x.id}"><span>${I.users}${esc(x.name)}</span><span>${BRL(x.total)}${I.next}</span></button>`).join('')}</div>` : '';
   return `<div class="dv-atalhos" data-pa="${u.id}">${h}${botoes}${junta}</div>`;
 }
 function removerPessoa(id) {
@@ -1801,7 +1603,7 @@ function addPessoa(name) {
   const d = draft;
   name = String(name || '').trim().replace(/\s+/g, ' ');
   if (!name) return false;
-  if (d.people.some(p => norm(p.name) === norm(name))) { toast(`${name} já está na comanda.`); return false; }
+  if (d.people.some(p => norm(p.name) === norm(name))) { KitFacil.avisar(`${name} já está na comanda.`); return false; }
   const p = newPerson(name), prevCount = d.people.length;
   d.people.push(p);
   // só entra sozinho em itens divididos entre todos (quem chega depois também entra)
@@ -1809,7 +1611,7 @@ function addPessoa(name) {
   const naMesa = d.people.filter(x => x.id !== p.id && !saiu(d, x.id));
   d.items.forEach(it => { if ((!it.lk || it.auto) && it.mode === 'equal' && prevCount && naMesa.length && naMesa.every(x => (it.a[x.id] || 0) > 0)) { it.a[p.id] = 1; entrou.push(it); } });
   commit();
-  if (entrou.some(it => it.lk)) setTimeout(() => toast(`${p.name} entrou na divisão de ${plural(entrou.length, 'item', 'itens')} já lançados.`, { label: 'Desfazer', run: () => { entrou.forEach(it => { delete it.a[p.id]; }); commit(); } }), 60);
+  if (entrou.some(it => it.lk)) setTimeout(() => KitFacil.avisar(`${p.name} entrou na divisão de ${plural(entrou.length, 'item', 'itens')} já lançados.`, { label: 'Desfazer', run: () => { entrou.forEach(it => { delete it.a[p.id]; }); commit(); } }), 60);
   return true;
 }
 function pessoaNovaSheet() {
@@ -1817,7 +1619,7 @@ function pessoaNovaSheet() {
   const naMesa = () => d.people.length ? `Na mesa: ${esc(d.people.map(p => p.name).join(', '))}` : 'Ninguém na mesa ainda.';
   const turmas = !d.isExample && (catalog.groups || []).length ? `<div class="field field-sel"><label for="pn-turma">Pôr uma turma na mesa</label><select id="pn-turma"><option value="">Escolher turma</option>${[...catalog.groups].sort(ordemNome).map(g => { const falta = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n))).length; return `<option value="${esc(g.id)}" ${falta ? '' : 'disabled'}>${esc(g.name)} · ${falta ? plural(falta, 'pessoa', 'pessoas') + ' a pôr' : 'todos já na mesa'}</option>`; }).join('')}</select></div>` : '';
   openSheet({ title: 'Quem está na mesa?', body: `<form id="pn-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
-      <div class="row"><div class="field grow"><label for="pn-nome">Nome</label><input id="pn-nome" type="text" autocapitalize="words" autocomplete="off" enterkeyhint="next"></div><button class="btn" type="submit" id="pn-add">${I.plus}Adicionar</button></div>
+      <div class="row kf-linha"><div class="field grow"><label for="pn-nome">Nome</label><input id="pn-nome" type="text" autocapitalize="words" autocomplete="off" enterkeyhint="next"></div><button class="btn" type="submit" id="pn-add">${I.plus}Adicionar</button></div>
       ${turmas}<p class="hint" id="pn-mesa" role="status" style="margin:0">${naMesa()}</p></form>`,
     onMount: s => {
       const inp = $('#pn-nome', s);
@@ -1832,7 +1634,7 @@ function pessoaNovaSheet() {
         const g = (catalog.groups || []).find(x => x.id === e.target.value); if (!g) return;
         const novos = g.members.filter(n => !d.people.some(p => norm(p.name) === norm(n)));
         novos.forEach(n => addPessoa(n)); depois();
-        toast(`${plural(novos.length, 'pessoa entrou', 'pessoas entraram')} na mesa: ${novos.join(', ')}.`);
+        KitFacil.avisar(`${plural(novos.length, 'pessoa entrou', 'pessoas entraram')} na mesa: ${novos.join(', ')}.`);
       });
     } });
 }
@@ -1852,8 +1654,8 @@ function produtoSheet(paraId, ed) {
   const d = draft, Uu = usage(), para = !ed && paraId && d.people.find(p => p.id === paraId);
   openSheet({ title: ed ? `Alterar ${ed.name}` : para ? `Lançar para ${para.name}` : 'Lançar item', tall: !para && d.people.length > 1, body: `<form id="pr-form" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
       <div class="field"><label for="pr-nome">Produto</label><input id="pr-nome" type="text" autocapitalize="words" autocomplete="off" placeholder="Ex.: Suco de laranja" value="${ed ? esc(ed.name) : ''}"></div>
-      <div class="row lado"><div class="field"><label for="pr-qtd">Quantidade</label><div class="stepper"><button type="button" data-pr-step="-1" aria-label="Menos">−</button><input id="pr-qtd" type="number" min="1" step="1" inputmode="numeric" value="${ed ? ed.qty : 1}"><button type="button" data-pr-step="1" aria-label="Mais">+</button></div></div>
-        <div class="field grow"><label for="pr-preco">Valor unitário</label><input id="pr-preco" type="text" inputmode="numeric" data-money placeholder="R$ 0,00" value="${ed ? moneyInput(ed.price) : ''}"></div></div>
+      <div class="row lado"><div class="field"><label for="pr-qtd">Quantidade</label>${KitFacil.ui.quantidade({ id: 'pr-qtd', valor: ed ? ed.qty : 1, min: 1, max: 999 })}</div>
+        <div class="field grow"><label for="pr-preco">Valor unitário</label><input id="pr-preco" type="text" inputmode="numeric" data-kf-dinheiro placeholder="R$ 0,00" value="${ed ? moneyInput(ed.price) : ''}"></div></div>
       <p class="price-hint" id="pr-dica" hidden></p>${!para && d.people.length > 1 ? divisaoHTML(d) : ''}</form>`,
     foot: `<button type="button" class="btn ghost" id="pr-no">Cancelar</button><button type="submit" form="pr-form" class="btn" id="lc-ok">${ed ? `${I.save}Salvar alteração` : `${I.plus}Lançar`}</button>`, onMount: s => {
       const nomeEl = $('#pr-nome', s), precoEl = $('#pr-preco', s), qtdEl = $('#pr-qtd', s), dica = $('#pr-dica', s);
@@ -1872,22 +1674,23 @@ function produtoSheet(paraId, ed) {
       attachSuggest(nomeEl, () => catalog.products.map(p => ({ p, i: priceInfo(p, d.place), n: Uu.products[norm(p.name)] || 0 }))
         .sort((a, b) => (!!b.i?.here - !!a.i?.here) || b.n - a.n || a.p.name.localeCompare(b.p.name, 'pt-BR'))
         .map(({ p, i }) => ({ label: p.name, right: i ? BRL(i.price) + (i.here ? '' : ' · outro local') : '', dim: i && !i.here })), x => { preencher(x.label, true); if (!isTouch) qtdEl.focus(); });
-      $$('[data-pr-step]', s).forEach(b => b.addEventListener('click', () => { qtdEl.value = Math.max(1, (parseInt(qtdEl.value) || 1) + +b.dataset.prStep); div?.atualizar(); }));
+      // − e + são do Kit (passo a passo de quantidade): ele avisa com o evento input
+      qtdEl.addEventListener('input', () => div?.atualizar());
       $('#pr-no', s).onclick = () => closeSheet();
       $('#pr-form', s).addEventListener('submit', e => {
         e.preventDefault();
         const name = nomeEl.value.trim().replace(/\s+/g, ' '), qty = Math.max(1, parseInt(qtdEl.value) || 1), price = parseMoney(precoEl.value);
-        if (!name) { toast('Informe o nome do produto.'); nomeEl.focus(); return; }
-        if (price === null || price === 0) { toast('Informe o valor unitário (por exemplo, 12,90).'); precoEl.focus(); return; }
+        if (!name) { KitFacil.avisar('Informe o nome do produto.'); nomeEl.focus(); return; }
+        if (price === null || price === 0) { KitFacil.avisar('Informe o valor unitário (por exemplo, 12,90).'); precoEl.focus(); return; }
         if (ed) {
           const cur = d.items.find(x => x.id === ed.id); if (!cur) { closeSheet(true); return; }
-          if (div && !div.pronto()) { toast(div.porque()); return; }
+          if (div && !div.pronto()) { KitFacil.avisar(div.porque()); return; }
           cur.name = name; cur.price = price; cur.qty = qty; cur.fq = Math.min(cur.fq || 0, qty);
           // a divisão só muda se a pessoa mexeu nela (preserva partes desiguais feitas em outro lugar)
           if (div && div.tocou()) { const r = div.resultado(); cur.a = r.a; cur.mode = r.modo; cur.auto = r.todos; cur.lk = true; }
           else if (cur.mode === 'units') { const tot = Object.values(cur.a).reduce((x, y) => x + y, 0); cur.lk = tot === qty; }
           delete pending[cur.id]; delete itPend[cur.id];
-          closeSheet(true); itemAberto = cur.id; commit(); toast(cur.mode === 'units' && !cur.lk ? `${cur.name}: distribua as unidades e confirme.` : 'Item alterado.');
+          closeSheet(true); itemAberto = cur.id; commit(); KitFacil.avisar(cur.mode === 'units' && !cur.lk ? `${cur.name}: distribua as unidades e confirme.` : 'Item alterado.');
           return;
         }
         if (para) {
@@ -1895,7 +1698,7 @@ function produtoSheet(paraId, ed) {
           const igual = d.items.find(it => it.lk && it.mode === 'units' && norm(it.name) === norm(name) && it.price === price);
           if (igual) { igual.a[para.id] = (igual.a[para.id] || 0) + qty; igual.qty += qty; igual.auto = false; itemNovo = igual.id; }
           else { const id = newId(); itemNovo = id; d.items.push({ id, o: nextOrder(), name, qty, price, fq: 0, mode: 'units', lk: true, auto: false, a: { [para.id]: qty } }); }
-          closeSheet(true); commit(); toast(`${qty > 1 ? qty + ' × ' : ''}${name} para ${para.name}.`);
+          closeSheet(true); commit(); KitFacil.avisar(`${qty > 1 ? qty + ' × ' : ''}${name} para ${para.name}.`);
           return;
         }
         const lancar = (a, todos, modo = 'equal') => {
@@ -1904,7 +1707,7 @@ function produtoSheet(paraId, ed) {
           itemAberto = null; itensAbertos = true; itemNovo = id; commit();
         };
         if (!div) { closeSheet(true); return lancar(Object.fromEntries(d.people.map(p => [p.id, 1])), true); }
-        if (!div.pronto()) { toast(div.porque()); return; }
+        if (!div.pronto()) { KitFacil.avisar(div.porque()); return; }
         const r = div.resultado(); closeSheet(true); lancar(r.a, r.todos, r.modo);
       });
     } });
@@ -1970,11 +1773,11 @@ function alternarPago(u, modo) {
   const d = draft, c = compute(d), antes = clone(d.pagos || {}), p = contaPaga(d, u, c);
   const antesX = { custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) }, saiu: { ...(d.saiu || {}) } };
   const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; Object.assign(d, antesX); commit({ anchor: false }); fcRefazer?.(); } };
-  if (modo === 'desmarcar') { marcarPago(d, u.members, false, c); commit({ anchor: false }); toast(`${u.name}: pagamento desmarcado.`, desfazer); return; }
+  if (modo === 'desmarcar') { marcarPago(d, u.members, false, c); commit({ anchor: false }); KitFacil.avisar(`${u.name}: pagamento desmarcado.`, desfazer); return; }
   marcarPago(d, u.members, true, c); commit({ anchor: false });
-  if (modo === 'acertar') { toast(p.estado === 'troco' ? `${u.name}: troco de ${BRL(p.troco)} devolvido.` : `${u.name}: diferença de ${BRL(p.falta)} recebida.`, desfazer); return; }
+  if (modo === 'acertar') { KitFacil.avisar(p.estado === 'troco' ? `${u.name}: troco de ${BRL(p.troco)} devolvido.` : `${u.name}: diferença de ${BRL(p.falta)} recebida.`, desfazer); return; }
   const abertos = c.openItems.length + c.unassigned.length;
-  toast(`${u.name}: pago ${BRL(p.falta)}.${abertos ? ' Ainda há itens sem divisão: a conta pode mudar.' : ''}`, desfazer);
+  KitFacil.avisar(`${u.name}: pago ${BRL(p.falta)}.${abertos ? ' Ainda há itens sem divisão: a conta pode mudar.' : ''}`, desfazer);
 }
 // botões de pagamento de um cupom, conforme a situação
 function botoesPagoHTML(u, p, attr = 'data-pg') {
@@ -2004,7 +1807,7 @@ function abrirSoEsta(det, irmas) {
     if (!sm.isConnected) return;
     const an = det.getAnimations().find(a => { try { return a.effect.getKeyframes().some(k => k.height); } catch { return false; } });
     let altura = det.offsetHeight; try { const kf = an && an.effect.getKeyframes(); if (kf && kf.length) altura = parseFloat(kf[kf.length - 1].height) || altura; } catch {}
-    const cab = $('.cu-cab'), topo = (cab ? cab.getBoundingClientRect().bottom : 0) + 8, doca = $('#guia-doca') || $$('.kf-nav').find(n => n.getClientRects().length), fundo = (doca ? doca.getBoundingClientRect().top : innerHeight) - 14;
+    const cab = $('.cu-cab'), topo = (cab ? cab.getBoundingClientRect().bottom : 0) + 8, doca = $('#kf-gu-doca') || $$('.kf-nav').find(n => n.getClientRects().length), fundo = (doca ? doca.getBoundingClientRect().top : innerHeight) - 14;
     const tituloFim = y0 - fechouAcima;                 // onde o título para se a tela não rolar
     let r = -fechouAcima;                               // rolagem que deixa o título onde o dedo tocou
     const paraCaber = tituloFim + altura - fundo;       // rolagem mínima para a linha aberta caber acima do pé
@@ -2030,41 +1833,12 @@ document.addEventListener('kf-secao', e => {
 });
 /* ---------- abrir e recolher com movimento ----------
    As telas são redesenhadas inteiras; este ajudante compara o antes e o depois de um redesenho e anima o que mudou:
-   [data-exp="chave"]  um trecho que aparece ou some (abre crescendo, fecha encolhendo);
-   [data-morf="chave"] uma caixa cujo conteúdo troca (a altura desliza de uma para a outra). */
+   [data-kf-exp="chave"]  um trecho que aparece ou some (abre crescendo, fecha encolhendo);
+   [data-kf-morf="chave"] uma caixa cujo conteúdo troca (a altura desliza de uma para a outra). */
 const MOV_EXP = { duration: MOVE.ms, easing: MOVE.css };
-function comMovimento(raiz, redesenhar) {
-  if (!raiz || !raiz.animate || (typeof semMovimento === 'function' && semMovimento())) { redesenhar(); return; }
-  const marca = el => el.id ? '#' + CSS.escape(el.id) : el.dataset.pa ? `[data-pa="${CSS.escape(el.dataset.pa)}"]` : el.dataset.item ? `[data-item="${CSS.escape(el.dataset.item)}"]` : el.dataset.pes ? `[data-pes="${CSS.escape(el.dataset.pes)}"]` : '';
-  const caminho = el => { const seg = []; for (let p = el; p && p !== raiz; p = p.parentElement) { const m = marca(p); if (m) { seg.unshift(m); return seg.join(' > '); } seg.unshift(`:nth-child(${[...p.parentElement.children].indexOf(p) + 1})`); } return seg.length ? ':scope > ' + seg.join(' > ') : ''; };
-  alturaPorContaDoApp(raiz, MOV_EXP.duration);
-  const antes = new Map(), alturas = new Map();
-  raiz.querySelectorAll('[data-exp]').forEach(e => { if (e.offsetHeight) antes.set(e.dataset.exp, { clone: e.cloneNode(true), pai: caminho(e.parentElement), i: [...e.parentElement.children].indexOf(e) }); });
-  raiz.querySelectorAll('[data-morf]').forEach(e => alturas.set(e.dataset.morf, e.offsetHeight));
-  redesenhar();
-  const medidas = e => { const cs = getComputedStyle(e), pai = e.parentElement && getComputedStyle(e.parentElement), vao = pai && /flex|grid/.test(pai.display) ? parseFloat(pai.rowGap) || 0 : 0;
-    return [{ height: '0px', paddingTop: '0px', paddingBottom: '0px', marginTop: -vao + 'px', marginBottom: '0px', borderTopWidth: '0px', borderBottomWidth: '0px', opacity: 0 },
-      { height: e.getBoundingClientRect().height + 'px', paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, marginTop: cs.marginTop, marginBottom: cs.marginBottom, borderTopWidth: cs.borderTopWidth, borderBottomWidth: cs.borderBottomWidth, opacity: 1 }]; };
-  const vistos = new Set();
-  raiz.querySelectorAll('[data-exp]').forEach(e => {
-    vistos.add(e.dataset.exp); if (antes.has(e.dataset.exp)) return;
-    const q = medidas(e); e.style.overflow = 'hidden'; e.style.boxSizing = 'border-box';
-    const a = e.animate(q, MOV_EXP); a.onfinish = a.oncancel = () => { e.style.overflow = ''; e.style.boxSizing = ''; };
-  });
-  for (const [k, x] of antes) {
-    if (vistos.has(k)) continue;
-    const pai = x.pai ? raiz.querySelector(x.pai) : raiz; if (!pai) continue;
-    const f = x.clone; f.removeAttribute('data-exp'); f.removeAttribute('id'); f.querySelectorAll('[id],[data-exp],[data-morf]').forEach(n => { n.removeAttribute('id'); n.removeAttribute('data-exp'); n.removeAttribute('data-morf'); });
-    f.classList.add('exp-fantasma'); f.setAttribute('aria-hidden', 'true'); f.inert = true;
-    pai.insertBefore(f, pai.children[Math.min(x.i, pai.children.length)] || null);
-    const q = medidas(f); f.style.overflow = 'hidden'; f.style.boxSizing = 'border-box';
-    const a = f.animate([q[1], q[0]], { ...MOV_EXP, fill: 'forwards' }); a.onfinish = a.oncancel = () => f.remove();
-  }
-  raiz.querySelectorAll('[data-morf]').forEach(e => {
-    const h0 = alturas.get(e.dataset.morf), h1 = e.offsetHeight; if (h0 == null || Math.abs(h0 - h1) < 3) return;
-    e.style.overflow = 'hidden'; const a = e.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], MOV_EXP); a.onfinish = a.oncancel = () => { e.style.overflow = ''; };
-  });
-}
+// o redesenho com movimento é o do Kit (KitFacil.movimento.redesenhar); aqui, só como achar as linhas da comanda
+const marcaConta = el => el.id ? '#' + CSS.escape(el.id) : el.dataset.pa ? `[data-pa="${CSS.escape(el.dataset.pa)}"]` : el.dataset.item ? `[data-item="${CSS.escape(el.dataset.item)}"]` : el.dataset.pes ? `[data-pes="${CSS.escape(el.dataset.pes)}"]` : '';
+const comMovimento = (raiz, redesenhar) => KitFacil.movimento.redesenhar(raiz, redesenhar, { marca: marcaConta });
 // o cupom compartilhado: quem está nele, quanto é de cada um e quem paga
 // o cupom compartilhado: quem está nele e quem paga
 function grupoSheet(uid) {
@@ -2075,7 +1849,7 @@ function grupoSheet(uid) {
       <div class="cs-lista">${u.members.map(m => { const nome = esc(c.per[m].person.name), paga = u.payers.includes(m);
         return `<div class="cs-lin gs-lin"><span class="cs-tx"><b>${nome}</b><span class="hint num">${BRL(c.per[m].total)} · ${paga ? 'paga' : 'não paga'}</span></span>
           <button type="button" class="ic-btn" data-gs-p="${m}" aria-label="Editar ${nome}">${I.edit}</button>
-          <label class="switch"><input type="checkbox" data-gs-paga="${m}" ${paga ? 'checked' : ''} aria-label="${nome} paga este cupom"><span class="track"></span></label></div>`; }).join('')}</div>`;
+          <label class="kf-chave"><input type="checkbox" data-gs-paga="${m}" ${paga ? 'checked' : ''} aria-label="${nome} paga este cupom"><span class="kf-chave-trilho"></span></label></div>`; }).join('')}</div>`;
   };
   if (!corpo()) return;
   openSheet({ title: 'Cupom compartilhado', body: `<div id="gs-corpo" class="cs">${corpo()}</div>`,
@@ -2086,7 +1860,7 @@ function grupoSheet(uid) {
         const el = e.target.closest('[data-gs-paga]'); if (!el) return;
         const pid = el.dataset.gsPaga, g = cleanGroups(d).find(x => x.members.includes(pid)); if (!g) return;
         const on = g.payers.includes(pid);
-        if (on && g.payers.length === 1) { el.checked = true; toast('O cupom compartilhado precisa de alguém que pague.'); return; }
+        if (on && g.payers.length === 1) { el.checked = true; KitFacil.avisar('O cupom compartilhado precisa de alguém que pague.'); return; }
         g.payers = on ? g.payers.filter(x => x !== pid) : [...g.payers, pid];
         if (on) dropCustom(d, pid);
         d.groups = cleanGroups(d).map(x => x.id === g.id ? g : x); commit({ anchor: false });
@@ -2115,11 +1889,11 @@ function editarPessoaSheet(pid) {
       $('#cs-nome-f', s).addEventListener('submit', e => {
         e.preventDefault();
         const el = $('#cs-nome', s), nome = el.value.trim().replace(/\s+/g, ' '), p = d.people.find(x => x.id === pid); if (!p) return closeSheet();
-        if (!nome) { toast('Informe o nome.'); el.focus(); return; }
-        if (d.people.some(x => x.id !== pid && norm(x.name) === norm(nome))) { toast(`Já há ${nome} na mesa. Use outro nome.`); el.focus(); return; }
+        if (!nome) { KitFacil.avisar('Informe o nome.'); el.focus(); return; }
+        if (d.people.some(x => x.id !== pid && norm(x.name) === norm(nome))) { KitFacil.avisar(`Já há ${nome} na mesa. Use outro nome.`); el.focus(); return; }
         if (nome === p.name) return closeSheet();
         const antigo = p.name; p.name = nome; closeSheet(true); commit({ anchor: false });
-        toast(`${antigo} agora é ${nome}${nome.endsWith('.') ? '' : '.'}`, { label: 'Desfazer', run: () => { const q = d.people.find(x => x.id === pid); if (q) { q.name = antigo; commit({ anchor: false }); } } });
+        KitFacil.avisar(`${antigo} agora é ${nome}${nome.endsWith('.') ? '' : '.'}`, { label: 'Desfazer', run: () => { const q = d.people.find(x => x.id === pid); if (q) { q.name = antigo; commit({ anchor: false }); } } });
       });
       $('#cs-rm', s).onclick = () => removerPessoa(pid);
     } });
@@ -2127,26 +1901,26 @@ function editarPessoaSheet(pid) {
 // a conta da mesa: de onde vem o total, com uma chave para serviço, couvert e desconto
 function contaSheet() {
   const d = draft, s = d.service, ds = d.discount;
-  const bloco = (k, on, titulo, valor, extra) => `<div class="cm-bloco"><label class="cs-lin cs-sw"><span class="cs-tx"><b>${titulo}</b><span class="hint num">${valor}</span></span><span class="switch"><input type="checkbox" data-cm="${k}" ${on ? 'checked' : ''} aria-label="${esc(titulo)}"><span class="track"></span></span></label>${on && extra ? `<div class="cm-extra" data-exp="cm-${k}">${extra}</div>` : ''}</div>`;
+  const bloco = (k, on, titulo, valor, extra) => `<div class="cm-bloco"><label class="cs-lin cs-sw"><span class="cs-tx"><b>${titulo}</b><span class="hint num">${valor}</span></span><span class="kf-chave"><input type="checkbox" data-cm="${k}" ${on ? 'checked' : ''} aria-label="${esc(titulo)}"><span class="kf-chave-trilho"></span></span></label>${on && extra ? `<div class="cm-extra" data-kf-exp="cm-${k}">${extra}</div>` : ''}</div>`;
   const corpo = () => {
     const c = compute(d), names = ids => ids.map(id => c.per[id].person.name).join(', ');
     let nota = '';
     if (s.enabled && c.skipped.length) nota = s.policy === 'discount' ? `${esc(names(c.skipped))} não paga${c.skipped.length > 1 ? 'm' : ''} o serviço; o total fica ${BRL(c.skippedValue)} menor.` : `${BRL(c.skippedValue)} de serviço de ${esc(names(c.skipped))} divididos entre os outros.`;
     const svc = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de taxa"><button type="button" data-cm-svcmode="fixed" aria-pressed="${s.mode === 'fixed'}">R$</button><button type="button" data-cm-svcmode="pct" aria-pressed="${s.mode === 'pct'}">%</button></div>
-      ${s.mode === 'fixed' ? `<input id="cm-svc-fixed" type="text" inputmode="numeric" data-money value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais">` : `<input id="cm-svc-pct" type="text" inputmode="numeric" data-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa">`}</div>
-      ${nota ? `<div class="policy-note pol-row" data-exp="cm-pol"><span>${nota}</span><button type="button" class="btn small ghost" data-cm-pol>Mudar</button></div>` : ''}`;
+      ${s.mode === 'fixed' ? `<input id="cm-svc-fixed" type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(s.fixed)}" aria-label="Valor da taxa em reais">` : `<input id="cm-svc-pct" type="text" inputmode="numeric" data-kf-pct value="${pctInput(s.pct)}" aria-label="Percentual da taxa">`}</div>
+      ${nota ? `<div class="policy-note pol-row" data-kf-exp="cm-pol"><span>${nota}</span><button type="button" class="btn small ghost" data-cm-pol>Mudar</button></div>` : ''}`;
     const cvPct = d.couvert.mode === 'pct';
     const cv = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de couvert"><button type="button" data-cm-cvmode="value" aria-pressed="${!cvPct}">R$</button><button type="button" data-cm-cvmode="pct" aria-pressed="${cvPct}">%</button></div>
-      <input id="cm-cv" type="text" inputmode="numeric" ${cvPct ? `data-pct value="${pctInput(d.couvert.pct || 0)}" aria-label="Percentual do couvert sobre o consumo de cada um"` : `data-money value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa"`}></div>`;
+      <input id="cm-cv" type="text" inputmode="numeric" ${cvPct ? `data-kf-pct value="${pctInput(d.couvert.pct || 0)}" aria-label="Percentual do couvert sobre o consumo de cada um"` : `data-kf-dinheiro value="${moneyInput(d.couvert.value)}" aria-label="Couvert por pessoa"`}></div>`;
     const dsc = `<div class="ds-row"><div class="seg" role="group" aria-label="Tipo de desconto"><button type="button" data-cm-dsmode="value" aria-pressed="${ds.mode === 'value'}">R$</button><button type="button" data-cm-dsmode="pct" aria-pressed="${ds.mode === 'pct'}">%</button></div>
-      <input id="cm-ds" type="text" inputmode="numeric" ${ds.mode === 'pct' ? `data-pct value="${pctInput(ds.pct)}" aria-label="Percentual de desconto"` : `data-money value="${moneyInput(ds.value)}" aria-label="Valor do desconto"`}></div>
+      <input id="cm-ds" type="text" inputmode="numeric" ${ds.mode === 'pct' ? `data-kf-pct value="${pctInput(ds.pct)}" aria-label="Percentual de desconto"` : `data-kf-dinheiro value="${moneyInput(ds.value)}" aria-label="Valor do desconto"`}></div>
       <div class="seg" role="group" aria-label="Onde o desconto incide"><button type="button" data-cm-dsat="after" aria-pressed="${ds.at === 'after'}">No valor total da comanda</button><button type="button" data-cm-dsat="before" aria-pressed="${ds.at !== 'after'}">Apenas no valor do consumo</button></div>`;
     const fqN = d.items.reduce((a, it) => a + (it.fq || 0), 0);
     let aviso = '';
     if (c.payDiff < 0) aviso = `Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga outro valor.`;
     if (c.payDiff > 0) aviso = `Os valores escolhidos passam ${BRL(c.payDiff)} do total.`;
     const mexe = pagosComDiferenca(d, c);
-    const jaPagou = mexe.length ? `<div class="aviso-pago" data-exp="cm-pago" role="status"><b>${I.warn}Isso mexe com quem já pagou</b>${mexe.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span></p>`).join('')}<p class="hint">Serviço, couvert e desconto valem para a mesa toda. Acerte a diferença com a pessoa e marque na comanda.</p></div>` : '';
+    const jaPagou = mexe.length ? `<div class="aviso-pago" data-kf-exp="cm-pago" role="status"><b>${I.warn}Isso mexe com quem já pagou</b>${mexe.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span></p>`).join('')}<p class="hint">Serviço, couvert e desconto valem para a mesa toda. Acerte a diferença com a pessoa e marque na comanda.</p></div>` : '';
     return `${jaPagou}<div class="cs-lista">
         <div class="cs-lin"><span class="cs-tx"><b>Consumo</b>${c.freeValue ? '<span class="hint">já descontadas as cortesias</span>' : ''}</span><span class="num">${BRL(c.consumoBruto)}</span></div>
         ${bloco('svc', s.enabled, 'Serviço', s.enabled ? BRL(c.service) : 'não cobrado', svc)}
@@ -2239,18 +2013,18 @@ function fecharSheet(abrirEm = 0) {
       if (d.people.length < 2) return '';
       if (c.payer) return `<div class="fc-todos on"><span><b>${esc(c.per[c.payer].person.name)}</b> paga a conta de todos</span><button type="button" class="btn small ghost" data-fc-cada>${I.x}Cada um paga o seu</button></div>`;
       return `<div class="fc-todos"><button type="button" class="btn small ghost" data-fc-todos aria-expanded="${quemAberto}">${I.users}Uma pessoa paga a conta de todos</button>
-        ${quemAberto ? `<div class="fc-quem" data-exp="fc-quem" role="group" aria-label="Quem paga a conta de todos">${d.people.map(p => `<button type="button" class="chip-b" data-fc-quem="${p.id}">${esc(p.name)}</button>`).join('')}</div>` : ''}</div>`;
+        ${quemAberto ? `<div class="fc-quem" data-kf-exp="fc-quem" role="group" aria-label="Quem paga a conta de todos">${d.people.map(p => `<button type="button" class="kf-escolha" data-fc-quem="${p.id}">${esc(p.name)}</button>`).join('')}</div>` : ''}</div>`;
     }
     const u = x.r, pg = contaPaga(d, u, c), pid = u.payers.length === 1 ? u.payers[0] : '', r = pid && c.per[pid];
     // com quem fica a diferença: os outros dividem (padrão) ou uma pessoa só
     const quem = (attr, dif, atual, rot) => { const L = pid && !c.payer ? quemCobre(d, c, pid, dif) : []; if (!L.length) return '';
       return `<div class="fc-cobre" role="group" aria-label="${rot} ${BRL(Math.abs(dif))}"><span class="fc-cobre-t">${rot} ${BRL(Math.abs(dif))}</span><div class="fc-quem">
-        <button type="button" class="chip-b" ${attr}="" aria-pressed="${atual === ''}">Os outros dividem</button>${L.map(id => `<button type="button" class="chip-b" ${attr}="${id}" aria-pressed="${atual === id}">${esc(c.per[id].person.name)}</button>`).join('')}</div></div>`; };
+        <button type="button" class="kf-escolha" ${attr}="" aria-pressed="${atual === ''}">Os outros dividem</button>${L.map(id => `<button type="button" class="kf-escolha" ${attr}="${id}" aria-pressed="${atual === id}">${esc(c.per[id].person.name)}</button>`).join('')}</div></div>`; };
     // outro valor: só para quem paga o próprio cupom, enquanto ele não foi marcado como pago
     let valor = '';
     if (r && pid !== c.payer && pg.estado === 'aberto') {
       const on = r.custom || valorAberto === pid, dif = r.custom ? r.share - (d.custom[pid] || 0) : 0;
-      valor = on ? `<div class="fc-valor"><div class="field"><label for="fc-v-${pid}">Vai pagar</label><input id="fc-v-${pid}" data-fc-custom="${pid}" type="text" inputmode="numeric" data-money value="${moneyInput(r.custom ? d.custom[pid] || 0 : r.paid)}"></div>
+      valor = on ? `<div class="fc-valor"><div class="field"><label for="fc-v-${pid}">Vai pagar</label><input id="fc-v-${pid}" data-fc-custom="${pid}" type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(r.custom ? d.custom[pid] || 0 : r.paid)}"></div>
           <button type="button" class="btn small ghost" data-fc-conta="${pid}">${I.refresh}Valor da conta</button></div>${dif ? quem('data-fc-cobre', dif, r.cover || '', dif > 0 ? 'Quem cobre' : 'Quem devolve') : ''}`
         : `<button type="button" class="btn small ghost" data-fc-valor="${pid}">${I.edit}Pagar outro valor</button>`;
     }
@@ -2258,10 +2032,10 @@ function fecharSheet(abrirEm = 0) {
     const dif = pg.estado === 'falta' ? pg.falta : pg.estado === 'troco' ? -pg.troco : 0;
     const outro = dif ? quem('data-fc-difcobre', dif, null, dif > 0 ? 'Ou quem cobre' : 'Ou quem devolve') : '';
     // já pagou: pode já ter ido embora (o cupom trava e a pessoa não entra em mais nada)
-    const foi = pg.estado !== 'aberto' && pg.estado !== 'parte' ? `<label class="fc-saiu"><span>Já saiu da mesa</span><span class="switch"><input type="checkbox" data-fc-saiu="${u.id}" ${cupomSaiu(d, u) ? 'checked' : ''} aria-label="${esc(u.name)} já saiu da mesa"><span class="track"></span></span></label>` : '';
+    const foi = pg.estado !== 'aberto' && pg.estado !== 'parte' ? `<label class="fc-saiu"><span>Já saiu da mesa</span><span class="kf-chave"><input type="checkbox" data-fc-saiu="${u.id}" ${cupomSaiu(d, u) ? 'checked' : ''} aria-label="${esc(u.name)} já saiu da mesa"><span class="kf-chave-trilho"></span></span></label>` : '';
     return `<div class="fc-pago" data-fc-u="${u.id}">${botoesPagoHTML(u, pg, 'data-fc-pago')}${outro}${foi}${valor}</div>`;
   };
-  const avisoHTML = c => c.payDiff < 0 ? `<div class="status warn" data-exp="fc-aviso">${I.warn}<span>Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga outro valor.</span></div>` : c.payDiff > 0 ? `<div class="status warn" data-exp="fc-aviso">${I.warn}<span>Os valores escolhidos passam ${BRL(c.payDiff)} do total.</span></div>` : '';
+  const avisoHTML = c => c.payDiff < 0 ? `<div class="status warn" data-kf-exp="fc-aviso">${I.warn}<span>Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga outro valor.</span></div>` : c.payDiff > 0 ? `<div class="status warn" data-kf-exp="fc-aviso">${I.warn}<span>Os valores escolhidos passam ${BRL(c.payDiff)} do total.</span></div>` : '';
   openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
       <div class="fc-nav"><button type="button" class="fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
       <div class="fc-janela" id="fc-janela"><div class="fc-trilho" id="fc-trilho" tabindex="0" aria-label="Cupons: arraste para o lado">${slides.map((x, i) => `<div class="fc-slide" role="group" aria-roledescription="cupom" aria-label="${i + 1} de ${slides.length}: ${esc(x.nome)}"><div class="cupom-1 ${x.pago ? 'cupom-pago' : ''}">${receiptHTML(x.r, d, c, x.rows)}${x.pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>
@@ -2330,7 +2104,7 @@ function fecharSheet(abrirEm = 0) {
         // quem paga a conta de todos (cada um continua com o seu cupom)
         if (t('[data-fc-todos]')) { quemAberto = !quemAberto; return refazer(); }
         if (t('[data-fc-quem]')) { const pid = t('[data-fc-quem]').dataset.fcQuem, antes = { payMode: d.payMode, payer: d.payer, custom: { ...(d.custom || {}) } }; pagaTodos(d, pid); quemAberto = false; mudar();
-          toast(`${d.people.find(p => p.id === pid).name} paga a conta de todos.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
+          KitFacil.avisar(`${d.people.find(p => p.id === pid).name} paga a conta de todos.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
         if (t('[data-fc-cada]')) { pagaTodos(d, ''); return mudar(); }
         // pagar outro valor
         if (t('[data-fc-valor]')) { valorAberto = t('[data-fc-valor]').dataset.fcValor; refazer(); const campo = $(`[data-fc-custom="${valorAberto}"]`, tr); campo?.focus({ preventScroll: true }); campo?.select?.(); return; }
@@ -2341,7 +2115,7 @@ function fecharSheet(abrirEm = 0) {
         if (t('[data-fc-difcobre]')) { const b = t('[data-fc-difcobre]'), u = cAt.U[b.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
           const antes = { pagos: clone(d.pagos || {}), custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) } }, p = contaPaga(d, u, cAt), q = b.dataset.fcDifcobre;
           if (!cobrirDiferenca(d, u, q, cAt)) return; mudar();
-          toast(`${q ? cAt.per[q].person.name : 'Os outros'} ${p.estado === 'troco' ? (q ? 'devolve' : 'devolvem') : (q ? 'cobre' : 'cobrem')} ${BRL(p.falta || p.troco)} de ${u.name}.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
+          KitFacil.avisar(`${q ? cAt.per[q].person.name : 'Os outros'} ${p.estado === 'troco' ? (q ? 'devolve' : 'devolvem') : (q ? 'cobre' : 'cobrem')} ${BRL(p.falta || p.troco)} de ${u.name}.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
         // pagamento: marca, acerta ou desmarca; os cupons (e o da mesa) são refeitos no lugar, já com o carimbo
         if (pgb) {
           const u = cAt.U[pgb.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
@@ -2350,9 +2124,9 @@ function fecharSheet(abrirEm = 0) {
         if (cp) { const x = slides[+cp.dataset.fcCopiar]; if (!x.r) return copyText([receiptText(null, d, cAt, x.rows), ...cAt.units.map(u => receiptText(u, d, cAt))].join('\n\n'), 'Todos os cupons copiados.'); return copyText(receiptText(x.r, d, cAt, x.rows), `Cupom de ${x.nome} copiado.`); }
         if (pd) {
           const x = slides[+pd.dataset.fcPdf];
-          if (!(await downloadsNS())) { toast('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }
+          if (!(await downloadsNS())) { KitFacil.avisar('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }
           pd.disabled = true;
-          try { await saveFile(`cupom-${slug(x.arq)}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(x.r, d, cAt, x.rows)])); } catch { toast('Não foi possível gerar o PDF agora.'); }
+          try { await saveFile(`cupom-${slug(x.arq)}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(x.r, d, cAt, x.rows)])); } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
           pd.disabled = false;
         }
       });
@@ -2409,9 +2183,9 @@ const viewComanda = {
 
     <article class="cmd-una" aria-label="Comanda">
       <header class="cu-cab">
-        <button type="button" class="cu-local" id="cmd-local" aria-label="${esc(d.place ? 'Local: ' + d.place + '. Mudar o nome' : 'Dar nome ao local')}">
+        <button type="button" class="cu-local" id="cmd-local">
           <span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Toque para dar nome')}${I.edit}</span>
-          <span class="cu-quando">${fmtDateTime(d.createdAt)}</span></button>
+          <span class="cu-quando">${fmtDateTime(d.createdAt)}</span><span class="so-leitor">. ${d.place ? 'Mudar o nome do local' : 'Dar nome ao local'}</span></button>
         <button type="button" class="cu-conta ${comPago ? 'parcial' : ''}" id="cmd-conta" aria-label="Total: ${BRL(calc.total)}.${comPago ? ` Falta pagar ${BRL(falta)}.` : ''}${troco ? ` Devolver ${BRL(troco)}.` : ''} ${esc(aj.join(', ') || 'Sem serviço')}. Abrir a conta da mesa: ajustes e fechar a comanda">
           <span class="cu-total">${BRL(calc.total)}</span>${I.next}</button>
         ${comPago ? `<p class="cu-falta ${falta ? '' : 'ok'}" role="status">${falta ? `<span class="sr-only">Falta pagar </span>${BRL(falta)}` : 'tudo pago ✓'}${troco ? `<span class="cu-troco">devolver ${BRL(troco)}</span>` : ''}</p>` : ''}
@@ -2419,7 +2193,7 @@ const viewComanda = {
 
       <div class="cm-corpo">
         <div class="cu-sec" id="groups-card" aria-label="Pessoas: quanto cada um paga">
-          ${difs.length ? `<div class="aviso-pago" data-exp="aviso-pago" role="status"><b>${I.warn}A conta de quem já pagou mudou</b>${difs.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span><span class="ap-bts"><button type="button" class="btn small" data-ap-acerta="${x.u.id}">${x.p.estado === 'troco' ? 'Devolvi' : 'Recebi'}</button>${x.u.payers.length === 1 && !calc.payer && quemCobre(d, calc, x.u.payers[0], x.p.falta || -x.p.troco).length ? `<button type="button" class="btn small ghost" data-ap-cobre="${x.u.id}">${x.p.estado === 'troco' ? 'Outro devolve' : 'Outro cobre'}</button>` : ''}</span></p>`).join('')}</div>` : ''}
+          ${difs.length ? `<div class="aviso-pago" data-kf-exp="aviso-pago" role="status"><b>${I.warn}A conta de quem já pagou mudou</b>${difs.map(x => `<p><span>${esc(fraseDiferenca(x.u, x.p))}</span><span class="ap-bts"><button type="button" class="btn small" data-ap-acerta="${x.u.id}">${x.p.estado === 'troco' ? 'Devolvi' : 'Recebi'}</button>${x.u.payers.length === 1 && !calc.payer && quemCobre(d, calc, x.u.payers[0], x.p.falta || -x.p.troco).length ? `<button type="button" class="btn small ghost" data-ap-cobre="${x.u.id}">${x.p.estado === 'troco' ? 'Outro devolve' : 'Outro cobre'}</button>` : ''}</span></p>`).join('')}</div>` : ''}
           <div class="cu-tit">PESSOAS${d.people.length ? ` · ${d.people.length}` : ''}</div>
           <div class="cm-col dv-col" aria-hidden="true"><span>Nº</span><span>NOME</span><span>A PAGAR</span></div>
           ${calc.units.map(u => {
@@ -2429,10 +2203,10 @@ const viewComanda = {
             const fala = pg.estado === 'pago' ? ', pago' : pg.estado === 'falta' ? `, pagou ${BRL(pg.pago)}, falta ${BRL(pg.falta)}` : pg.estado === 'troco' ? `, pagou ${BRL(pg.pago)}, devolver ${BRL(pg.troco)}` : pg.estado === 'parte' ? `, pago em parte, falta ${BRL(pg.falta)}` : '';
             const cls = `${pulou[u.id] ? 'pula' : ''} ${pg.estado === 'pago' ? 'pago' : marcado ? 'pago-dif' : ''}`;
             if (u.members.length === 1) { const pid = u.members[0], r = calc.per[pid];
-              return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin ${cls}" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}" aria-label="${esc(nm(pid))}: ${BRL(u.total)}${fala}. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar">
-                <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}${saiu(d, pid) ? '<span class="dv-obs">saiu da mesa</span>' : ''}${dif}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
-            return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin dv-grupo ${cls}" data-unit="${u.id}" data-drop="g:${u.id}" data-grupo="${u.id}" aria-label="Cupom compartilhado de ${esc(u.name)}: ${BRL(u.total)}${fala}. Mostrar atalhos">
-              <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado${cupomSaiu(d, u) ? ' · saiu da mesa' : ''}</span>${dif}${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${selo}</summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
+              return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin ${cls}" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}">
+                <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}${saiu(d, pid) ? '<span class="dv-obs">saiu da mesa</span>' : ''}${dif}</span><span class="dv-v">${brl(u.total)}</span>${selo}<span class="so-leitor">${fala}. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar</span></summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
+            return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin dv-grupo ${cls}" data-unit="${u.id}" data-drop="g:${u.id}" data-grupo="${u.id}">
+              <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado${cupomSaiu(d, u) ? ' · saiu da mesa' : ''}</span>${dif}${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${selo}<span class="so-leitor">${fala}. Mostrar atalhos</span></summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
           }).join('')}
           <button type="button" class="it-novo dv-add" id="add-pessoa" data-drop="out"><span class="it-q ma-add">+</span><span class="ma-add">${d.people.length ? 'Pessoa' : 'Adicionar quem está na mesa'}</span><span class="it-q ma-des">×</span><span class="ma-des">Desfazer o cupom compartilhado</span><span></span></button>
         </div>
@@ -2444,14 +2218,14 @@ const viewComanda = {
           <button type="button" class="it-novo" id="it-novo"><span class="it-q">+</span><span>${d.items.length ? 'Novo item' : 'Lançar o primeiro item'}</span></button>
         </div>
 
-        <button type="button" class="cm-pe" id="cm-pe" aria-label="Total: ${BRL(calc.total)}. Abrir a conta da mesa: ajustes e fechar a comanda">
+        <button type="button" class="cm-pe" id="cm-pe">
           <span class="cm-l"><span>Consumo</span><span>${brl(calc.itemsGross + calc.freeValue)}</span></span>
           ${calc.freeValue ? `<span class="cm-l"><span>Cortesia</span><span>−${brl(calc.freeValue)}</span></span>` : ''}
           ${s.enabled ? `<span class="cm-l"><span>${esc(serviceLabel(d))}</span><span>${brl(calc.service)}</span></span>` : ''}
           ${d.couvert.enabled ? `<span class="cm-l"><span>Couvert</span><span>${brl(calc.couvert)}</span></span>` : ''}
           ${d.discount.enabled ? `<span class="cm-l"><span>Desconto</span><span>−${brl(calc.discount)}</span></span>` : ''}
           <span class="cm-l cm-tot"><span>TOTAL</span><span>${BRL(calc.total)}</span></span>
-          <span class="cm-aj">Serviço, couvert e desconto ${I.next}</span></button>
+          <span class="cm-aj">Serviço, couvert e desconto ${I.next}</span><span class="so-leitor">. Abrir a conta da mesa: ajustes e fechar a comanda</span></button>
         <p class="cu-rodape">Conta Fácil · divida a conta</p>
       </div>
     </article>
@@ -2472,7 +2246,7 @@ const viewComanda = {
     $('#cmd-local', v).addEventListener('click', localSheet);
     $('#cmd-conta', v).addEventListener('click', contaSheet);
     $('#cm-pe', v)?.addEventListener('click', contaSheet);
-    $('#it-novo', v)?.addEventListener('click', () => { if (!d.people.length) { toast('Primeiro, adicione quem está na mesa.'); pessoaNovaSheet(); return; } produtoSheet(); });
+    $('#it-novo', v)?.addEventListener('click', () => { if (!d.people.length) { KitFacil.avisar('Primeiro, adicione quem está na mesa.'); pessoaNovaSheet(); return; } produtoSheet(); });
     $('#add-pessoa', v).addEventListener('click', pessoaNovaSheet);
     // mini comandas: tocar abre a pessoa; segurar e arrastar sobre outra junta as duas num cupom compartilhado
     const area = $('#groups-card', v);
@@ -2492,9 +2266,9 @@ const viewComanda = {
         if (t('[data-pa-svcabre]')) { pesSvc = !pesSvc; return render({ anchor: false }); }
         if (t('[data-pa-cvabre]')) { pesCv = !pesCv; return render({ anchor: false }); }
         const pg = t('[data-pa-pago]'); if (pg) return alternarPago(u, pg.dataset.paPago);
-        if (t('[data-pa-desfaz]')) { const antes = clone(d.groups || []); u.members.forEach(m => leaveGroup(d, m)); pesAberto = null; commit({ anchor: false }); toast('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); return; }
+        if (t('[data-pa-desfaz]')) { const antes = clone(d.groups || []); u.members.forEach(m => leaveGroup(d, m)); pesAberto = null; commit({ anchor: false }); KitFacil.avisar('Cada um voltou a ter o seu cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); return; }
         const alvo = t('[data-pa-alvo]');
-        if (alvo) { const antes = clone(d.groups || []); if (joinGroup(d, u.members[0], alvo.dataset.paAlvo)) { pesAberto = null; pesJuntando = false; commit({ anchor: false }); destacarCupom(u.members[0]); toast('Agora estão no mesmo cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); } }
+        if (alvo) { const antes = clone(d.groups || []); if (joinGroup(d, u.members[0], alvo.dataset.paAlvo)) { pesAberto = null; pesJuntando = false; commit({ anchor: false }); destacarCupom(u.members[0]); KitFacil.avisar('Agora estão no mesmo cupom.', { label: 'Desfazer', run: () => { d.groups = antes; commit(); } }); } }
         return;
       }
     };
@@ -2529,7 +2303,7 @@ const viewComanda = {
       p.a = { ...p.a, [pid]: (p.a[pid] || 0) + dir }; if (!p.a[pid]) delete p.a[pid]; p.qty += dir; p.fq = Math.min(p.fq, p.qty); repinta(); }));
     $$('[data-it-desc]', v).forEach(b => b.addEventListener('click', () => { delete itPend[b.dataset.itDesc]; repinta(); }));
     $$('[data-it-ok]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itOk), p = it && itPend[it.id]; if (!p) return;
-      it.qty = p.qty; it.a = p.a; it.fq = p.fq; it.auto = false; delete itPend[it.id]; commit({ anchor: false }); toast(`${it.name}: alteração salva.`); }));
+      it.qty = p.qty; it.a = p.a; it.fq = p.fq; it.auto = false; delete itPend[it.id]; commit({ anchor: false }); KitFacil.avisar(`${it.name}: alteração salva.`); }));
     $$('[data-it-del]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itDel); if (!it) return;
       confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda.`, 'Remover', () => { delete pending[it.id]; d.items = d.items.filter(i => i.id !== it.id); if (itemAberto === it.id) itemAberto = null; commit(); }, true); }));
 
@@ -2553,7 +2327,7 @@ const viewComanda = {
       if (!it || it.lk) return;
       $('[data-rename]', card)?.addEventListener('click', () => renameSheet(it));
       $('[data-del]', card)?.addEventListener('click', () => confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda.`, 'Remover', () => { d.items = d.items.filter(i => i.id !== it.id); commit(); }, true));
-      $('[data-confirm]', card)?.addEventListener('click', () => { it.lk = true; it.auto = false; commit(); toast(`${it.name}: divisão confirmada.`); });
+      $('[data-confirm]', card)?.addEventListener('click', () => { it.lk = true; it.auto = false; commit(); KitFacil.avisar(`${it.name}: divisão confirmada.`); });
       $$('[data-unit]', card).forEach(b => b.addEventListener('click', () => {
         const id = b.dataset.unit, dir = +b.dataset.dir;
         const used = Object.values(it.a).reduce((s, x) => s + x, 0);
@@ -2599,7 +2373,7 @@ const c_groupOf = (d, pid) => cleanGroups(d).find(g => g.members.includes(pid))?
 const drag = { pend: null, timer: 0, on: null, x: 0, y: 0, ghost: null, over: null, raf: 0, droppedAt: 0 };
 function dragSource(el) {
   // as linhas com chave também levantam o cartão; só a chave e os botões ficam de fora
-  if (!el.closest || el.closest('button, input, select, textarea, a, .switch, label:not(.prow)')) return null;
+  if (!el.closest || el.closest('button, input, select, textarea, a, .kf-chave, label:not(.prow)')) return null;
   const box = el.closest('#groups-card [data-unit]'); if (!box) return null;
   const c = compute(draft), u = c.U[box.dataset.unit]; if (!u || u.members.some(m => saiu(draft, m))) return null;
   const multi = u.members.length > 1;
@@ -2684,10 +2458,10 @@ function dragEnd(drop) {
     $$('.drop-on').forEach(x => x.classList.remove('drop-on')); $$('.lifting').forEach(x => x.classList.remove('lifting'));
     if (!t) return;
     const d = draft, to = t.dataset.drop;
-    if (to === 'out') { if (!p.group) return; p.pids.forEach(pid => leaveGroup(d, pid)); commit(); toast(p.whole ? 'Grupo desfeito.' : 'Saiu do grupo.'); return; }
+    if (to === 'out') { if (!p.group) return; p.pids.forEach(pid => leaveGroup(d, pid)); commit(); KitFacil.avisar(p.whole ? 'Grupo desfeito.' : 'Saiu do grupo.'); return; }
     let dest = to, changed = false;
     p.pids.forEach(pid => { if (joinGroup(d, pid, dest)) { changed = true; const gid = c_groupOf(d, pid); if (gid) dest = 'g:' + gid; } });
-    if (changed) { LS.set('dicaJuntar', true); commit(); destacarCupom(p.pids[0]); toast('Agora estão no mesmo cupom.'); } else render({ preserve: true });
+    if (changed) { LS.set('dicaJuntar', true); commit(); destacarCupom(p.pids[0]); KitFacil.avisar('Agora estão no mesmo cupom.'); } else render({ preserve: true });
   };
   // 1.0: o cupom pousa — entra no cupom de destino ou volta para o seu lugar
   const suave = g && g.classList.contains('drag-cupom') && !matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2730,18 +2504,18 @@ function politicaSheet(d, p) {
     body: `<p class="pol-perg">${valor ? `O que fazer com ${BRL(valor)} de serviço?` : 'O que fazer com essa parte do serviço?'}</p><div class="lanc-ops">${op('discount', 'Ninguém paga essa parte', '')}${op('redistribute', 'Os outros dividem essa parte', '')}</div>`,
     foot: `<button type="button" class="btn ghost" id="pol-desfaz">${p ? `${esc(p.name.split(' ')[0])} paga o serviço` : 'Fechar'}</button>`,
     onMount: dl => {
-      $$('[data-pol]', dl).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.pol; closeSheet(true); commit(); toast(s.policy === 'discount' ? 'Ninguém paga essa parte.' : 'Os outros dividem essa parte.'); }));
+      $$('[data-pol]', dl).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.pol; closeSheet(true); commit(); KitFacil.avisar(s.policy === 'discount' ? 'Ninguém paga essa parte.' : 'Os outros dividem essa parte.'); }));
       $('#pol-desfaz', dl).addEventListener('click', () => { if (p) { p.payService = true; closeSheet(true); commit(); } else closeSheet(); });
     } });
 }
 function saveBill(opts = {}) {
   const d = draft, c = compute(d);
-  if (d.isExample) { toast('No exemplo, nada é salvo no histórico.'); return; }
-  if (c.unassigned.length || c.incomplete.length) { toast('Acerte a divisão de todos os itens antes de salvar.'); return; }
-  if (d.items.some(pendingDirty)) { toast('Há itens com alterações não salvas. Salve ou descarte antes de continuar.'); return; }
-  if (c.openItems.length) { toast(`Confirme a divisão de ${plural(c.openItems.length, 'item', 'itens')} antes de salvar.`); return; }
-  if (c.missingPayer) { toast('Escolha quem vai pagar a conta em Pagamento antes de salvar.'); return; }
-  if (c.payDiff !== 0) { toast(`Os valores personalizados ${c.payDiff > 0 ? 'passam' : 'ficam'} ${BRL(Math.abs(c.payDiff))} ${c.payDiff > 0 ? 'do' : 'abaixo do'} total. Ajuste antes de salvar.`); return; }
+  if (d.isExample) { KitFacil.avisar('No exemplo, nada é salvo no histórico.'); return; }
+  if (c.unassigned.length || c.incomplete.length) { KitFacil.avisar('Acerte a divisão de todos os itens antes de salvar.'); return; }
+  if (d.items.some(pendingDirty)) { KitFacil.avisar('Há itens com alterações não salvas. Salve ou descarte antes de continuar.'); return; }
+  if (c.openItems.length) { KitFacil.avisar(`Confirme a divisão de ${plural(c.openItems.length, 'item', 'itens')} antes de salvar.`); return; }
+  if (c.missingPayer) { KitFacil.avisar('Escolha quem vai pagar a conta em Pagamento antes de salvar.'); return; }
+  if (c.payDiff !== 0) { KitFacil.avisar(`Os valores personalizados ${c.payDiff > 0 ? 'passam' : 'ficam'} ${BRL(Math.abs(c.payDiff))} ${c.payDiff > 0 ? 'do' : 'abaixo do'} total. Ajuste antes de salvar.`); return; }
   const difs = pagosComDiferenca(d, c);
   if (difs.length && !opts.comDiferenca) { confirmSheet('Salvar com diferença?', difs.map(x => fraseDiferenca(x.u, x.p)).join(' ') + ' A comanda fica salva assim, com a diferença anotada.', 'Salvar assim', () => saveBill({ comDiferenca: true })); return; }
   const firstSave = !bills.some(b => b.id === d.id);
@@ -2767,7 +2541,7 @@ function saveBill(opts = {}) {
     jogoMemo.chave = ''; store.saveBill(); store.saveCatalog(); saveDraft(); render(); window.scrollTo({ top: 0 });
   };
   if (firstSave && festa(bill, jogoAntes, { desfazer })) return;
-  toast(firstSave ? 'Comanda salva no histórico.' : 'Comanda atualizada no histórico.', desfazer ? { label: 'Desfazer', run: desfazer } : undefined);
+  KitFacil.avisar(firstSave ? 'Comanda salva no histórico.' : 'Comanda atualizada no histórico.', desfazer ? { label: 'Desfazer', run: desfazer } : undefined);
 }
 
 /* ---------- aba Ajustes: só as guias comuns do Kit Fácil ---------- */
@@ -2778,7 +2552,7 @@ function baixarCopiaConta() {
 async function restaurarCopiaConta(f) {
   const j = await KitFacil.copia.ler(f);
   const d = j && j.dados;
-  if (!d || !Array.isArray(d.bills) || !d.catalog || typeof d.catalog !== 'object') { toast('Esse arquivo não é uma cópia do Conta Fácil.'); return; }
+  if (!d || !Array.isArray(d.bills) || !d.catalog || typeof d.catalog !== 'object') { KitFacil.avisar('Esse arquivo não é uma cópia do Conta Fácil.'); return; }
   const quando = fmtDate(Date.parse(j.em) || Date.now());
   const ppl = Array.isArray(d.catalog.people) ? d.catalog.people.length : 0;
   KitFacil.dialogo.confirmar({ titulo: 'Restaurar a cópia?', ok: 'Restaurar', perigo: true,
@@ -2790,6 +2564,6 @@ async function restaurarCopiaConta(f) {
       const real = draft.isExample ? loadRealDraft() : draft;
       let extra = '';
       if (d.draft && !real.active && !draft.live && !draft.isExample) { draft = migrate(d.draft); saveDraft(); extra = ' A comanda que estava aberta também voltou.'; }
-      render(); toast('Cópia restaurada.' + extra);
+      render(); KitFacil.avisar('Cópia restaurada.' + extra);
     } });
 }

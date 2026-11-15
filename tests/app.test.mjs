@@ -10,7 +10,7 @@ before(async () => { amb = await preparar(); versao = JSON.parse(await readFile(
 after(async () => { await amb?.encerrar(); });
 const esperar = async (cond, ms = 8000) => { const fim = Date.now() + ms; while (Date.now() < fim) { if (await cond()) return true; await new Promise(r => setTimeout(r, 50)); } return false; };
 const TELAS = [[{ width: 320, height: 568 }, 'celular mínimo (zoom 400%)'], [{ width: 360, height: 740 }, 'celular pequeno'], [{ width: 390, height: 844 }, 'celular'], [{ width: 820, height: 1180 }, 'tablet'], [{ width: 1440, height: 900 }, 'computador']];
-const nav = (p, id) => p.locator(`#tab-${id}, #trilho-${id}`).locator('visible=true').first().click();
+const nav = (p, id) => p.locator(`#kf-nav-${id}, #kf-trilho-${id}`).locator('visible=true').first().click();
 const semErros = a => assert.deepEqual(a.erros, [], 'erros no console');
 // a janela nasce abaixo da tela e sobe: espera ela chegar ao lugar
 const assentar = p => p.waitForFunction(() => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')); return d && d.getAnimations().length === 0; });
@@ -64,7 +64,7 @@ test('zoom liberado e alvos de toque da navegação com 44 px ou mais', async ()
   const a = await aparelho(amb);
   const vp = await a.page.getAttribute('meta[name=viewport]', 'content');
   assert.ok(!/user-scalable\s*=\s*no|maximum-scale/.test(vp), 'o zoom não pode ser travado');
-  const pequenos = await a.page.evaluate(() => [...document.querySelectorAll('.nav-it, .kf-topo-btn, .marca')].filter(e => e.getClientRects().length).map(e => e.getBoundingClientRect()).filter(r => r.width < 44 || r.height < 44).length);
+  const pequenos = await a.page.evaluate(() => [...document.querySelectorAll('.kf-nav-it, .kf-topo-btn, .marca')].filter(e => e.getClientRects().length).map(e => e.getBoundingClientRect()).filter(r => r.width < 44 || r.height < 44).length);
   assert.equal(pequenos, 0);
   await a.fechar();
 });
@@ -72,30 +72,30 @@ test('zoom liberado e alvos de toque da navegação com 44 px ou mais', async ()
 test('abertura: aparece na primeira vez, a demonstração recalcula, guarda o nome e não volta sozinha', async () => {
   const a = await aparelho(amb, { antes: () => { window.CF_TESTE_ABERTURA = true; } });
   const p = a.page;
-  await p.locator('.abertura').waitFor();
-  assert.match(await p.textContent('#ab-t'), /sem calculadora/);
-  await p.click('#ab-prox');
+  await p.locator('.kf-abertura').waitFor();
+  assert.match(await p.textContent('#kf-ab-t'), /sem calculadora/);
+  await p.click('#kf-ab-prox');
   assert.match(await p.textContent('.ab-demo-r'), /Entre todos · R\$\s14,00 cada/);
   await p.click('[data-ab-p="Carla"]');
   assert.match(await p.textContent('.ab-demo-r'), /Entre 2 · R\$\s21,00 cada/);
   await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowRight');
   await p.fill('#ab-eu', 'Bruno');
-  await p.click('#ab-prox');
-  await p.locator('.abertura').waitFor({ state: 'detached' });
+  await p.click('#kf-ab-prox');
+  await p.locator('.kf-abertura').waitFor({ state: 'detached' });
   assert.equal(await p.evaluate(() => catalog.me), 'Bruno');
   // quem disse o nome na apresentação já recebe a primeira tampinha; ao fechar, segue para a nova comanda
   await p.locator('.tn').waitFor(); assert.match(await p.textContent('.tn-nome'), /Prazer, eu/);
   await p.click('#tn-ok');
   await p.locator('#nc-local').waitFor(); // a última tela leva direto à nova comanda
   await p.reload(); await p.locator('#view .imp').waitFor();
-  assert.equal(await p.locator('.abertura').count(), 0, 'a abertura não pode voltar sozinha');
+  assert.equal(await p.locator('.kf-abertura').count(), 0, 'a abertura não pode voltar sozinha');
   assert.match(await p.textContent('.saudacao'), /Bruno/);
   // dá para rever nos Ajustes (um lugar só)
   await p.keyboard.press('Escape'); await nav(p, 'mais');
   assert.equal(await p.locator('#ma-abertura').count(), 0);
   await p.locator('#view [data-kf="ajustes"]').click(); await p.locator('#view .kf-aj-lista [data-kf-aj-ir="comandas"]').click(); await p.click('#aj-abertura');
-  await p.locator('.abertura').waitFor(); await p.keyboard.press('Escape');
-  await p.locator('.abertura').waitFor({ state: 'detached' });
+  await p.locator('.kf-abertura').waitFor(); await p.keyboard.press('Escape');
+  await p.locator('.kf-abertura').waitFor({ state: 'detached' });
   semErros(a); await a.fechar();
 });
 
@@ -181,7 +181,7 @@ test('Pix: chave no cadastro vira copia e cola válido, com QR code', async () =
   const p = a.page;
   const r = await p.evaluate(() => {
     const cod = pixPayload('ana@exemplo.com.br', 'Ana Souza', 1234);
-    return { cod, crcOk: crc16(cod.slice(0, -4)) === cod.slice(-4), cpf: normPixKey('529.982.247-25'), tel: normPixKey('(11) 98888-7777') };
+    return { cod, crcOk: (t => { let c = 0xFFFF; for (let i = 0; i < t.length; i++) { c ^= t.charCodeAt(i) << 8; for (let j = 0; j < 8; j++) c = c & 0x8000 ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF; } return c.toString(16).toUpperCase().padStart(4, '0'); })(cod.slice(0, -4)) === cod.slice(-4), cpf: normPixKey('529.982.247-25'), tel: normPixKey('(11) 98888-7777') };
   });
   assert.ok(r.crcOk); assert.match(r.cod, /^000201.*br\.gov\.bcb\.pix.*540512\.34.*5802BR.*6304[0-9A-F]{4}$/);
   assert.equal(r.cpf, '52998224725'); assert.equal(r.tel, '+5511988887777');
@@ -200,13 +200,13 @@ test('tampinhas e níveis: nascem do histórico, a tampinha gira em 3D, o sortei
   // a tampinha é um objeto 3D: arrastar de lado gira, e as setas do teclado também
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.click('[data-tampa="primeira"]');
-  const o3d = p.locator('.kf-dlg .o3d'); await o3d.waitFor();
+  const o3d = p.locator('.kf-dlg .kf-o3d'); await o3d.waitFor();
   // malha 3D de verdade (WebGL; sem ele, canvas comum): tem tinta e não tem faces de CSS soltas na página, que piscavam no iPhone
-  assert.equal(await p.locator('.kf-dlg .o3d-saia, .kf-dlg .o3d-eixo').count(), 0);
-  assert.match(await p.getAttribute('.kf-dlg .o3d', 'data-motor'), /^(webgl|canvas)$/);
-  assert.ok(await p.evaluate(() => { const c = document.querySelector('.kf-dlg .o3d canvas'), t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const g = t.getContext('2d'); g.drawImage(c, 0, 0);
+  assert.equal(await p.locator('.kf-dlg .kf-o3d-saia, .kf-dlg .kf-o3d-eixo').count(), 0);
+  assert.match(await p.getAttribute('.kf-dlg .kf-o3d', 'data-motor'), /^(webgl|canvas)$/);
+  assert.ok(await p.evaluate(() => { const c = document.querySelector('.kf-dlg .kf-o3d canvas'), t = document.createElement('canvas'); t.width = c.width; t.height = c.height; const g = t.getContext('2d'); g.drawImage(c, 0, 0);
     const d = g.getImageData(0, 0, t.width, t.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 200) n++; return n > t.width * t.height * 0.2; }), 'a tampinha deveria estar desenhada');
-  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .o3d').dataset.ang);
+  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .kf-o3d').dataset.ang);
   const g0 = await giro(), cx = await o3d.boundingBox();
   await p.mouse.move(cx.x + cx.width / 2 - 50, cx.y + cx.height / 2); await p.mouse.down(); await p.mouse.move(cx.x + cx.width / 2 + 60, cx.y + cx.height / 2, { steps: 6 }); await p.mouse.up();
   const g1 = await giro(); assert.notEqual(g1, g0, 'arrastar deveria girar a tampinha');
@@ -229,7 +229,7 @@ test('tampinhas e níveis: nascem do histórico, a tampinha gira em 3D, o sortei
   // desligar: a navegação troca Tampinhas por Cadastros e a festa não aparece
   await p.keyboard.press('Escape');
   await p.evaluate(() => { jogo.off = true; jogoSalvar(); render(); });
-  assert.equal(await p.locator('#tab-tampinhas').count(), 0); assert.equal(await p.locator('#tab-cadastros').count(), 1);
+  assert.equal(await p.locator('#kf-nav-tampinhas').count(), 0); assert.equal(await p.locator('#kf-nav-cadastros').count(), 1);
   await p.evaluate(() => { const d = blankDraft(); d.place = 'Cantina B'; d.people = ['Ana'].map(newPerson); d.items = [{ id: newId(), o: 1, name: 'Água', qty: 1, price: 500, fq: 0, mode: 'equal', lk: true, a: { [d.people[0].id]: 1 } }]; d.active = true; draft = d; saveBill(); });
   assert.equal(await p.locator('.festa').count(), 0);
   assert.match(await p.textContent('.kf-toast'), /Comanda salva no histórico/);
@@ -338,49 +338,49 @@ test('guia: janela fixa num espaço só dela, do começo ao fim, sem tocar nos d
   await salvarComanda(p, 'Cantina Real', ['Ana', 'Bruno'], { nome: 'Suco', qtd: 2, preco: 1290 });
   await p.evaluate(() => { window.__avisos = []; const w = console.warn; console.warn = (...x) => { window.__avisos.push(x.map(v => (v && v.message) || String(v)).join(' ')); w(...x); }; });
   await nav(p, 'mais'); await p.click('#ma-guia');
-  await p.locator('#guia-doca').waitFor();
+  await p.locator('#kf-gu-doca').waitFor();
   // a demonstração começa do zero na tela, e o que é de verdade continua guardado
   assert.deepEqual(await p.evaluate(() => [bills.length, catalog.people.length, JSON.parse(localStorage.getItem('contafacil.bills')).length, comReais(() => pacoteSync(true)).bills[0].place]), [0, 0, 1, 'Cantina Real']);
   // a janela fica entre o conteúdo e a barra de baixo, sem cobrir nenhum dos dois
-  const g = await p.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect(); const d = r('#guia-doca'), n = r('.kf-nav.nav'); return { fundo: d.bottom, nav: n.top, navFundo: n.bottom, alt: innerHeight, moldura: document.querySelector('.gm-tempo').getAttribute('d') }; });
+  const g = await p.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect(); const d = r('#kf-gu-doca'), n = r('.kf-nav.nav'); return { fundo: d.bottom, nav: n.top, navFundo: n.bottom, alt: innerHeight, moldura: document.querySelector('.kf-gu-m-tempo').getAttribute('d') }; });
   assert.ok(Math.abs(g.fundo - g.nav) <= 1, 'a janela do guia encosta na barra de baixo, sem cobrir');
-  assert.ok(await p.evaluate(() => { const b = document.querySelector('.nav-bola').getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + 3); return !!e && !!e.closest('.kf-nav'); }), 'a faixa do guia não pode comer o botão do meio'); assert.ok(Math.abs(g.navFundo - g.alt) <= 1); assert.match(g.moldura, /^M/);
+  assert.ok(await p.evaluate(() => { const b = document.querySelector('.kf-nav-bola').getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + 3); return !!e && !!e.closest('.kf-nav'); }), 'a faixa do guia não pode comer o botão do meio'); assert.ok(Math.abs(g.navFundo - g.alt) <= 1); assert.match(g.moldura, /^M/);
   // primeiro passo: pisca, a moldura esvazia (contagem) e só então o passo acontece
-  assert.equal(await p.evaluate(() => guia.fase), 'conta');
-  assert.ok(await esperar(() => p.evaluate(() => { const o = +document.querySelector('.gm-tempo').style.strokeDashoffset; return o < 0 && o > -1; })), 'a contagem na moldura não andou');
-  assert.ok(await esperar(() => p.evaluate(() => guia.i >= 2 && draft.people.length === 4), 60000), 'o guia não montou a mesa');
+  assert.equal(await p.evaluate(() => KitFacil.guia.estado().fase), 'conta');
+  assert.ok(await esperar(() => p.evaluate(() => { const o = +document.querySelector('.kf-gu-m-tempo').style.strokeDashoffset; return o < 0 && o > -1; })), 'a contagem na moldura não andou');
+  assert.ok(await esperar(() => p.evaluate(() => KitFacil.guia.estado()?.i >= 2 && draft.people.length === 4), 60000), 'o guia não montou a mesa');
   // com uma janela aberta, ela termina acima da janela do guia
-  assert.ok(await esperar(() => p.evaluate(() => { const d = document.querySelector('.kf-dlg'), g = document.querySelector('#guia-doca'); return !!d && d.getBoundingClientRect().bottom <= g.getBoundingClientRect().top + 1; }), 30000), 'janela por baixo do guia');
+  assert.ok(await esperar(() => p.evaluate(() => { const d = document.querySelector('.kf-dlg'), g = document.querySelector('#kf-gu-doca'); return !!d && d.getBoundingClientRect().bottom <= g.getBoundingClientRect().top + 1; }), 30000), 'janela por baixo do guia');
   // o destaque é um anel solto, por cima de tudo: não pode ser cortado pela caixa em que o alvo está
-  assert.deepEqual(await p.evaluate(() => { const a = document.querySelector('#guia-anel'), s = getComputedStyle(a); return [s.position, a.parentElement === document.body]; }), ['fixed', true]);
+  assert.deepEqual(await p.evaluate(() => { const a = document.querySelector('#kf-gu-anel'), s = getComputedStyle(a); return [s.position, a.parentElement === document.body]; }), ['fixed', true]);
   // voltar um passo refaz o passo inteiro, em qualquer ponto do guia; pulando, o guia chega ao fim sem tropeçar
-  await p.click('#guia-volta');
-  assert.ok(await esperar(() => p.evaluate(() => guia.fase === 'conta')));
+  await p.click('#kf-gu-volta');
+  assert.ok(await esperar(() => p.evaluate(() => KitFacil.guia.estado()?.fase === 'conta')));
   const fim = Date.now() + 400000, voltou = new Set();
-  while (Date.now() < fim && await p.evaluate(() => !!guia)) {
-    const e = await p.evaluate(() => guia && { i: guia.i, fase: guia.fase, rapido: guia.rapido });
+  while (Date.now() < fim && await p.evaluate(() => !!KitFacil.guia.estado())) {
+    const e = await p.evaluate(() => KitFacil.guia.estado());
     // ao chegar a cada passo, volta para o anterior (que é refeito do começo) e só então segue
-    if (e && e.fase === 'conta' && e.i >= 1 && !voltou.has(e.i)) { voltou.add(e.i); await p.evaluate(() => guia && document.querySelector('#guia-volta').click()); }
-    else await p.evaluate(() => { if (guia && !guia.rapido && guia.fase === 'conta') document.querySelector('#guia-pula').click(); });
+    if (e && e.fase === 'conta' && e.i >= 1 && !voltou.has(e.i)) { voltou.add(e.i); await p.evaluate(() => KitFacil.guia.estado() && document.querySelector('#kf-gu-volta').click()); }
+    else await p.evaluate(() => { const g = KitFacil.guia.estado(); if (g && !g.rapido && g.fase === 'conta') document.querySelector('#kf-gu-pula').click(); });
     await new Promise(r => setTimeout(r, 90));
   }
   assert.ok(voltou.size >= 30, 'o teste deveria ter voltado em todos os passos: ' + voltou.size);
-  assert.equal(await p.evaluate(() => !!guia), false, 'o guia não chegou ao fim');
+  assert.equal(await p.evaluate(() => !!KitFacil.guia.estado()), false, 'o guia não chegou ao fim');
   assert.deepEqual(await p.evaluate(() => window.__avisos.filter(x => /guia/.test(x))), [], 'algum passo do guia falhou');
-  assert.deepEqual(await p.evaluate(() => [bills.length, bills[0].place, catalog.people.length, tab, draft.active, semSalvar, !!dadosReais, !!jogo.flags.guia, JSON.parse(localStorage.getItem('contafacil.bills')).length, document.querySelectorAll('#guia-doca, #guia-escudo, #guia-dedo, .festa, .kf-dlg').length]),
+  assert.deepEqual(await p.evaluate(() => [bills.length, bills[0].place, catalog.people.length, tab, draft.active, semSalvar, !!dadosReais, !!jogo.flags.guia, JSON.parse(localStorage.getItem('contafacil.bills')).length, document.querySelectorAll('#kf-gu-doca, #kf-gu-escudo, #kf-gu-dedo, .festa, .kf-dlg').length]),
     [1, 'Cantina Real', 2, 'inicio', false, false, false, true, 1, 0]);
   // sair no meio (Esc) também devolve tudo
   await nav(p, 'mais'); await p.click('#ma-guia');
-  assert.ok(await esperar(() => p.evaluate(() => !!guia && guia.i >= 1 && draft.active), 30000));
+  assert.ok(await esperar(() => p.evaluate(() => KitFacil.guia.estado()?.i >= 1 && draft.active), 30000));
   await p.keyboard.press('Escape');
-  assert.deepEqual(await p.evaluate(() => [!!guia, bills.length, bills[0].place, tab, draft.active]), [false, 1, 'Cantina Real', 'inicio', false]);
+  assert.deepEqual(await p.evaluate(() => [!!KitFacil.guia.estado(), bills.length, bills[0].place, tab, draft.active]), [false, 1, 'Cantina Real', 'inicio', false]);
   semErros(a); await a.fechar();
 });
 
 test('barra de baixo colada ao pé da tela e baixa; quantidade e valor lado a lado; o papel sai da fenda', async () => {
   const a = await aparelho(amb, { viewport: { width: 393, height: 760 } });
   const p = a.page;
-  const n = await p.evaluate(() => { const r = document.querySelector('.kf-nav.nav').getBoundingClientRect(), b = document.querySelector('.nav-bola').getBoundingClientRect(); return { alt: r.height, fundo: innerHeight - r.bottom, topo: innerHeight - Math.min(r.top, b.top) }; });
+  const n = await p.evaluate(() => { const r = document.querySelector('.kf-nav.nav').getBoundingClientRect(), b = document.querySelector('.kf-nav-bola').getBoundingClientRect(); return { alt: r.height, fundo: innerHeight - r.bottom, topo: innerHeight - Math.min(r.top, b.top) }; });
   assert.ok(n.fundo <= 1 && n.alt <= 64 && n.topo <= 74, 'a barra de baixo está alta: ' + JSON.stringify(n));
   // a saída do papel começa dentro da fenda escura e fica por cima da borda de baixo da impressora
   const imp = await p.evaluate(() => { const b = document.querySelector('#view .imp-boca').getBoundingClientRect(), s = document.querySelector('#view .imp-saida'), r = s.getBoundingClientRect(); return { dentro: r.top > b.top + 8 && r.top < b.bottom - 8, z: +getComputedStyle(s).zIndex > +getComputedStyle(document.querySelector('#view .imp-boca')).zIndex, estreito: r.left > b.left + 12 && r.right < b.right - 12 }; });
@@ -398,14 +398,14 @@ test('ícones do alto na mesma cor; Mais sem repetições; presente em 3D que gi
   const cores = await p.evaluate(() => [...document.querySelectorAll('#barra .kf-topo-btn > svg')].map(s => getComputedStyle(s).color + '|' + getComputedStyle(s).strokeWidth));
   assert.equal(cores.length, 3); assert.equal(new Set(cores).size, 1, 'os três ícones do alto têm a mesma cor e o mesmo traço: ' + cores.join(' '));
   await nav(p, 'mais');
-  assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('#view .lin b')].map(b => b.textContent)), ['Cadastros', 'Sortear alguém da mesa', 'Ajustes', 'Ver o guia', 'Abrir a comanda de exemplo']);
-  await p.click('#topo-presente');
-  const o3d = p.locator('.kf-dlg .o3d[data-o3d="presente"]'); await o3d.waitFor();
-  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .o3d').dataset.ang);
-  await p.emulateMedia({ reducedMotion: 'reduce' }); await p.keyboard.press('Escape'); await p.click('#topo-presente'); await o3d.waitFor();
+  assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('#view .lin b')].map(b => b.textContent)), ['Cadastros', 'Sortear alguém da mesa', 'Ver o guia', 'Abrir a comanda de exemplo', 'Ajustes']);
+  await p.click('#barra [data-kf-presente]');
+  const o3d = p.locator('.kf-dlg .kf-o3d[data-o3d="presente"]'); await o3d.waitFor();
+  const giro = () => p.evaluate(() => document.querySelector('.kf-dlg .kf-o3d').dataset.ang);
+  await p.emulateMedia({ reducedMotion: 'reduce' }); await p.keyboard.press('Escape'); await p.click('#barra [data-kf-presente]'); await o3d.waitFor();
   await o3d.focus(); const g0 = await giro(); await p.keyboard.press('ArrowLeft');
   assert.notEqual(await giro(), g0);
-  assert.equal(await p.locator('.kf-dlg .kf-dlg-pe button').count(), 1); assert.match(await p.textContent('#ap-copiar'), /Copiar código Pix/);
+  assert.equal(await p.locator('.kf-dlg .kf-dlg-pe button').count(), 1); assert.match(await p.textContent('.kf-dlg [data-kf-pix-codigo]'), /Copiar código Pix/);
   await p.keyboard.press('Escape');
   const proibidas = /chopp|cerveja|caipirinha|garrafa|boteco|vinho|cacha[çc]a|u[íi]sque|whisky|vodca|vodka|drinque|drink|bebida|rodada/i;
   for (const arq of ['app.js', 'jogo.js', 'telas.js', 'casca.js', 'index.html', 'manifest.webmanifest', 'estilo.css']) {
@@ -441,8 +441,8 @@ test('abrir e recolher: o título tocado fica à vista, uma linha aberta por vez
   assert.ok(await p.evaluate(() => document.querySelector('.pa-sub').getAnimations().length > 0), 'a lista de Paga serviço deveria abrir com movimento');
   await p.waitForTimeout(400);
   await p.click('[data-pa-svcabre]');
-  assert.equal(await p.locator('.exp-fantasma').count(), 1, 'ao recolher, o trecho encolhe antes de sumir');
-  assert.ok(await esperar(async () => await p.locator('.exp-fantasma').count() === 0));
+  assert.equal(await p.locator('.kf-exp-fantasma').count(), 1, 'ao recolher, o trecho encolhe antes de sumir');
+  assert.ok(await esperar(async () => await p.locator('.kf-exp-fantasma').count() === 0));
   // "Ver cupom" só nos atalhos da pessoa: não se repete em Editar nem no cupom compartilhado
   await p.click(`[data-pa="${grupo}"] [data-pa-mais]`); await p.locator('.kf-dlg').waitFor();
   assert.equal(await p.locator('.kf-dlg >> text=Ver cupom').count(), 0);
@@ -467,7 +467,7 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   assert.equal(await p.locator(`[data-pa="${ana}"] [data-pa-pago="desmarcar"]`).count(), 1, 'quem já está marcado pode ser desmarcado pela comanda');
   // 1) desconto depois do pagamento: a conta de Ana cai e o app manda devolver
   await p.click('#cm-pe'); await assentar(p); await p.locator('[data-cm="ds"]').click({ force: true });
-  const campo = p.locator('.kf-dlg [data-exp="cm-ds"] input[data-money]'); await campo.click(); await campo.pressSequentially('900'); await p.keyboard.press('Tab');
+  const campo = p.locator('.kf-dlg [data-kf-exp="cm-ds"] input[data-kf-dinheiro]'); await campo.click(); await campo.pressSequentially('900'); await p.keyboard.press('Tab');
   assert.match(await p.textContent('.kf-dlg .aviso-pago'), /Ana pagou R\$\s20,00 e a conta agora é R\$\s17,00: devolver R\$\s3,00/);
   await p.click('.kf-dlg [data-kf-fechar]');
   assert.deepEqual(await estado(), ['troco', 2000, 0, 300, 3400, 300]);
@@ -477,7 +477,7 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   assert.equal(await p.evaluate(() => bills.length), 0);
   // acertar: "Devolvi" registra o valor novo
   await p.click('#view [data-ap-acerta]');
-  assert.deepEqual(await estado(), ['pago', 1700, 0, 0, 3400, 0]); assert.equal(await p.locator('#view .aviso-pago:not(.exp-fantasma)').count(), 0);
+  assert.deepEqual(await estado(), ['pago', 1700, 0, 0, 3400, 0]); assert.equal(await p.locator('#view .aviso-pago:not(.kf-exp-fantasma)').count(), 0);
   // 2) item novo: quem já pagou fica de fora, com aviso; se marcar, volta a dever
   await p.click('#it-novo'); await p.fill('#pr-nome', 'Pudim'); await p.locator('#pr-preco').pressSequentially('1000');
   assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('[data-lc-ck]')].map(b => b.getAttribute('aria-pressed'))), ['false', 'true', 'true']);
@@ -514,7 +514,7 @@ test('Início: excluir a comanda em andamento; nomes na mesa sem perder o foco; 
   assert.deepEqual(esc, ['fixed', true, true]);
   await p.click('.kf-dlg [data-kf-fechar]');
   await nav(p, 'inicio');
-  await p.click('#ini-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('#cf-ok');
+  await p.click('#ini-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('.kf-dlg [data-kf-ok]');
   assert.equal(await p.evaluate(() => draft.active), false);
   await p.locator('.kf-toast button').click(); // Desfazer
   assert.equal(await p.evaluate(() => draft.active && draft.people.length), 2);
@@ -525,15 +525,15 @@ test('objetos 3D voltam a girar sozinhos depois que a pessoa para de mexer', asy
   const a = await aparelho(amb);
   const p = a.page;
   await p.evaluate(() => tampaSheet(TAMPINHAS[0]));
-  const o3d = p.locator('.kf-dlg .o3d'); await o3d.waitFor();
-  const ang = () => p.evaluate(() => +document.querySelector('.kf-dlg .o3d').dataset.ang);
+  const o3d = p.locator('.kf-dlg .kf-o3d'); await o3d.waitFor();
+  const ang = () => p.evaluate(() => +document.querySelector('.kf-dlg .kf-o3d').dataset.ang);
   await o3d.focus(); await p.keyboard.press('ArrowRight');
   const a0 = await ang(); await new Promise(r => setTimeout(r, 500));
   assert.equal(await ang(), a0, 'logo depois de mexer, o objeto fica onde a pessoa deixou');
   await new Promise(r => setTimeout(r, 2200));
   assert.ok(await ang() > a0 + 0.2, 'depois de um instante parado, o objeto deveria voltar a girar, no mesmo sentido');
   // o laço do presente não atravessa a caixa: as pontas ficam deitadas sobre a tampa, sem passar da beirada
-  assert.ok(await p.evaluate(() => { const M = malhaPresente().M; let ok = true; for (let i = 0; i < M.p.length; i += 3) { const x = M.p[i], y = M.p[i + 1], z = M.p[i + 2], fita = M.c[i] > 0.8 && M.m[(i / 3) * 4 + 2] > 0.2; if (fita && y > 0.36 && (Math.abs(x) > 0.56 || Math.abs(z) > 0.56)) ok = false; } return ok; }), 'há fita passando da beirada da tampa');
+  assert.ok(await p.evaluate(() => { const M = KitFacil.jogo._malhaPresente(document.documentElement).M; let ok = true; for (let i = 0; i < M.p.length; i += 3) { const x = M.p[i], y = M.p[i + 1], z = M.p[i + 2], fita = M.c[i] > 0.8 && M.m[(i / 3) * 4 + 2] > 0.2; if (fita && y > 0.36 && (Math.abs(x) > 0.56 || Math.abs(z) > 0.56)) ok = false; } return ok; }), 'há fita passando da beirada da tampa');
   semErros(a); await a.fechar();
 });
 
@@ -543,7 +543,7 @@ test('1.7.0: tudo o que abre e fecha dura 600 ms, na mesma curva; nenhuma janela
   const CURVA = 'cubic-bezier(0.45, 0, 0.2, 1)';
   const anims = sel => p.evaluate(sel => { const e = document.querySelector(sel); return e ? e.getAnimations().map(x => { const t = x.effect.getTiming(); return [t.duration, String(t.easing)]; }) : null; }, sel);
   const semCampo = () => p.evaluate(() => { const f = document.activeElement; return !(f && f.matches('input:not([type=checkbox]):not([type=radio]), textarea, select')); });
-  assert.deepEqual(await p.evaluate(() => [MOVE.ms, MOVE.css, getComputedStyle(document.documentElement).getPropertyValue('--cf-ms').trim(), getComputedStyle(document.documentElement).getPropertyValue('--cf-curva').trim()]), [600, 'cubic-bezier(.45,0,.2,1)', '600ms', 'cubic-bezier(.45,0,.2,1)'], 'um relógio só, igual no código e no CSS');
+  assert.deepEqual(await p.evaluate(() => [MOVE.ms, MOVE.css, getComputedStyle(document.documentElement).getPropertyValue('--kf-ms').trim(), getComputedStyle(document.documentElement).getPropertyValue('--kf-curva').trim()]), [600, 'cubic-bezier(0.45,0,0.2,1)', '600ms', 'cubic-bezier(.45,0,.2,1)'], 'um relógio só, igual no código e no CSS');
   // janela da Início (nova comanda), do nome do local, das pessoas, do item e da conta: nenhuma abre com o campo selecionado
   await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
   await p.locator('#add-pessoa').waitFor();
@@ -558,10 +558,10 @@ test('1.7.0: tudo o que abre e fecha dura 600 ms, na mesma curva; nenhuma janela
     assert.ok(await semCampo(), `${abre}: abre sem caixa de texto selecionada`);
     // sair: a cópia que desce também leva 600 ms
     await p.click('.kf-dlg [data-kf-fechar]');
-    const s = await anims('#cf-saidas .kf-dlg-x');
+    const s = await anims('#kf-saidas .kf-dlg-x');
     assert.ok(s && s.length === 1 && s[0][0] === 600 && s[0][1] === CURVA, `${abre}: a janela sai em 600 ms (${JSON.stringify(s)})`);
-    assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('#cf-saidas .kf-ov'), '::before').animationDuration), '0.6s');
-    await p.waitForFunction(() => !document.querySelector('#cf-saidas > *, #kf-saidas > .kf-ov'));
+    assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('#kf-saidas .kf-ov'), '::before').animationDuration), '0.6s');
+    await p.waitForFunction(() => !document.querySelector('#kf-saidas > *, #kf-saidas > .kf-ov'));
   }
   // Quem está na mesa: sem "Pronto"; o botão Adicionar fica alinhado ao campo, com a lista de sugestões abaixo da linha
   await p.evaluate(() => { catalog.people = [{ id: 'x1', name: 'Rosana' }, { id: 'x2', name: 'Mateus' }]; });
@@ -569,11 +569,11 @@ test('1.7.0: tudo o que abre e fecha dura 600 ms, na mesma curva; nenhuma janela
   assert.equal(await p.locator('.kf-dlg > .kf-dlg-pe').count(), 0, 'sem botão Pronto: o X fecha');
   await p.click('#pn-nome');
   // no celular a lista espera o teclado assentar; aqui o teclado não vem, e ela abre logo depois
-  await p.waitForFunction(() => !document.querySelector('.sg-box').hidden);
-  const lista = await p.evaluate(() => document.querySelector('.sg-box').getAnimations().map(x => x.effect.getTiming().duration));
+  await p.waitForFunction(() => !document.querySelector('.kf-sg-lista').hidden);
+  const lista = await p.evaluate(() => document.querySelector('.kf-sg-lista').getAnimations().map(x => x.effect.getTiming().duration));
   assert.deepEqual(lista, [600], 'a lista de sugestões abre em 600 ms');
-  await p.waitForFunction(() => !document.querySelector('.sg-box').getAnimations().length);
-  const al = await p.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect(), i = r('#pn-nome'), b = r('#pn-add'), l = r('.sg-box'); return { topo: Math.abs(i.top - b.top), base: Math.abs(i.bottom - b.bottom), listaAbaixo: l.top >= i.bottom && l.top >= b.bottom, larg: Math.round(l.width) > Math.round(i.width) }; });
+  await p.waitForFunction(() => !document.querySelector('.kf-sg-lista').getAnimations().length);
+  const al = await p.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect(), i = r('#pn-nome'), b = r('#pn-add'), l = r('.kf-sg-lista'); return { topo: Math.abs(i.top - b.top), base: Math.abs(i.bottom - b.bottom), listaAbaixo: l.top >= i.bottom && l.top >= b.bottom, larg: Math.round(l.width) > Math.round(i.width) }; });
   assert.ok(al.topo <= 1 && al.base <= 1 && al.listaAbaixo && al.larg, `Adicionar alinhado ao campo, lista abaixo da linha (${JSON.stringify(al)})`);
   await p.keyboard.type('Ana'); await p.keyboard.press('Enter'); await p.keyboard.type('Bruno'); await p.keyboard.press('Enter');
   await p.click('.kf-dlg [data-kf-fechar]'); await p.waitForFunction(() => !document.querySelector('.kf-dlg'));
@@ -583,7 +583,7 @@ test('1.7.0: tudo o que abre e fecha dura 600 ms, na mesma curva; nenhuma janela
   assert.ok(lin.length && lin.every(x => x === 600), `a linha abre em 600 ms (${lin})`);
   await p.evaluate(() => irPara('historico'));
   assert.deepEqual((await anims('#view')).map(x => x[0]), [600], 'a tela troca em 600 ms');
-  await p.evaluate(() => toast('Teste.'));
+  await p.evaluate(() => KitFacil.avisar('Teste.'));
   assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('.kf-toast')).animationDuration), '0.6s', 'o aviso aparece em 600 ms');
 });
 
@@ -606,13 +606,13 @@ test('janelas: nascem e acompanham o teclado num movimento só, sem saltar nem v
   let f = await filmar(async () => { await p.tap('#add-pessoa'); await p.waitForTimeout(40); await teclado(p, true); });
   assert.equal(f.inv, 0, 'a janela nasce e sobe sem ir e voltar'); assert.ok(f.de >= H - 40, `a janela nasce abaixo da tela (${f.de})`);
   let c = await caixa(); assert.equal(c.base, H - TECLADO, 'a janela termina encostada no teclado'); assert.ok(c.topo >= 0); assert.ok(c.cont, 'a cor da janela continua por trás do teclado'); assert.equal(c.pe, '0px');
-  assert.ok(await p.evaluate(() => document.documentElement.classList.contains('cf-tk')));
+  assert.ok(await p.evaluate(() => document.documentElement.classList.contains('kf-tk')));
   for (const n of ['Ana', 'Bruno', 'Carla']) { await p.fill('#pn-nome', n); await p.press('#pn-nome', 'Enter'); }
   f = await filmar(async () => { await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(30); await teclado(p, false); });
   assert.equal(f.inv, 0, 'ao fechar o teclado, a janela desce de uma vez'); c = await caixa(); assert.equal(c.base, H);
   await p.click('.kf-dlg [data-kf-fechar]');
   // janela alta com o teclado: cabe inteira acima dele
-  await p.click('#it-novo'); await p.locator('.kf-dlg input[data-money]').first().waitFor(); await assentar(p);
+  await p.click('#it-novo'); await p.locator('.kf-dlg input[data-kf-dinheiro]').first().waitFor(); await assentar(p);
   f = await filmar(async () => { await p.tap('#pr-nome'); await p.waitForTimeout(40); await teclado(p, true); });
   assert.equal(f.inv, 0, 'com o teclado, a janela alta encolhe e sobe sem ir e voltar');
   c = await caixa(); assert.equal(c.base, H - TECLADO); assert.ok(c.topo >= 0, `o título não sobe para fora da tela (topo ${c.topo})`);
@@ -623,14 +623,14 @@ test('janelas: nascem e acompanham o teclado num movimento só, sem saltar nem v
   await p.evaluate(() => closeSheet(true));
   // no guia: ligar e desligar o "teclado" não mexe na janela, que fica acima da janela do guia
   await p.evaluate(() => guiaIniciar());
-  await esperar(() => p.evaluate(() => guia && guia.i === 1 && !!document.querySelector('#pn-nome')), 30000);
-  await p.evaluate(() => { guia.pausado = true; }); await assentar(p);
+  await esperar(() => p.evaluate(() => KitFacil.guia.estado()?.i === 1 && !!document.querySelector('#pn-nome')), 30000);
+  await p.evaluate(() => { if (!KitFacil.guia.estado().pausado) document.querySelector('#kf-gu-pausa').click(); }); await assentar(p);
   const livre = await caixa();
   await p.evaluate(() => document.documentElement.classList.add('kf-teclado')); await teclado(p, true); await p.waitForTimeout(500); const comT = await caixa();
   await p.evaluate(() => document.documentElement.classList.remove('kf-teclado')); await teclado(p, false);
   assert.deepEqual([comT.topo, comT.base, comT.pe], [livre.topo, livre.base, livre.pe], 'a janela do guia fica no mesmo lugar');
-  assert.equal(livre.base, await p.evaluate(() => Math.round(document.querySelector('#guia-doca').getBoundingClientRect().top)), 'e termina onde começa a janela do guia');
-  await p.evaluate(() => guiaParar());
+  assert.equal(livre.base, await p.evaluate(() => Math.round(document.querySelector('#kf-gu-doca').getBoundingClientRect().top)), 'e termina onde começa a janela do guia');
+  await p.evaluate(() => KitFacil.guia.pararDemonstracao());
   semErros(a); await a.fechar();
 });
 
@@ -642,7 +642,7 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   const [ana, bruno] = await p.evaluate(() => draft.people.map(x => x.id));
   // Editar: só o nome e Remover da mesa
   await p.click(`[data-unit="${ana}"]`); await p.click(`[data-pa="${ana}"] [data-pa-mais]`); await p.locator('#cs-nome').waitFor();
-  assert.equal(await p.locator('.kf-dlg input, .kf-dlg .switch').count(), 1, 'a janela só tem o campo do nome');
+  assert.equal(await p.locator('.kf-dlg input, .kf-dlg .kf-chave').count(), 1, 'a janela só tem o campo do nome');
   assert.deepEqual(await p.locator('.kf-dlg button:not(.kf-fechar)').allTextContents().then(x => x.map(s => s.trim())), ['Remover da mesa', 'Salvar']);
   await p.fill('#cs-nome', 'Aninha'); await p.click('#cs-ok');
   assert.equal(await p.evaluate(() => draft.people[0].name), 'Aninha');
@@ -654,10 +654,10 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
     await p.tap(sel); await p.waitForTimeout(900);
     return p.evaluate(() => { __on = false; let inv = 0; for (let i = 2; i < __q.length; i++) { const x = __q[i - 1] - __q[i - 2], y = __q[i] - __q[i - 1]; if (x * y < -1) inv++; } return inv; });
   };
-  for (const k of ['cv', 'ds', 'ds', 'svc', 'svc', 'cv']) assert.equal(await tremor(`.kf-dlg label:has([data-cm="${k}"]) .switch`), 0, `a janela não vai e volta ao tocar na chave ${k}`);
+  for (const k of ['cv', 'ds', 'ds', 'svc', 'svc', 'cv']) assert.equal(await tremor(`.kf-dlg label:has([data-cm="${k}"]) .kf-chave`), 0, `a janela não vai e volta ao tocar na chave ${k}`);
   // valor digitado: ao sair do campo, o app não fica preso no modo "teclado aberto" nem com a barra do OK na tela
   const modo = () => p.evaluate(() => [document.documentElement.classList.contains('kf-teclado'), document.querySelectorAll('.ok-teclado').length, document.activeElement.id || document.activeElement.tagName]);
-  await p.tap('.kf-dlg label:has([data-cm="cv"]) .switch'); await p.waitForTimeout(500);
+  await p.tap('.kf-dlg label:has([data-cm="cv"]) .kf-chave'); await p.waitForTimeout(500);
   await p.tap('#cm-cv'); await p.waitForTimeout(250); assert.deepEqual(await modo(), [true, 0, 'cm-cv'], 'não há mais barra própria de OK: o teclado do aparelho já tem a tecla de concluir');
   await p.keyboard.type('700'); await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(500);
   assert.deepEqual(await modo(), [false, 0, 'BODY']); assert.equal(await p.evaluate(() => draft.couvert.value), 700);
@@ -667,7 +667,7 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   await p.tap('#cm-cv'); await p.waitForTimeout(250); await p.keyboard.type('1100'); await p.tap('#cm-svc-pct'); await p.waitForTimeout(500);
   assert.deepEqual(await modo(), [true, 0, 'cm-svc-pct']); assert.equal(await p.evaluate(() => draft.couvert.value), 1100);
   await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(450);
-  await p.tap('.kf-dlg label:has([data-cm="cv"]) .switch'); await p.waitForTimeout(400);
+  await p.tap('.kf-dlg label:has([data-cm="cv"]) .kf-chave'); await p.waitForTimeout(400);
   await p.click('.kf-dlg [data-kf-fechar]');
   // Excluir comanda fica logo abaixo de Fechar comanda
   assert.equal(await p.evaluate(() => document.querySelector('#fechar-cmd').nextElementSibling?.id), 'cmd-excluir');
@@ -690,13 +690,13 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; paga por todos e outro valo
   assert.equal(await p.evaluate(ana => ana in draft.custom, ana), false);
   await p.click('#fc-volta');
   // iPhone: o toque num campo de uma janela dá o foco sem o Safari empurrar a tela (o campo volta ao lugar no quadro seguinte)
-  await p.evaluate(() => { window.CF_TESTE_IOS = true; });
+  await p.evaluate(() => { window.KF_TESTE_IOS = true; });
   await p.click('#add-pessoa'); await p.locator('#pn-nome').waitFor(); await p.evaluate(() => document.activeElement.blur());
   await p.tap('#pn-nome'); await p.waitForTimeout(120);
   assert.deepEqual(await p.evaluate(() => [document.activeElement.id, document.querySelector('#pn-nome').style.transform]), ['pn-nome', '']);
-  await p.evaluate(() => { window.CF_TESTE_IOS = false; closeSheet(true); });
+  await p.evaluate(() => { window.KF_TESTE_IOS = false; closeSheet(true); });
   // excluir pela comanda
-  await p.click('#cmd-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('#cf-ok');
+  await p.click('#cmd-excluir'); await p.locator('text=Excluir esta comanda?').waitFor(); await p.click('.kf-dlg [data-kf-ok]');
   assert.equal(await p.evaluate(() => draft.active), false);
   semErros(a); await a.fechar();
 });
@@ -736,7 +736,7 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, botões de Fechar c
     await acao(); await p.waitForTimeout(700);
     return p.evaluate(() => { __on = false; const inv = k => { let n = 0; for (let i = 2; i < __q.length; i++) { const x = __q[i - 1][k] - __q[i - 2][k], y = __q[i][k] - __q[i - 1][k]; if (x * y < -1) n++; } return n; };
       const d = document.querySelector('.kf-dlg'), pe = d.querySelector(':scope > .kf-dlg-pe'), u = __q[__q.length - 1];
-      return { janela: inv(0), campo: inv(1), topo: [Math.round(__q[0][0]), Math.round(u[0])], campoFim: Math.round(u[1]), sobra: d.querySelectorAll(':scope > div[aria-hidden]').length + d.getAnimations({ subtree: true }).length, pe: pe.style.cssText, peAlt: Math.round(pe.getBoundingClientRect().height), tk: getComputedStyle(document.documentElement).getPropertyValue('--cf-tk').trim(), alt: innerHeight }; });
+      return { janela: inv(0), campo: inv(1), topo: [Math.round(__q[0][0]), Math.round(u[0])], campoFim: Math.round(u[1]), sobra: d.querySelectorAll(':scope > div[aria-hidden]').length + d.getAnimations({ subtree: true }).length, pe: pe.style.cssText, peAlt: Math.round(pe.getBoundingClientRect().height), tk: getComputedStyle(document.documentElement).getPropertyValue('--kf-tk').trim(), alt: innerHeight }; });
   };
   let fk = await filmar(async () => { await p.tap(`${AQUI} [data-fc-custom]`); await p.waitForTimeout(40); await teclado(p, true); });
   assert.deepEqual([fk.janela, fk.campo, fk.sobra, fk.pe, fk.tk], [0, 0, 0, '', TECLADO + 'px'], 'ao abrir o teclado, a janela e o campo sobem num movimento só');
@@ -750,7 +750,7 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, botões de Fechar c
   assert.deepEqual(await p.evaluate(() => [Object.keys(draft.custom).length, Object.keys(draft.cover).length]), [0, 0]);
   // Bruno paga e vai embora: o cupom dele trava
   await p.click('#fc-prox'); await p.waitForTimeout(500);
-  await p.click(`${AQUI} [data-fc-pago="marcar"]`); await p.click(`${AQUI} .fc-saiu .switch`);
+  await p.click(`${AQUI} [data-fc-pago="marcar"]`); await p.click(`${AQUI} .fc-saiu .kf-chave`);
   assert.equal(await p.evaluate(b => !!draft.saiu[b], bruno), true);
   await p.click('#fc-volta'); await p.waitForTimeout(400);
   assert.match(await p.textContent(`summary[data-unit="${bruno}"]`), /saiu da mesa/);
