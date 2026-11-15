@@ -3,6 +3,13 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.6 · 2026-11-15
+
+- **Nenhum botão sobe para cima do teclado (regra do Bruno):** com o teclado aberto, o pé da janela (Cancelar e Lançar, Salvar, Adicionar) se recolhe, em todas as janelas; ao fechar o teclado, ele volta. Antes, isso só acontecia em Fechar a comanda.
+- **Mais espaço:** com o pé recolhido, sobra mais conteúdo à vista acima do teclado.
+- **Como concluir:** feche o teclado e toque no botão.
+- **Não muda:** o botão que fica na mesma linha do campo (Adicionar, em Quem está na mesa) continua ao lado dele. O guia não puxa a janela para fechar e não ganha passo novo para isso (decisão do Bruno).
+
 ## 1.8.5 · 2026-11-15
 
 - **Cursor fora da caixa de texto:** ao tocar num campo, a janela sobe com o teclado, e o cursor azul ficava para trás, abaixo do campo, até a janela parar. Quem desenha o cursor é o iPhone, e ele não acompanha a janela em movimento. Agora o cursor só aparece com a janela parada, já dentro da caixa (cerca de um terço de segundo depois do toque). O que se digita aparece normalmente.

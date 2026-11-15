@@ -1,9 +1,9 @@
 # Proposta 3 para o Integrador
 
-Do Projeto Conta Fácil · 15/11/2026 · app 1.8.5 · Kit Fácil 0.7.0 · Código 0.7
+Do Projeto Conta Fácil · 15/11/2026 · app 1.8.6 · Kit Fácil 0.7.0 · Código 0.7
 
-Três correções e uma peça nova do Kit, nascidas de cinco ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
-Código já diz; a segunda também alarga dois artigos do Código; a terceira pede um parágrafo novo; a quarta é só do Kit.
+Três correções, uma peça nova e uma regra nova do Kit, nascidas de seis ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
+Código já diz; a segunda também alarga dois artigos do Código; a terceira pede um parágrafo novo; a quarta é só do Kit; a quinta pede uma frase nova no Código.
 
 ## 1. A cópia da janela que fecha não pode ser religada (Arts. 68, § 3º, e 72-A)
 
@@ -78,3 +78,19 @@ janela; só rola o conteúdo que for maior que ela. O X e o Esc continuam (Art. 
 caminho (`_kfTk`, `partir`), sem precisar olhar quadro a quadro.
 
 **Impacto.** Todos os apps com campo em janela têm o mesmo cursor atrasado no iPhone.
+
+## 5. Nenhum botão sobe para cima do teclado (Arts. 16, IX, e 68, § 3º)
+
+**Regra do Bruno (15/11/2026).** "Ao abrir o teclado, eu não quero que nenhum botão suba para cima do teclado. Isso não
+deve acontecer nunca."
+
+**O que o Conta Fácil faz desde a 1.8.6 (`estilo.css`).** Com o teclado aberto (`html.kf-tk`), o pé de toda janela
+(`.kf-dlg-pe`) se recolhe; volta quando o teclado fecha. Fora do guia. Antes valia só para Fechar a comanda (Regras do
+Conta Fácil, Art. 8º, VI). O mecanismo de janelas do Kit já anima o pé que some e volta.
+
+**O que mudar no Kit.** Levar a regra para `comum/kit-facil.css`.
+
+**O que mudar no Código.** Art. 68, § 3º, frase nova: "Com o teclado aberto, o pé da janela se recolhe: nenhum botão
+sobe para cima do teclado."
+
+**Decisão do Bruno sobre o item 3.** O gesto de puxar a janela não ganha passo no guia.

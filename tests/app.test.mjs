@@ -918,3 +918,26 @@ test('1.8.5: o cursor do campo fica invisível enquanto a janela sobe com o tecl
   assert.equal(await p.evaluate(() => document.querySelectorAll('.cf-sem-cursor').length), 0);
   semErros(a); await a.fechar();
 });
+
+test('1.8.6: com o teclado aberto, o pé da janela se recolhe em toda janela e volta quando o teclado fecha', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.locator('#add-pessoa').waitFor();
+  await p.evaluate(() => { addPessoa('Ana'); addPessoa('Bruno'); });
+  const H = await p.evaluate(() => innerHeight);
+  const pe = () => p.evaluate(() => { const d = [...document.querySelectorAll('.kf-dlg')].find(x => !x.closest('#kf-saidas')), e = d.querySelector(':scope > .kf-dlg-pe'), r = e.getBoundingClientRect(); return { some: getComputedStyle(e).display === 'none' || r.height === 0, base: Math.round(d.getBoundingClientRect().bottom) }; });
+  for (const [abre, campo] of [['produtoSheet', '#pr-form input'], ['localSheet', '.kf-dlg input']]) {
+    await p.evaluate(f => eval(f + '()'), abre); await p.locator('.kf-dlg').waitFor(); await assentar(p);
+    if (!(await p.locator('.kf-dlg > .kf-dlg-pe').count())) { await p.click('.kf-dlg [data-kf-fechar]'); await p.waitForTimeout(700); continue; }
+    assert.equal((await pe()).some, false, `${abre}: sem teclado o pé aparece`);
+    await p.locator(campo).first().tap(); await p.waitForTimeout(40); await teclado(p, true); await p.waitForTimeout(700);
+    const c = await pe();
+    assert.equal(c.some, true, `${abre}: com o teclado aberto nenhum botão do pé fica à vista`);
+    assert.equal(c.base, H - TECLADO, `${abre}: a janela encosta no teclado`);
+    await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(30); await teclado(p, false); await p.waitForTimeout(700);
+    assert.equal((await pe()).some, false, `${abre}: o pé volta quando o teclado fecha`);
+    await p.click('.kf-dlg [data-kf-fechar]'); await p.waitForTimeout(700);
+  }
+  semErros(a); await a.fechar();
+});

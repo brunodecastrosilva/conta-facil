@@ -566,7 +566,9 @@ body.kf-com-guia .festa{bottom:calc(var(--kf-pe-h) + var(--kf-gu-h));padding-bot
 
 /* ---------- 17. janelas: o mecanismo único é o do Kit (Art. 68, § 3º) ---------- */
 /* em Fechar a comanda, Voltar e Salvar não sobem com o teclado: ficam recolhidos enquanto ele está aberto */
-@media (max-width:719px){html.kf-tk body:not(.kf-com-guia) .kf-dlg:has(.fc) .kf-dlg-pe{display:none}}
+/* regra do Bruno (1.8.6): com o teclado aberto, nenhum botão do pé da janela sobe para cima dele; o pé se recolhe em
+   toda janela e volta quando o teclado fecha (antes, só em Fechar a comanda) */
+html.kf-tk body:not(.kf-com-guia) .kf-dlg .kf-dlg-pe{display:none}
 
 /* ---------- 18. um relógio só ----------
    Regra do Bruno (15/11/2026): tudo o que abre ou fecha dura 600 ms, na mesma curva (--kf-ms e --kf-curva, iguais a
