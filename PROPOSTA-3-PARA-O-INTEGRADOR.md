@@ -2,8 +2,8 @@
 
 Do Projeto Conta Fácil · 15/11/2026 · app 1.8.2 · Kit Fácil 0.7.0 · Código 0.7
 
-Duas correções do Kit, nascidas de dois ajustes pedidos pelo Bruno em 15/11/2026. Nenhuma muda artigo do Código: as duas
-fazem o Kit cumprir o que o Código já diz.
+Duas correções do Kit, nascidas de dois ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
+Código já diz; a segunda também alarga dois artigos do Código.
 
 ## 1. A cópia da janela que fecha não pode ser religada (Arts. 68, § 3º, e 72-A)
 
