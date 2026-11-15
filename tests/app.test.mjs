@@ -837,3 +837,49 @@ test('1.8.2: fechar no X não dá pulo: a cópia que sai tem a altura e o topo d
   }
   semErros(a); await a.fechar();
 });
+
+test('1.8.3: puxar a janela pelo cabeçalho: acompanha o dedo, volta se soltar antes e fecha de onde o dedo deixou', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.locator('#add-pessoa').waitFor();
+  await p.evaluate(() => produtoSheet()); await p.locator('.kf-dlg').waitFor(); await assentar(p);
+  // o cabeçalho é a alça: não seleciona texto nem rola a página
+  assert.deepEqual(await p.evaluate(() => { const c = getComputedStyle(document.querySelector('.kf-dlg-cab')), pe = getComputedStyle(document.querySelector('.kf-dlg-pe')), x = getComputedStyle(document.querySelector('.kf-dlg-cab .kf-fechar')); return [c.touchAction, c.userSelect || c.webkitUserSelect, pe.touchAction, x.touchAction]; }), ['none', 'none', 'none', 'manipulation']);
+  assert.equal(await p.evaluate(() => { const e = new Event('touchmove', { bubbles: true, cancelable: true }); e.touches = e.changedTouches = [{ clientX: 0, clientY: 0, identifier: 1 }]; document.querySelector('.kf-dlg-cab h2').dispatchEvent(e); return e.defaultPrevented; }), true, 'arrastar no cabeçalho não rola a página');
+  assert.equal(await p.evaluate(() => { const e = new Event('touchmove', { bubbles: true, cancelable: true }); e.touches = e.changedTouches = [{ clientX: 0, clientY: 0, identifier: 1 }]; document.querySelector('.kf-dlg-corpo').dispatchEvent(e); return e.defaultPrevented; }), false, 'o conteúdo da janela continua rolando');
+  const puxar = (dy, passos = 8, ms = 30) => p.evaluate(async ([dy, passos, ms]) => {
+    const h = document.querySelector('.kf-dlg-cab h2'), r = h.getBoundingClientRect(), x = r.left + 20, y = r.top + 5;
+    const ev = (t, yy) => h.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: yy, button: t === 'pointermove' ? -1 : 0 }));
+    ev('pointerdown', y);
+    for (let i = 1; i <= passos; i++) { await new Promise(f => setTimeout(f, ms)); ev('pointermove', y + dy * i / passos); }
+    return y + dy;
+  }, [dy, passos, ms]);
+  const soltar = y => p.evaluate(y => document.querySelector('.kf-dlg-cab h2').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7, pointerType: 'touch', clientY: y })), y);
+  const topo = () => p.evaluate(() => document.querySelector('.kf-dlg').getBoundingClientRect().top);
+  const t0 = await topo();
+  // puxão curto e lento: acompanha o dedo e volta
+  let y = await puxar(60, 8, 60);
+  assert.ok(Math.abs(await topo() - (t0 + 60)) < 1.5, 'a janela acompanha o dedo');
+  await soltar(y); await p.waitForTimeout(450);
+  assert.ok(await p.locator('.kf-dlg').count() === 1 && Math.abs(await topo() - t0) < 1, 'soltou antes: a janela volta para o lugar');
+  // para cima não sai do lugar
+  y = await puxar(-80); assert.ok(Math.abs(await topo() - t0) < 1, 'para cima a janela não se move'); await soltar(y);
+  assert.equal(await p.locator('.kf-dlg').count(), 1);
+  // puxão longo: fecha, e a cópia desce de onde o dedo deixou, sem voltar ao alto
+  y = await puxar(260, 10, 40);
+  const r = await p.evaluate(y => new Promise(fim => {
+    const q = [];
+    document.querySelector('.kf-dlg-cab h2').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7, pointerType: 'touch', clientY: y }));
+    const olhar = () => { const g = document.querySelector('#kf-saidas .kf-dlg-x'); if (!g) return fim({ q, aberta: document.querySelectorAll('.kf-ov').length - document.querySelectorAll('#kf-saidas .kf-ov').length, alto: innerHeight }); q.push(g.getBoundingClientRect().top); requestAnimationFrame(olhar); };
+    Promise.resolve().then(() => requestAnimationFrame(olhar));
+  }), y);
+  assert.equal(r.aberta, 0, 'puxou bastante: a janela fecha');
+  assert.ok(r.q.length > 5 && r.q[0] >= t0 + 259, `a saída parte de onde o dedo deixou (${t0 + 260} → ${r.q[0]})`);
+  assert.ok(r.q.every((x, i) => !i || x >= r.q[i - 1] - 0.5) && r.q.at(-1) >= r.alto - 40, 'a janela só desce, até sair da tela');
+  // puxão rápido e curto também fecha; no X continua fechando
+  await p.waitForTimeout(100); await p.evaluate(() => produtoSheet()); await p.locator('.kf-dlg').waitFor(); await assentar(p);
+  y = await puxar(70, 4, 12); await soltar(y); await p.waitForTimeout(100);
+  assert.equal(await p.evaluate(() => document.querySelectorAll('.kf-ov').length - document.querySelectorAll('#kf-saidas .kf-ov').length), 0, 'puxão rápido fecha');
+  semErros(a); await a.fechar();
+});

@@ -188,6 +188,11 @@ button.lin{border-radius:0}
 .kf-toast button{color:var(--ambar)!important}
 .kf-aj-h{font-family:var(--f-display);font-weight:800;letter-spacing:-.03em}
 .kf-aj-sec-h h2{font-family:var(--f-display);letter-spacing:-.02em}
+/* puxar a janela para baixo (casca.js): o cabeçalho é a alça; não seleciona texto, não abre o menu do iPhone e não rola a página */
+.kf-dlg-cab,.kf-dlg-pe{touch-action:none}
+.kf-dlg-cab{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.kf-dlg-cab .kf-fechar,.kf-dlg-pe button,.kf-dlg-pe a{touch-action:manipulation}
+body.cf-puxando{-webkit-user-select:none;user-select:none}
 @media (min-width:1024px){.kf-dlg{border-radius:var(--kf-r-lg)}.kf-dlg-cab::before{display:none}}
 @media (min-width:1024px){.kf-toast{bottom:28px}}
 

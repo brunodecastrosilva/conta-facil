@@ -3,6 +3,14 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.3 · 2026-11-15
+
+- **Puxar a janela para baixo:** a barrinha no alto da janela agora funciona. Puxe pelo cabeçalho e a janela acompanha o dedo; soltou depois de um terço da altura, ou num puxão rápido, ela fecha, como no X; soltou antes, volta para o lugar. Vale para todas as janelas, no celular e no tablet. O X e o Esc continuam.
+- **O que bugava:** a barrinha era só um desenho. Arrastar ali rolava a página por trás (a janela subia e cortava o conteúdo), e tocar e segurar selecionava o título, com o menu Copiar do iPhone. O cabeçalho e o rodapé das janelas não rolam mais a página nem selecionam texto.
+- **Sem pulo:** a janela puxada fecha a partir de onde o dedo deixou, em 600 ms, sem voltar ao alto antes.
+- **Guia:** durante o guia, puxar não fecha a janela. O gesto ainda não tem passo próprio no guia (decisão do Bruno: Regras, Art. 13).
+- **Própria do app, a levar ao Kit:** o gesto está em `casca.js` e no `estilo.css`; entra na Proposta 3.
+
 ## 1.8.2 · 2026-11-15
 
 - **Pulo ao fechar no X:** a janela que tem lista de escolha (como "Pôr uma turma na mesa", em Quem está na mesa) dava um pulo para cima ao fechar. O que desce pela tela é uma cópia da janela; o Kit tomava a lista de escolha da cópia por uma lista nova e montava outra embaixo dela, e a cópia ficava uma linha mais alta. Agora a cópia sai com a mesma altura da janela, sempre.

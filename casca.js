@@ -361,6 +361,45 @@ const GUIA = [
     acao: async m => { await m.tocar(navQ('inicio')); await m.espera(2000); } },
 ];
 
+/* ---------- puxar a janela para baixo (1.8.3) ----------
+   A barrinha no alto da janela convida a puxar. Quem puxa pelo cabeçalho leva a janela junto com o dedo: soltou depois
+   de um terço da altura (ou num puxão rápido), ela fecha, como no X; soltou antes, ela volta para o lugar.
+   - o dedo move a janela com a propriedade `translate`, que soma com o `transform` do mecanismo de janelas do Kit: a
+     cópia que sai parte de onde o dedo deixou e desce em 600 ms, sem voltar ao alto antes;
+   - cabeçalho e rodapé não rolam a página nem selecionam texto (o iPhone fazia as duas coisas);
+   - vale para toda janela do Kit, enquanto a barrinha aparece (telas com menos de 1024 px). No computador, e para quem
+     não arrasta, o X e o Esc continuam (Código, Art. 16, X). */
+(() => {
+  const estreita = () => matchMedia('(max-width:1023px)').matches;
+  const real = el => el && !el.closest('#kf-saidas');
+  let p = null;   // { dlg, y0, dy, t, v, id }
+  const soltar = fechar => {
+    if (!p) return; const { dlg, dy } = p; p = null;
+    document.body.classList.remove('cf-puxando');
+    if (!dlg.isConnected) return;
+    if (fechar) { KitFacil.dialogo.fechar(); return; }   // a cópia leva o `translate` e desce dali
+    dlg.style.translate = '';
+    if (dy > 1 && dlg.animate && !KitFacil.movimento.reduzido()) dlg.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }], { duration: MOVE.ms / 2, easing: MOVE.css });
+  };
+  document.addEventListener('pointerdown', e => {
+    if (p || !estreita() || e.button > 0 || KitFacil.guia.ativo()) return;
+    const cab = e.target.closest && e.target.closest('.kf-dlg-cab'); if (!cab || !real(cab) || e.target.closest('button, a, input')) return;
+    const dlg = cab.closest('.kf-dlg'); if (!dlg || dlg.getAnimations().some(a => a.playState === 'running')) return;
+    p = { dlg, y0: e.clientY, dy: 0, t: e.timeStamp, v: 0, id: e.pointerId };
+    document.body.classList.add('cf-puxando');
+  }, true);
+  document.addEventListener('pointermove', e => {
+    if (!p || e.pointerId !== p.id) return;
+    const dy = Math.max(0, e.clientY - p.y0), dt = Math.max(1, e.timeStamp - p.t);
+    p.v = .6 * p.v + .4 * ((dy - p.dy) / dt); p.dy = dy; p.t = e.timeStamp;
+    p.dlg.style.translate = dy ? `0 ${Math.round(dy)}px` : '';
+  }, true);
+  const fim = e => { if (!p || e.pointerId !== p.id) return; soltar(e.type === 'pointerup' && (p.dy > Math.min(160, p.dlg.offsetHeight / 3) || (p.dy > 24 && p.v > .5))); };
+  document.addEventListener('pointerup', fim, true); document.addEventListener('pointercancel', fim, true);
+  // o cabeçalho e o rodapé da janela nunca rolam a página
+  document.addEventListener('touchmove', e => { const t = e.target; if (p || (t.closest && real(t) && t.closest('.kf-dlg-cab, .kf-dlg-pe'))) e.preventDefault(); }, { passive: false, capture: true });
+})();
+
 /* ---------- arranque ---------- */
 if (draft.live) { draft.isExample = false; draft.active = true; }
 if (backfillPrices()) LS.set('catalog', catalog);
