@@ -1,6 +1,6 @@
 # Proposta 3 para o Integrador
 
-Do Projeto Conta Fácil · 15/11/2026 · app 1.8.6 · Kit Fácil 0.7.0 · Código 0.7
+Do Projeto Conta Fácil · 15/11/2026 · app 1.8.7 · Kit Fácil 0.7.0 · Código 0.7
 
 Três correções, uma peça nova e uma regra nova do Kit, nascidas de seis ajustes pedidos pelo Bruno em 15/11/2026. A primeira só faz o Kit cumprir o que o
 Código já diz; a segunda também alarga dois artigos do Código; a terceira pede um parágrafo novo; a quarta é só do Kit; a quinta pede uma frase nova no Código.
@@ -94,3 +94,20 @@ Conta Fácil, Art. 8º, VI). O mecanismo de janelas do Kit já anima o pé que s
 sobe para cima do teclado."
 
 **Decisão do Bruno sobre o item 3.** O gesto de puxar a janela não ganha passo no guia.
+
+## 6. Todo botão de exclusão é vermelho, com um vermelho só (Arts. 16, V, e 66, § 1º)
+
+**Regra do Bruno (15/11/2026).** "Eu quero que todos os botões do app referentes a exclusão sejam vermelhos."
+
+**O que o Conta Fácil faz desde a 1.8.7 (`estilo.css`, `app.js`).** Excluir, remover e apagar são botões cheios, vermelhos,
+com texto branco; a confirmação que exclui também (`confirmSheet` marca perigo pelo rótulo); botão só com ícone fica com
+o ícone vermelho. O vermelho do botão é um só no claro e no escuro (`--cf-excluir: #B3362B`, 5,9:1 com branco).
+
+**Erro do Kit corrigido por cima.** No escuro, `.kf-btn.kf-perigo` usa `--kf-bad` (#F08E80) com texto branco: contraste
+perto de 2,5:1, abaixo do AA (Art. 16, V). E "Restaurar padrões de fábrica" é contornado (`kf-perigo-sec`).
+
+**O que mudar no Kit.** Uma cor própria para o fundo do botão de perigo (`--kf-perigo-fundo: #B3362B` nos três temas);
+`kf-perigo-sec` passa a ser cheio como `kf-perigo`; `confirmar()` marca perigo quando o rótulo exclui.
+
+**O que mudar no Código.** Art. 66, § 1º: "Vermelho é só para excluir, e todo botão que exclui, remove ou apaga é
+vermelho e cheio, inclusive o da confirmação; botão só com ícone tem o ícone vermelho."

@@ -516,8 +516,13 @@ body.kf-com-guia .festa{bottom:calc(var(--kf-pe-h) + var(--kf-gu-h));padding-bot
 .cu-troco{display:block;font-size:.8em;opacity:.9}
 .ck-pagou .ck-nome::after{content:"já pagou";margin-left:8px;padding:2px 7px;border-radius:99px;background:#FFF1CC;color:#5A3D00;font:700 11px/1.4 var(--f-body);vertical-align:middle}
 .lc-pagou{margin:0;color:#5A3D00;background:#FFF1CC;padding:8px 10px;border-radius:10px}
-.ip-excluir{align-self:center;margin-top:2px;color:var(--paper-muted,#6E6858)}
-.ip-excluir .i{width:16px;height:16px}
+.ip-excluir{margin-top:2px}
+/* regra do Bruno (1.8.7): todo botão de exclusão é vermelho (Código, Art. 66, § 1º). Um vermelho só, igual no claro e
+   no escuro, com texto branco (contraste 5,9:1); vale também para os botões de perigo do Kit e para a comanda de papel.
+   Botão só com ícone (lixeira dos cadastros) fica com o ícone vermelho. */
+:root{--cf-excluir:#B3362B}
+.btn.danger,.cmd-una .btn.danger,.cmd-mesa .btn.danger,.kf-btn.kf-perigo,.kf-btn.kf-perigo-sec{background:var(--cf-excluir)!important;color:#fff!important;box-shadow:none!important}
+.ic-btn.del,.ic-btn.del:hover{color:var(--danger)}
 
 
 /* ações da pessoa na comanda: três botões cabem numa linha sem encostar na borda */

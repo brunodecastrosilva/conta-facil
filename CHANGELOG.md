@@ -3,6 +3,15 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.7 · 2026-11-15
+
+- **Todo botão de exclusão é vermelho (regra do Bruno):** "Excluir esta comanda" (Início), "Remover da mesa" (Editar pessoa), "Remover" (item da comanda, lançado ou ainda por dividir), "Excluir" (comanda do histórico) e "Restaurar padrões de fábrica" (Ajustes) ficaram vermelhos e cheios, como "Excluir comanda".
+- **Confirmações:** o botão que confirma excluir, remover ou apagar também é vermelho, em todas as janelas de confirmação.
+- **Cadastros:** a lixeira de pessoa, turma e produto e o X de apagar preço têm o ícone vermelho, sem precisar passar o mouse.
+- **Início:** "Excluir esta comanda" ganhou a largura de "Continuar a comanda".
+- **Modo escuro:** os botões vermelhos usavam um vermelho claro com texto branco, difícil de ler (contraste perto de 2,5:1). Agora é o mesmo vermelho do modo claro, com contraste 5,9:1.
+- **Não muda:** "Encerrar" e "Sair" da comanda ao vivo e "Desfazer" não excluem a comanda e continuam como estavam.
+
 ## 1.8.6 · 2026-11-15
 
 - **Nenhum botão sobe para cima do teclado (regra do Bruno):** com o teclado aberto, o pé da janela (Cancelar e Lançar, Salvar, Adicionar) se recolhe, em todas as janelas; ao fechar o teclado, ele volta. Antes, isso só acontecia em Fechar a comanda.

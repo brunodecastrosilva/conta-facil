@@ -941,3 +941,32 @@ test('1.8.6: com o teclado aberto, o pé da janela se recolhe em toda janela e v
   }
   semErros(a); await a.fechar();
 });
+
+test('1.8.7: todo botão de exclusão é vermelho, no claro e no escuro, inclusive o da confirmação', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  const VERM = 'rgb(179, 54, 43)';
+  // varre a tela: todo botão à vista que exclui, remove ou apaga tem fundo vermelho (ou ícone vermelho, se for só ícone)
+  const varrer = () => p.evaluate(VERM => [...document.querySelectorAll('button')].filter(b => b.getClientRects().length && !b.closest('#kf-saidas') && /^(Excluir|Remover|Apagar|Restaurar padrões)/.test((b.textContent.trim() || b.getAttribute('aria-label') || '').trim()))
+    .map(b => { const c = getComputedStyle(b), so = !b.textContent.trim(); return [(b.textContent.trim() || b.getAttribute('aria-label')).slice(0, 30), so && b.classList.contains('ic-btn') ? c.color === getComputedStyle(document.documentElement).getPropertyValue('--kf-bad').trim() || /^rgb\((1[5-9]\d|2\d\d), /.test(c.color) : c.backgroundColor === VERM && c.color === 'rgb(255, 255, 255)']; }), VERM);
+  const conferir = async (onde, minimo = 1) => { const r = await varrer(); assert.ok(r.length >= minimo, `${onde}: achou ${r.length} botões de exclusão`); assert.deepEqual(r.filter(x => !x[1]).map(x => x[0]), [], `${onde}: botão de exclusão que não é vermelho`); };
+  await salvarComanda(p, 'Cantina A', ['Ana', 'Bruno'], { nome: 'Suco', qtd: 2, preco: 1290 });
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.locator('#add-pessoa').waitFor();
+  await p.evaluate(() => { addPessoa('Ana'); addPessoa('Bruno'); draft.items.push({ id: newId(), o: 1, name: 'Suco', qty: 2, price: 1290, fq: 0, mode: 'equal', lk: true, a: Object.fromEntries(draft.people.map(x => [x.id, 1])) }); commit(); });
+  for (const tema of ['light', 'dark']) {
+    await p.emulateMedia({ colorScheme: tema });
+    await nav(p, 'comanda'); await conferir(`comanda (${tema})`);
+    await p.locator('.item-d > .it-lin').first().click(); await p.waitForTimeout(700); await conferir(`item aberto (${tema})`, 2);
+    await p.locator('[data-it-del]').first().click(); await p.locator('.kf-confirmar').waitFor(); await assentar(p); await conferir(`confirmação de remover item (${tema})`, 1);
+    assert.equal(await p.evaluate(() => getComputedStyle(document.querySelector('.kf-confirmar [data-kf-ok]')).backgroundColor), VERM, 'o botão da confirmação é vermelho');
+    await p.click('.kf-confirmar [data-kf-cancelar]'); await p.waitForTimeout(700);
+    await p.locator('.item-d > .it-lin').first().click(); await p.waitForTimeout(700);
+    await p.evaluate(() => editarPessoaSheet(draft.people[0].id)); await p.locator('#cs-rm').waitFor(); await assentar(p); await conferir(`editar pessoa (${tema})`, 1);
+    await p.click('.kf-dlg [data-kf-fechar]'); await p.waitForTimeout(700);
+    await nav(p, 'inicio'); await conferir(`Início (${tema})`);
+    await nav(p, 'mais'); await p.locator('#view [data-ir="cadastros"]').click(); await p.waitForTimeout(300); await conferir(`cadastros (${tema})`, 2);
+    await nav(p, 'inicio');
+  }
+  semErros(a); await a.fechar();
+});

@@ -116,7 +116,7 @@ const viewInicio = {
         <div class="ip-linhas mono"><span><span>Pessoas</span><span>${d.people.length}</span></span><span><span>Pedidos</span><span>${d.items.length}${pend ? ` (${pend} sem divisão)` : ''}</span></span>
           <span class="ip-tot"><span>TOTAL</span><span>${BRL(c.total)}</span></span>${algumPago(d) ? `<span><span>Falta pagar</span><span>${BRL(falta)}</span></span>` : ''}${trocoDevolver(d, c) ? `<span><span>Devolver</span><span>${BRL(trocoDevolver(d, c))}</span></span>` : ''}</div>
         <button type="button" class="btn bloco ip-btn" id="ini-continuar">${I.receipt}Continuar a comanda</button>
-        ${d.live ? '' : `<button type="button" class="btn link small ip-excluir" id="ini-excluir">${I.trash}Excluir esta comanda</button>`}`;
+        ${d.live ? '' : `<button type="button" class="btn danger bloco ip-excluir" id="ini-excluir">${I.trash}Excluir esta comanda</button>`}`;
     } else {
       papel = `<span class="mono ip-n">COMANDA Nº ${n}</span>
         <h1 class="ip-t"><label for="ini-local">Onde vai ser hoje?</label></h1>
@@ -237,7 +237,7 @@ function openBill(id) {
   const c = calcBill(b);
   openSheet({ title: b.place || 'Comanda sem nome', sub: `${fmtDateTime(b.closedAt)}, ${plural(b.people.length, 'pessoa', 'pessoas')}, total ${BRL(c.total)}`, tall: true, body: `${acertosHTML(c)}
     <div class="receipts">${c.units.map(u => { const p = contaPaga(b, u, c), pago = p.estado === 'pago'; return `<div class="receipt-wrap">${p.estado !== 'aberto' && !pago ? `<p class="pa-dif">${p.estado === 'parte' ? `Parte deste cupom foi paga (${BRL(p.pago)}). Faltou ${BRL(p.falta)}.` : esc(fraseDiferenca(u, p))}</p>` : ''}<div class="cupom-1 ${pago ? 'cupom-pago' : ''}">${receiptHTML(u, b, c)}${pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div><button type="button" class="btn small ghost" data-share="${u.id}">${I.share}Compartilhar</button></div>`; }).join('')}</div>
-    <div class="sheet-actions"><button type="button" class="btn ghost" id="sh-pdf">${I.file}Todos em PDF</button><button type="button" class="btn ghost danger-text" id="sh-del">${I.trash}Excluir</button></div>`,
+    <div class="sheet-actions"><button type="button" class="btn ghost" id="sh-pdf">${I.file}Todos em PDF</button><button type="button" class="btn danger" id="sh-del">${I.trash}Excluir</button></div>`,
     foot: `<button type="button" class="btn ghost" id="sh-edit">Abrir para editar</button><button type="button" class="btn" id="sh-reuse">Repetir comanda</button>`, onMount: s => {
     $$('[data-share]', s).forEach(x => x.onclick = () => shareReceipt(c.U[x.dataset.share], b, c, () => openBill(id)));
     $$('[data-pixpay]', s).forEach(x => x.onclick = () => { const dbt = pixDebts(c).find(z => z.pid === x.dataset.pixpay); if (dbt) pixSheet(dbt, () => openBill(id)); });

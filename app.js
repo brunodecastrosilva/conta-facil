@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.8.6';
+const VERSAO = '1.8.7';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,9 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.8.7', itens: [
+    'Todos os botões de excluir, remover e apagar agora são vermelhos, inclusive o da confirmação.',
+  ] },
   { versao: '1.8.6', itens: [
     'Com o teclado aberto, os botões do pé da janela (como Cancelar e Lançar) não sobem mais para cima dele.',
   ] },
@@ -855,7 +858,8 @@ function openSheet({ title, sub = '', body, foot = '', tall = false, wide = fals
 }
 function closeSheet(silent) { KitFacil.dialogo.fechar(silent); }
 // confirmação do Kit (Código, Art. 65, VIII): o botão nomeia a ação
-const confirmSheet = (title, text, okLabel, onOk, danger) => KitFacil.dialogo.confirmar({ titulo: title, texto: text, ok: okLabel, perigo: !!danger, aoConfirmar: onOk });
+// regra do Bruno (1.8.7): todo botão de exclusão é vermelho; a confirmação que exclui, remove ou apaga também
+const confirmSheet = (title, text, okLabel, onOk, danger) => KitFacil.dialogo.confirmar({ titulo: title, texto: text, ok: okLabel, perigo: !!danger || /^(Excluir|Remover|Apagar)/.test(okLabel), aoConfirmar: onOk });
 
 /* ---------- cupom ---------- */
 function serviceLabel(b) { return b.service.mode === 'fixed' ? 'Serviço' : `Serviço (${pctStr(b.service.pct)}%)`; }
@@ -1537,7 +1541,7 @@ function itemPendenteHTML(it, d) {
     <div class="ip-cab"><span class="it-q">${it.qty}×</span><span class="it-nome"><span>${esc(it.name)}</span><span class="it-tipo">${brl(it.price)} cada · ${it.mode === 'units' ? 'individual' : 'compartilhado'}</span></span><span class="it-v">${brl(it.qty * it.price)}</span></div>
     <span class="ip-selo">FALTA DIVIDIR</span>
     <div class="ip-corpo">${corpo}</div>
-    <div class="ip-acoes"><button type="button" class="btn ip-ok" data-confirm ${ok ? '' : 'disabled'}>Confirmar divisão</button><button type="button" class="btn" data-rename aria-label="Alterar ${esc(it.name)}" title="Alterar">${I.edit}</button><button type="button" class="btn" data-del aria-label="Remover ${esc(it.name)}">${I.trash}</button></div>
+    <div class="ip-acoes"><button type="button" class="btn ip-ok" data-confirm ${ok ? '' : 'disabled'}>Confirmar divisão</button><button type="button" class="btn" data-rename aria-label="Alterar ${esc(it.name)}" title="Alterar">${I.edit}</button><button type="button" class="btn danger" data-del aria-label="Remover ${esc(it.name)}">${I.trash}</button></div>
   </div>`;
 }
 // item aberto: dá para pôr ou tirar unidades e cortesias; tudo fica num rascunho até tocar em Salvar
@@ -1563,7 +1567,7 @@ function itemFechadoHTML(it, d) {
       <div class="div-lin fq-lin"><span class="cs-tx"><span>Cortesia</span></span>
         <span class="div-dir"><span class="num fq-n" aria-label="${fq} de ${cur.qty} sem cobrança">${fq}<small>/${cur.qty}</small></span><span class="unit-btns"><button type="button" class="minus" data-it-fq="${it.id}" data-dir="-1" ${fq ? '' : 'disabled'} aria-label="−1: uma cortesia a menos em ${esc(it.name)}">−1</button><button type="button" class="plus" data-it-fq="${it.id}" data-dir="1" ${fq < cur.qty ? '' : 'disabled'} aria-label="+1: uma cortesia a mais em ${esc(it.name)}">+1</button></span></span></div>
       ${sujo ? `<div class="pending-bar" data-kf-exp="pend:${it.id}"><span><b>Alteração não salva</b> · ${esc(resumo())} · <span class="num">${BRL((it.qty - (it.fq || 0)) * it.price)} → ${BRL((cur.qty - fq) * cur.price)}</span></span><span class="grp"><button type="button" class="btn small ghost" data-it-desc="${it.id}">Descartar</button><button type="button" class="btn small" data-it-ok="${it.id}">${I.save}Salvar</button></span></div>`
-        : `<div class="grp item-acoes"><button class="btn small ghost" data-it-alt="${it.id}">${I.edit}Alterar</button><button class="btn small ghost del-btn" data-it-del="${it.id}">${I.trash}Remover</button></div>`}
+        : `<div class="grp item-acoes"><button class="btn small ghost" data-it-alt="${it.id}">${I.edit}Alterar</button><button class="btn small danger" data-it-del="${it.id}">${I.trash}Remover</button></div>`}
     </div></details>`;
 }
 // movimento do Kit (Anexo V); quem pede movimento reduzido vê a troca direta
@@ -1910,7 +1914,7 @@ function cupomSheet(pid) {
 function editarPessoaSheet(pid) {
   const d = draft, p0 = d.people.find(p => p.id === pid); if (!p0) return;
   openSheet({ title: p0.name, body: `<form class="field" id="cs-nome-f" autocomplete="off"><label for="cs-nome">Nome</label><input id="cs-nome" type="text" autocapitalize="words" autocomplete="off" enterkeyhint="done" value="${esc(p0.name)}"></form>`,
-    foot: `<button type="button" class="btn ghost danger-text" id="cs-rm">${I.trash}Remover da mesa</button><button type="submit" form="cs-nome-f" class="btn" id="cs-ok">Salvar</button>`, onMount: s => {
+    foot: `<button type="button" class="btn danger" id="cs-rm">${I.trash}Remover da mesa</button><button type="submit" form="cs-nome-f" class="btn" id="cs-ok">Salvar</button>`, onMount: s => {
       $('#cs-nome-f', s).addEventListener('submit', e => {
         e.preventDefault();
         const el = $('#cs-nome', s), nome = el.value.trim().replace(/\s+/g, ' '), p = d.people.find(x => x.id === pid); if (!p) return closeSheet();
