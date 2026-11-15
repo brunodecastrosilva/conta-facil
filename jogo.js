@@ -236,7 +236,7 @@ function festa(bill, antes, { desfazer } = {}) {
   const raiz = $('#festa'); if (!raiz) return false;
   festaAberta = true;
   const de = antes.prox ? antes.prox.pct : 100, para = subiu ? 100 : (s.prox ? s.prox.pct : 100);
-  raiz.innerHTML = `<div class="festa" role="dialog" aria-modal="true" aria-labelledby="festa-t"><div class="festa-in">
+  raiz.innerHTML = `<div class="festa" data-kf-tela-cheia role="dialog" aria-modal="true" aria-labelledby="festa-t"><div class="festa-in">
       <div class="imp festa-imp" aria-hidden="true"><div class="imp-boca"></div><div class="imp-saida"><div class="papel imp-papel sai"><span class="mono fp-marca">CONTA FÁCIL</span><span class="mono fp-local">${esc(bill.place || 'Comanda')}</span><span class="fp-linha"></span><span class="mono fp-tot"><span>TOTAL</span><span>${BRL(bill.total)}</span></span><span class="fp-carimbo">SALVA</span></div></div></div>
       <h2 class="festa-t" id="festa-t" tabindex="-1">Conta fechada</h2>
       <p class="festa-sub">${esc(bill.place || 'A comanda')} entrou no histórico: ${plural(bill.people.length, 'pessoa', 'pessoas')}, ${BRL(bill.total)}.</p>

@@ -3,6 +3,15 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.10.0 · 2026-11-15
+
+Kit Fácil 0.9.0 e Código 0.9 (Proposta 4 para o Integrador, aprovada pelo Bruno).
+
+- **Guia, a janela fica aberta de um passo para o outro** (Código, Art. 78, IV, novo): *O pagamento de cada um* (18) acontece na janela que *Feche a comanda* (17) deixou aberta, e *Salve no Histórico* (20) na que *A conta de quem já pagou mudou* (19) deixou. A janela de Fechar a comanda abria quatro vezes nesses passos; agora abre duas. O guia continua com 34 passos.
+- **Janelas sem "Fechar" sozinho no pé:** Avaliação e feedback, Sobre o aplicativo e Mensagem enviada fecham pelo X (Art. 68, § 1º).
+- **Por dentro, o app larga as soluções próprias (Art. 30-A):** saíram do `estilo.css` o desenho da janela de Avaliação e feedback e o pé livre da tela de "Conta fechada" no guia; saíram do `casca.js` o `naJanela`, o `demoArea` e a rolagem da tela de "Conta fechada". Tudo isso agora é do Kit 0.9.0. A tela de "Conta fechada" leva `data-kf-tela-cheia`, e os campos do Kit seguem os do app pelas variáveis `--kf-campo-*`.
+- **Kit:** o CSS perdeu 184 regras repetidas (19 kB a menos); quatro testes novos.
+
 ## 1.9.6 · 2026-11-15
 
 - **Guia, passo a passo:**

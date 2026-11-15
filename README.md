@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.9.6** · Kit Fácil 0.8.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.10.0** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
@@ -122,10 +122,9 @@ a janela parada, nenhum botão acima do teclado e todo botão de exclusão verme
 [Proposta 3](PROPOSTA-3-PARA-O-INTEGRADOR.md), aprovada inteira no Integrador em 15/11/2026: entraram no Código 0.8 e no
 Kit Fácil 0.8.0, e na 1.9.0 o app deixou as suas versões próprias e passou a usar as do Kit.
 
-**Peça do Kit passada por cima (Art. 30-A), desde a 1.9.1:** a janela de Avaliação e feedback. No Kit 0.8.0 as duas opções
-saíam amassadas, porque a classe `.kf-escolha` tem dois donos; o `estilo.css` do app as desenha como linhas do app, tira o
-"Fechar" do pé e iguala a caixa de texto grande aos outros campos. O conserto no Kit está na
-[Proposta 4](PROPOSTA-4-PARA-O-INTEGRADOR.md).
+**Nenhuma peça do Kit passada por cima (Art. 30-A).** Da 1.9.1 à 1.9.6 o app desenhou por conta própria a janela de
+Avaliação e feedback e três ajustes do guia; os quatro entraram no Kit 0.9.0
+([Proposta 4](PROPOSTA-4-PARA-O-INTEGRADOR.md), aprovada em 15/11/2026), e a 1.10.0 voltou a usar só o Kit.
 
 ## Uso do código
 

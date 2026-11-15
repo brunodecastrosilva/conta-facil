@@ -988,13 +988,13 @@ test('1.8.7: todo botão de exclusão é vermelho, no claro e no escuro, inclusi
 test('1.9.1: Avaliação e feedback no padrão do app: opções em linha, sem Fechar no pé, caixa de texto igual aos campos', async () => {
   const a = await aparelho(amb, { toque: true });
   const p = a.page;
-  await p.click('#barra [data-kf="feedback"]'); await p.locator('.kf-escolha').first().waitFor(); await assentar(p);
-  const r = await p.evaluate(() => [...document.querySelectorAll('.kf-dlg .kf-escolha')].map(b => { const c = getComputedStyle(b), q = b.getBoundingClientRect(), dentro = [...b.querySelectorAll('b, small')].every(t => { const x = t.getBoundingClientRect(); return x.top >= q.top + 4 && x.bottom <= q.bottom - 4; });
+  await p.click('#barra [data-kf="feedback"]'); await p.locator('.kf-fb-op').first().waitFor(); await assentar(p);
+  const r = await p.evaluate(() => [...document.querySelectorAll('.kf-dlg .kf-fb-op')].map(b => { const c = getComputedStyle(b), q = b.getBoundingClientRect(), dentro = [...b.querySelectorAll('b, small')].every(t => { const x = t.getBoundingClientRect(); return x.top >= q.top + 4 && x.bottom <= q.bottom - 4; });
     return { raio: c.borderTopLeftRadius, alt: q.height >= 60, dentro, apoio: getComputedStyle(b.querySelector('small')).fontWeight, titulo: getComputedStyle(b.querySelector('b')).fontWeight, seta: !!b.querySelector(':scope > svg') }; }));
   assert.equal(r.length, 2);
   r.forEach(x => assert.deepEqual(x, { raio: '0px', alt: true, dentro: true, apoio: '400', titulo: '700', seta: true }, 'a opção é uma linha do app, com o texto dentro dela'));
   assert.equal(await p.evaluate(() => { const pe = document.querySelector('.kf-dlg > .kf-dlg-pe'); return !pe || getComputedStyle(pe).display === 'none'; }), true, 'sem Fechar no pé: o X fecha');
-  await p.click('.kf-escolha[data-kf="problema"]'); await p.locator('#kf-msg').waitFor(); await assentar(p);
+  await p.click('.kf-fb-op[data-kf="problema"]'); await p.locator('#kf-msg').waitFor(); await assentar(p);
   const f = await p.evaluate(() => { const t = getComputedStyle(document.querySelector('#kf-msg')), i = getComputedStyle(document.querySelector('#kf-contato')); return [t.backgroundColor === i.backgroundColor, t.borderTopColor === i.borderTopColor, t.borderTopLeftRadius === i.borderTopLeftRadius, getComputedStyle(document.querySelector('.kf-dlg > .kf-dlg-pe')).display !== 'none']; });
   assert.deepEqual(f, [true, true, true, true], 'a caixa de texto grande é igual ao campo; o pé com Voltar e Enviar continua');
   semErros(a); await a.fechar();

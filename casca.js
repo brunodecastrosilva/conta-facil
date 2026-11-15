@@ -222,20 +222,7 @@ function guiaIniciar() {
     cabecalhoFixo: () => $('#view .cu-cab'),
     // segura um nome e arrasta sobre outro cupom: o atalho de juntar, feito com o mesmo código do dedo de verdade
     maos: m => {
-      /* O Kit 0.8.0 só confere se o alvo cabe na tela; numa janela, o alvo pode estar "na tela" e mesmo assim escondido
-         atrás do pé dela (o conteúdo rola por baixo). O dedo ia então parar em cima de um botão do pé, como "Salvar no
-         histórico". Antes de tocar, apontar ou escrever, o alvo vem para a parte visível do conteúdo da janela. */
-      const naJanela = async el => {
-        const cx = el && el.closest && el.closest('.kf-dlg-corpo'); if (!cx) return;
-        const r = el.getBoundingClientRect(), c = cx.getBoundingClientRect(), folga = 14;
-        if (r.top >= c.top + folga && r.bottom <= c.bottom - folga) return;
-        const alvo = r.height > c.height - 2 * folga ? r.top - c.top - folga : r.top + r.height / 2 - (c.top + c.height / 2);
-        cx.scrollTo({ top: Math.max(0, cx.scrollTop + alvo), behavior: m.rapido() || semMovimento() ? 'instant' : 'smooth' }); await m.espera(520);
-      };
-      const comAlvo = f => async (q, ...resto) => { const o = resto.find(x => x && typeof x === 'object') || {}; const el = await m.acha(q, o); if (!el) return null; await naJanela(el); return f(el, ...resto); };
-      const { tocar, apontar, digitar } = m;
       return {
-      tocar: comAlvo(tocar), apontar: comAlvo(apontar), digitar: comAlvo(digitar),
       arrastarAte: async (qDe, qPara) => {
         const de = await m.acha(qDe); await m.levar(de); m.vivo();
         const r = de.getBoundingClientRect(), x0 = r.left + Math.min(96, r.width / 3), y0 = r.top + r.height / 2;
@@ -286,30 +273,23 @@ async function demoCadastros(m, aba) {
   if (!$('#view [data-cad]')) { await demoIr(m, 'mais'); await m.tocar('#view [data-ir="cadastros"]'); }
   if (aba && cadAba !== aba) await m.tocar(`#view [data-cad="${aba}"]`);
 }
-// abre Fechar a comanda no cupom de uma pessoa (ou no da mesa, sem nome)
+// a janela de Fechar a comanda está aberta? (a cópia que sai, em #kf-saidas, não conta)
+const fcAberta = () => $$('#fc-prox').some(e => e.getClientRects().length && !e.closest('#kf-saidas'));
+/* abre Fechar a comanda, se ainda não estiver aberta, e anda até o cupom de uma pessoa (ou o da mesa, sem nome). O passo
+   que continua na janela do passo anterior (Código, Art. 78, IV) parte do cupom em que ela ficou; depois de voltar um
+   passo, a janela está fechada, e ele a abre de novo. */
 async function demoFechar(m, nome) {
-  await m.tocar('#fechar-cmd'); await m.acha('#fc-prox');
+  if (!fcAberta()) { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); }
   const k = nome ? compute(draft).units.findIndex(u => u.members.includes(demoId(nome))) + 1 : 0;
-  for (let i = 0; i < k; i++) await m.tocar('#fc-prox', { depois: i === k - 1 ? 700 : 260 });
+  const onde = () => Math.max(0, $$('.kf-dlg .fc-slide').filter(e => !e.closest('#kf-saidas')).findIndex(e => e.getAttribute('aria-hidden') === 'false'));
+  for (let n = 0; n < 12 && onde() !== k; n++) await m.tocar(onde() < k ? '#fc-prox' : '#fc-ant', { depois: Math.abs(onde() - k) === 1 ? 700 : 260 });
 }
 const FC_AQUI = '.fc-slide[aria-hidden="false"]';
-/* destaca uma ÁREA com um anel só: vários elementos seguidos (o bloco de pagamento do cupom) ou só o texto de uma linha.
-   O anel do guia segue um elemento; aqui nasce um elemento invisível do tamanho da área, dentro de `pai`, só enquanto
-   o destaque dura. Ele rola junto com o conteúdo, então o anel não se desencontra da área. */
-async function demoArea(m, pai, caixas, ms = 2000) {
-  const P = typeof pai === 'string' ? await m.acha(pai) : pai, L = caixas().filter(r => r && r.width && r.height); if (!P || !L.length) return;
-  const pr = P.getBoundingClientRect(), x0 = Math.min(...L.map(r => r.left)), y0 = Math.min(...L.map(r => r.top)), x1 = Math.max(...L.map(r => r.right)), y1 = Math.max(...L.map(r => r.bottom));
-  const era = P.style.position; if (getComputedStyle(P).position === 'static') P.style.position = 'relative';
-  const a = document.createElement('div'); a.setAttribute('aria-hidden', 'true');
-  a.style.cssText = `position:absolute;pointer-events:none;border-radius:8px;left:${x0 - pr.left - P.clientLeft}px;top:${y0 - pr.top - P.clientTop}px;width:${x1 - x0}px;height:${y1 - y0}px`;
-  P.appendChild(a);
-  try { await m.apontar(a, ms); } finally { a.remove(); P.style.position = era; }
-}
-// toda a área de pagamento do cupom à vista: o título PAGAMENTO e todas as linhas dele
+// toda a área de pagamento do cupom à vista, num anel só: o título PAGAMENTO e todas as linhas dele (destaque de área do Kit 0.9.0)
 async function demoPagamentoInteiro(m, ms = 2400) {
   const s = $$(`${FC_AQUI} .rc-section`).filter(e => /PAGAMENTO/.test(e.textContent)).pop(); if (!s) return m.apontar(`${FC_AQUI} .cupom-1`, ms);
   const L = [s]; for (let e = s.nextElementSibling; e && e.matches('.rc-line, .rc-detail'); e = e.nextElementSibling) L.push(e);
-  await demoArea(m, s.parentElement, () => L.map(e => e.getBoundingClientRect()), ms);
+  await m.apontar(L, ms);
 }
 // toca e não deixa o aviso com Desfazer aparecer por cima do dedo: no guia, o aviso some assim que nasce
 async function demoTocarSemAviso(m, q, ms = 700) { await m.tocar(q, { depois: 0 }); for (let t = 0; t < ms; t += 60) { guiaSemAviso(); await m.espera(60); } guiaSemAviso(); }
@@ -358,14 +338,14 @@ const GUIA = [
       await m.tocar('#cm-pe'); await m.apontar(await bloco('svc'), 1500);
       await m.tocar('.kf-dlg [data-cm="cv"]'); await m.acha('#cm-cv'); await m.espera(750); await m.apontar(await bloco('cv'), 1600); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.espera(500);
       await m.tocar('.kf-dlg [data-cm="ds"]'); await m.acha('#cm-ds'); await m.espera(750); await m.apontar(await bloco('ds'), 1600); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
-  // os dois passos seguintes juntam o que antes eram quatro (decisão do Bruno, 15/11/2026): a janela de Fechar a comanda
-  // abre uma vez em cada um, e tudo o que se faz nela acontece em seguida, sem fechar e reabrir
+  // os dois passos seguintes juntam o que antes eram quatro (decisão do Bruno, 15/11/2026) e acontecem na mesma janela:
+  // ela abre no primeiro e continua aberta no segundo (`continua: true`; Código, Art. 78, IV)
   { t: 'Feche a comanda', d: 'Um cupom por pessoa, a mesa primeiro. No da mesa, uma pessoa pode pagar a conta de todos.',
     acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1300);
       await m.tocar(`${FC_AQUI} [data-fc-todos]`); await m.espera(500); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-quem="${demoId('Bruno')}"]`); await demoPagamentoInteiro(m, 2600);
       await m.tocar('#fc-prox', { depois: 800 }); await demoPagamentoInteiro(m, 2400);
-      await m.tocar('#fc-ant', { depois: 700 }); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-cada]`, 900); await m.tocar('#fc-volta'); await m.some('#fc-prox'); } },
-  { t: 'O pagamento de cada um', d: 'No cupom da pessoa, marque quem já pagou. Vai pagar outro valor? Diga quem cobre a diferença.',
+      await m.tocar('#fc-ant', { depois: 700 }); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-cada]`, 900); } },
+  { t: 'O pagamento de cada um', d: 'No cupom da pessoa, marque quem já pagou. Vai pagar outro valor? Diga quem cobre a diferença.', continua: true,
     acao: async m => { await demoFechar(m, 'Ana'); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-pago="marcar"]`, 900); await demoTocarSemAviso(m, `${FC_AQUI} .fc-saiu .kf-chave`, 900);
       // segue para o cupom da Carla, na mesma janela: abre o campo, escreve o valor, escolhe quem cobre, vê o cupom e volta ao valor da conta
       await m.tocar('#fc-prox', { depois: 300 }); await m.tocar('#fc-prox', { depois: 800 });
@@ -376,12 +356,10 @@ const GUIA = [
       await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-conta]`, 800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(600); } },
   { t: 'A conta de quem já pagou mudou', d: 'O desconto caiu depois que Ana pagou. Receba a diferença ou escolha quem cobre.',
     acao: async m => { await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
-      await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`, 700); await demoPagamentoInteiro(m, 2600); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(500); } },
-  { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3600);
-      // o botão de continuar vem para a parte livre da tela, acima da janela do guia, antes do toque
-      const fe = ok.closest('.festa'); if (fe) { fe.scrollTo({ top: fe.scrollHeight, behavior: m.rapido() || semMovimento() ? 'instant' : 'smooth' }); await m.espera(700); }
-      await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
+      await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`, 700); await demoPagamentoInteiro(m, 2600); await m.espera(500); } },
+  // continua na janela que o passo anterior deixou aberta; a tela de "Conta fechada" rola sozinha até o botão (Kit 0.9.0)
+  { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.', continua: true,
+    acao: async m => { if (!fcAberta()) await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3600); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
   { t: 'Tampinhas e níveis', d: 'Cada comanda salva rende pontos. As tampinhas que você ganha ficam na coleção.', se: () => jogoLigado(),
     acao: async m => { await demoIr(m, 'tampinhas'); await m.apontar('#view .nivel-card', 1700); await m.apontar('#view [data-tampa="primeira"]', 1300); } },
   { t: 'Gire a tampinha', d: 'Toque numa tampinha e deslize o dedo sobre ela: ela gira nas suas mãos.', se: () => jogoLigado(),

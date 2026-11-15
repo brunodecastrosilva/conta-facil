@@ -34,6 +34,8 @@
   --kf-nav-bg:var(--nav-bg); --kf-nav-ink:var(--nav-ink); --kf-nav-on:var(--nav-on); --kf-nav-atual:var(--ambar);
   --kf-nav-atual-bg:rgba(255,255,255,.1); --kf-nav-hover:rgba(255,255,255,.07); --kf-nav-linha:rgba(255,255,255,.1); --kf-nav-centro-on:#FFFDF5;
   --kf-presente:#1D5A3B; --kf-presente-fita:#F2B33D; --kf-guia-tempo:var(--ambar-forte); --kf-chave-off:var(--campo);
+  /* os campos do Kit (a caixa de texto grande da avaliação, por exemplo) ficam iguais aos do app */
+  --kf-campo-fundo:var(--surface-2); --kf-campo-linha:var(--campo); --kf-campo-traco:1.5px; --kf-campo-anel:4px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --ambar-forte:#F2B33D; --espuma:#22382C; --bg:#0B1510; --surface:#13211A; --surface-2:#1A2B22; --line:#2A3F33; --line-2:#3B5345;
@@ -399,8 +401,6 @@ button.lin{border-radius:0}
 .festa-tampa small{font-weight:700;font-size:12.5px;line-height:1.2}
 @keyframes pousar{from{opacity:0;transform:translateY(-60px) rotate(-180deg) scale(.5)}to{opacity:1;transform:none}}
 .festa-acoes{width:100%;display:flex;flex-direction:column;gap:4px;margin-top:6px}
-/* no guia, a festa deixa livre o pé da tela, onde fica a janela do guia: o botão de continuar não fica escondido atrás dela */
-body.kf-com-guia .festa{padding-bottom:calc(var(--kf-pe,0px) + 20px)}
 .festa-acoes .btn.link{color:#CFE3D6}
 
 /* ---------- 11. abertura (onboarding) ---------- */
@@ -487,7 +487,6 @@ body.kf-com-guia .festa{padding-bottom:calc(var(--kf-pe,0px) + 20px)}
 
 /* ---------- 15. guia: a janela fixa, o dedo e o anel são do Kit (KitFacil.guia.demonstrar) ---------- */
 body.kf-com-guia .wrap{padding-bottom:calc(var(--kf-pe-h) + var(--kf-gu-h) + 48px)}
-body.kf-com-guia .festa{bottom:calc(var(--kf-pe-h) + var(--kf-gu-h));padding-bottom:16px}
 
 /* lançar item: quantidade e valor lado a lado */
 .row.lado{flex-wrap:nowrap;align-items:flex-end}
@@ -579,30 +578,3 @@ body.kf-com-guia .festa{bottom:calc(var(--kf-pe-h) + var(--kf-gu-h));padding-bot
 .cmd-una .dv-pes,.cmd-una .item-d,.item-d>summary::after,.it-lin::after,.cmd-una .dv-lin::after,.cmd-una .item-d>.it-lin::after,.pa-seta,details.fold>summary::after,.join form{transition-duration:var(--kf-ms);transition-timing-function:var(--kf-curva)}
 /* o botão que divide a linha com um campo tem a altura do campo */
 .row>.btn{min-height:50px}
-
-/* ---------- janela de Avaliação e feedback (1.8.8) ----------
-   No Kit 0.8.0 a classe .kf-escolha tem dois donos: a opção do feedback (cartão com ícone, título e apoio) e a pílula de
-   escolher um valor. A regra da pílula vem depois e amassava as opções do feedback: borda de pílula, texto encostado
-   na borda, apoio em negrito. Aqui as duas opções seguem o padrão do app para linha que abre alguma coisa (.lin): ícone,
-   título, apoio e seta, separadas por uma linha. Kit passado por cima (Código, Art. 30-A); está na Proposta 4. */
-.kf-escolhas{gap:0}
-.kf-escolhas > .kf-escolha{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;min-height:60px;padding:10px 4px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;box-shadow:none;text-align:left;font:400 16px/1.35 var(--kf-font);color:var(--ink)}
-.kf-escolhas > .kf-escolha:last-child{border-bottom:0}
-.kf-escolhas > .kf-escolha:active{background:var(--surface-2)}
-.kf-escolhas .kf-escolha-ic{width:42px;height:42px;border-radius:13px;background:var(--green-soft);color:var(--green)}
-.kf-escolhas .kf-escolha-ic .kf-i{width:22px;height:22px}
-.kf-escolhas .kf-escolha-tx{gap:2px}
-.kf-escolhas .kf-escolha-tx b{font-weight:700;font-size:16px;color:var(--ink)}
-.kf-escolhas .kf-escolha-tx small{font-weight:400;font-size:13.5px;color:var(--muted)}
-.kf-escolhas > .kf-escolha > .kf-i{width:18px;height:18px;color:var(--muted)}
-@media (hover:hover){.kf-escolhas > .kf-escolha:hover{box-shadow:none;background:var(--surface-2)}}
-/* janela que só precisa ser fechada não tem "Fechar" no pé: o X fecha (Código, Art. 68, § 1º) */
-.kf-dlg-pe:has(> .kf-sec[data-kf-fechar]:only-child){display:none}
-/* nos formulários de avaliar e de relatar, a caixa de texto grande é igual aos outros campos do app, e a linha
-   "O que é enviado e para onde" abre com a mesma seta das outras linhas */
-.kf-dlg textarea.kf-entrada,.kf-aj-sec textarea.kf-entrada{width:100%;background:var(--surface-2);border:1.5px solid var(--campo);border-radius:var(--kf-r-campo);padding:11px 14px;font-size:16px;color:var(--ink);box-shadow:none}
-.kf-dlg textarea.kf-entrada:focus,.kf-aj-sec textarea.kf-entrada:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 4px var(--green-soft)}
-.kf-det > summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:var(--kf-alvo)}
-.kf-det > summary::-webkit-details-marker{display:none}
-.kf-det > summary::after{content:"";flex:none;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 0;transition:transform var(--kf-ms) var(--kf-curva)}
-.kf-det[open] > summary::after{transform:rotate(-135deg);margin-top:4px}
