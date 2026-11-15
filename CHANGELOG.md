@@ -3,6 +3,12 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.8.2 · 2026-11-15
+
+- **Pulo ao fechar no X:** a janela que tem lista de escolha (como "Pôr uma turma na mesa", em Quem está na mesa) dava um pulo para cima ao fechar. O que desce pela tela é uma cópia da janela; o Kit tomava a lista de escolha da cópia por uma lista nova e montava outra embaixo dela, e a cópia ficava uma linha mais alta. Agora a cópia sai com a mesma altura da janela, sempre.
+- **Kit passado por cima (Art. 30-A):** a correção está no CSS do app (`comanda.css`), sem mexer em `comum/`. O conserto de verdade é do Kit (a cópia de saída não deve ser religada) e está na `PROPOSTA-3-PARA-O-INTEGRADOR.md`, junto com o campo que o Kit ainda seleciona sozinho em "Relatar um problema".
+- **Teste novo:** toda janela do app é fechada e a cópia que sai tem de ter a altura e o topo da janela original, do primeiro ao último quadro.
+
 ## 1.8.1 · 2026-11-15
 
 - **Caixa de texto nunca é selecionada sozinha (regra do Bruno):** o teclado só sobe quando a pessoa toca no campo. A regra da 1.7.0 valia para a abertura das janelas; agora vale para o app inteiro.

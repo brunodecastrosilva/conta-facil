@@ -812,3 +812,28 @@ test('1.8.1: caixa de texto nunca é selecionada sozinha (turma na mesa, campo q
   assert.deepEqual(focos.map(x => `${x[0]}:${x[1]}`), [], 'sobrou foco automático em caixa de texto');
   await a.fechar?.();
 });
+
+test('1.8.2: fechar no X não dá pulo: a cópia que sai tem a altura e o topo da janela, do primeiro ao último quadro', async () => {
+  const a = await aparelho(amb, { toque: true });
+  const p = a.page;
+  await p.evaluate(() => { catalog.groups = [{ id: 'g1', name: 'Pombo', members: ['Bruno', 'Letícia'] }]; store.saveCatalog(); });
+  await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
+  await p.locator('#add-pessoa').waitFor();
+  for (const abre of ['pessoaNovaSheet', 'localSheet', 'produtoSheet', 'contaSheet']) {
+    await p.evaluate(f => eval(f + '()'), abre);
+    await p.locator('.kf-dlg').waitFor(); await assentar(p);
+    if (abre === 'pessoaNovaSheet') assert.equal(await p.locator('.kf-dlg .kf-esc').count(), 1, 'a janela das pessoas tem a lista de turmas');
+    const r = await p.evaluate(() => new Promise(fim => {
+      const d = document.querySelector('.kf-dlg'), antes = d.getBoundingClientRect(), q = [];
+      d.querySelector('[data-kf-fechar]').click();
+      const olhar = () => { const g = document.querySelector('#kf-saidas .kf-dlg-x'); if (!g) return fim({ topo: antes.top, alt: antes.height, q }); const b = g.getBoundingClientRect(); q.push([b.top, g.offsetHeight, g.querySelectorAll('.kf-esc').length - [...g.querySelectorAll('.kf-esc')].filter(x => getComputedStyle(x).display === 'none').length]); requestAnimationFrame(olhar); };
+      Promise.resolve().then(() => requestAnimationFrame(olhar));
+    }));
+    assert.ok(r.q.length > 5, `${abre}: a saída foi filmada`);
+    assert.ok(r.q.every(x => Math.abs(x[1] - r.alt) < 1), `${abre}: a cópia mantém a altura da janela (${r.alt} → ${[...new Set(r.q.map(x => x[1]))]})`);
+    assert.ok(r.q.every(x => x[0] >= r.topo - 1), `${abre}: o topo nunca sobe ao fechar (${r.topo} → mínimo ${Math.min(...r.q.map(x => x[0]))})`);
+    assert.ok(r.q.every((x, i) => !i || x[0] >= r.q[i - 1][0] - 0.5), `${abre}: a janela só desce`);
+    await p.waitForTimeout(100);
+  }
+  semErros(a); await a.fechar();
+});
