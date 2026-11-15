@@ -4,8 +4,10 @@ Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviç
 
 Versão **1.6.1** · Kit Fácil 0.6.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
-Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). A versão 1.0 foi refeita com liberdade
-para sair do [Código do Projeto Fácil](comum/CODIGO.md); o que saiu e o porquê está em [Exceções ao padrão](#exceções-ao-padrão).
+Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
+**o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O que isso muda no
+[Código do Projeto Fácil](comum/CODIGO.md) (versão 0.5) está em [O novo padrão](#o-novo-padrão) e na
+[Proposta para o Integrador](PROPOSTA-PARA-O-INTEGRADOR.md).
 
 ## O que o app faz
 
@@ -59,7 +61,7 @@ npm start                         # abre em http://localhost:8080/conta-facil/
 npm install                       # primeira vez: instala o Playwright e o axe, usados nos testes
 npx playwright install chromium   # primeira vez: baixa o navegador dos testes
 npm test                          # testes do Kit Fácil e do app, sem internet
-npm run verificar                 # segredos, versão, service worker, CSP e SRI (veja as exceções abaixo)
+npm run verificar                 # segredos, versão, service worker, CSP e SRI (duas falhas esperadas: veja O novo padrão)
 ```
 
 Os testes simulam o GitHub (sincronização) e o Firebase (avaliações); nada toca nos dados reais.
@@ -99,12 +101,16 @@ quando a mudança mexe no guia; a bateria completa (`npm test`), quando mexe nas
 no claro e no escuro. Se o app abrir com erro no ar, desfaça o envio na hora (`git revert`) e só depois investigue.
 O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
 
-## Exceções ao padrão
+## O novo padrão
 
-A versão 1.0.0 foi pedida pelo Bruno em 14/11/2026 com liberdade para ignorar o Código do Projeto Fácil; a 1.1.0, no mesmo dia, trouxe os ajustes que ele pediu depois de usar o app no iPhone. Esta é a lista do que
-saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta registrar no Painel do Integrador (Código, Art. 5º).
+Em 14/11/2026 o Bruno definiu que o Conta Fácil, mesmo ainda não finalizado, é o novo padrão do Projeto Fácil: nada do que
+está aqui é exceção, e tudo o que foi decidido neste app é regra. A tabela mostra, artigo por artigo, onde o Código (versão 0.5)
+e as Regras do Conta Fácil ainda dizem outra coisa e qual é a regra que vale. O Código, o Kit Fácil e a skill só mudam no
+projeto Integrador (Arts. 7º a 9º): o texto pronto para levar para lá está em
+[`PROPOSTA-PARA-O-INTEGRADOR.md`](PROPOSTA-PARA-O-INTEGRADOR.md). Até o Kit ser atualizado, `npm run verificar` acusa duas
+falhas esperadas (barra de cima e Ajustes fora da barra de baixo), porque ainda confere o padrão antigo.
 
-| Regra | O que foi feito | Por quê |
+| O que o Código 0.5 ou as Regras antigas dizem | A regra que vale (como é no Conta Fácil) | Por quê |
 |---|---|---|
 | Arts. 59 e 60 (navegação) e Regras, Art. 10 | barra de baixo colada ao pé da tela, baixa, com a comanda no centro; "Mais" é uma tela, e os Ajustes ficam dentro dela (no computador, no pé do trilho) | a comanda é a ação principal da noite e fica sempre sob o polegar; cinco destinos sem encolher os nomes |
 | Art. 64, II (um só jeito de criar) | a comanda nova nasce no Início e no botão do centro da barra | o botão do centro vale em qualquer tela; o campo do Início serve a quem acabou de abrir o app |
@@ -130,7 +136,7 @@ saiu do Código (versão 0.5) e das Regras do Conta Fácil, e por quê. Falta re
 | Regras, Arts. 6º e 7º (telas Fechar e Pagamento) | Fechar faz parte da comanda (uma janela com os cupons); marcar como pago, pagar outro valor e "uma pessoa paga a conta de todos" ficam nessa janela | conceito do Laboratório: uma folha só; o que fica em Fechar foi pedido do Bruno em 14/11/2026 |
 | Regras, Art. 7º, V (quem paga por todos fica num cupom compartilhado) | "Uma pessoa paga a conta de todos" não junta ninguém: cada um continua com o seu cupom, que diz quanto pagar a quem pagou a conta | pedido do Bruno em 14/11/2026 |
 
-Continuam valendo, sem exceção: gratuidade (Art. 12), convite de apoio (Art. 13), português do Brasil (Art. 14), acessibilidade
+Do Código 0.5, continuam valendo como estão: gratuidade (Art. 12), convite de apoio (Art. 13), português do Brasil (Art. 14), acessibilidade
 (Art. 16), repositório sem segredos e sem build (Arts. 19 e 21), dados no aparelho e sincronização opcional (Arts. 32 a 37),
 prazos de guarda (Art. 39), segurança (Arts. 43 a 50: CSP sem script na página, SRI, texto de fora sempre protegido), avaliação
 (Arts. 51 a 54), modo escuro e pasta `comum/` intacta (Art. 30).
