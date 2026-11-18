@@ -4,9 +4,10 @@ Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviç
 
 Versão **1.10.0** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
-Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Por decisão do Bruno, de 14/11/2026,
-**o Conta Fácil é a referência do Projeto Fácil**: o que foi decidido aqui é regra, não exceção. O
-[Código do Projeto Fácil](comum/CODIGO.md) 0.8 já traz essas regras: veja [O novo padrão](#o-novo-padrão).
+Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Desde 14/11/2026,
+**o Conta Fácil é a referência do Projeto Fácil** para a moldura, os componentes e o comportamento dos controles; o
+fluxo e o desenho das telas são dele, feitos para a comanda de bar ([Código do Projeto Fácil](comum/CODIGO.md), Art. 93,
+e [O novo padrão](#o-novo-padrão)).
 
 ## O que o app faz
 
