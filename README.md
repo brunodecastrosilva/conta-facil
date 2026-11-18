@@ -6,8 +6,7 @@ Versão **1.10.0** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Desde 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil** para a moldura, os componentes e o comportamento dos controles; o
-fluxo e o desenho das telas são dele, feitos para a comanda de bar ([Código do Projeto Fácil](comum/CODIGO.md), Art. 93,
-e [O novo padrão](#o-novo-padrão)).
+fluxo e o desenho das telas são dele, feitos para a comanda de bar ([Código do Projeto Fácil](comum/CODIGO.md), Art. 93).
 
 ## O que o app faz
 
@@ -100,32 +99,6 @@ GitHub Pages a partir da branch `main`, pasta raiz. Antes de publicar: `npm run 
 quando a mudança mexe no guia; a bateria completa (`npm test`), quando mexe nas contas. Confira o app no celular e no computador,
 no claro e no escuro. Se o app abrir com erro no ar, desfaça o envio na hora (`git revert`) e só depois investigue.
 O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
-
-## O novo padrão
-
-Em 14/11/2026 o Bruno definiu que o Conta Fácil, mesmo ainda não finalizado, é o novo padrão do Projeto Fácil: nada do que
-está aqui é exceção, e tudo o que foi decidido neste app é regra. No mesmo dia, o Integrador aprovou a
-[proposta](PROPOSTA-PARA-O-INTEGRADOR.md) inteira, e o [Código do Projeto Fácil](comum/CODIGO.md) passou à versão 0.6
-com essas regras (Art. 93).
-
-Em 15/11/2026 vieram mais duas regras do Bruno, já valendo no app desde a 1.7.0: **tudo o que abre ou fecha dura 600 ms,
-na mesma curva** (um relógio só: `MOVE` em `app.js`, `--cf-ms` e `--cf-curva` no CSS; só a janela que acompanha o teclado
-do sistema segue o relógio do teclado) e **nenhuma janela abre com a caixa de texto selecionada**. O que isso muda no
-Código e no Kit está na [Proposta 2](PROPOSTA-2-PARA-O-INTEGRADOR.md), aprovada inteira no mesmo dia: o Código passou
-à versão 0.7, e as peças que ainda são do app entraram na lista do Anexo II.
-
-No mesmo dia, na 1.8.1, o Bruno alargou a segunda regra: **uma caixa de texto nunca é selecionada sozinha**, em
-janela ou fora dela. O teclado só sobe quando a pessoa toca no campo; campo que falta preencher é apontado com contorno,
-sem receber o foco (`KitFacil.apontar`). O app só devolve o foco ao campo em que a pessoa já estava digitando.
-
-Da 1.8.2 à 1.8.7 vieram mais seis regras do Bruno (janela que fecha sem pulo, puxar a janela pela barrinha, cursor só com
-a janela parada, nenhum botão acima do teclado e todo botão de exclusão vermelho). Elas foram à
-[Proposta 3](PROPOSTA-3-PARA-O-INTEGRADOR.md), aprovada inteira no Integrador em 15/11/2026: entraram no Código 0.8 e no
-Kit Fácil 0.8.0, e na 1.9.0 o app deixou as suas versões próprias e passou a usar as do Kit.
-
-**Nenhuma peça do Kit passada por cima (Art. 30-A).** Da 1.9.1 à 1.9.6 o app desenhou por conta própria a janela de
-Avaliação e feedback e três ajustes do guia; os quatro entraram no Kit 0.9.0
-([Proposta 4](PROPOSTA-4-PARA-O-INTEGRADOR.md), aprovada em 15/11/2026), e a 1.10.0 voltou a usar só o Kit.
 
 ## Uso do código
 
