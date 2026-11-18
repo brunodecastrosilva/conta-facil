@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.10.1';
+const VERSAO = '1.11.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,13 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.11.0', itens: [
+    'Pix: chave de celular ou de CPF volta a ser salva. Chave fora do formato é avisada na hora.',
+    'Cadastros: o lápis altera a pessoa (nome, Pix e "sou eu") e o produto (nome e preços).',
+    'Sortear alguém da mesa fica só em Mais; saiu de Tampinhas.',
+    'Quantidade com a mesma aparência das outras caixas de texto.',
+    'Quem não paga o serviço: marque a opção e toque em Confirmar; Cancelar desfaz.',
+  ] },
   { versao: '1.10.1', itens: [
     'PDF do cupom bem mais leve: o arquivo ficou cerca de 30 vezes menor, com o mesmo desenho.',
   ] },
@@ -924,7 +931,7 @@ function payRows(r, c) {
     const what = x.k === 'place' ? (c.payer === pid ? 'paga a conta' : 'paga ao local') : x.k === 'out' ? 'paga para ' + name(x.to) : 'recebe de ' + name(x.from);
     rows.push({ t: 'pair', left: multi ? first(pid) + ' ' + what : cap(what), right: BRL(x.v), tone: x.k === 'in' ? 'in' : '' });
     const k = x.k === 'out' && pixOf(name(x.to));
-    if (k) rows.push({ t: 'detail', text: 'Pix: ' + k, qr: debts.length === 1 ? debts.find(z => z.pid === pid && z.toName === name(x.to)) : null });
+    if (k) rows.push({ t: 'detail', text: 'Pix: ' + pixBonita(k), qr: debts.length === 1 ? debts.find(z => z.pid === pid && z.toName === name(x.to)) : null });
   }));
   // quem só paga o próprio total ao local não precisa da seção: o TOTAL já diz tudo
   const plan = !multi && planOf(c, u.members[0]);
@@ -933,11 +940,39 @@ function payRows(r, c) {
 }
 // chave Pix guardada no cadastro da pessoa
 const pixOf = name => (draft.isExample && draft.demoPix && draft.demoPix[name]) || (catalog.people.find(p => norm(p.name) === norm(name))?.pix || '').trim();
+// CPF com os dois dígitos de conferência certos (o Kit confere igual por dentro, mas não oferece a conta: Proposta 5)
+function cpfValid(d) {
+  d = String(d || ''); if (!/^\d{11}$/.test(d) || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = n => { let t = 0; for (let i = 0; i < n; i++) t += +d[i] * (n + 1 - i); const r = (t * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10];
+}
 // 11 dígitos que valem como CPF e também parecem celular (DDD + 9): só a pessoa sabe
 function pixAmbiguous(k) {
   k = String(k || '').trim(); const dig = k.replace(/\D/g, '');
   if (!k || k.includes('@') || k.startsWith('+') || /[().]/.test(k) || dig.length !== 11) return false;
   return cpfValid(dig) && dig[2] === '9' && +dig.slice(0, 2) >= 11;
+}
+// o que há de errado com a chave digitada ('' quando ela serve): o banco recusa o Pix de uma chave fora do formato
+function pixErro(k) {
+  k = String(k || '').trim(); if (!k) return '';
+  if (k.includes('@')) return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(k) ? '' : 'E-mail incompleto. Confira a chave Pix.';
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(k)) return '';
+  if (/[a-z]/i.test(k)) return 'Chave Pix inválida. Use CPF, celular com DDD, e-mail ou chave aleatória.';
+  const dig = k.replace(/\D/g, ''), n = dig.length;
+  if (k.startsWith('+')) return n >= 12 && n <= 13 ? '' : 'Celular incompleto. Digite o DDD e o número.';
+  if (n === 14 || (n === 13 && dig.startsWith('55'))) return '';
+  if (n === 8 || n === 9) return 'Falta o DDD. Digite o celular com o DDD.';
+  if (n === 10) return '';
+  if (n === 11) return cpfValid(dig) || (dig[2] === '9' && +dig.slice(0, 2) >= 11) ? '' : 'CPF inválido. Confira os números.';
+  return 'Chave Pix inválida. Use CPF, celular com DDD, e-mail ou chave aleatória.';
+}
+// a chave como a pessoa lê: CPF com pontos, celular com DDD entre parênteses; e-mail e chave aleatória ficam como são
+function pixBonita(k) {
+  k = String(k || '').trim(); const dig = k.replace(/\D/g, '');
+  if (/^\+55\d{10,11}$/.test(k)) { const t = dig.slice(2); return `(${t.slice(0, 2)}) ${t.slice(2, t.length - 4)}-${t.slice(-4)}`; }
+  if (/^\d{11}$/.test(k)) return `${k.slice(0, 3)}.${k.slice(3, 6)}.${k.slice(6, 9)}-${k.slice(9)}`;
+  if (/^\d{14}$/.test(k)) return `${k.slice(0, 2)}.${k.slice(2, 5)}.${k.slice(5, 8)}/${k.slice(8, 12)}-${k.slice(12)}`;
+  return k;
 }
 // guarda a chave já no formato do Pix (CPF só dígitos, celular com +55); se não der para saber, pergunta
 function savePixKey(name, key, done) {
@@ -2021,7 +2056,7 @@ function contaSheet() {
       if (dm) { ds.mode = dm.dataset.cmDsmode; return refazer(); }
       if (da) { ds.at = da.dataset.cmDsat; return refazer(); }
       if (t('[data-cm-pol]')) return politicaSheet(d);
-      if (t('[data-cm-acertos]')) return copyText(['Acertos — ' + (d.place || 'Comanda'), ...c.transfers.map(x => { const to = c.per[x.to].person.name, k = pixOf(to); return `${c.per[x.from].person.name} paga ${BRL(x.value)} para ${to}${k ? ' (Pix: ' + k + ')' : ''}`; })].join('\n'), 'Acertos copiados.');
+      if (t('[data-cm-acertos]')) return copyText(['Acertos — ' + (d.place || 'Comanda'), ...c.transfers.map(x => { const to = c.per[x.to].person.name, k = pixOf(to); return `${c.per[x.from].person.name} paga ${BRL(x.value)} para ${to}${k ? ' (Pix: ' + pixBonita(k) + ')' : ''}`; })].join('\n'), 'Acertos copiados.');
       if (t('[data-cm-copiar]')) return copyText(c.units.map(u => receiptText(u, d, c)).join('\n\n'), 'Todos os cupons copiados.');
       if (t('[data-cm-pdf]')) return shareAllPDF(d, c, t('[data-cm-pdf]'));
     });
@@ -2556,13 +2591,17 @@ function politicaSheet(d, p) {
   const s = d.service, c = compute(d);
   const quem = p ? p.name : c.skipped.map(id => c.per[id].person.name).join(', ');
   const valor = p ? (c.per[p.id]?.serviceNominal || 0) : c.skippedValue;
-  const op = (k, t, sub) => `<button type="button" class="lanc-op" data-pol="${k}" aria-pressed="${s.policy === k}">${s.policy === k ? I.check : '<span style="width:22px;flex:none"></span>'}<span><b>${t}</b></span></button>`;
-  openSheet({ title: `${quem} não paga o serviço`,
-    body: `<p class="pol-perg">${valor ? `O que fazer com ${BRL(valor)} de serviço?` : 'O que fazer com essa parte do serviço?'}</p><div class="lanc-ops">${op('discount', 'Ninguém paga essa parte', '')}${op('redistribute', 'Os outros dividem essa parte', '')}</div>`,
-    foot: `<button type="button" class="btn ghost" id="pol-desfaz">${p ? `${esc(p.name.split(' ')[0])} paga o serviço` : 'Fechar'}</button>`,
+  // a escolha só marca; quem decide é o Confirmar. Cancelar (ou fechar a janela) deixa tudo como estava antes da chave
+  let sel = s.policy === 'redistribute' ? 'redistribute' : 'discount', confirmou = false;
+  const op = (k, t) => `<button type="button" class="lanc-op" data-pol="${k}" aria-pressed="${sel === k}"><span class="pol-ck" aria-hidden="true">${I.check}</span><span><b>${t}</b></span></button>`;
+  const desistir = () => { if (confirmou || !p) return; confirmou = true; const q = d.people.find(x => x.id === p.id); if (q && !q.payService) { q.payService = true; commit({ anchor: false }); } };
+  openSheet({ title: `${quem} não paga o serviço`, onClose: desistir,
+    body: `<p class="pol-perg">${valor ? `O que fazer com ${BRL(valor)} de serviço?` : 'O que fazer com essa parte do serviço?'}</p><div class="lanc-ops" role="group" aria-label="O que fazer com essa parte do serviço">${op('discount', 'Ninguém paga essa parte')}${op('redistribute', 'Os outros dividem essa parte')}</div>`,
+    foot: `<button type="button" class="btn ghost" id="pol-no">Cancelar</button><button type="button" class="btn" id="pol-ok">${I.check}Confirmar</button>`,
     onMount: dl => {
-      $$('[data-pol]', dl).forEach(b => b.addEventListener('click', () => { s.policy = b.dataset.pol; closeSheet(true); commit(); KitFacil.avisar(s.policy === 'discount' ? 'Ninguém paga essa parte.' : 'Os outros dividem essa parte.'); }));
-      $('#pol-desfaz', dl).addEventListener('click', () => { if (p) { p.payService = true; closeSheet(true); commit(); } else closeSheet(); });
+      $$('[data-pol]', dl).forEach(b => b.addEventListener('click', () => { sel = b.dataset.pol; $$('[data-pol]', dl).forEach(x => x.setAttribute('aria-pressed', String(x === b))); }));
+      $('#pol-no', dl).addEventListener('click', () => { desistir(); confirmou = true; closeSheet(true); });
+      $('#pol-ok', dl).addEventListener('click', () => { confirmou = true; s.policy = sel; closeSheet(true); commit({ anchor: false }); KitFacil.avisar(sel === 'discount' ? 'Ninguém paga essa parte.' : 'Os outros dividem essa parte.'); });
     } });
 }
 function saveBill(opts = {}) {

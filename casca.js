@@ -314,7 +314,7 @@ const GUIA = [
   { t: 'A parte de cada pessoa', d: 'A comanda soma na hora. Toque num nome para ver os atalhos dessa pessoa.',
     acao: async m => { const u = demoUn('Diego'); await m.tocar(`summary[data-unit="${u}"]`); await m.espera(500); await m.apontar(`[data-pa="${u}"]`, 1700); } },
   { t: 'Quem não paga o serviço', d: 'Desligue o serviço de alguém e escolha: ninguém paga a parte ou os outros dividem.',
-    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svc]`); await m.acha('[data-pol="redistribute"]'); await m.espera(500); await m.apontar('[data-pol="discount"]', 1300); await m.apontar('[data-pol="redistribute"]', 1300); await m.tocar('[data-pol="redistribute"]'); await m.some('[data-pol]'); await m.apontar(`summary[data-unit="${demoUn('Diego')}"]`, 1400); } },
+    acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-svc]`); await m.acha('[data-pol="redistribute"]'); await m.espera(500); await m.apontar('[data-pol="discount"]', 1300); await m.apontar('[data-pol="redistribute"]', 1300); await m.tocar('[data-pol="redistribute"]', { depois: 500 }); await m.tocar('#pol-ok'); await m.some('[data-pol]'); await m.apontar(`summary[data-unit="${demoUn('Diego')}"]`, 1400); } },
   { t: 'O cupom de cada um', d: 'Ver cupom mostra a conta da pessoa, pronta para compartilhar.',
     acao: async m => { const u = demoUn('Diego'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.tocar(`[data-pa="${u}"] [data-pa-cupom]`); await m.acha('#cp-share'); await m.apontar('.kf-dlg .cupom-1', 1700); await m.apontar('#cp-share', 1300); await m.fechar(); await m.some('#cp-share');
       // o cartão do Diego se recolhe antes do próximo passo
@@ -371,7 +371,7 @@ const GUIA = [
   { t: 'Exclua uma comanda', d: 'Abriu sem querer? Excluir comanda fica logo abaixo de Fechar comanda.',
     acao: async m => { await demoIr(m, 'comanda'); await m.tocar('#cmd-excluir'); await m.acha('.kf-dlg [data-kf-ok]'); await m.espera(800); await m.tocar('.kf-dlg [data-kf-ok]'); await m.some('.kf-dlg [data-kf-ok]'); await m.espera(900); } },
   { t: 'Cadastros: pessoas e Pix', d: 'Em Mais, os Cadastros guardam as pessoas. Com a chave Pix, o cupom leva copia e cola.',
-    acao: async m => { await demoCadastros(m, 'pessoas'); await m.tocar('#view [data-pix-edit]'); await m.digitar('#px-in', 'ana@exemplo.com.br', { ritmo: 45 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#px-in'); await m.espera(900); } },
+    acao: async m => { await demoCadastros(m, 'pessoas'); await m.tocar('#view [data-pes-ed]'); await m.digitar('#np-pix', 'ana@exemplo.com.br', { ritmo: 45 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#np-pix'); await m.espera(900); } },
   { t: 'Turmas', d: 'Monte uma turma com quem sai junto. Na próxima comanda, todos entram de uma vez.',
     acao: async m => { await demoCadastros(m, 'turmas'); await m.tocar('#cad-turma'); await m.digitar('#tg-nome', 'Amigos da praça', { ritmo: 50 }); for (const n of ['Ana', 'Bruno', 'Carla']) await m.tocar(`.kf-dlg [data-tg="${n}"]`, { depois: 220 }); await m.tocar('.kf-dlg-pe button[type=submit]'); await m.some('#tg-nome'); await m.apontar('#view .cad-card .lin', 1500, { opcional: true }); } },
   { t: 'Produtos e preços', d: 'O app lembra o preço de cada produto em cada lugar e sugere na hora de lançar.',

@@ -214,7 +214,8 @@ test('tampinhas e níveis: nascem do histórico, a tampinha gira em 3D, o sortei
   assert.notEqual(await giro(), g1, 'a seta deveria girar a tampinha');
   await p.click('#tp-ok');
   // sorteio: quem entra é escolha de quem sorteia (sem mesa aberta, ninguém vem marcado)
-  await p.click('#tp-sorteio'); await p.locator('#gf-quem').waitFor();
+  assert.equal(await p.locator('#tp-sorteio').count(), 0, 'o sorteio saiu de Tampinhas: fica só em Mais');
+  await nav(p, 'mais'); await p.click('#ma-sorteio'); await p.locator('#gf-quem').waitFor();
   assert.equal(await p.locator('#gf-quem [aria-pressed="true"]').count(), 0); assert.ok(await p.locator('#gf-go').isDisabled(), 'sem duas pessoas não há sorteio');
   const cand = await p.locator('#gf-quem [data-gf-n]').count(); assert.ok(cand >= 2, 'as pessoas dos cadastros são oferecidas');
   await p.click('#gf-quem [data-gf-n] >> nth=0'); await p.click('#gf-quem [data-gf-n] >> nth=1');
@@ -246,7 +247,7 @@ test('Cadastros: pessoa com Pix, turma que entra na comanda nova e preço por lu
   await p.click('[data-cad="turmas"]'); await p.click('#cad-turma'); await p.fill('#tg-nome', 'Futebol');
   await p.click('[data-tg="Ana"]'); await p.click('[data-tg="Carla"]'); await p.click('.kf-dlg-pe button[type=submit]');
   await p.click('[data-cad="produtos"]');
-  assert.match(await p.inputValue('[data-pprod="Suco"]'), /R\$\s12,90/);
+  assert.match(await p.textContent('.lin-prod .prod-preco'), /Cantina A\s*R\$\s12,90/);
   // nova comanda já com a turma
   await nav(p, 'comanda'); await p.click('[data-nc-turma]'); await p.fill('#nc-local', 'Cantina A'); await p.click('.kf-dlg-pe button[type=submit]');
   assert.deepEqual(await p.evaluate(() => draft.people.map(x => x.name)), ['Ana', 'Carla']);
@@ -1027,5 +1028,60 @@ test('1.10.1: PDF do cupom leve: cada cupom entra no PDF como imagem compactada,
     // sem compactação, cada ponto da imagem ocupa 4 bytes no arquivo: um cupom simples passava de 2 MB
     assert.ok(['FAST', 'MEDIUM', 'SLOW'].includes(pg.compactacao), `imagem sem compactação no PDF (veio ${pg.compactacao})`);
   }
+  semErros(a); await a.fechar();
+});
+
+test('1.11.0: Pix de celular e de CPF, alterar pessoa e produto nos Cadastros, quantidade igual aos campos, serviço com Cancelar e Confirmar', async () => {
+  const a = await aparelho(amb, { viewport: { width: 393, height: 852 } });
+  const p = a.page;
+  await p.evaluate(() => { jogo.off = true; jogoSalvar(); });
+  await salvarComanda(p, 'Cantina A', ['Ana', 'Bruno', 'Carla'], { nome: 'Suco', qtd: 3, preco: 1290 });
+  await nav(p, 'mais'); await p.locator('#view [data-ir="cadastros"]').click();
+  // Pix: celular sem pontuação, CPF e o número que pode ser os dois (o app pergunta); antes, estes três davam erro e nada era salvo
+  const chave = async (nome, digitado, tipo) => {
+    await p.click(`[data-pes-ed="${nome}"]`); await assentar(p); await p.fill('#np-pix', digitado); await p.click('.kf-dlg-pe button[type=submit]');
+    if (tipo) { await p.locator('#pk-' + tipo).click(); }
+    await p.locator('.kf-ov').waitFor({ state: 'detached' });
+    return p.evaluate(n => catalog.people.find(x => x.name === n).pix, nome);
+  };
+  assert.equal(await chave('Ana', '85999998888'), '+5585999998888');
+  assert.equal(await chave('Bruno', '529.982.247-25'), '52998224725');
+  assert.equal(await chave('Carla', '11987654374', 'tel'), '+5511987654374');
+  assert.match(await p.textContent('#view .cad-card'), /\(85\) 99999-8888[\s\S]*529\.982\.247-25/);
+  const cod = await p.evaluate(() => [pixPayload(pixOf('Ana'), 'Ana', 1290), pixPayload(pixOf('Bruno'), 'Bruno', 1290)]);
+  assert.match(cod[0], /0114\+5585999998888/); assert.match(cod[1], /011152998224725/);
+  // chave fora do formato: a janela continua aberta, o campo é apontado e nada muda
+  await p.click('[data-pes-ed="Ana"]'); await assentar(p); await p.fill('#np-pix', '999998888'); await p.click('.kf-dlg-pe button[type=submit]');
+  assert.equal(await p.getAttribute('#np-pix', 'aria-invalid'), 'true'); assert.match(await p.textContent('.kf-toast, [role=status]:not(#pn-mesa)'), /DDD/);
+  // alterar a pessoa: o nome muda nos cadastros, na turma e nas comandas salvas; tem Desfazer
+  await p.fill('#np-pix', '(85) 99999-8888'); await p.fill('#np-nome', 'Ana Lima'); await p.click('.kf-dlg-pe button[type=submit]'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
+  assert.deepEqual(await p.evaluate(() => [catalog.people.some(x => x.name === 'Ana Lima'), catalog.people.some(x => x.name === 'Ana'), bills[0].people.map(x => x.name), pixOf('Ana Lima')]), [true, false, ['Ana Lima', 'Bruno', 'Carla'], '+5585999998888']);
+  // alterar o produto: nome e preço do lugar numa janela; a lista só mostra
+  await p.click('[data-cad="produtos"]');
+  assert.equal(await p.locator('#view .cad-card input').count(), 0);
+  await p.click('[data-prod-ed="Suco"]'); await assentar(p); await p.fill('#pc-nome', 'Suco de laranja'); await p.fill('.kf-dlg [data-pc-k]', ''); await p.locator('.kf-dlg [data-pc-k]').pressSequentially('1450'); await p.click('.kf-dlg-pe button[type=submit]'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
+  assert.deepEqual(await p.evaluate(() => { const x = catalog.products[0]; return [x.name, Object.values(x.prices)[0].price, bills[0].items[0].name]; }), ['Suco de laranja', 1450, 'Suco de laranja']);
+  assert.match(await p.textContent('.lin-prod'), /Suco de laranja[\s\S]*R\$\s14,50/);
+  // quantidade: mesma cara do campo de valor (fundo, contorno, altura, alinhamento e peso da letra)
+  await p.evaluate(() => { const d = blankDraft(); d.place = 'Cantina A'; d.people = ['Ana', 'Bruno'].map(newPerson); d.active = true; draft = d; tab = 'comanda'; saveDraft(); render(); });
+  await p.click('#it-novo'); await assentar(p);
+  const cara = await p.evaluate(() => { const f = e => { const c = getComputedStyle(e), r = e.getBoundingClientRect(); return [c.backgroundColor, c.borderTopColor, c.borderTopWidth, Math.round(r.top), Math.round(r.height)].join('|'); }; const q = document.querySelector('.kf-quantidade'), v = document.querySelector('#pr-preco'); return [f(q), f(v), getComputedStyle(q.querySelector('input')).fontWeight, getComputedStyle(v).fontWeight]; });
+  assert.equal(cara[0], cara[1]); assert.equal(cara[2], cara[3]);
+  await p.fill('#pr-nome', 'Suco'); await p.locator('#pr-preco').pressSequentially('1000'); await p.click('#lc-ok'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
+  // quem não paga o serviço: a opção só marca; Confirmar decide; Cancelar e o X devolvem o serviço à pessoa
+  const estado = () => p.evaluate(() => [draft.people[0].payService, draft.service.policy]);
+  await p.click('summary[data-abrir] >> nth=0'); await p.locator('details[open] .pa-lin').waitFor();
+  await p.click('details[open] .pa-lin'); await assentar(p);
+  assert.deepEqual(await p.locator('.kf-dlg-pe button').allTextContents(), ['Cancelar', 'Confirmar']);
+  assert.equal(await p.getAttribute('[data-pol="discount"]', 'aria-pressed'), 'true');
+  await p.click('[data-pol="redistribute"]');
+  assert.deepEqual([await p.getAttribute('[data-pol="discount"]', 'aria-pressed'), await p.getAttribute('[data-pol="redistribute"]', 'aria-pressed')], ['false', 'true']);
+  assert.deepEqual(await estado(), [false, 'discount'], 'marcar a opção ainda não muda a comanda');
+  await p.click('#pol-no'); await p.locator('.kf-ov').waitFor({ state: 'detached' }); assert.deepEqual(await estado(), [true, 'discount']);
+  await p.click('details[open] .pa-lin'); await assentar(p); await p.click('[data-pol="redistribute"]'); await p.click('#pol-ok'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
+  assert.deepEqual(await estado(), [false, 'redistribute']);
+  await p.click('details[open] .pa-lin'); await esperar(async () => (await estado())[0] === true);
+  await p.click('details[open] .pa-lin'); await assentar(p); await p.click('.kf-dlg [data-kf-fechar]'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
+  assert.deepEqual(await estado(), [true, 'redistribute'], 'fechar no X é desistir');
   semErros(a); await a.fechar();
 });

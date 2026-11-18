@@ -261,31 +261,74 @@ function openBill(id) {
 
 /* ---------- Cadastros ---------- */
 let cadAba = 'pessoas';
-function pessoaSheet() {
-  openSheet({ title: 'Nova pessoa', body: `<form id="np-form" class="pilha" autocomplete="off">
-      <div class="field"><label for="np-nome">Nome</label><input id="np-nome" type="text" autocapitalize="words" maxlength="40" placeholder="Nome ou apelido"></div>
-      <div class="field"><label for="np-pix">Chave Pix (opcional)</label><input id="np-pix" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="CPF, celular, e-mail ou chave aleatória"></div>
-      <label class="aj-chave"><span class="lin-tx"><b>Sou eu</b></span><span class="kf-chave"><input type="checkbox" id="np-eu"><span class="kf-chave-trilho"></span></span></label>
-    </form>`, foot: `<button type="button" class="btn ghost" id="np-no">Cancelar</button><button type="submit" form="np-form" class="btn">${I.save}Salvar pessoa</button>`, onMount: s => {
+// mudar um nome nos cadastros muda também nas comandas salvas (o histórico e as contagens seguem a pessoa ou o produto),
+// nas turmas e na comanda aberta; tem Desfazer
+function renomearCadastro(tipo, antigo, novo) {
+  const mesmo = n => norm(n) === norm(antigo);
+  if (tipo === 'pessoa') {
+    bills.forEach(b => (b.people || []).forEach(x => { if (mesmo(x.name)) x.name = novo; }));
+    (catalog.groups || []).forEach(g => { g.members = g.members.map(n => mesmo(n) ? novo : n); });
+    if (mesmo(catalog.me)) catalog.me = novo;
+    if (!draft.isExample && !draft.people.some(x => norm(x.name) === norm(novo))) draft.people.forEach(x => { if (mesmo(x.name)) x.name = novo; });
+  } else {
+    bills.forEach(b => (b.items || []).forEach(x => { if (mesmo(x.name)) x.name = novo; }));
+    if (!draft.isExample) draft.items.forEach(x => { if (mesmo(x.name)) x.name = novo; });
+  }
+}
+const fotoCadastros = () => { const antes = { bills: clone(bills), catalog: clone(catalog), draft: clone(draft) }; return () => { bills = antes.bills; catalog = antes.catalog; if (!draft.isExample) draft = antes.draft; store.saveBill(); store.saveCatalog(); saveDraft(); render(); }; };
+// pessoa dos cadastros: nova ou já cadastrada (nome, chave Pix e "sou eu" numa janela só)
+function pessoaSheet(p0) {
+  const eraEu = !!p0 && norm(p0.name) === norm(catalog.me);
+  openSheet({ title: p0 ? `Alterar ${p0.name}` : 'Nova pessoa', body: `<form id="np-form" class="pilha" autocomplete="off">
+      <div class="field"><label for="np-nome">Nome</label><input id="np-nome" type="text" autocapitalize="words" maxlength="40" placeholder="Nome ou apelido" value="${esc(p0 ? p0.name : '')}"></div>
+      <div class="field"><label for="np-pix">Chave Pix (opcional)</label><input id="np-pix" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="CPF, celular, e-mail ou chave aleatória" value="${esc(p0 ? pixBonita(pixOf(p0.name)) : '')}"></div>
+      <label class="aj-chave"><span class="lin-tx"><b>Sou eu</b></span><span class="kf-chave"><input type="checkbox" id="np-eu" ${eraEu ? 'checked' : ''}><span class="kf-chave-trilho"></span></span></label>
+    </form>`, foot: `<button type="button" class="btn ghost" id="np-no">Cancelar</button><button type="submit" form="np-form" class="btn">${I.save}${p0 ? 'Salvar alteração' : 'Salvar pessoa'}</button>`, onMount: s => {
     $('#np-no', s).onclick = () => closeSheet();
     $('#np-form', s).addEventListener('submit', e => {
       e.preventDefault();
-      const nome = $('#np-nome', s).value.trim().replace(/\s+/g, ' '), pix = $('#np-pix', s).value.trim();
+      const nome = $('#np-nome', s).value.trim().replace(/\s+/g, ' '), pix = $('#np-pix', s).value.trim(), erro = pixErro(pix);
       if (!nome) { KitFacil.avisar('Informe o nome.'); apontar($('#np-nome', s)); return; }
-      if (catalog.people.some(p => norm(p.name) === norm(nome))) { KitFacil.avisar(`${nome} já está nos cadastros.`); return; }
-      catalog.people.push({ name: nome, pix: '' });
-      const eu = $('#np-eu', s).checked; if (eu) definirEu(nome);
-      store.saveCatalog(); closeSheet(true); if (eu) setTimeout(() => jogoConferir(), 400);
-      if (pix) savePixKey(nome, pix, () => { render(); KitFacil.avisar(`${nome} cadastrado com a chave Pix.`); });
-      else { render(); KitFacil.avisar(`${nome} cadastrado.`); }
+      if (catalog.people.some(p => p !== p0 && norm(p.name) === norm(nome))) { KitFacil.avisar(`${nome} já está nos cadastros.`); apontar($('#np-nome', s)); return; }
+      if (erro) { KitFacil.avisar(erro); apontar($('#np-pix', s)); return; }
+      if (draft.isExample) { closeSheet(true); KitFacil.avisar('No exemplo, nada é salvo.'); return; }
+      const desfazer = p0 ? fotoCadastros() : null, antigo = p0 ? p0.name : '';
+      let p = p0;
+      if (p) { if (p.name !== nome) { renomearCadastro('pessoa', p.name, nome); p.name = nome; store.saveBill(); saveDraft(); } }
+      else { p = { name: nome, pix: '' }; catalog.people.push(p); }
+      const eu = $('#np-eu', s).checked; if (eu) definirEu(nome); else if (eraEu) catalog.me = '';
+      store.saveCatalog(); closeSheet(true); if (eu && !eraEu) setTimeout(() => jogoConferir(), 400);
+      const fim = () => { render(); KitFacil.avisar(!p0 ? `${nome} cadastrado${pix ? ' com a chave Pix' : ''}.` : antigo !== nome ? `${antigo} agora é ${nome}${nome.endsWith('.') ? '' : '.'}` : 'Cadastro atualizado.', desfazer ? { label: 'Desfazer', run: desfazer } : undefined); };
+      // a chave só passa pela pergunta "CPF ou celular?" quando foi mexida
+      if (pix !== pixBonita(pixOf(nome))) savePixKey(nome, pix, fim); else fim();
     });
   } });
 }
-function pixEditSheet(name) {
-  openSheet({ title: `Chave Pix de ${name}`, body: `<form id="px-form" class="pilha" autocomplete="off"><div class="field"><label for="px-in">Chave Pix</label><input id="px-in" type="text" value="${esc(pixOf(name))}" placeholder="CPF, celular, e-mail ou chave aleatória" autocapitalize="off" autocorrect="off" spellcheck="false"></div></form>`,
-    foot: `<button type="button" class="btn ghost" id="px-no">Cancelar</button><button type="submit" form="px-form" class="btn">${I.save}Salvar chave</button>`, onMount: s => {
-    $('#px-no', s).onclick = () => closeSheet();
-    $('#px-form', s).addEventListener('submit', e => { e.preventDefault(); const val = $('#px-in', s).value; closeSheet(true); savePixKey(name, val, k => { render(); KitFacil.avisar(k ? 'Chave Pix salva.' : 'Chave Pix removida.'); }); });
+// produto dos cadastros: o nome e o preço em cada lugar
+function produtoCadSheet(p0) {
+  const locais = Object.entries(p0.prices || {}).sort((a, b) => (b[1].last || 0) - (a[1].last || 0)), fora = new Set();
+  const campo = (id, rot, v, k) => `<div class="field pc-lin" data-pc-lin="${esc(k)}"><label for="${id}">${rot}</label><div class="row kf-linha"><input id="${id}" class="grow" type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(v)}" data-pc-k="${esc(k)}">${k ? `<button type="button" class="ic-btn del" data-pc-del="${esc(k)}" aria-label="Apagar o preço em ${rot}">${I.trash}</button>` : ''}</div></div>`;
+  openSheet({ title: `Alterar ${p0.name}`, body: `<form id="pc-form" class="pilha" autocomplete="off">
+      <div class="field"><label for="pc-nome">Produto</label><input id="pc-nome" type="text" autocapitalize="words" maxlength="60" value="${esc(p0.name)}"></div>
+      ${locais.length ? locais.map(([k, e], i) => campo('pc-v-' + i, esc(e.place), e.price, k)).join('') : campo('pc-v-x', 'Valor unitário', p0.price || 0, '')}
+    </form>`, foot: `<button type="button" class="btn ghost" id="pc-no">Cancelar</button><button type="submit" form="pc-form" class="btn">${I.save}Salvar alteração</button>`, onMount: s => {
+    $('#pc-no', s).onclick = () => closeSheet();
+    $$('[data-pc-del]', s).forEach(b => b.addEventListener('click', () => { fora.add(b.dataset.pcDel); const lin = b.closest('[data-pc-lin]'); KitFacil.janela.ocupada?.(MV().ms); comMovimento(s, () => lin.remove()); }));
+    $('#pc-form', s).addEventListener('submit', e => {
+      e.preventDefault();
+      const nomeEl = $('#pc-nome', s), nome = nomeEl.value.trim().replace(/\s+/g, ' ');
+      if (!nome) { KitFacil.avisar('Informe o nome do produto.'); apontar(nomeEl); return; }
+      if (catalog.products.some(p => p !== p0 && norm(p.name) === norm(nome))) { KitFacil.avisar(`${nome} já está nos cadastros.`); apontar(nomeEl); return; }
+      const vals = $$('[data-pc-k]', s).map(i => ({ i, k: i.dataset.pcK, v: parseMoney(i.value) })), ruim = vals.find(x => !x.v);
+      if (ruim) { KitFacil.avisar('Informe o valor (por exemplo, 12,90).'); apontar(ruim.i); return; }
+      if (draft.isExample) { closeSheet(true); KitFacil.avisar('No exemplo, nada é salvo.'); return; }
+      const desfazer = fotoCadastros(), antigo = p0.name;
+      vals.forEach(x => { if (x.k && p0.prices[x.k]) { if (p0.prices[x.k].price !== x.v) Object.assign(p0.prices[x.k], { price: x.v, edited: true }); } else p0.price = x.v; });
+      fora.forEach(k => { delete p0.prices[k]; });
+      if (antigo !== nome) { renomearCadastro('produto', antigo, nome); p0.name = nome; store.saveBill(); saveDraft(); }
+      store.saveCatalog(); closeSheet(true); render();
+      KitFacil.avisar(antigo !== nome ? `${antigo} agora é ${nome}${nome.endsWith('.') ? '' : '.'}` : 'Produto atualizado.', { label: 'Desfazer', run: desfazer });
+    });
   } });
 }
 function turmaSheet(g) {
@@ -318,22 +361,22 @@ const viewCadastros = {
     let corpo = '';
     if (cadAba === 'pessoas') {
       const ppl = [...catalog.people].sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name, 'pt-BR'));
-      corpo = `${ppl.length ? `<div class="lista">${ppl.map(p => `<div class="lin">${avatar(p.name)}<span class="lin-tx"><b>${esc(p.name)}${norm(p.name) === norm(catalog.me) ? ' <span class="tag">você</span>' : ''}</b><small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(p.pix) : ''}</small></span>
-          <button type="button" class="btn small ghost" data-pix-edit="${esc(p.name)}">${p.pix ? 'Pix' : '+ Pix'}</button><button type="button" class="ic-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>`
+      corpo = `${ppl.length ? `<div class="lista">${ppl.map(p => `<div class="lin">${avatar(p.name)}<span class="lin-tx"><b>${esc(p.name)}${norm(p.name) === norm(catalog.me) ? ' <span class="tag">você</span>' : ''}</b><small>${used(cnt(p))}${p.pix ? ' · Pix: ' + esc(pixBonita(p.pix)) : ''}</small></span>
+          <button type="button" class="ic-btn" data-pes-ed="${esc(p.name)}" aria-label="Alterar ${esc(p.name)}">${I.edit}</button><button type="button" class="ic-btn del" data-del-person="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>`).join('')}</div>`
         : `<div class="vazio">${ILU.pessoas}<b>Nenhuma pessoa cadastrada</b><p>Quem entra numa comanda salva aparece aqui sozinho. Você também pode cadastrar antes, já com a chave Pix.</p></div>`}
         <button type="button" class="btn bloco" id="cad-pessoa">${I.plus}Nova pessoa</button>`;
     } else if (cadAba === 'turmas') {
       const gs = [...(catalog.groups || [])].sort(ordemNome);
-      corpo = `${gs.length ? `<div class="lista">${gs.map(g => `<div class="lin"><span class="lin-ic">${I.users}</span><span class="lin-tx"><b>${esc(g.name)}</b><small>${esc(g.members.join(', '))}</small></span><button type="button" class="btn small ghost" data-turma-ed="${esc(g.id)}">Alterar</button><button type="button" class="ic-btn del" data-turma-del="${esc(g.id)}" aria-label="Excluir a turma ${esc(g.name)}">${I.trash}</button></div>`).join('')}</div>`
+      corpo = `${gs.length ? `<div class="lista">${gs.map(g => `<div class="lin"><span class="lin-ic">${I.users}</span><span class="lin-tx"><b>${esc(g.name)}</b><small>${esc(g.members.join(', '))}</small></span><button type="button" class="ic-btn" data-turma-ed="${esc(g.id)}" aria-label="Alterar a turma ${esc(g.name)}">${I.edit}</button><button type="button" class="ic-btn del" data-turma-del="${esc(g.id)}" aria-label="Excluir a turma ${esc(g.name)}">${I.trash}</button></div>`).join('')}</div>`
         : `<div class="vazio">${ILU.turmas}<b>Nenhuma turma</b><p>Turma é quem sai junto: com um toque, todos entram na mesa.</p></div>`}
         <button type="button" class="btn bloco" id="cad-turma" ${catalog.people.length > 1 ? '' : 'disabled'}>${I.plus}Nova turma</button>${catalog.people.length > 1 ? '' : '<p class="hint centro">Cadastre ao menos duas pessoas para criar uma turma.</p>'}`;
     } else {
       const prods = [...catalog.products].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-      corpo = prods.length ? `<div class="prods">${prods.map((p, i) => {
+      corpo = prods.length ? `<div class="lista">${prods.map(p => {
         const entries = Object.entries(p.prices || {}).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
-        return `<div class="prod"><div class="prod-cab"><span class="lin-tx"><b>${esc(p.name)}</b><small>${used(pc(p))}</small></span><button type="button" class="ic-btn del" data-del-prod="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button></div>
-          ${entries.length ? entries.map(([k, e]) => `<div class="preco-lin"><label for="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}">${esc(e.place)}</label><input type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(e.price)}" data-pprod="${esc(p.name)}" data-pk="${esc(k)}" id="pp-${i}-${esc(k.replace(/[^a-z0-9]/g, '-'))}"><button type="button" class="ic-btn del" data-pdel="${esc(p.name)}" data-pk="${esc(k)}" aria-label="Apagar o preço de ${esc(p.name)} em ${esc(e.place)}">${I.x}</button></div>`).join('')
-          : `<div class="preco-lin"><label for="pp-${i}-x" class="hint">Sem local</label><input type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(p.price || 0)}" data-pprod="${esc(p.name)}" data-pk="" id="pp-${i}-x"><span></span></div>`}</div>`; }).join('')}</div>`
+        return `<div class="lin lin-prod"><span class="lin-tx"><b>${esc(p.name)}</b><small>${used(pc(p))}</small></span>
+          <button type="button" class="ic-btn" data-prod-ed="${esc(p.name)}" aria-label="Alterar ${esc(p.name)}">${I.edit}</button><button type="button" class="ic-btn del" data-del-prod="${esc(p.name)}" aria-label="Excluir ${esc(p.name)}">${I.trash}</button>
+          <div class="prod-precos">${entries.length ? entries.map(([, e]) => `<span class="prod-preco"><span>${esc(e.place)}</span><span class="num">${BRL(e.price)}</span></span>`).join('') : `<span class="prod-preco"><span>Sem local</span><span class="num">${BRL(p.price || 0)}</span></span>`}</div></div>`; }).join('')}</div>`
         : `<div class="vazio">${ILU.produtos}<b>Nenhum produto cadastrado</b><p>Os produtos e os preços de cada lugar entram aqui quando você salva uma comanda.</p></div>`;
     }
     return `<header class="tela-cab">${voltarMaisHTML()}<h1 class="tela-t">Cadastros</h1><p class="tela-sub">Pessoas, chaves Pix, turmas e o preço de cada produto em cada lugar.</p></header>
@@ -352,7 +395,8 @@ const viewCadastros = {
       const [gone] = catalog.groups.splice(idx, 1); store.saveCatalog(); render();
       KitFacil.avisar(`Turma ${gone.name} excluída.`, { label: 'Desfazer', run: () => { catalog.groups.splice(idx, 0, gone); store.saveCatalog(); render(); } });
     }));
-    $$('[data-pix-edit]', v).forEach(b => b.addEventListener('click', () => pixEditSheet(b.dataset.pixEdit)));
+    $$('[data-pes-ed]', v).forEach(b => b.addEventListener('click', () => { const p = catalog.people.find(x => x.name === b.dataset.pesEd); if (p) pessoaSheet(p); }));
+    $$('[data-prod-ed]', v).forEach(b => b.addEventListener('click', () => { const p = catalog.products.find(x => x.name === b.dataset.prodEd); if (p) produtoCadSheet(p); }));
     $$('[data-del-person]', v).forEach(b => b.addEventListener('click', () => confirmSheet(`Excluir ${b.dataset.delPerson} do cadastro?`, 'A pessoa deixa de aparecer nas sugestões. As comandas do histórico não mudam.', 'Excluir pessoa', () => {
       const idx = catalog.people.findIndex(p => p.name === b.dataset.delPerson); if (idx < 0) return;
       const [gone] = catalog.people.splice(idx, 1), wasMe = norm(catalog.me) === norm(gone.name);
@@ -366,16 +410,6 @@ const viewCadastros = {
       store.saveCatalog(); render();
       KitFacil.avisar(`Cadastro de ${gone.name} excluído.`, { label: 'Desfazer', run: () => { catalog.products.splice(idx, 0, gone); store.saveCatalog(); render(); } });
     }, true)));
-    $$('[data-pdel]', v).forEach(b => b.addEventListener('click', () => {
-      const p = catalog.products.find(x => x.name === b.dataset.pdel); if (!p) return;
-      delete p.prices[b.dataset.pk]; store.saveCatalog(); render(); KitFacil.avisar('Preço do local apagado.');
-    }));
-    $$('[data-pprod]', v).forEach(i => i.addEventListener('change', () => {
-      const c = parseMoney(i.value), p = catalog.products.find(x => x.name === i.dataset.pprod);
-      if (!c || !p) { KitFacil.avisar('Valor inválido. Digite, por exemplo, 12,90.'); render(); return; }
-      if (i.dataset.pk && p.prices[i.dataset.pk]) Object.assign(p.prices[i.dataset.pk], { price: c, edited: true }); else p.price = c;
-      store.saveCatalog(); i.value = moneyInput(c); KitFacil.avisar('Preço atualizado.');
-    }));
   },
 };
 

@@ -3,6 +3,22 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.11.0 · 2026-11-18
+
+- **Pix de celular e de CPF consertado:** ao salvar uma chave de 11 números (celular sem pontuação, "85 99999-8888" ou CPF sem pontos), o app dava erro por dentro e a chave não era guardada. A conferência de CPF tinha ido para o Kit na 1.10.0 e o app continuava chamando a antiga. Agora a chave é salva: CPF só com números, celular com +55.
+- **Chave fora do formato é avisada na hora:** celular sem DDD, CPF com número errado e e-mail incompleto não são mais aceitos em silêncio (o banco recusaria o Pix). A janela continua aberta e o campo é apontado.
+- **A chave aparece como se lê:** "(85) 99999-8888" e "529.982.247-25" nos Cadastros, no cupom e nos acertos. O copia e cola continua no formato do Banco Central.
+- **Cadastros, alterar pessoa:** o lápis de cada pessoa abre uma janela só, com nome, chave Pix e "Sou eu" (antes só dava para mexer na chave Pix, e o nome não mudava em lugar nenhum).
+- **Cadastros, alterar produto:** o lápis abre a janela com o nome e o preço em cada lugar. A lista passou a só mostrar os preços; antes, eles eram caixas de texto soltas na lista, e o nome não podia ser mudado.
+- **Nome novo vale no histórico:** mudar o nome de uma pessoa ou de um produto muda também nas comandas salvas, nas turmas e na comanda aberta, para as contagens ("em 3 comandas salvas") seguirem o cadastro. Tem Desfazer.
+- **Turmas:** o botão "Alterar" virou o mesmo lápis das outras listas.
+- **Sortear alguém da mesa saiu de Tampinhas:** fica só em Mais (Código, Art. 64-B: cada função num lugar só).
+- **Quantidade igual às outras caixas de texto:** o − n + da janela de lançar tem o mesmo fundo, contorno, altura, letra e anel de foco do campo de valor, e os dois ficam alinhados.
+- **Quem não paga o serviço:** tocar numa opção só marca o check. No pé, "Cancelar" e "Confirmar" entram no lugar de "Fulano paga o serviço". Cancelar (ou fechar no X) devolve o serviço à pessoa.
+- **Guia:** os passos *Quem não paga o serviço* e *Cadastros: pessoas e Pix* seguem as janelas novas. Continua com 34 passos.
+- **Por cima do Kit (Art. 30-A), na Proposta 5 para o Integrador:** a aparência do passo a passo de quantidade e a conferência de CPF e de chave Pix.
+- **Testes:** rodaram a verificação do padrão, o teste novo desta versão, os de Cadastros, Pix, Tampinhas, Mais, janelas e botões de exclusão, a acessibilidade e o guia inteiro (a mudança mexe no guia). Pulada: a bateria completa, porque as contas não mudaram.
+
 ## 1.10.1 · 2026-11-18
 
 - **PDF do cupom bem mais leve:** a imagem do cupom entra no PDF compactada, sem perder qualidade. Um cupom que saía com 5 MB agora sai com menos de 200 kB, e o "Todos em PDF" de uma mesa de seis pessoas caiu de 33 MB para 1 MB. O desenho do cupom é o mesmo, ponto por ponto.

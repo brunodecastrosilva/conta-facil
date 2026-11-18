@@ -165,12 +165,10 @@ const viewTampinhas = {
       <div class="card nivel-card grande">${bolachaHTML(s, { grande: true })}${nivelHTML(s)}</div>
       <div class="sec-cab"><h2 class="sec-t">Coleção</h2><span class="hint">${s.ganhas.length} de ${TAMPINHAS.length}</span></div>
       <ul class="tampas">${ord.map(t => { const tem = ganhas.has(t.id), p = t.prog && !tem ? t.prog(s) : null;
-        return `<li><button type="button" class="tampa ${tem ? 'tem' : ''}" data-tampa="${t.id}">${tampaSVG(t, { apagada: !tem })}<span class="tampa-nome">${esc(t.nome)}</span>${p ? `<span class="tampa-prog"><span class="so-leitor">: </span>${p[0]}/${p[1]}</span>` : ''}<span class="so-leitor">. ${tem ? 'Na coleção' : 'Falta ganhar. ' + esc(t.como)}</span></button></li>`; }).join('')}</ul>
-      <button type="button" class="card lin-card" id="tp-sorteio"><span class="lin-ic ambar">${I.sorteio}</span><span class="lin-tx"><b>Sortear alguém da mesa</b><small>Quem escolhe o próximo lugar, quem divide a sobremesa.</small></span>${I.next}</button>`;
+        return `<li><button type="button" class="tampa ${tem ? 'tem' : ''}" data-tampa="${t.id}">${tampaSVG(t, { apagada: !tem })}<span class="tampa-nome">${esc(t.nome)}</span>${p ? `<span class="tampa-prog"><span class="so-leitor">: </span>${p[0]}/${p[1]}</span>` : ''}<span class="so-leitor">. ${tem ? 'Na coleção' : 'Falta ganhar. ' + esc(t.como)}</span></button></li>`; }).join('')}</ul>`;
   },
   bind(v) {
     $$('[data-tampa]', v).forEach(b => b.addEventListener('click', () => tampaSheet(TAMPINHAS.find(t => t.id === b.dataset.tampa))));
-    $('#tp-sorteio', v).addEventListener('click', () => sorteioSheet());
   },
 };
 

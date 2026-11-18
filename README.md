@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.10.1** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.11.0** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Desde 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil** para a moldura, os componentes e o comportamento dos controles; o
@@ -18,9 +18,9 @@ fluxo e o desenho das telas são dele, feitos para a comanda de bar ([Código do
 - **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; ali também ficam "uma pessoa paga a conta de todos" (cada um continua com o seu cupom), "pagar outro valor" (com a escolha de quem cobre ou devolve a diferença), marcar quem já pagou e "já saiu da mesa" (trava o cupom); salvar tem Desfazer
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai
-- **Cadastros:** pessoas e chaves Pix, turmas (quem sai junto entra na mesa com um toque) e preço de cada produto em cada lugar
+- **Cadastros:** pessoas e chaves Pix, turmas (quem sai junto entra na mesa com um toque) e preço de cada produto em cada lugar; o lápis de cada linha altera a pessoa (nome, chave Pix e "sou eu"), a turma ou o produto (nome e preços), e o nome novo vale também nas comandas salvas
 - **Tampinhas e níveis:** uma coleção que cresce conforme você usa o app; cada tampinha é um objeto 3D (WebGL) que gira com o dedo; dá para desligar nos Ajustes
-- **Sortear alguém da mesa:** você escolhe quem entra; um ponteiro gira e para num nome
+- **Sortear alguém da mesa** (em Mais): você escolhe quem entra; um ponteiro gira e para num nome
 - **Apresentação na primeira abertura** e **guia** que faz cada passo na tela, do começo ao fim, numa demonstração que não grava nada
 - **Sem bebida alcoólica:** nenhum texto, exemplo ou imagem do app fala de bebida alcoólica (há um teste que confere)
 - **Use em vários aparelhos (opcional):** histórico e cadastros sincronizados, criptografados, num gist secreto da sua conta GitHub
@@ -99,6 +99,15 @@ GitHub Pages a partir da branch `main`, pasta raiz. Antes de publicar: `npm run 
 quando a mudança mexe no guia; a bateria completa (`npm test`), quando mexe nas contas. Confira o app no celular e no computador,
 no claro e no escuro. Se o app abrir com erro no ar, desfaça o envio na hora (`git revert`) e só depois investigue.
 O que mudou em cada versão está no [`CHANGELOG.md`](CHANGELOG.md).
+
+## Peças do Kit substituídas (Código, Art. 30-A)
+
+Estão na Proposta 5 para o Integrador; saem daqui quando o Kit as absorver.
+
+| Peça do Kit | O que o app faz por cima | Por quê |
+|---|---|---|
+| Passo a passo de quantidade (`.kf-quantidade`) | `estilo.css` dá a ele o fundo, o contorno, a altura, a letra e o anel de foco dos campos | no Kit ele tem fundo branco e número em negrito, diferente das outras caixas de texto |
+| Pix (`KitFacil.pix`) | `app.js` tem a própria conferência de CPF (`cpfValid`), a validação da chave (`pixErro`) e a chave formatada para leitura (`pixBonita`) | o Kit confere o CPF por dentro, mas não oferece a conta; o app precisava dela para perguntar "CPF ou celular?" |
 
 ## Uso do código
 
