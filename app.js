@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.10.0';
+const VERSAO = '1.10.1';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,9 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.10.1', itens: [
+    'PDF do cupom bem mais leve: o arquivo ficou cerca de 30 vezes menor, com o mesmo desenho.',
+  ] },
   { versao: '1.10.0', itens: [
     'Guia: a janela de Fechar a comanda fica aberta de um passo para o outro, sem fechar e abrir de novo.',
     'Janelas que só precisam ser fechadas não têm mais o botão Fechar: o X fecha.',
@@ -1328,7 +1331,8 @@ async function canvasesToPDF(cvs) {
     const w = cv.width / 2 * 0.75, h = cv.height / 2 * 0.75, o = h >= w ? 'p' : 'l';
     if (!i) doc = new JsPDF({ unit: 'pt', format: [w, h], orientation: o });
     else doc.addPage([w, h], o);
-    doc.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, w, h);
+    // 'FAST' compacta a imagem dentro do PDF, sem perder qualidade; sem isso cada ponto ocupa 4 bytes (um cupom passava de 2 MB)
+    doc.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, w, h, undefined, 'FAST');
   });
   return doc.output('blob');
 }

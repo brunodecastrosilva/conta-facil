@@ -3,6 +3,11 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.10.1 · 2026-11-18
+
+- **PDF do cupom bem mais leve:** a imagem do cupom entra no PDF compactada, sem perder qualidade. Um cupom que saía com 5 MB agora sai com menos de 200 kB, e o "Todos em PDF" de uma mesa de seis pessoas caiu de 33 MB para 1 MB. O desenho do cupom é o mesmo, ponto por ponto.
+- **Por dentro:** o `canvasesToPDF` (em `app.js`) passa a pedir a compactação `FAST` ao jsPDF; antes, cada ponto da imagem ocupava 4 bytes no arquivo. Um teste novo confere isso. O `package-lock.json`, parado na 1.8.0, voltou a acompanhar a versão.
+
 ## 1.10.0 · 2026-11-15
 
 Kit Fácil 0.9.0 e Código 0.9 (Proposta 4 para o Integrador, aprovada pelo Bruno).

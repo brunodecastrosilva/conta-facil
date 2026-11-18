@@ -999,3 +999,33 @@ test('1.9.1: Avaliação e feedback no padrão do app: opções em linha, sem Fe
   assert.deepEqual(f, [true, true, true, true], 'a caixa de texto grande é igual ao campo; o pé com Voltar e Enviar continua');
   semErros(a); await a.fechar();
 });
+
+test('1.10.1: PDF do cupom leve: cada cupom entra no PDF como imagem compactada, uma página por cupom', async () => {
+  const a = await aparelho(amb);
+  const p = a.page;
+  // a biblioteca do PDF vem do CDN, bloqueado nos testes: uma de mentira anota como o app entrega cada imagem
+  const r = await p.evaluate(async () => {
+    const paginas = [];
+    window.jspdf = { jsPDF: class {
+      constructor(o) { paginas.push({ formato: o.format }); }
+      addPage(formato) { paginas.push({ formato }); }
+      addImage(...x) { Object.assign(paginas.at(-1), { png: String(x[0]).startsWith('data:image/png') && x[1] === 'PNG', larg: x[4], compactacao: x[7] }); }
+      output() { return new Blob(['%PDF'], { type: 'application/pdf' }); }
+    } };
+    const d = blankDraft(); d.place = 'Cantina A'; d.people = ['Ana', 'Bruno'].map(newPerson);
+    d.items = [{ id: newId(), o: 1, name: 'Suco', qty: 2, price: 1000, fq: 0, mode: 'equal', lk: true, a: Object.fromEntries(d.people.map(x => [x.id, 1])) }];
+    const c = compute(d), cvs = [];
+    for (const u of c.units) cvs.push(await receiptCanvas(u, d, c));
+    const pdf = await canvasesToPDF(cvs);
+    return { paginas, tipo: pdf.type };
+  });
+  assert.equal(r.tipo, 'application/pdf');
+  assert.equal(r.paginas.length, 2, 'uma página por cupom');
+  for (const pg of r.paginas) {
+    assert.ok(pg.png, 'o cupom vai como imagem sem perda (PNG)');
+    assert.equal(pg.larg, pg.formato[0], 'a imagem ocupa a página inteira');
+    // sem compactação, cada ponto da imagem ocupa 4 bytes no arquivo: um cupom simples passava de 2 MB
+    assert.ok(['FAST', 'MEDIUM', 'SLOW'].includes(pg.compactacao), `imagem sem compactação no PDF (veio ${pg.compactacao})`);
+  }
+  semErros(a); await a.fechar();
+});
