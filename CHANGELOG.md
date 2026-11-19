@@ -3,6 +3,23 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.13.0 · 2026-11-19
+
+Revisão geral do app (relatório no Projeto: `claude/revisao-geral-1.12.6.md`).
+
+- **A comanda ao vivo saiu do app** (decisão do Bruno, de 19/11/2026: nunca foi usada, e era nela que estavam as duas falhas de segurança da revisão). Saem o cartão "Comanda ao vivo" da comanda, "Entrar numa comanda ao vivo" do Início, o convite com QR code, a tampinha "Ao vivo" (a coleção passa a ter 15) e o passo do guia (que passa a ter 33). A comanda fica só neste aparelho; o cupom de cada pessoa continua indo em PDF e com Pix.
+- **O app não fala mais com o login nem com o banco da comanda ao vivo:** saíram `fb.js` e `config.js`, e a política de segurança da página (CSP) perdeu os endereços do login do Firebase. O Firebase continua só para as avaliações, pelo Kit.
+- **Dado de fora é conferido antes de entrar** (Código, Arts. 42 e 48): o que vem do armazenamento, da cópia de segurança e da sincronização passa por uma conferência. Identificador só com letras, números, `_` e `-`; nome em texto, com tamanho máximo; quantidade e preço inteiros e nunca negativos. Antes, um arquivo adulterado podia pôr HTML na tela ou fazer o total virar "NaN".
+- **Identificadores sorteados com o sorteio seguro do navegador** (`crypto.getRandomValues`), no lugar de `Math.random`.
+- **Uso sem internet mais firme:** o service worker só guarda resposta boa das bibliotecas (PDF, QR code, fontes). Antes, um erro passageiro do CDN ficava guardado até a versão seguinte.
+- **Serviço em valor fixo sem consumo cobrado** (mesa só de cortesias, por exemplo): passa a ser dividido em partes iguais entre quem paga serviço. Antes, sumia da conta sem aviso. O mesmo vale para "Os outros dividem essa parte" quando quem paga serviço não consumiu nada.
+- **Código morto fora:** o que restava de "Uma pessoa paga a conta de todos" (tirada da tela na 1.12.0) saiu das contas.
+- **Textos:** a etiqueta do item aberto passou de "FALTA DIVIDIR" para "SEM DIVISÃO", igual ao cabeçalho dos pedidos ("1 sem divisão").
+- **Abertura:** o título da primeira tela não aparece mais com o anel de foco em volta.
+- **Peça do Kit substituída, registrada no README** (Código, Art. 30-A): os botões "−1" e "+1" das linhas da comanda de papel.
+- **Pendências que não são do app:** fechar a regra da coleção `mesas` no Firestore, tirar a comanda ao vivo do Código (Arts. 34, II e 39, II) e das Regras do Conta Fácil (Arts. 4º, 8º e 13) e rever o Art. 64, I. Vão como Proposta para o Integrador.
+- Testes: verificação do padrão e bateria completa (a mudança mexe nas contas e no guia), com a acessibilidade. Três testes novos: a comanda ao vivo não existe mais na tela, no código nem na rede; dado adulterado não entra na tela nem nas contas; contas por sorteio em 3.000 comandas. Saiu o teste da comanda ao vivo sem conexão.
+
 ## 1.12.6 · 2026-11-19
 
 - **Pulso nos botões:** "Fechar comanda" troca o picote com brilho por um pulso: o botão respira e solta dois anéis mostarda, como batida de coração. O intervalo entre as batidas varia, para não parecer relógio. Continua quieto enquanto houver item sem dividir.

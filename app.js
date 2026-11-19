@@ -1,12 +1,18 @@
-/* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
+/* Conta Fácil · motor do app: modelo, contas, Pix, cupons, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.12.6';
+const VERSAO = '1.13.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-const newId = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-5);
+// identificador sorteado pelo sorteio seguro do navegador (crypto), só com letras minúsculas e números
+const newId = () => { const a = new Uint32Array(3); crypto.getRandomValues(a); return [...a].map(n => n.toString(36).padStart(7, '0')).join('').slice(0, 12); };
+// o que vem de fora (armazenamento, cópia de segurança, sincronização) é conferido antes de entrar no app (Código, Arts. 42 e 48):
+// identificador só com letras, números, _ e -; texto com tamanho máximo; número inteiro e nunca negativo
+const idOk = id => typeof id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(id);
+const textoDeFora = (v, max) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '').slice(0, max);
+const inteiroDeFora = (v, min = 0) => Math.max(min, Math.round(Number(v)) || 0);
 const BRL = c => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const norm = s => String(s || '').trim().toLocaleLowerCase('pt-BR');
@@ -50,7 +56,6 @@ const I = {
   refresh: '<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
   lock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   unlock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.6-1.8"/></svg>',
-  live: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19 5a10 10 0 0 1 0 14M5 19A10 10 0 0 1 5 5"/></svg>',
   paste: '<svg class="i" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>',
   qr: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M17 20h4v-3"/></svg>',
   ajustes: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>',
@@ -83,8 +88,8 @@ function blankDraft() {
     service: { enabled: true, mode: 'pct', pct: 10, fixed: 0, policy: 'discount' },
     couvert: { enabled: false, value: 1500 },
     discount: { enabled: false, label: 'Desconto', mode: 'value', value: 0, pct: 10, at: 'after' },
-    payMode: 'none', payer: '', custom: {}, cover: {}, groups: [],
-    live: null, savedAt: null, isExample: false, active: false, fechada: null };
+    custom: {}, cover: {}, groups: [],
+    savedAt: null, isExample: false, active: false, fechada: null };
 }
 function migrate(d) {
   const hadGroups = Array.isArray(d && d.groups);
@@ -95,9 +100,7 @@ function migrate(d) {
   // contas antigas aplicavam o desconto antes do serviço
   d.discount = { ...b.discount, at: 'before', ...(d.discount || {}) };
   delete d.check;
-  // "Várias pagaram" virou valor personalizado por pessoa
-  if (d.payMode === 'multi') { d.custom = Object.fromEntries(Object.entries(d.paid || {}).filter(([, v]) => v > 0)); d.payMode = 'none'; }
-  d.payMode = 'none'; d.payer = ''; // "uma pessoa paga a conta de todos" saiu na 1.12.0: cada um paga o seu
+  delete d.payMode; delete d.payer; delete d.live; // saíram do app: "uma pessoa paga a conta de todos" (1.12.0) e a comanda ao vivo (1.13.0)
   d.custom = isObj(d.custom) ? d.custom : {};
   d.cover = isObj(d.cover) ? d.cover : {};
   delete d.paid;
@@ -110,11 +113,16 @@ function migrate(d) {
     d.groups = Object.entries(map).filter(([, m]) => m.length > 1).map(([r, m]) => ({ id: newId(), members: [r, ...m.filter(x => x !== r)], payers: [r] }));
   }
   if (typeof d.active !== 'boolean') d.active = !d.savedAt && !d.isExample && !!((d.items || []).length || (d.people || []).length);
-  d.people = (d.people || []).map((p, i) => ({ payService: true, payCouvert: true, o: i, ...p }));
-  d.items = (d.items || []).map((it, i) => {
+  d.place = textoDeFora(d.place, 80);
+  d.people = (Array.isArray(d.people) ? d.people : []).filter(p => isObj(p) && idOk(p.id) && textoDeFora(p.name, 60))
+    .map((p, i) => ({ payService: true, payCouvert: true, o: i, ...p, name: textoDeFora(p.name, 60) }));
+  d.groups = (Array.isArray(d.groups) ? d.groups : []).filter(isObj).map(g => ({ ...g, id: idOk(g.id) ? g.id : newId(), members: (Array.isArray(g.members) ? g.members : []).filter(idOk), payers: (Array.isArray(g.payers) ? g.payers : []).filter(idOk) }));
+  d.items = (Array.isArray(d.items) ? d.items : []).filter(it => isObj(it) && idOk(it.id) && textoDeFora(it.name, 120)).map((it, i) => {
+    it = { ...it, name: textoDeFora(it.name, 120), qty: inteiroDeFora(it.qty, 1), price: inteiroDeFora(it.price) };
+    if (isObj(it.a)) it.a = Object.fromEntries(Object.entries(it.a).filter(([k, v]) => idOk(k) && Number(v) > 0).map(([k, v]) => [k, inteiroDeFora(v, 1)]));
     const a = it.a ? { ...it.a } : Object.fromEntries((it.assign || []).map(id => [id, 1]));
     const { assign, uneq, free, ...rest } = it;
-    const fq = Math.min(it.qty || 1, it.fq ?? (free ? (it.qty || 1) : 0));
+    const fq = Math.min(it.qty, inteiroDeFora(it.fq ?? (free ? it.qty : 0)));
     return { o: i, ...rest, fq, mode: it.mode || (uneq ? 'parts' : 'equal'), lk: it.lk ?? Object.keys(a).length > 0, a };
   });
   return d;
@@ -177,9 +185,11 @@ function compute(d) {
   const consumo = consumoBruto - discount;
   const s = d.service;
   const nominalTotal = !s.enabled ? 0 : (s.mode === 'fixed' ? s.fixed : Math.round(consumo * s.pct / 100));
-  allocate(nominalTotal, ids.map(id => per[id].subtotal)).forEach((v, i) => per[ids[i]].serviceNominal = v);
+  // serviço em valor fixo sem consumo cobrado (tudo cortesia, por exemplo): não há proporção, então a divisão é em partes iguais
+  const pesos = L => { const w = L.map(id => per[id].subtotal); return w.some(x => x > 0) ? w : w.map(() => 1); };
+  allocate(nominalTotal, pesos(ids)).forEach((v, i) => per[ids[i]].serviceNominal = v);
   const payers = ids.filter(id => per[id].person.payService);
-  if (s.policy === 'redistribute') allocate(nominalTotal, payers.map(id => per[id].subtotal)).forEach((v, i) => per[payers[i]].service = v);
+  if (s.policy === 'redistribute') allocate(nominalTotal, pesos(payers)).forEach((v, i) => per[payers[i]].service = v);
   else payers.forEach(id => per[id].service = per[id].serviceNominal);
   if (d.couvert.enabled) ids.forEach(id => { if (per[id].person.payCouvert) per[id].couvert = d.couvert.mode === 'pct' ? Math.round(per[id].subtotal * (d.couvert.pct || 0) / 100) : d.couvert.value; });
   ids.forEach(id => { const r = per[id]; r.total = r.subtotal + r.service + r.couvert; });
@@ -222,35 +232,30 @@ function compute(d) {
   // cada responsável deve uma parte igual do total do seu cupom
   const share = {}; ids.forEach(id => share[id] = 0);
   units.forEach(u => { const sh = allocate(u.total, u.payers.map(() => 1)); u.shares = {}; u.payers.forEach((pid, i) => { share[pid] += sh[i]; u.shares[pid] = sh[i]; }); });
-  // quem vai pagar o local: valores personalizados primeiro; o restante fica com quem paga a conta
-  // ("Uma pessoa paga") ou é dividido entre os demais na proporção da parte de cada um ("Cada um paga o seu")
-  const single = d.payMode === 'single' && per[d.payer] ? d.payer : '';
+  // quem vai pagar o local: valores personalizados primeiro; o restante é dividido entre os demais na proporção da parte de cada um
   // quem está num cupom compartilhado sem pagar não tem valor próprio (vale também para dados antigos ou de outro aparelho)
   const nonPay = new Set(groups.flatMap(g => g.members.filter(m => !g.payers.includes(m))));
   const custom = {};
-  Object.entries(d.custom || {}).forEach(([k, v]) => { if (per[k] && k !== single && !nonPay.has(k)) custom[k] = Math.max(0, Math.round(v) || 0); });
+  Object.entries(d.custom || {}).forEach(([k, v]) => { if (per[k] && !nonPay.has(k)) custom[k] = Math.max(0, Math.round(v) || 0); });
   const paidBy = {}, coverOf = {}; ids.forEach(id => paidBy[id] = custom[id] || 0);
   const rest = total - Object.values(custom).reduce((a, b) => a + b, 0);
   if (rest > 0) {
-    if (single) paidBy[single] = rest;
-    else if (d.payMode !== 'single') {
-      const free = ids.filter(id => !(id in custom) && share[id] > 0);
-      // quem paga menos que a sua parte pode escolher quem cobre a diferença (e fica devendo a essa pessoa)
-      let left = rest;
-      // quem paga outro valor pode escolher com quem fica a diferença: quem cobre o que faltou (paga a mais ao local)
-      // ou quem devolve o que sobrou (paga a menos ao local). Sem escolha, os outros dividem.
-      Object.entries(d.cover || {}).forEach(([x, y]) => {
-        const gap = (x in custom) ? share[x] - custom[x] : 0;
-        if (!gap || !free.includes(y) || x === y || unitOf[x] === unitOf[y]) return;
-        if (gap > 0 ? gap <= left : share[y] + gap >= 0) { coverOf[x] = y; paidBy[y] += gap; left -= gap; }
-      });
-      // quem já pagou fica com a sua parte: a diferença dos outros é dividida só entre quem ainda vai pagar
-      const jaPagou = id => !!(d.pagos && d.pagos[id]), ja = free.filter(jaPagou), aindaNao = free.filter(id => !jaPagou(id));
-      if (ja.length && aindaNao.length) {
-        ja.forEach(id => { paidBy[id] += share[id]; left -= share[id]; });
-        const al = allocate(Math.max(0, left), aindaNao.map(id => share[id])); aindaNao.forEach((id, i) => paidBy[id] += al[i]);
-      } else { const al = allocate(left, free.map(id => share[id])); free.forEach((id, i) => paidBy[id] += al[i]); }
-    }
+    const free = ids.filter(id => !(id in custom) && share[id] > 0);
+    // quem paga menos que a sua parte pode escolher quem cobre a diferença (e fica devendo a essa pessoa)
+    let left = rest;
+    // quem paga outro valor pode escolher com quem fica a diferença: quem cobre o que faltou (paga a mais ao local)
+    // ou quem devolve o que sobrou (paga a menos ao local). Sem escolha, os outros dividem.
+    Object.entries(d.cover || {}).forEach(([x, y]) => {
+      const gap = (x in custom) ? share[x] - custom[x] : 0;
+      if (!gap || !free.includes(y) || x === y || unitOf[x] === unitOf[y]) return;
+      if (gap > 0 ? gap <= left : share[y] + gap >= 0) { coverOf[x] = y; paidBy[y] += gap; left -= gap; }
+    });
+    // quem já pagou fica com a sua parte: a diferença dos outros é dividida só entre quem ainda vai pagar
+    const jaPagou = id => !!(d.pagos && d.pagos[id]), ja = free.filter(jaPagou), aindaNao = free.filter(id => !jaPagou(id));
+    if (ja.length && aindaNao.length) {
+      ja.forEach(id => { paidBy[id] += share[id]; left -= share[id]; });
+      const al = allocate(Math.max(0, left), aindaNao.map(id => share[id])); aindaNao.forEach((id, i) => paidBy[id] += al[i]);
+    } else { const al = allocate(left, free.map(id => share[id])); free.forEach((id, i) => paidBy[id] += al[i]); }
   }
   const paidSum = ids.reduce((a, id) => a + paidBy[id], 0);
   const bal = {}; ids.forEach(id => { bal[id] = paidBy[id] - share[id]; per[id].paid = paidBy[id]; per[id].share = share[id]; per[id].balance = bal[id]; per[id].custom = id in custom; per[id].cover = coverOf[id] || ''; });
@@ -272,40 +277,7 @@ function compute(d) {
   }
   const payDiff = paidSum - total;
   units.forEach(u => { u.paid = u.members.reduce((a, m) => a + paidBy[m], 0); });
-  return { per, ids, units, U, unitOf, groups, payMode: d.payMode, payer: single, itemsGross, consumoBruto, discount, consumo, nominalTotal, service, couvert, total, unassigned, incomplete, openItems, freeCount: d.items.filter(i => i.fq > 0).length, freeValue, discountAfter: after, skipped, skippedValue, payers, transfers, coverOf, paidSum, payDiff, missingPayer: d.payMode === 'single' && !single };
-}
-
-/* ---------- formato compartilhado da mesa ao vivo ---------- */
-function toShared(d) {
-  const people = {}; d.people.forEach((p, i) => people[p.id] = { name: p.name, payService: !!p.payService, payCouvert: !!p.payCouvert, o: p.o ?? i });
-  const items = {}; d.items.forEach((it, i) => items[it.id] = { name: it.name, qty: it.qty, price: it.price, fq: it.fq || 0, mode: it.mode || 'equal', lk: !!it.lk, auto: !!it.auto, a: { ...it.a }, o: it.o ?? i });
-  return { place: d.place || '', createdAt: d.createdAt, people, items, service: { ...d.service }, couvert: { ...d.couvert },
-    discount: { ...d.discount }, payMode: d.payMode, payer: d.payer || '', custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) }, groups: clone(d.groups || []) };
-}
-function fromShared(s, base) {
-  const b = blankDraft();
-  const people = Object.entries(s.people || {}).filter(([, p]) => isObj(p) && !p._del && p.name)
-    .map(([id, p]) => ({ id, name: p.name, payService: p.payService !== false, payCouvert: p.payCouvert !== false, o: p.o || 0 })).sort((x, y) => x.o - y.o);
-  const pids = new Set(people.map(p => p.id));
-  const items = Object.entries(s.items || {}).filter(([, it]) => isObj(it) && !it._del && it.name)
-    .map(([id, it]) => ({ id, name: it.name, qty: it.qty || 1, price: it.price || 0, fq: Math.min(it.qty || 1, it.fq ?? (it.free ? (it.qty || 1) : 0)), mode: it.mode || (it.uneq ? 'parts' : 'equal'), lk: !!it.lk, auto: !!it.auto, o: it.o || 0,
-      a: Object.fromEntries(Object.entries(it.a || {}).filter(([k, v]) => v > 0 && pids.has(k))) })).sort((x, y) => x.o - y.o);
-  return { ...base, place: s.place || '', createdAt: s.createdAt || base.createdAt, people, items,
-    service: { ...b.service, ...(s.service || {}) }, couvert: { ...b.couvert, ...(s.couvert || {}) },
-    discount: { ...b.discount, ...(s.discount || {}) },
-    payMode: s.payMode === 'single' ? 'single' : 'none', payer: s.payer || '', custom: Object.fromEntries(Object.entries(s.custom || {}).filter(([k, v]) => typeof v === 'number' && v >= 0 && pids.has(k))),
-    cover: Object.fromEntries(Object.entries(s.cover || {}).filter(([k, v]) => pids.has(k) && pids.has(v))),
-    groups: Array.isArray(s.groups) ? s.groups : Object.values(s.groups || {}) };
-}
-// patch mínimo: só as folhas que mudaram, para várias pessoas editarem ao mesmo tempo sem se sobrescrever
-function diff(a, b) {
-  if (isObj(a) && isObj(b)) {
-    const p = {}; let any = false;
-    for (const k of Object.keys(b)) { const x = diff(a[k], b[k]); if (x !== undefined) { p[k] = x; any = true; } }
-    for (const k of Object.keys(a)) if (!(k in b)) { p[k] = isObj(a[k]) ? { _del: true } : null; any = true; }
-    return any ? p : undefined;
-  }
-  return JSON.stringify(a) === JSON.stringify(b) ? undefined : (b === undefined ? null : b);
+  return { per, ids, units, U, unitOf, groups, itemsGross, consumoBruto, discount, consumo, nominalTotal, service, couvert, total, unassigned, incomplete, openItems, freeCount: d.items.filter(i => i.fq > 0).length, freeValue, discountAfter: after, skipped, skippedValue, payers, transfers, coverOf, paidSum, payDiff };
 }
 
 /* ---------- armazenamento ---------- */
@@ -315,213 +287,13 @@ const LS = {
   get(k, def) { try { const v = localStorage.getItem('contafacil.' + k); return v ? JSON.parse(v) : def; } catch { return def; } },
   set(k, v) { if (semSalvar) return; try { localStorage.setItem('contafacil.' + k, JSON.stringify(v)); } catch {} if (k === 'bills' || k === 'catalog') syncTocou(); },
 };
-// histórico, cadastros e comanda ficam neste aparelho; o Firebase só guarda as comandas ao vivo.
+// histórico, cadastros e comanda ficam neste aparelho.
 // Com a sincronização ligada (Ajustes), histórico e cadastros também vão, criptografados, para um gist secreto do usuário.
-const LIVE_PRAZO_DIAS = 30; // comandas ao vivo nunca encerradas vencem 30 dias depois de criadas; a limpeza mensal apaga as vencidas
 const store = {
-  mode: 'local', db: null, ready: false, chain: Promise.resolve(),
-  queue(fn, onErr) { this.chain = this.chain.then(fn).catch(e => (onErr || (x => console.warn('db', x)))(e)); return this.chain; },
-  async init() {
-    try {
-      const m = await import('./fb.js');
-      this.db = await m.connect();
-    } catch (e) { console.warn('firebase', e); this.db = null; }
-    this.ready = true;
-    renderSync(); render({ preserve: true });
-    live.boot();
-  },
   saveCatalog() { LS.set('catalog', catalog); },
   saveBill() { LS.set('bills', bills); },
   deleteBill() { LS.set('bills', bills); },
 };
-
-/* ---------- mesa ao vivo ---------- */
-// cada aparelho tem um id fixo; "quem é você" vem da escolha feita no cartão da comanda ao vivo
-const DEVICE = (() => { let id = LS.get('device', ''); if (!id) { id = newId() + newId(); LS.set('device', id); } return id; })();
-const BEAT_MS = 60000, STALE_MS = 150000;
-const isStandalone = () => { try { return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches; } catch { return false; } };
-const live = {
-  unsub: null, last: null, readOnly: false, closed: false, connecting: false, online: {}, beatTimer: null, tickTimer: null,
-  ref(code) { return store.db.doc('mesas/' + code); },
-  /* prazo de guarda (política de privacidade): ao encerrar, o anfitrião apaga a comanda do Firebase na hora.
-     expiraEm (30 dias depois de criada) é a rede de segurança para comandas nunca encerradas: a limpeza mensal no
-     console apaga as vencidas (comum/regras-firestore-feedback.txt). Vai numa gravação à parte: se a regra do banco ainda não aceitar
-     o campo, a comanda continua funcionando normalmente. */
-  carimbarPrazo(code) {
-    const expiraEm = new Date(Date.now() + LIVE_PRAZO_DIAS * 864e5);
-    store.queue(() => this.ref(code).update({ expiraEm }), e => console.warn('prazo da comanda ao vivo', e && e.code));
-  },
-  link() { return APP_URL + '#m' + draft.live.code; },
-  available() { return !!store.db; },
-  async boot() {
-    const m = /^#m([a-z0-9]{6,16})$/.exec(location.hash || '');
-    if (m && store.db) {
-      const code = m[1];
-      if (draft.live?.code === code) return this.subscribe();
-      if (isTouch && !isStandalone() && !this.browserOk) return openInAppSheet(code);
-      try {
-        const snap = await this.ref(code).get();
-        if (!snap.exists) { KitFacil.avisar('Essa comanda ao vivo não foi encontrada.'); return draft.live && this.subscribe(); }
-        const data = snap.data();
-        if (data.closed) { KitFacil.avisar('Essa comanda ao vivo já foi encerrada.'); return draft.live && this.subscribe(); }
-        const join = () => { this.stop(); draft = fromShared(data, { ...blankDraft(), active: true, live: { code, host: false } }); this.last = toShared(draft); tab = 'comanda'; saveDraft(); render(); this.subscribe(); KitFacil.avisar('Você entrou na comanda ao vivo.'); };
-        draft.live ? join() : confirmReplace(join);
-      } catch (e) { console.warn(e); KitFacil.avisar('Não foi possível abrir a comanda ao vivo.'); }
-    } else if (draft.live && store.db) this.subscribe();
-  },
-  async start() {
-    if (!store.db) { KitFacil.avisar('A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.'); return; }
-    const code = Array.from({ length: 10 }, () => 'abcdefghjkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 31)]).join('');
-    if (draft.isExample) { KitFacil.avisar('No exemplo, a comanda ao vivo fica desligada.'); return; }
-    draft.live = { code, host: true };
-    // hostUid: só o aparelho que criou a comanda pode apagá-la (regra do Firestore)
-    const body = { ...toShared(draft), closed: false, v: 1, ...(store.db.uid ? { hostUid: store.db.uid } : {}) };
-    try {
-      await this.ref(code).set(body);
-      this.carimbarPrazo(code);
-      this.last = toShared(draft);
-      saveDraft(); render(); this.subscribe(); window.scrollTo({ top: 0 });
-      inviteSheet(); jogoMarcar('aoVivo');
-    } catch (e) { console.warn(e); draft.live = null; render(); KitFacil.avisar('Não foi possível criar a comanda ao vivo agora. Tente de novo em instantes.'); }
-  },
-  async subscribe() {
-    if (!draft.live || !store.db || this.unsub) return;
-    const code = draft.live.code;
-    this.closed = false;
-    this.unsub = this.ref(code).onSnapshot(snap => {
-      if (!draft.live || draft.live.code !== code) return;
-      if (!snap.exists) { this.closed = true; render({ preserve: true }); return; }
-      const data = snap.data();
-      const wasClosed = this.closed;
-      this.closed = !!data.closed;
-      this.online = isObj(data.online) ? { ...data.online } : {};
-      const next = fromShared(data, draft);
-      const nextShared = toShared(next);
-      if (JSON.stringify(nextShared) === JSON.stringify(toShared(draft)) && this.last) { this.last = nextShared; if (wasClosed !== this.closed) render({ preserve: true }); else paintPresence(); return; }
-      draft = next; this.last = nextShared; saveDraft(); render({ preserve: true });
-    }, err => { console.warn('live', err); this.unsub = null; KitFacil.avisar('A conexão com a comanda ao vivo caiu. Toque em Reconectar.'); render({ preserve: true }); });
-    this.startBeats();
-    render({ preserve: true });
-  },
-  push() {
-    if (!draft.live || !store.db || this.closed) return;
-    const now = toShared(draft);
-    const patch = this.last ? diff(this.last, now) : now;
-    this.last = now;
-    if (!patch) return;
-    const code = draft.live.code;
-    store.queue(() => this.ref(code).update(patch), e => {
-      console.warn('live write', e);
-      if (e && e.code === 'permission-denied') KitFacil.avisar('Esta comanda ao vivo não aceita mais alterações.');
-      else KitFacil.avisar('Não deu para enviar a alteração. Ela será reenviada na próxima mudança.');
-      this.last = null;
-    });
-  },
-  stop() { this.offline(); clearInterval(this.beatTimer); clearInterval(this.tickTimer); this.beatTimer = this.tickTimer = null; if (this.unsub) { try { this.unsub(); } catch {} } this.unsub = null; this.online = {}; },
-  // presença: um sinal por minuto enquanto o app está aberto na tela; sai na hora ao fechar ou bloquear o celular
-  me() { return draft.live ? LS.get('me.' + draft.live.code, '') : ''; },
-  beat() {
-    if (!draft.live || !store.db || this.closed || document.visibilityState === 'hidden') return;
-    const code = draft.live.code, entry = { p: this.me() || '', at: Date.now() };
-    this.online[DEVICE] = entry;
-    store.queue(() => this.ref(code).update({ online: { [DEVICE]: entry } }), e => console.warn('presença', e));
-  },
-  offline() {
-    if (!draft.live || !store.db || !this.unsub) return;
-    const code = draft.live.code; delete this.online[DEVICE];
-    try { this.ref(code).update({ online: { [DEVICE]: null } }).catch(() => {}); } catch {}
-  },
-  startBeats() {
-    clearInterval(this.beatTimer); clearInterval(this.tickTimer);
-    this.beat();
-    this.beatTimer = setInterval(() => this.beat(), BEAT_MS);
-    this.tickTimer = setInterval(() => paintPresence(), 30000);
-  },
-  people() {
-    // quem está online agora: um por aparelho; aparelhos sem nome escolhido contam como "sem nome"
-    const now = Date.now(), seen = new Set(), named = [], devices = [];
-    let anon = 0;
-    Object.entries(this.online || {}).forEach(([dev, x]) => {
-      if (!x || typeof x.at !== 'number' || now - x.at > STALE_MS) return;
-      devices.push(dev);
-      const p = x.p && draft.people.find(q => q.id === x.p);
-      if (p) { if (!seen.has(p.id)) { seen.add(p.id); named.push({ ...p, you: dev === DEVICE }); } else if (dev === DEVICE) named.find(n => n.id === p.id).you = true; }
-      else anon++;
-    });
-    return { count: devices.length, named, anon, youAnon: devices.includes(DEVICE) && !(this.online[DEVICE] && draft.people.some(q => q.id === this.online[DEVICE].p)) };
-  },
-  async end() {
-    const code = draft.live?.code; const host = draft.live?.host;
-    this.stop();
-    if (code && host && store.db && !this.closed) {
-      // encerra para quem está na mesa e apaga do Firebase; se a regra ainda não deixar apagar, fica só encerrada
-      store.queue(() => this.ref(code).update({ closed: true }));
-      store.queue(() => this.ref(code).delete(), e => console.warn('apagar a comanda ao vivo', e && e.code));
-    }
-    draft.live = null; this.last = null; this.closed = false; this.readOnly = false; liveWho = false;
-    try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch {}
-    commit();
-  },
-};
-
-// código em dois blocos de cinco, mais fácil de ler em voz alta na mesa
-const codeHTML = code => `<b class="code-val" aria-label="${esc(code.split('').join(' '))}">${code.length === 10 ? `<span>${esc(code.slice(0, 5))}</span><span>${esc(code.slice(5))}</span>` : `<span>${esc(code)}</span>`}</b>`;
-const codeShort = code => code.length === 10 ? code.slice(0, 5) + ' ' + code.slice(5) : code;
-// no iPhone, um link sempre abre no Safari, nunca no app da tela de início: a ponte é o código
-function openInAppSheet(code) {
-  openSheet({ title: 'Comanda ao vivo', body: `<p class="hint" style="font-size:15px">Tem o Conta Fácil na tela de início? Copie o código, abra o app e cole em <b>Comanda ao vivo</b>, na tela inicial.</p>
-    <div class="code-box"><span class="eyebrow">Código</span>${codeHTML(code)}</div>
-    <details class="oa-install" data-kf-secao><summary>Ainda não tenho o app</summary><p class="hint">Toque em <b>Compartilhar</b> no Safari e em <b>Adicionar à Tela de Início</b>. Depois, abra o app pelo ícone e entre com o código.</p></details>`,
-    foot: `<button class="btn ghost" id="oa-here">Continuar no navegador</button><button class="btn" id="oa-copy">${I.copy}Copiar código</button>`, onMount: s => {
-    $('#oa-copy', s).onclick = () => copyText(code, 'Código copiado. Agora abra o app.');
-    $('#oa-here', s).onclick = () => { closeSheet(true); live.browserOk = true; live.boot(); };
-  } });
-}
-// convite: QR code para quem está na mesa, link e código para mandar no grupo
-function inviteText() {
-  return `Comanda ao vivo${draft.place ? ' em ' + draft.place : ''} no Conta Fácil.\nCódigo: ${codeShort(draft.live.code)}\nNo app, cole o código em Comanda ao vivo, na tela inicial. Sem o app, abra o link:`;
-}
-function inviteSheet() {
-  if (!draft.live || draft.isExample) return;
-  const code = draft.live.code, link = live.link();
-  openSheet({ title: 'Convidar a turma', sub: draft.place || '', body: `<div class="qr-wrap sm"><canvas id="iv-qr" width="400" height="400" aria-label="QR code do convite"></canvas><span class="hint" id="iv-qr-msg">Gerando QR code…</span></div>
-    <div class="code-box"><span class="eyebrow">Código</span>${codeHTML(code)}</div>
-    ${navigator.share ? `<button class="btn mustard" id="iv-share">${I.share}Enviar convite</button>` : ''}
-    <div class="btn-row"><button class="btn ghost" id="iv-link">${I.copy}Copiar link</button><button class="btn ghost" id="iv-code">${I.copy}Copiar código</button></div>`, onMount: async s => {
-    $('#iv-link', s).onclick = () => copyText(link, 'Link copiado.');
-    $('#iv-code', s).onclick = () => copyText(code, 'Código copiado.');
-    $('#iv-share', s)?.addEventListener('click', async () => {
-      const text = inviteText();
-      try { await navigator.share({ title: 'Conta Fácil', text, url: link }); } catch (e) { if (e && e.name !== 'AbortError') copyText(text + '\n' + link, 'Convite copiado.'); }
-    });
-    try { const m = await qrMatrix(link); const cv = $('#iv-qr'); if (cv) { drawQR(cv.getContext('2d'), m, 0, 0, 400); $('#iv-qr-msg').hidden = true; } }
-    catch { const msg = $('#iv-qr-msg'); if (msg) msg.textContent = 'Não deu para gerar o QR code agora.'; const cv = $('#iv-qr'); if (cv) cv.hidden = true; }
-  } });
-}
-// quem está online, atualizado sem redesenhar a tela
-const joinNames = a => a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1];
-function presenceHTML() {
-  if (!draft.live || !live.unsub || live.closed) return '';
-  const { named, anon, youAnon } = live.people();
-  const total = named.length + anon;
-  if (!total) return '';
-  const first = n => esc(n.name.split(' ')[0]);
-  const you = named.find(n => n.you), others = named.filter(n => !n.you), meIn = !!(you || youAnon);
-  const otherAnon = anon - (youAnon ? 1 : 0);
-  const shown = [...(you ? [you] : []), ...others].slice(0, 4);
-  const extra = total - shown.length;
-  const avs = shown.map(n => avatar(n.name)).join('') + (extra > 0 ? `<span class="avatar lp-more">${!shown.length && extra === 1 ? '?' : '+' + extra}</span>` : '');
-  const names = [...(meIn ? ['você'] : []), ...others.map(first)];
-  if (otherAnon > 0) names.push(otherAnon === 1 ? '1 sem nome' : otherAnon + ' sem nome');
-  const title = total === 1 && meIn ? 'Só você por enquanto' : plural(total, 'pessoa conectada', 'pessoas conectadas');
-  const sub = total === 1 && meIn ? '' : cap(joinNames(names));
-  return `<span class="lp-avs">${avs}</span><span class="lp-on-txt"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>`;
-}
-function paintPresence() {
-  const a = $('#live-online'); if (a) a.innerHTML = presenceHTML();
-}
-document.addEventListener('visibilitychange', () => { if (!draft.live || !live.unsub) return; if (document.visibilityState === 'hidden') live.offline(); else live.beat(); });
-window.addEventListener('pagehide', () => live.offline());
 
 /* ---------- estado ---------- */
 function exampleDraft() {
@@ -548,7 +320,6 @@ let draft = loadRealDraft();
 const saveDraft = () => { if (!draft.isExample) LS.set('draft', draft); };
 function enterExample(semGuia = false) {
   semGuia = semGuia === true;
-  if (draft.live) { KitFacil.avisar('Saia da comanda ao vivo antes de abrir o exemplo.'); return; }
   pending = {}; draft = exampleDraft(); tab = 'comanda'; render(); window.scrollTo({ top: 0 });
   // 0.3.0: o exemplo não abre mais o guia sozinho; o guia em vídeo tem a própria demonstração
 }
@@ -563,14 +334,14 @@ let tab = /^#m[a-z0-9]{6,16}$/.test(location.hash || '') ? 'comanda' : 'inicio';
 
 /* ---------- sincronização entre aparelhos (Kit Fácil) ---------- */
 // Vão para a nuvem o histórico (comandas salvas) e os cadastros (pessoas, chaves Pix, produtos e preços por local).
-// A comanda aberta fica neste aparelho: para usar a mesma comanda em vários celulares, existe a comanda ao vivo.
+// A comanda aberta fica só neste aparelho.
 // Cada registro guarda a hora da última mudança; ao juntar aparelhos, a mudança mais recente vence.
 let SY = null, SNAP_SYNC = null, syncAplicando = false;
 const chaveBill = b => 'b:' + b.id, chavePessoa = p => 'p:' + norm(p.name), chaveProduto = p => 'r:' + norm(p.name), chaveTurma = g => 'g:' + g.id;
 const ordemBills = (a, b) => (b.closedAt || 0) - (a.closedAt || 0) || String(a.id).localeCompare(String(b.id));
 const ordemNome = (a, b) => norm(a.name).localeCompare(norm(b.name), 'pt-BR');
 // a comanda salva vai sempre no mesmo formato (o mesmo que saveBill grava), para os aparelhos compararem igual
-const billSync = b => { const m = migrate(b); delete m.live; delete m.isExample; return m; };
+const billSync = b => { const m = migrate(b); delete m.isExample; return m; };
 function registrosSync() {
   const m = new Map();
   bills.forEach(b => m.set(chaveBill(b), JSON.stringify(b)));
@@ -656,6 +427,11 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.13.0', itens: [
+    'A comanda ao vivo saiu do app: a comanda fica só neste aparelho, e o cupom de cada pessoa continua indo em PDF e Pix',
+    'Mais segurança: o que vem da cópia de segurança e da sincronização é conferido antes de entrar no app',
+    'Serviço em valor fixo numa mesa só de cortesias agora é dividido em partes iguais',
+  ] },
   { versao: '1.12.6', itens: [
     'Animação nova no botão "Fechar comanda": ele pulsa quando a comanda está pronta para fechar',
     '"Salvar no histórico" pulsa do mesmo jeito quando tudo foi recebido',
@@ -853,14 +629,13 @@ KitFacil.iniciar({
   copia: { descricao: 'Baixe um arquivo com o histórico e os cadastros (e a comanda aberta, se houver).', baixar: () => baixarCopiaConta(), restaurar: f => restaurarCopiaConta(f) },
   privacidade: [
     'As comandas, o histórico, os cadastros (nomes, chaves Pix e preços por local) e as tampinhas ficam guardados neste aparelho.',
-    'Comanda ao vivo (opcional): o local, os nomes, os pedidos e os valores da comanda vão para o Firebase (Google), para todos da mesa verem as mudanças na hora. Esses dados são apagados do Firebase assim que o anfitrião encerra a comanda; se ela nunca for encerrada, saem na limpeza mensal, depois de 30 dias. Quem tem o código ou o link entra na comanda: compartilhe só com quem está na mesa.',
   ],
 });
 KitFacil.tema.iniciar({ chave: 'contafacil.pref', cores: { claro: '#E8EEE7', escuro: '#0B1510' } });
 SY = KitFacil.sync.criar({
   app: 'conta-facil', nome: 'Conta Fácil', chave: 'contafacil.sync',
   dados: 'o histórico de comandas e os cadastros (pessoas, chaves Pix e preços)',
-  observacao: 'A comanda aberta fica neste aparelho. Para dividir a mesma comanda entre celulares, use a comanda ao vivo.',
+  observacao: 'A comanda aberta fica só neste aparelho.',
   carimbar: () => comReais(carimbarSync), aplicar: R => comReais(() => aplicarSync(R)), pacote: () => comReais(() => pacoteSync(false)),
   mesmo: (a, r) => KitFacil.canon(a) === KitFacil.canon({ v: r.v, bills: r.bills, people: r.people, products: r.products, me: r.me ?? '', st: r.st, del: r.del }),
   redesenhar: () => render({ preserve: true }),
@@ -870,9 +645,7 @@ SY = KitFacil.sync.criar({
 SNAP_SYNC = registrosSync();
 
 function commit(opts = {}) {
-  if (draft.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); if (live.last) draft = fromShared(live.last, draft); render(); return; }
   saveDraft();
-  if (draft.live) live.push();
   render(opts);
 }
 
@@ -952,7 +725,7 @@ function lineDetail(l) {
 // o que cada pessoa vai fazer: pagar ao local, passar a diferença para alguém ou receber
 function planOf(c, pid) {
   const p = c.per[pid], name = id => c.per[id].person.name, L = [];
-  if (p.paid > 0) L.push({ k: 'place', v: p.paid, t: c.payer === pid ? `paga a conta: ${BRL(p.paid)}` : `paga ${BRL(p.paid)} ao local` });
+  if (p.paid > 0) L.push({ k: 'place', v: p.paid, t: `paga ${BRL(p.paid)} ao local` });
   c.transfers.filter(t => t.from === pid).forEach(t => L.push({ k: 'out', v: t.value, to: t.to, t: `paga ${BRL(t.value)} para ${name(t.to)}` }));
   c.transfers.filter(t => t.to === pid).forEach(t => L.push({ k: 'in', v: t.value, from: t.from, t: `recebe ${BRL(t.value)} de ${name(t.from)}` }));
   return L;
@@ -965,14 +738,14 @@ function payRows(r, c) {
   const debts = pixDebts(c).filter(x => x.unit === r.id);
   const rows = [];
   u.members.forEach(pid => planOf(c, pid).forEach(x => {
-    const what = x.k === 'place' ? (c.payer === pid ? 'paga a conta' : 'paga ao local') : x.k === 'out' ? 'paga para ' + name(x.to) : 'recebe de ' + name(x.from);
+    const what = x.k === 'place' ? 'paga ao local' : x.k === 'out' ? 'paga para ' + name(x.to) : 'recebe de ' + name(x.from);
     rows.push({ t: 'pair', left: multi ? first(pid) + ' ' + what : cap(what), right: BRL(x.v), tone: x.k === 'in' ? 'in' : '' });
     const k = x.k === 'out' && pixOf(name(x.to));
     if (k) rows.push({ t: 'detail', text: 'Pix: ' + pixBonita(k), qr: debts.length === 1 ? debts.find(z => z.pid === pid && z.toName === name(x.to)) : null });
   }));
   // quem só paga o próprio total ao local não precisa da seção: o TOTAL já diz tudo
   const plan = !multi && planOf(c, u.members[0]);
-  if (plan && plan.length === 1 && plan[0].k === 'place' && c.payer !== u.members[0] && plan[0].v === r.total) return [];
+  if (plan && plan.length === 1 && plan[0].k === 'place' && plan[0].v === r.total) return [];
   return rows;
 }
 // chave Pix guardada no cadastro da pessoa
@@ -1145,37 +918,6 @@ function anchorKey(el) {
 }
 function renderSync() { KitFacil.topo.atualizar(); }
 /* ---------- aba Comanda ---------- */
-let liveWho = false; // lista "Quem é você?" aberta depois de já ter escolhido
-function liveCardHTML() {
-  if (!draft.live) {
-    if (!store.db && !draft.isExample) return '';
-    return `<div class="card ex-card" id="live-offer">
-      <div class="ex-head"><span class="ex-icon lo-icon">${I.live}</span><span><b>Comanda ao vivo</b></span></div>
-      <button class="btn small" id="live-start">${I.share}Compartilhar com a turma</button></div>`;
-  }
-  const me = live.me(), mePerson = draft.people.find(p => p.id === me);
-  const connected = !!live.unsub, closed = live.closed, host = draft.live.host && !closed;
-  const st = closed ? ['warn', 'Encerrada'] : connected ? ['on', 'Ao vivo'] : !store.ready ? ['', 'Conectando…'] : ['warn', 'Sem conexão'];
-  let who = '';
-  if (!closed && draft.people.length) {
-    who = mePerson && !liveWho
-      ? `<div class="lp-me">${avatar(mePerson.name)}<span>Você é <b>${esc(mePerson.name)}</b></span><button class="lp-link" id="live-who">Trocar</button></div>`
-      : `<div class="lp-who"><span class="lp-label">Quem é você?</span>
-        <div class="ck-list">${draft.people.map(p => ckRow(`data-me="${p.id}"`, p.name, me === p.id)).join('')}</div></div>`;
-  }
-  const main = closed ? '' : connected ? `<button class="btn mustard" id="live-invite">${I.share}Convidar</button>`
-    : store.ready ? `<button class="btn mustard" id="live-reconnect">${I.refresh}Reconectar</button>` : '';
-  return `<section class="live-panel" id="live-card" data-kf-morf="live-card" aria-label="Comanda ao vivo">
-    <div class="lp-head">
-      <span class="lp-status ${st[0]}"><span class="lp-dot" aria-hidden="true"></span>${st[1]}</span>
-      ${closed ? '' : `<button class="lp-code" id="live-code" aria-label="Código ${esc(draft.live.code.split('').join(' '))}. Mostrar convite">${esc(codeShort(draft.live.code))}${I.qr}</button>`}
-    </div>
-    ${closed ? '<p class="lp-msg">Quem criou encerrou a comanda ao vivo. Os dados continuam aqui para vocês fecharem a conta.</p>' : `<div class="lp-online" id="live-online">${presenceHTML()}</div>`}
-    ${who}
-    <div class="lp-actions ${main ? '' : 'one'}">${main}<button class="btn lp-ghost" id="live-end">${host ? 'Encerrar' : 'Sair'}</button></div>
-  </section>`;
-}
-
 /* ---------- uso derivado do histórico (contagens sempre batem com as contas salvas) ---------- */
 const placeKey = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
 function usage() {
@@ -1471,12 +1213,11 @@ function deleteCurrent(ask) {
   const inHistory = bills.some(b => b.id === d.id);
   const go = () => {
     closeSheet(); pending = {};
-    if (draft.live) live.end();
     const backup = { draft: clone(draft), bill: bills.find(b => b.id === d.id) || null };
     if (backup.bill) { bills = bills.filter(b => b.id !== d.id); store.deleteBill(d.id); }
     draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 });
     KitFacil.avisar('Comanda excluída.', { label: 'Desfazer', run: () => {
-      draft = migrate(backup.draft); draft.active = true; draft.live = null;
+      draft = migrate(backup.draft); draft.active = true;
       if (backup.bill) { bills = [backup.bill, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(backup.bill); }
       tab = 'comanda'; saveDraft(); render(); window.scrollTo({ top: 0 });
     } });
@@ -1487,7 +1228,6 @@ function deleteCurrent(ask) {
 }
 function newBillAt(place, people) {
   const go = () => {
-    if (draft.live) live.end();
     pending = {};
     draft = blankDraft(); draft.place = place || ''; draft.active = true;
     if (people) draft.people = people.map(n => newPerson(n));
@@ -1642,7 +1382,7 @@ function itemPendenteHTML(it, d) {
   }
   return `<div class="item item-p" data-item="${it.id}">
     <div class="ip-cab"><span class="it-q">${it.qty}×</span><span class="it-nome"><span>${esc(it.name)}</span><span class="it-tipo">${brl(it.price)} cada · ${it.mode === 'units' ? 'individual' : 'compartilhado'}</span></span><span class="it-v">${brl(it.qty * it.price)}</span></div>
-    <span class="ip-selo">FALTA DIVIDIR</span>
+    <span class="ip-selo">SEM DIVISÃO</span>
     <div class="ip-corpo">${corpo}</div>
     <div class="ip-acoes"><button type="button" class="btn ip-ok" data-confirm ${ok ? '' : 'disabled'}>Confirmar divisão</button><button type="button" class="btn" data-rename aria-label="Alterar ${esc(it.name)}" title="Alterar">${I.edit}</button><button type="button" class="btn danger" data-del aria-label="Remover ${esc(it.name)}">${I.trash}</button></div>
   </div>`;
@@ -1726,7 +1466,7 @@ function removerPessoa(id) {
       if (!Object.keys(i.a).length) i.lk = false;
     });
     leaveGroup(d, id);
-    delete d.custom[id]; delete d.cover[id]; Object.keys(d.cover).forEach(k => { if (d.cover[k] === id) delete d.cover[k]; }); if (d.payer === id) d.payer = ''; commit();
+    delete d.custom[id]; delete d.cover[id]; Object.keys(d.cover).forEach(k => { if (d.cover[k] === id) delete d.cover[k]; }); commit();
   }, true);
 }
 function addPessoa(name) {
@@ -1849,7 +1589,7 @@ const algumPago = d => !!d.pagos && Object.keys(d.pagos).length > 0;
 const valorPago = (d, id, c) => { const x = d.pagos && d.pagos[id]; return !x ? 0 : x === true ? (c.per[id] ? c.per[id].total : 0) : (x.v || 0); };
 function fixarPagos(d, c) { if (d.pagos) for (const id in d.pagos) { if (!c.per[id]) delete d.pagos[id]; else if (d.pagos[id] === true) d.pagos[id] = { v: c.per[id].total, t: 0 }; } }
 // o que um cupom paga ao local: a parte dele, já com outro valor combinado (ou o total, quando uma pessoa paga a conta de todos)
-const devido = (u, c) => c.payer ? u.total : u.members.reduce((a, id) => a + (c.per[id] ? c.per[id].paid : 0), 0);
+const devido = (u, c) => u.members.reduce((a, id) => a + (c.per[id] ? c.per[id].paid : 0), 0);
 // situação de um cupom: aberto, pago, falta (pagou e a conta subiu), troco (pagou e a conta desceu) ou parte (só alguns do cupom pagaram)
 function contaPaga(d, u, c) {
   const marcados = u.members.filter(id => d.pagos && d.pagos[id]), dv = devido(u, c);
@@ -1862,9 +1602,9 @@ function marcarPago(d, ids, on, c = compute(d)) {
   ids.forEach(id => {
     const r = c.per[id];
     if (!on) { if (d.pagos[id] && d.pagos[id].fx) { if (d.custom) delete d.custom[id]; if (d.cover) delete d.cover[id]; } delete d.pagos[id]; if (d.saiu) delete d.saiu[id]; return; }
-    const v = r ? (c.payer ? r.total : r.paid) : 0;
+    const v = r ? r.paid : 0;
     // quem paga já dividindo a diferença de outra pessoa fica com esse valor fixo: o pagamento dele não muda sozinho depois
-    const fx = !!r && !c.payer && !r.custom && r.paid !== r.share && r.paid > 0;
+    const fx = !!r && !r.custom && r.paid !== r.share && r.paid > 0;
     if (fx) { d.custom = { ...(d.custom || {}), [id]: r.paid }; }
     d.pagos[id] = { v, t: Date.now(), ...(fx || (d.pagos[id] && d.pagos[id].fx) ? { fx: true } : {}) };
   });
@@ -2145,13 +1885,12 @@ function pixReceber(d, u, c) {
 function fecharComanda() {
   const d = draft, c = compute(d);
   if (d.fechada || corteRodando || !d.items.length || !d.people.length) return;
-  if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
   if (d.items.some(pendingDirty)) { KitFacil.avisar('Há itens com alterações não salvas. Salve ou descarte antes de fechar.'); return; }
   if (c.unassigned.length || c.incomplete.length || c.openItems.length) { KitFacil.avisar('Divida todos os itens antes de fechar a comanda.'); return; }
   closeSheet(true);
   // a comanda em uso pode ser trocada por outra igual enquanto a tela sobe (o guia faz isso): vale sempre a atual
   const virar = sem => {
-    const d = draft; d.fechada = Date.now(); if (d.payer || d.payMode !== 'none') pagaTodos(d, '');
+    const d = draft; d.fechada = Date.now();
     canAberto = ''; canValor = ''; barraDe = null; pesAberto = null; itemAberto = null; pesJuntando = false;
     commit({ anchor: false, semMovimento: sem }); window.scrollTo({ top: 0, behavior: 'instant' });
   };
@@ -2161,7 +1900,6 @@ function fecharComanda() {
 }
 function reabrirComanda() {
   const d = draft; if (!d.fechada || corteRodando) return;
-  if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
   const virar = sem => { const d = draft; d.fechada = null; canAberto = ''; canValor = ''; barraDe = null; commit({ anchor: false, semMovimento: sem }); window.scrollTo({ top: 0, behavior: 'instant' }); };
   if (corteDireto() || tab !== 'comanda' || !$('#view #cf')) return virar(false);
   corteRodando = true; const vez = ++corteVez;
@@ -2279,7 +2017,7 @@ function corteReabrir(virar) {
   an(art, [{ clipPath: rec(yIni), easing: MOVE.css }, { clipPath: rec(Math.max(yIni, yLin)), offset: tudo / total, easing: 'steps(1, jump-start)' }, { clipPath: rec(yFimLin), offset: tudo / total, easing: MOVE.css }, { clipPath: rec(R.art.b + 12) }], { duration: total, easing: 'linear', fill: 'backwards' });
   $$('#groups-card > .cu-tit, #groups-card > .dv-col', v).forEach(x => an(x, [{ opacity: 0 }, { opacity: 1 }], { duration: ms * .5, delay: 120 }));
   $$('.cu-ico .i', v).forEach(x => an(x, [{ opacity: 0 }, { opacity: getComputedStyle(x).opacity }], { duration: 260, delay: tudo * .5 }));
-  [...$$('#groups-card > #add-pessoa', v), ...[...art.querySelectorAll('.cm-corpo > *')].filter(x => x.id !== 'groups-card'), ...$$('.fim-acoes, #live-offer', v)].forEach((x, i) => an(x, [{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: fase2, delay: tudo - 40 + Math.min(i, 4) * 30 }));
+  [...$$('#groups-card > #add-pessoa', v), ...[...art.querySelectorAll('.cm-corpo > *')].filter(x => x.id !== 'groups-card'), ...$$('.fim-acoes', v)].forEach((x, i) => an(x, [{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: fase2, delay: tudo - 40 + Math.min(i, 4) * 30 }));
   // no quadro em que os canhotos encostam, eles saem de cena: por baixo, as linhas da comanda estão no mesmo lugar
   Promise.allSettled(fim.filter(Boolean).map(a => a.finished)).then(() => { fCans.forEach(f => f.remove()); });
   corteSoltar(corteVez, () => corteAoFim([], total));
@@ -2352,8 +2090,7 @@ function fechadaHTML(d, c) {
   const aviso = c.payDiff < 0 ? `<div class="status warn" data-kf-exp="cf-aviso">${I.warn}<span>Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga valor diferente.</span></div>` : c.payDiff > 0 ? `<div class="status warn" data-kf-exp="cf-aviso">${I.warn}<span>Os valores escolhidos passam ${BRL(c.payDiff)} do total.</span></div>` : '';
   return `
     ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small ghost" id="clear-example">Sair</button></span></div>` : ''}
-    ${d.live ? liveCardHTML() : ''}
-    ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. As alterações são guardadas quando você salvar de novo.</span><button class="btn small ghost" id="new-bill-top">Encerrar edição</button></div>` : ''}
+    ${d.savedAt ? `<div class="banner"><span>Esta comanda já está no histórico. As alterações são guardadas quando você salvar de novo.</span><button class="btn small ghost" id="new-bill-top">Encerrar edição</button></div>` : ''}
     <div class="cf" id="cf">
       <article class="cmd-una cf-cabeca" aria-label="Comanda fechada">
         <header class="cu-cab">
@@ -2417,28 +2154,11 @@ function bindFechada(v) {
       KitFacil.avisar(`${q ? c.per[q].person.name : 'Os outros'} ${p.estado === 'troco' ? (q ? 'devolve' : 'devolvem') : (q ? 'cobre' : 'cobrem')} ${BRL(p.falta || p.troco)} de ${u.name}.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); } }); }
   });
 }
-function bindAoVivo(v) {
-  const d = draft;
-  $('#live-start', v)?.addEventListener('click', () => live.start());
-  $('#live-invite', v)?.addEventListener('click', inviteSheet);
-  $('#live-code', v)?.addEventListener('click', inviteSheet);
-  $('#live-who', v)?.addEventListener('click', () => { liveWho = true; render({ preserve: true }); });
-  $('#live-reconnect', v)?.addEventListener('click', () => { live.stop(); live.subscribe(); });
-  $('#live-end', v)?.addEventListener('click', () => {
-    const host = d.live.host && !live.closed;
-    confirmSheet(host ? 'Encerrar a comanda ao vivo?' : 'Sair da comanda ao vivo?',
-      host ? 'Os amigos param de conseguir marcar itens. A comanda continua aqui para você fechar.' : 'Você deixa de receber as atualizações. Uma cópia da comanda fica aqui com você.',
-      host ? 'Encerrar' : 'Sair', () => live.end());
-  });
-  $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { LS.set('me.' + d.live.code, b.dataset.me); liveWho = false; live.beat(); render({ preserve: true }); }));
-
-}
 const viewComanda = {
   html() {
     const d = draft, calc = compute(d), s = d.service;
     fixarPagos(d, calc);
     if (d.fechada) return fechadaHTML(d, calc);
-    const me = d.live ? LS.get('me.' + d.live.code, '') : '';
     // mini comanda que mudou de valor dá um pulo (só quando muda, nunca na primeira vez)
     if (totaisAnt.id !== d.id) totaisAnt = { id: d.id, v: {} };
     const pulou = {};
@@ -2473,8 +2193,7 @@ const viewComanda = {
     };
     return `
     ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small ghost" id="clear-example">Sair</button></span></div>` : ''}
-    ${d.live ? liveCardHTML() : ''}
-    ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. As alterações são guardadas quando você salvar de novo.</span><button class="btn small ghost" id="new-bill-top">Encerrar edição</button></div>` : ''}
+    ${d.savedAt ? `<div class="banner"><span>Esta comanda já está no histórico. As alterações são guardadas quando você salvar de novo.</span><button class="btn small ghost" id="new-bill-top">Encerrar edição</button></div>` : ''}
     ${calc.incomplete.length ? `<div class="banner warn"><span><b>Unidades a distribuir:</b> ${calc.incomplete.map(x => `${esc(x.it.name)} (${x.units} de ${x.it.qty})`).join(', ')}.</span></div>` : ''}
     ${calc.unassigned.length ? `<div class="banner warn"><span><b>Sem ninguém marcado, fora da conta:</b> ${esc(calc.unassigned.map(i => i.name).join(', '))}.</span></div>` : ''}
 
@@ -2527,16 +2246,14 @@ const viewComanda = {
       const fechar = d.items.length && d.people.length ? `<button type="button" class="kf-btn kf-pri fechar-btn" id="fechar-cmd">${I.receipt}<span>Fechar comanda</span></button>` : '';
       const lixo = !d.isExample && (d.items.length || d.people.length || d.place) ? `<button type="button" class="btn danger" id="cmd-excluir">${I.trash}Excluir comanda</button>` : '';
       return fechar || lixo ? `<div class="fim-acoes">${fechar}${lixo}</div>` : '';
-    })()}
-
-    ${d.live ? '' : liveCardHTML()}`;
+    })()}`;
   },
   bind(v) {
     const d = draft;
     $('#clear-example', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); });
     $('#ex-guide', v)?.addEventListener('click', () => guiaIniciar());
     $('#new-bill-top', v)?.addEventListener('click', () => { pending = {}; draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 }); });
-    if (d.fechada) { bindAoVivo(v); return bindFechada(v); }
+    if (d.fechada) return bindFechada(v);
     $('#cmd-local', v).addEventListener('click', localSheet);
     $('#cmd-conta', v).addEventListener('click', contaSheet);
     $('#cm-pe', v)?.addEventListener('click', contaSheet);
@@ -2597,7 +2314,6 @@ const viewComanda = {
     $$('[data-it-del]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itDel); if (!it) return;
       confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda.`, 'Remover', () => { delete pending[it.id]; d.items = d.items.filter(i => i.id !== it.id); if (itemAberto === it.id) itemAberto = null; commit(); }, true); }));
 
-    bindAoVivo(v);
 
     // itens ainda sem divisão confirmada: continuam com a lista de marcar e o Confirmar
     $$('.item[data-item]', v).forEach(card => {
@@ -2770,7 +2486,6 @@ window.addEventListener('blur', () => drag.on && dragEnd(false));
 // cartão único de pagamento: quem pagou o local, grupos e quanto cada um paga, numa caixa por cupom
 /* 1.4: "Uma pessoa paga a conta de todos" fica em Fechar a comanda e não junta ninguém: cada um continua com o seu
    cupom, que passa a dizer quanto pagar a quem pagou a conta */
-function pagaTodos(d, pid) { d.payMode = pid ? 'single' : 'none'; d.payer = pid || ''; if (pid && d.custom) delete d.custom[pid]; }
 /* 1.13: quem não paga o serviço. A pergunta aparece numa janela na hora em que o serviço é desligado na pessoa
    (antes surgia lá no alto, em Taxa de serviço, sem aviso) */
 function politicaSheet(d, p) {
@@ -2796,15 +2511,14 @@ function saveBill(opts = {}) {
   if (c.unassigned.length || c.incomplete.length) { KitFacil.avisar('Acerte a divisão de todos os itens antes de salvar.'); return; }
   if (d.items.some(pendingDirty)) { KitFacil.avisar('Há itens com alterações não salvas. Salve ou descarte antes de continuar.'); return; }
   if (c.openItems.length) { KitFacil.avisar(`Confirme a divisão de ${plural(c.openItems.length, 'item', 'itens')} antes de salvar.`); return; }
-  if (c.missingPayer) { KitFacil.avisar('Escolha quem vai pagar a conta em Pagamento antes de salvar.'); return; }
   if (c.payDiff !== 0) { KitFacil.avisar(`Os valores personalizados ${c.payDiff > 0 ? 'passam' : 'ficam'} ${BRL(Math.abs(c.payDiff))} ${c.payDiff > 0 ? 'do' : 'abaixo do'} total. Ajuste antes de salvar.`); return; }
   const difs = pagosComDiferenca(d, c);
   if (difs.length && !opts.comDiferenca) { confirmSheet('Salvar com diferença?', difs.map(x => fraseDiferenca(x.u, x.p)).join(' ') + ' A comanda fica salva assim, com a diferença anotada.', 'Salvar assim', () => saveBill({ comDiferenca: true })); return; }
   const firstSave = !bills.some(b => b.id === d.id);
-  const antes = { draft: clone(d), bills: clone(bills), catalog: clone(catalog), tab }, eraAoVivo = !!draft.live, jogoAntes = { ...jogoEstado() };
+  const antes = { draft: clone(d), bills: clone(bills), catalog: clone(catalog), tab }, jogoAntes = { ...jogoEstado() };
   const now = Date.now();
   d.savedAt = now;
-  const { live: _l, isExample: _e, ...rest } = d;
+  const { isExample: _e, ...rest } = d;
   const bill = clone({ ...rest, closedAt: firstSave ? now : (bills.find(b => b.id === d.id)?.closedAt || now), total: c.total });
   bills = [bill, ...bills.filter(b => b.id !== bill.id)].sort((a, b) => b.closedAt - a.closedAt);
   d.people.forEach(p => {
@@ -2813,17 +2527,15 @@ function saveBill(opts = {}) {
   });
   d.items.forEach(it => rememberPrice(it.name, it.price, d.place, now));
   store.saveCatalog(); store.saveBill(bill);
-  if (draft.live) live.end();
   pending = {};
   draft = blankDraft(); tab = 'inicio';
   saveDraft(); render(); window.scrollTo({ top: 0 });
-  // salvar tem volta (a comanda ao vivo, se havia, já foi encerrada e não volta)
-  const desfazer = eraAoVivo ? null : () => {
+  const desfazer = () => {
     bills = antes.bills; catalog = antes.catalog; draft = antes.draft; draft.savedAt = firstSave ? null : draft.savedAt; tab = 'comanda';
     jogoMemo.chave = ''; store.saveBill(); store.saveCatalog(); saveDraft(); render(); window.scrollTo({ top: 0 });
   };
   if (firstSave && festa(bill, jogoAntes, { desfazer })) return;
-  KitFacil.avisar(firstSave ? 'Comanda salva no histórico.' : 'Comanda atualizada no histórico.', desfazer ? { label: 'Desfazer', run: desfazer } : undefined);
+  KitFacil.avisar(firstSave ? 'Comanda salva no histórico.' : 'Comanda atualizada no histórico.', { label: 'Desfazer', run: desfazer });
 }
 
 /* ---------- aba Ajustes: só as guias comuns do Kit Fácil ---------- */
@@ -2845,7 +2557,7 @@ async function restaurarCopiaConta(f) {
       store.saveBill(); store.saveCatalog();
       const real = draft.isExample ? loadRealDraft() : draft;
       let extra = '';
-      if (d.draft && !real.active && !draft.live && !draft.isExample) { draft = migrate(d.draft); saveDraft(); extra = ' A comanda que estava aberta também voltou.'; }
+      if (d.draft && !real.active && !draft.isExample) { draft = migrate(d.draft); saveDraft(); extra = ' A comanda que estava aberta também voltou.'; }
       render(); KitFacil.avisar('Cópia restaurada.' + extra);
     } });
 }

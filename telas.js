@@ -28,7 +28,6 @@ Object.assign(I, {
   share: ic('<path d="M12 15V4M7.500 8.500 12 4l4.500 4.500"/><path d="M5 13v6.500h14V13"/>'),
   file: ic('<path d="M13.500 3.500h-7v17h11v-13z"/><path d="M13.500 3.500v4h4M9.500 12.500h5M9.500 16h5"/>'),
   refresh: ic('<path d="M19.500 12a7.500 7.500 0 0 1-13 5.100M4.500 12a7.500 7.500 0 0 1 13-5.100"/><path d="M17.500 3.500V7H14M6.500 20.500V17H10"/>'),
-  live: ic('<circle cx="12" cy="12" r="1.800"/><path d="M15.900 8.100a5.500 5.500 0 0 1 0 7.800M8.100 15.900a5.500 5.500 0 0 1 0-7.800M18.700 5.300a9.500 9.500 0 0 1 0 13.400M5.300 18.700a9.500 9.500 0 0 1 0-13.400"/>'),
   paste: ic('<rect x="8.500" y="3" width="7" height="4" rx="1.500"/><path d="M15.500 5H17a2 2 0 0 1 2 2v11.500a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1.500"/>'),
   qr: ic('<rect x="3.500" y="3.500" width="6.500" height="6.500" rx="1.500"/><rect x="14" y="3.500" width="6.500" height="6.500" rx="1.500"/><rect x="3.500" y="14" width="6.500" height="6.500" rx="1.500"/><path d="M14 14h2.500v2.500H14zM20.500 14v.01M14 20.500v.01M17.500 20.500h3v-3"/>'),
   ajustes: ic('<path d="M4 7.500h8M17 7.500h3M4 16.500h3M12 16.500h8"/><circle cx="14.500" cy="7.500" r="2.500"/><circle cx="9.500" cy="16.500" r="2.500"/>'),
@@ -91,17 +90,8 @@ function novaComandaSheet() {
       $('#nc-form', s).addEventListener('submit', e => { e.preventDefault(); abrir(inp.value); });
     } });
 }
-function entrarAoVivo(valor) {
-  const code = String(valor || '').toLowerCase().replace(/^.*#m/, '').replace(/[^a-z0-9]/g, '');
-  if (!/^[a-z0-9]{6,16}$/.test(code)) { KitFacil.avisar('Código inválido. Ele tem 10 letras e números.'); return false; }
-  if (!store.db) { KitFacil.avisar(store.ready ? 'A comanda ao vivo precisa de internet. Verifique a conexão e tente de novo.' : 'Conectando… tente de novo em instantes.'); return false; }
-  live.browserOk = true;
-  if (location.hash === '#m' + code) live.boot(); else location.hash = '#m' + code;
-  return true;
-}
-
 /* ---------- Início ---------- */
-let aoVivoAberto = false, heroVisto = false;
+let heroVisto = false;
 const viewInicio = {
   html() {
     const d = draft, U = usage(), lugares = recentPlaces(U).slice(0, 3), s = jogoEstado();
@@ -111,12 +101,12 @@ const viewInicio = {
     let papel;
     if (d.active && !d.isExample) {
       const c = compute(d), falta = faltaReceber(d, c), pend = d.items.filter(it => !it.lk).length;
-      papel = `<span class="mono ip-n">COMANDA Nº ${n} · ABERTA${d.live ? ' · AO VIVO' : ''}</span>
+      papel = `<span class="mono ip-n">COMANDA Nº ${n} · ABERTA</span>
         <h1 class="ip-t">${esc(d.place || 'Comanda sem nome')}</h1>
         <div class="ip-linhas mono"><span><span>Pessoas</span><span>${d.people.length}</span></span><span><span>Pedidos</span><span>${d.items.length}${pend ? ` (${pend} sem divisão)` : ''}</span></span>
           <span class="ip-tot"><span>TOTAL</span><span>${BRL(c.total)}</span></span>${algumPago(d) ? `<span><span>Falta pagar</span><span>${BRL(falta)}</span></span>` : ''}${trocoDevolver(d, c) ? `<span><span>Devolver</span><span>${BRL(trocoDevolver(d, c))}</span></span>` : ''}</div>
         <button type="button" class="btn bloco ip-btn" id="ini-continuar">${I.receipt}Continuar a comanda</button>
-        ${d.live ? '' : `<button type="button" class="btn danger bloco ip-excluir" id="ini-excluir">${I.trash}Excluir esta comanda</button>`}`;
+        <button type="button" class="btn danger bloco ip-excluir" id="ini-excluir">${I.trash}Excluir esta comanda</button>`;
     } else {
       papel = `<span class="mono ip-n">COMANDA Nº ${n}</span>
         <h1 class="ip-t"><label for="ini-local">Onde vai ser hoje?</label></h1>
@@ -130,11 +120,6 @@ const viewInicio = {
     const usaEu = !!catalog.me, gastoMes = doMes.reduce((a, b) => { const c = calcBill(b); return a + (usaEu ? (meuTotal(b, c) || 0) : c.total); }, 0);
     return `<p class="saudacao">${oi}${catalog.me ? ', ' + esc(primeiroNome(catalog.me)) : ''}.</p>
       <section class="imp" aria-label="${d.active && !d.isExample ? 'Comanda aberta' : 'Nova comanda'}"><div class="imp-boca" aria-hidden="true"></div><div class="imp-saida"><div class="papel imp-papel ${anima}">${papel}</div></div></section>
-
-      ${d.active && !d.isExample ? '' : `<div class="aovivo ${aoVivoAberto ? 'aberto' : ''}" id="ini-aovivo" data-kf-morf="aovivo">
-        ${aoVivoAberto ? `<form id="av-form" class="av-form" autocomplete="off"><label class="so-leitor" for="av-codigo">Código da comanda ao vivo</label><input id="av-codigo" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="Código de 10 letras" maxlength="60" data-keep>
-          <button type="button" class="ic-btn" id="av-colar" aria-label="Colar o código">${I.paste}</button><button type="submit" class="btn small">Entrar</button></form>`
-        : `<button type="button" class="av-abre" id="av-abre"><span class="av-pulso" aria-hidden="true"></span><span><b>Entrar numa comanda ao vivo</b><small>Alguém da mesa já abriu? Use o código.</small></span>${I.next}</button>`}</div>`}
 
       ${jogoLigado() ? `<button type="button" class="card nivel-card" id="ini-nivel"><span class="so-leitor">Nível ${s.nivel}: </span>${bolachaHTML(s)}${nivelHTML(s)}
         ${proxima ? `<span class="nivel-prox"><span class="tampa-mini">${tampaSVG(proxima, { apagada: true })}</span><span><small>Próxima tampinha</small><b>${esc(proxima.nome)}</b></span></span>` : ''}<span class="so-leitor">. ${s.ganhas.length} de ${TAMPINHAS.length} tampinhas. Ver a coleção</span></button>` : ''}
@@ -156,12 +141,6 @@ const viewInicio = {
     if (inp) attachSuggest(inp, () => recentPlaces().map(p => ({ label: p.name, right: plural(p.n, 'vez', 'vezes'), dim: true })));
     $('#ini-form', v)?.addEventListener('submit', e => { e.preventDefault(); const nome = inp.value.trim().replace(/\s+/g, ' '); if (!nome) { KitFacil.avisar('Digite o nome do local ou escolha um da lista.'); apontar(inp); return; } newBillAt(nome); });
     $$('[data-ini-lugar]', v).forEach(b => b.addEventListener('click', () => newBillAt(b.dataset.iniLugar)));
-    $('#av-abre', v)?.addEventListener('click', () => { aoVivoAberto = true; render({ anchor: false }); });
-    $('#av-form', v)?.addEventListener('submit', e => { e.preventDefault(); entrarAoVivo($('#av-codigo', v).value); });
-    $('#av-colar', v)?.addEventListener('click', async () => {
-      try { const t = (await navigator.clipboard.readText()).trim(); if (!t) { KitFacil.avisar('Nada copiado.'); return; } $('#av-codigo', v).value = t; entrarAoVivo(t); }
-      catch { KitFacil.avisar('Não deu para colar. Toque e segure no campo e escolha Colar.'); }
-    });
     $('#ini-nivel', v)?.addEventListener('click', () => irPara('tampinhas'));
     $('#ini-hist', v)?.addEventListener('click', () => irPara('historico'));
     $$('[data-bill]', v).forEach(b => b.addEventListener('click', () => openBill(b.dataset.bill)));
@@ -247,8 +226,8 @@ function openBill(id) {
       bills = bills.filter(x => x.id !== id); store.deleteBill(id); closeSheet(true); if (draft.id === id) draft.savedAt = null; saveDraft(); render();
       KitFacil.avisar('Comanda excluída.', { label: 'Desfazer', run: () => { bills = [gone, ...bills].sort((a, b) => b.closedAt - a.closedAt); store.saveBill(gone); render(); } });
     }, true);
-    const replace = fn => confirmReplace(() => { if (draft.live) live.end(); pending = {}; itPend = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(true); commit(); window.scrollTo({ top: 0 }); });
-    $('#sh-edit', s).onclick = () => replace(() => migrate({ ...clone(b), savedAt: b.closedAt, isExample: false, live: null }));
+    const replace = fn => confirmReplace(() => { pending = {}; itPend = {}; draft = fn(); draft.active = true; tab = 'comanda'; closeSheet(true); commit(); window.scrollTo({ top: 0 }); });
+    $('#sh-edit', s).onclick = () => replace(() => migrate({ ...clone(b), savedAt: b.closedAt, isExample: false }));
     $('#sh-reuse', s).onclick = () => replace(() => {
       const d = blankDraft(); d.place = b.place;
       const map = {}; b.people.forEach(p => { const np = { ...newPerson(p.name) }; map[p.id] = np.id; d.people.push(np); });

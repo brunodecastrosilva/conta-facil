@@ -153,7 +153,7 @@ function aberturaAbrir({ rever = false } = {}) {
         <div class="papel ab-cupom c3"><span class="mono">Bruno</span><span class="fp-linha"></span><span class="mono ab-l"><span>Total</span><span>64,18</span></span><span class="fp-carimbo">PAGO</span></div>
         <div class="papel ab-cupom c2"><span class="mono">Ana</span><span class="fp-linha"></span><span class="mono ab-l"><span>Total</span><span>77,09</span></span>${QR_FIGURA}<span class="mono ab-pix">Pix copia e cola</span></div></div>`,
       titulo: 'Um cupom para cada pessoa', texto: 'Feche a comanda e mande o cupom de cada um, com o Pix copia e cola e o QR code. Marque quem já pagou.' },
-    { arte: `<div class="ab-tampas">${['primeira', 'pix', 'mesa-cheia', 'ao-vivo', 'explorador'].map((id, k) => `<span class="ab-tampa" style="--i:${k}">${tampaSVG(TAMPINHAS.find(t => t.id === id))}</span>`).join('')}</div>`,
+    { arte: `<div class="ab-tampas">${['primeira', 'pix', 'mesa-cheia', 'sorteio', 'explorador'].map((id, k) => `<span class="ab-tampa" style="--i:${k}">${tampaSVG(TAMPINHAS.find(t => t.id === id))}</span>`).join('')}</div>`,
       titulo: veterano ? `Você já chega com ${plural(s.ganhas.length, 'tampinha', 'tampinhas')}` : 'Junte tampinhas pelo caminho',
       texto: 'Usar o app rende tampinhas e níveis. É só uma brincadeira, e dá para desligar nos Ajustes.',
       extra: catalog.me ? '' : `<div class="field ab-nome"><label for="ab-eu">Como chamam você na mesa? (opcional)</label><input id="ab-eu" class="kf-entrada" type="text" autocapitalize="words" autocomplete="off" maxlength="40" placeholder="Seu nome ou apelido"></div>` },
@@ -192,7 +192,6 @@ function guiaLimparTela() { $('#festa-ok')?.click(); closeSheet(true); guiaSemAv
 function guiaZerarTela() { corteLimpar(); canAberto = ''; canValor = ''; barraDe = null; pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; pesCv = false; if (drag.on) dragEnd(false); jogoMemo.chave = ''; cacheBills = new WeakMap(); }
 function guiaIniciar() {
   if (guiaAtivo() || aberturaAtiva()) return;
-  if (draft.live) { KitFacil.avisar('Saia da comanda ao vivo antes de ver o guia.'); return; }
   KitFacil.guia.demonstrar({
     passos: GUIA,
     comecar: () => {
@@ -328,8 +327,6 @@ const GUIA = [
   { t: 'Separe quando quiser', d: 'O cupom compartilhado mostra a parte de cada um. Separar desfaz a união.',
     acao: async m => { const u = demoUn('Carla'); await demoAbrir(m, `summary[data-unit="${u}"]`); await m.apontar(`summary[data-unit="${u}"]`, 1300); await m.tocar(`[data-pa="${u}"] [data-pa-desfaz]`); await m.espera(500); guiaSemAviso();
       for (const n of ['Bruno', 'Carla', 'Diego']) await m.apontar(`summary[data-unit="${demoUn(n)}"]`, 800); } },
-  { t: 'Comanda ao vivo', d: 'Compartilhe a comanda: cada pessoa lança pelo próprio celular.', se: () => !!store.db,
-    acao: async m => { await m.apontar('#live-start', 2200, { opcional: true, prazo: 1200 }); } },
   { t: 'Serviço, couvert e desconto', d: 'Toque no total para abrir a conta da mesa. Aqui entram couvert e desconto.',
     acao: async m => { const bloco = async k => (await m.acha(`.kf-dlg [data-cm="${k}"]`)).closest('.cm-bloco');
       // liga a chave, espera a opção abrir e só então a destaca inteira, já à vista na janela; depois escreve o valor
@@ -398,7 +395,6 @@ const GUIA = [
 /* puxar a janela pela barrinha (1.8.3/1.8.4) e o cursor parado (1.8.5) são do Kit desde o 0.8.0 (Código, Art. 68). */
 
 /* ---------- arranque ---------- */
-if (draft.live) { draft.isExample = false; draft.active = true; }
 if (backfillPrices()) LS.set('catalog', catalog);
 // barra de cima do Kit: nuvem, presente e balão, os três em traço e na mesma cor
 $('#topo').outerHTML = KitFacil.topo.html({ principal: true });
@@ -406,11 +402,9 @@ $('#topo').outerHTML = KitFacil.topo.html({ principal: true });
 const linkSync = SY.tokenDoLink();
 if (linkSync) try { history.replaceState(null, '', location.pathname + location.search); } catch {}
 render();
-store.init();
 SY.iniciar({ token: linkSync, silencioso: true, textoConfirmar: 'O histórico e os cadastros deste aparelho se juntam aos da nuvem.' });
-window.addEventListener('hashchange', () => live.boot());
-// a abertura aparece uma vez para quem chega à versão 1.0; quem entra por um convite de comanda ao vivo vai direto para a mesa
-if (LS.get('abertura', '') !== '1' && !/^#m[a-z0-9]{6,16}$/.test(location.hash || '') && !linkSync && !(navigator.webdriver && !window.CF_TESTE_ABERTURA)) aberturaAbrir();
+// a abertura aparece uma vez para quem chega à versão 1.0
+if (LS.get('abertura', '') !== '1' && !linkSync && !(navigator.webdriver && !window.CF_TESTE_ABERTURA)) aberturaAbrir();
 else jogoConferir({ silencioso: !jogo.pronto });
 // atalho "Nova comanda" do ícone do app (manifesto)
 if (/[?&]nova=1/.test(location.search)) { try { history.replaceState(null, '', location.pathname + location.hash); } catch {} if (!draft.active && !aberturaAtiva()) setTimeout(novaComandaSheet, 300); }

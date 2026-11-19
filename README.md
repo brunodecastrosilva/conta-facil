@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.12.6** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.13.0** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Desde 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil** para a moldura, os componentes e o comportamento dos controles; o
@@ -19,7 +19,6 @@ fluxo e o desenho das telas são dele, feitos para a comanda de bar ([Código do
 - **Comanda aberta sem pagamento:** marcar, desmarcar, carimbo, "falta" e diferença de quem já pagou só existem com a comanda fechada. Aberta, a comanda mostra nomes, valores e o selo PAGO de quem pagou (quem já saiu da mesa continua marcado, porque fica travado)
 - **Canhoto aberto:** "Ver cupom" (a janela do cupom, com "Compartilhar" em PDF), "Receber com Pix" (só aparece quando serve: você tem chave Pix em "Você nas comandas", o canhoto não é o seu e ainda falta receber), "Pagar valor diferente" (com a escolha de quem cobre ou devolve a diferença) e "Já saiu da mesa" (trava o canhoto)
 - **Cupom da mesa:** "Ver cupom da mesa" abre o cupom, que termina no total; "Compartilhar" manda o PDF
-- **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai
 - **Cadastros:** pessoas e chaves Pix, turmas (quem sai junto entra na mesa com um toque) e preço de cada produto em cada lugar; o lápis de cada linha altera a pessoa (nome, chave Pix e "sou eu"), a turma ou o produto (nome e preços), e o nome novo vale também nas comandas salvas
 - **Tampinhas e níveis:** uma coleção que cresce conforme você usa o app; cada tampinha é um objeto 3D (WebGL) que gira com o dedo; dá para desligar nos Ajustes
@@ -43,13 +42,12 @@ Abra o endereço em qualquer navegador, no celular, no tablet ou no computador. 
 | Dado | Onde fica |
 |---|---|
 | Comanda aberta, histórico, cadastros, preferências e tampinhas | neste aparelho (armazenamento do navegador, chaves `contafacil.*`) |
-| Comanda ao vivo (quando você liga) | Firestore do projeto no Firebase (Google), coleção `mesas`; apagada assim que o anfitrião encerra (nunca encerrada: sai na limpeza mensal depois de 30 dias) |
 | Histórico e cadastros, com a sincronização ligada | gist secreto na conta GitHub do usuário, criptografado no aparelho (AES-256) |
 | Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback`; apagados depois de 2 anos |
 
-A comanda aberta não vai para a sincronização: para dividir a mesma comanda entre celulares, use a comanda ao vivo.
-"Fechada" (em `fechada`), "pago" (com o valor pago por pessoa, em `pagos`) e "já saiu da mesa" (em `saiu`) ficam só no aparelho de quem marcou (não vão para a comanda ao vivo). As tampinhas e os níveis são calculados do
-histórico e dos cadastros, então acompanham a sincronização; só as marcas "ao vivo", "sorteio" e "guia" ficam no aparelho.
+A comanda aberta não vai para a sincronização: fica só neste aparelho. A comanda ao vivo, que dividia a mesma comanda entre celulares, saiu do app na 1.13.0.
+"Fechada" (em `fechada`), "pago" (com o valor pago por pessoa, em `pagos`) e "já saiu da mesa" (em `saiu`) ficam só neste aparelho. As tampinhas e os níveis são calculados do
+histórico e dos cadastros, então acompanham a sincronização; só as marcas "sorteio" e "guia" ficam no aparelho.
 
 Quem já usava a versão 0.5.0 não perde nada: as chaves do armazenamento e os formatos são os mesmos.
 
@@ -76,11 +74,10 @@ O modo sem internet (service worker) só funciona em `https`, ou seja, no endere
 | `index.html` | moldura da página: barra de cima, navegação e a política de segurança (CSP) |
 | `estilo.css` | identidade visual (tokens, moldura, telas novas, abertura, festa, tampinhas) |
 | `comanda.css` | estrutura da comanda de papel, dos cupons e das janelas |
-| `app.js` | motor: modelo, contas em centavos, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda |
+| `app.js` | motor: modelo, contas em centavos, Pix, cupons, sincronização e a tela da comanda |
 | `telas.js` | Início, Histórico, Cadastros e Mais |
 | `jogo.js` | níveis, tampinhas e presente em 3D, festa de fechamento e o sorteio |
 | `casca.js` | navegação, Ajustes, abertura (onboarding), guia e arranque |
-| `fb.js`, `config.js` | conexão com o Firebase da comanda ao vivo |
 | `comum/` | **Kit Fácil**: sincronização, avaliação, apoio, cópia de segurança, Ajustes, janelas e avisos. Igual nos quatro apps: não edite só aqui |
 | `sw.js`, `manifest.webmanifest`, `icons/` | instalação e uso sem internet |
 | `tests/` | testes do app |
@@ -89,11 +86,12 @@ O modo sem internet (service worker) só funciona em `https`, ou seja, no endere
 
 | Serviço | Para quê | Custo | O que configurar |
 |---|---|---|---|
-| Firebase (projeto `conta-facil-2c1f9`) | comanda ao vivo (Firestore e login anônimo) e avaliações | plano gratuito | regra de [`comum/regras-firestore-feedback.txt`](comum/regras-firestore-feedback.txt) publicada |
+| Firebase (projeto `conta-facil-2c1f9`) | avaliações e relatos de problema (Firestore) | plano gratuito | regra de [`comum/regras-firestore-feedback.txt`](comum/regras-firestore-feedback.txt) publicada |
 | GitHub (gist) | sincronização entre aparelhos | gratuito | nada no projeto; cada pessoa usa a própria conta |
-| Google Fonts, cdnjs, gstatic | fontes, QR code, PDF e biblioteca do Firebase | gratuito | nada |
+| Google Fonts, cdnjs, gstatic | fontes, QR code, PDF e a biblioteca do Firebase usada pelas avaliações (App Check) | gratuito | nada |
 
-A configuração web do Firebase em `config.js` é pública por natureza (não é senha); quem protege o banco são as regras do Firestore.
+A configuração web do Firebase fica no Kit (`comum/kit-facil.js`) e é pública por natureza (não é senha); quem protege o banco são as regras do Firestore.
+O app não usa mais o login anônimo nem a coleção `mesas`: depois de apagar as comandas ao vivo que restarem no console, a regra de `mesas` pode ser fechada (Proposta para o Integrador).
 
 ## Publicação
 
@@ -110,6 +108,7 @@ Estão na Proposta 5 para o Integrador; saem daqui quando o Kit as absorver.
 | Peça do Kit | O que o app faz por cima | Por quê |
 |---|---|---|
 | Passo a passo de quantidade (`.kf-quantidade`) | `estilo.css` dá a ele o fundo, o contorno, a altura, a letra e o anel de foco dos campos | no Kit ele tem fundo branco e número em negrito, diferente das outras caixas de texto |
+| Passo a passo de quantidade, dentro da comanda de papel | nas linhas da comanda (quantidade do item, cortesias e unidades por pessoa) o app usa os botões "−1" e "+1" (`.unit-btns`), sem caixa de texto | a linha é redesenhada a cada toque e não tem campo para digitar; o passo a passo do Kit, que é uma caixa de texto, continua na janela "Lançar item" (Código, Art. 56, V) |
 | Pix (`KitFacil.pix`) | `app.js` tem a própria conferência de CPF (`cpfValid`), a validação da chave (`pixErro`) e a chave formatada para leitura (`pixBonita`) | o Kit confere o CPF por dentro, mas não oferece a conta; o app precisava dela para perguntar "CPF ou celular?" |
 
 ## Uso do código

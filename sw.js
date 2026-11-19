@@ -1,10 +1,10 @@
 // Conta Fácil · uso sem internet (modelo do Projeto Integrador).
 // Arquivos do app: busca a versão nova primeiro e usa a guardada se estiver sem internet.
-// Bibliotecas (QR code, PDF, fontes, Firebase) têm versão fixa: usa a guardada.
+// Bibliotecas (QR code, PDF, fontes, Firebase das avaliações) têm versão fixa: usa a guardada.
 // O cache leva a versão do app (package.json); cada app só apaga as próprias cópias antigas,
 // porque os apps do projeto dividem o mesmo endereço (github.io).
-const CACHE = 'conta-facil-1.12.6';
-const APP = ['./', './index.html', './estilo.css', './comanda.css', './app.js', './jogo.js', './telas.js', './casca.js', './fb.js', './config.js', './comum/kit-facil.js', './comum/kit-facil.css', './comum/kit-jogo.js', './manifest.webmanifest', './icons/apple-touch-icon.png', './icons/icon-192.png'];
+const CACHE = 'conta-facil-1.13.0';
+const APP = ['./', './index.html', './estilo.css', './comanda.css', './app.js', './jogo.js', './telas.js', './casca.js', './comum/kit-facil.js', './comum/kit-facil.css', './comum/kit-jogo.js', './manifest.webmanifest', './icons/apple-touch-icon.png', './icons/icon-192.png'];
 const LIBS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
@@ -28,8 +28,10 @@ self.addEventListener('fetch', e => {
   } else if (isLib) {
     // cópia "opaca" (guardada sem CORS) não passa na conferência da impressão digital (SRI): busca de novo
     e.respondWith(caches.match(req, { cacheName: CACHE }).then(hit => (hit && hit.type !== 'opaque') ? hit : fetch(req).then(res => {
-      const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res;
+      // só guarda resposta boa: um erro passageiro do CDN não pode ficar preso no aparelho até a próxima versão
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+      return res;
     })));
   }
-  // o resto (banco do Firebase, API do GitHub da sincronização, envio de avaliações) passa direto pela rede
+  // o resto (API do GitHub da sincronização, envio de avaliações) passa direto pela rede
 });

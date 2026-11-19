@@ -325,16 +325,6 @@ test('sincronização: histórico e cadastros passam de um aparelho para o outro
   await A.fechar(); await B.fechar();
 });
 
-test('comanda ao vivo: sem conexão o app avisa e a comanda continua só no aparelho', async () => {
-  const a = await aparelho(amb);
-  const p = a.page;
-  await abrirMesa(p, 'Bar', ['Ana']);
-  assert.ok(await esperar(() => p.evaluate(() => store.ready)));
-  assert.equal(await p.locator('#live-start').count(), 0, 'sem Firebase, a oferta de comanda ao vivo não aparece');
-  await p.evaluate(() => entrarAoVivo('abc')); assert.match(await p.textContent('.kf-toast'), /Código inválido/);
-  await a.fechar();
-});
-
 test('guia: janela fixa num espaço só dela, do começo ao fim, sem tocar nos dados reais', async () => {
   const a = await aparelho(amb);
   const p = a.page;
@@ -696,7 +686,7 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; valor diferente fica no can
   // Fechar: não existe mais "uma pessoa paga a conta de todos"; cada um tem o seu canhoto
   await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.waitForTimeout(1400);
   assert.equal(await p.locator('#view >> text=/paga a conta de todos/').count(), 0);
-  assert.deepEqual(await p.evaluate(() => { const c = compute(draft); return [c.units.length, c.payer, document.querySelectorAll('.cf-can').length]; }), [3, '', 3]);
+  assert.deepEqual(await p.evaluate(() => { const c = compute(draft); return [c.units.length, document.querySelectorAll('.cf-can').length]; }), [3, 3]);
   // pagar valor diferente, no canhoto da pessoa
   const CAN = `[data-can="${ana}"]`;
   await p.click(`${CAN} [data-can-abre]`); await p.click(`${CAN} [data-can-valor]`); await p.locator(`${CAN} [data-can-custom]`).fill('1000'); await p.locator(`${CAN} [data-can-custom]`).blur();
@@ -789,7 +779,7 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, canhoto aberto numa
   semErros(a); await a.fechar();
 });
 
-test('1.8.1: caixa de texto nunca é selecionada sozinha (turma na mesa, campo que falta, outro valor, código ao vivo)', async () => {
+test('1.8.1: caixa de texto nunca é selecionada sozinha (turma na mesa, campo que falta, outro valor)', async () => {
   const a = await aparelho(amb, { toque: true });
   const p = a.page;
   const campo = () => p.evaluate(() => { const f = document.activeElement; return !!(f && f.matches('input:not([type=checkbox]):not([type=radio]), textarea')) && (f.id || f.name || 'campo'); });
@@ -797,9 +787,7 @@ test('1.8.1: caixa de texto nunca é selecionada sozinha (turma na mesa, campo q
   await p.click('#ini-form button[type=submit]');
   assert.equal(await campo(), false, 'local em branco: o campo não é selecionado');
   assert.equal(await p.getAttribute('#ini-local', 'aria-invalid'), 'true', 'o campo que falta fica apontado');
-  // comanda ao vivo: abrir o trecho do código não seleciona o campo
-  if (await p.locator('#av-abre').count()) { await p.click('#av-abre'); await p.waitForTimeout(200); assert.equal(await campo(), false, 'código da comanda ao vivo: não é selecionado'); }
-  await p.evaluate(() => { catalog.groups = [{ id: 'g1', name: 'Pombo', members: ['Bruno', 'Letícia', 'Mateus', 'Rosana'] }]; store.saveCatalog(); });
+  await p.evaluate(() => { catalog.groups = [{ id: 'g1', name: 'Pombo', members: ['Bruno', 'Letícia', 'Mateus', 'Rosana'] }]; store.saveCatalog(); jogoConferir({ silencioso: true }); }); // a turma posta direto nos dados não abre a janela de tampinha nova no meio do teste
   await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
   await p.click('#add-pessoa'); await p.locator('#pn-turma').waitFor({ state: 'attached' }); await assentar(p);
   // pôr uma turma na mesa: as pessoas entram e o campo Nome continua sem seleção
@@ -825,7 +813,7 @@ test('1.8.1: caixa de texto nunca é selecionada sozinha (turma na mesa, campo q
 test('1.8.2: fechar no X não dá pulo: a cópia que sai tem a altura e o topo da janela, do primeiro ao último quadro', async () => {
   const a = await aparelho(amb, { toque: true });
   const p = a.page;
-  await p.evaluate(() => { catalog.groups = [{ id: 'g1', name: 'Pombo', members: ['Bruno', 'Letícia'] }]; store.saveCatalog(); });
+  await p.evaluate(() => { catalog.groups = [{ id: 'g1', name: 'Pombo', members: ['Bruno', 'Letícia'] }]; store.saveCatalog(); jogoConferir({ silencioso: true }); }); // a turma posta direto nos dados não abre a janela de tampinha nova no meio do teste
   await p.fill('#ini-local', 'Cantina do Teste'); await p.click('#ini-form button[type=submit]');
   await p.locator('#add-pessoa').waitFor();
   for (const abre of ['pessoaNovaSheet', 'localSheet', 'produtoSheet', 'contaSheet']) {
@@ -1237,4 +1225,78 @@ test('1.12.3: fechar e reabrir em corte invisível: o preâmbulo não se mexe, c
   await p.evaluate(() => { reabrirComanda(); setTimeout(() => { tab = 'historico'; render(); }, 250); });
   assert.ok(await esperar(() => p.evaluate(() => !corteRodando && !document.querySelector('#cf-palco, #cf-trava')), 6000));
   semErros(a); await a.fechar();
+});
+
+test('1.13.0: a comanda ao vivo saiu do app: nada dela na tela, no código nem na rede', async () => {
+  const a = await aparelho(amb);
+  const p = a.page, pedidos = []; p.on('request', r => pedidos.push(r.url()));
+  await abrirMesa(p, 'Bar', ['Ana', 'Bruno']); await lancar(p, 'Suco', 1290);
+  assert.equal(await p.locator('#live-start, #live-card, #ini-aovivo, #av-abre').count(), 0);
+  await nav(p, 'inicio'); assert.equal(await p.locator('#ini-aovivo, #av-abre').count(), 0);
+  assert.deepEqual(await p.evaluate(() => [typeof live, typeof fromShared, typeof entrarAoVivo, 'live' in blankDraft(), TAMPINHAS.some(t => t.id === 'ao-vivo')]), ['undefined', 'undefined', 'undefined', false, false]);
+  assert.doesNotMatch(await p.evaluate(() => document.body.innerText), /ao vivo/i);
+  assert.deepEqual(pedidos.filter(u => /identitytoolkit|securetoken|firebase-auth|firebase-firestore|\/mesas\//.test(u)), [], 'o app não fala mais com o login nem com o banco da comanda ao vivo');
+  const csp = await p.getAttribute('meta[http-equiv="Content-Security-Policy"]', 'content');
+  assert.doesNotMatch(csp, /identitytoolkit|securetoken|firebaseapp\.com|apis\.google\.com/);
+  // comanda guardada por uma versão antiga, ainda marcada como ao vivo: abre normalmente, sem a marca
+  assert.deepEqual(await p.evaluate(() => { const d = migrate({ ...blankDraft(), live: { code: 'abcde23456', host: true }, payMode: 'single', payer: 'x' }); return ['live' in d, 'payMode' in d, 'payer' in d]; }), [false, false, false]);
+  semErros(a); await a.fechar();
+});
+
+test('1.13.0: dado adulterado (cópia de segurança, sincronização ou armazenamento) não entra na tela nem nas contas', async () => {
+  const a = await aparelho(amb);
+  const p = a.page;
+  const r = await p.evaluate(async () => {
+    const mau = 'x"><b id="INJETADO">oi</b><i a="';
+    draft = migrate({ ...blankDraft(), active: true, place: { x: 1 },
+      people: [{ id: mau, name: 'Invasor' }, { id: 'p1', name: 'Ana' }, { id: 'p2', name: { x: 1 } }, { id: 'p3', name: 'Caio' }, null, 'texto'],
+      groups: [{ id: mau, members: ['p1', mau], payers: [mau] }],
+      items: [{ id: 'i1', name: 'Suco', qty: '2', price: 'abc', a: { [mau]: 1, p1: 1, p3: '1' }, lk: true }, { id: mau, name: 'X', qty: 1, price: 100, a: { p1: 1 } }, { id: 'i3', name: 'Água', qty: -4, price: 550.4, fq: 'z', a: { p1: 1 }, lk: true }] });
+    tab = 'comanda'; render(); await new Promise(r => setTimeout(r, 300));
+    const c = compute(draft);
+    return { injetado: !!document.querySelector('#INJETADO'), place: draft.place, pessoas: draft.people.map(x => x.name), itens: draft.items.map(i => [i.name, i.qty, i.price, i.fq, Object.keys(i.a).join()]), total: c.total, grupos: c.groups.length, tela: document.querySelector('#view').innerText };
+  });
+  assert.equal(r.injetado, false, 'identificador com HTML não pode virar elemento na tela');
+  assert.equal(r.place, ''); assert.deepEqual(r.pessoas, ['Ana', 'Caio']);
+  assert.deepEqual(r.itens, [['Suco', 2, 0, 0, 'p1,p3'], ['Água', 1, 550, 0, 'p1']]);
+  assert.equal(r.total, 605, 'R$ 5,50 de água mais 10% de serviço'); assert.equal(r.grupos, 0);
+  assert.doesNotMatch(r.tela, /NaN|object Object|undefined/);
+  semErros(a); await a.fechar();
+});
+
+test('1.13.0: contas por sorteio: em 3.000 comandas a soma por pessoa é o total, sem centavo perdido', async () => {
+  const a = await aparelho(amb);
+  const falhas = await a.page.evaluate(() => {
+    let seed = 20261119; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff, ri = (x, y) => x + Math.floor(rnd() * (y - x + 1));
+    const falhas = {}; const nota = k => { falhas[k] = (falhas[k] || 0) + 1; };
+    for (let t = 0; t < 3000; t++) {
+      const d = blankDraft(), np = ri(1, 7);
+      d.people = Array.from({ length: np }, (_, i) => ({ id: 'p' + i, name: 'P' + i, payService: rnd() > .2, payCouvert: rnd() > .2, o: i }));
+      d.items = Array.from({ length: ri(0, 8) }, (_, i) => {
+        const qty = ri(1, 6), mode = ['equal', 'equal', 'units', 'parts'][ri(0, 3)], a = {};
+        if (mode === 'units') { let left = qty; d.people.forEach((x, k) => { const u = k === np - 1 ? left : ri(0, left); if (u) a[x.id] = u; left -= u; }); }
+        else d.people.forEach(x => { if (rnd() > .35) a[x.id] = mode === 'parts' ? ri(1, 4) : 1; });
+        return { id: 'i' + i, o: i, name: 'I' + i, qty, price: ri(0, 9999), fq: rnd() > .8 ? ri(0, qty) : 0, mode, lk: true, a };
+      });
+      d.service = { ...d.service, enabled: rnd() > .3, mode: rnd() > .7 ? 'fixed' : 'pct', pct: [10, 12, 13, 15, 8.5][ri(0, 4)], fixed: ri(0, 5000), policy: rnd() > .5 ? 'redistribute' : 'discount' };
+      d.couvert = { ...d.couvert, enabled: rnd() > .5, mode: rnd() > .6 ? 'pct' : 'fixed', pct: ri(0, 20), value: ri(0, 3000) };
+      d.discount = { ...d.discount, enabled: rnd() > .5, mode: rnd() > .5 ? 'pct' : 'fixed', pct: ri(0, 100), value: ri(0, 20000), at: rnd() > .5 ? 'after' : 'before' };
+      if (rnd() > .7 && np > 2) d.groups = [{ id: 'g', members: ['p0', 'p1'], payers: rnd() > .5 ? ['p0'] : ['p0', 'p1'] }];
+      const c = compute(d), sum = k => c.ids.reduce((s, i) => s + c.per[i][k], 0);
+      if (c.ids.some(i => ['gross', 'discount', 'service', 'couvert', 'total', 'paid'].some(k => !Number.isInteger(c.per[i][k])))) nota('valor que não é inteiro em centavos');
+      if (c.ids.some(i => c.per[i].total < 0)) nota('total negativo');
+      if (sum('total') !== c.total) nota('soma das pessoas diferente do total');
+      if (c.units.reduce((s, u) => s + u.total, 0) !== c.total) nota('soma dos cupons diferente do total');
+      if (sum('discount') !== c.discount) nota('desconto repartido diferente do desconto');
+      const cobrado = d.items.filter(it => c.ids.some(i => (it.a[i] || 0) > 0) && !c.incomplete.some(x => x.it === it)).reduce((s, it) => s + (it.qty - Math.min(it.fq, it.qty)) * it.price, 0);
+      if (sum('gross') !== cobrado) nota('consumo repartido diferente do cobrado');
+      if (c.payDiff !== 0) nota('o que se paga ao local diferente do total');
+      // serviço: com todos pagando, ou com "os outros dividem" e alguém pagando, o serviço inteiro é cobrado
+      const pagam = d.people.filter(x => x.payService).length;
+      if (d.service.enabled && (pagam === np || (d.service.policy === 'redistribute' && pagam > 0)) && c.service !== c.nominalTotal) nota('serviço cobrado diferente do serviço da mesa');
+    }
+    return falhas;
+  });
+  assert.deepEqual(falhas, {});
+  await a.fechar();
 });
