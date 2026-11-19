@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.11.0';
+const VERSAO = '1.11.1';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -655,6 +655,9 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.11.1', itens: [
+    'Fechar a comanda: no cupom da mesa, "Copiar" copia só a comanda da mesa.',
+  ] },
   { versao: '1.11.0', itens: [
     'Pix: chave de celular ou de CPF volta a ser salva. Chave fora do formato é avisada na hora.',
     'Cadastros: o lápis altera a pessoa (nome, Pix e "sou eu") e o produto (nome e preços).',
@@ -2131,7 +2134,7 @@ function fecharSheet(abrirEm = 0) {
   openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
       <div class="fc-nav"><button type="button" class="fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
       <div class="fc-janela" id="fc-janela"><div class="fc-trilho" id="fc-trilho" tabindex="0" aria-label="Cupons: arraste para o lado">${slides.map((x, i) => `<div class="fc-slide" role="group" aria-roledescription="cupom" aria-label="${i + 1} de ${slides.length}: ${esc(x.nome)}"><div class="cupom-1 ${x.pago ? 'cupom-pago' : ''}">${receiptHTML(x.r, d, c, x.rows)}${x.pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>
-        <div class="fc-col"><div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}${i ? 'Copiar' : 'Copiar todos'}</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div>
+        <div class="fc-col"><div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}Copiar</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div>
         <div class="fc-extra">${extras(x, c)}</div></div></div>`).join('')}</div></div>
       <div class="fc-pontos" aria-hidden="true">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
       <div id="fc-aviso">${avisoHTML(c)}</div>
@@ -2213,7 +2216,7 @@ function fecharSheet(abrirEm = 0) {
           const u = cAt.U[pgb.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
           alternarPago(u, pgb.dataset.fcPago); refazer(); return;
         }
-        if (cp) { const x = slides[+cp.dataset.fcCopiar]; if (!x.r) return copyText([receiptText(null, d, cAt, x.rows), ...cAt.units.map(u => receiptText(u, d, cAt))].join('\n\n'), 'Todos os cupons copiados.'); return copyText(receiptText(x.r, d, cAt, x.rows), `Cupom de ${x.nome} copiado.`); }
+        if (cp) { const x = slides[+cp.dataset.fcCopiar]; if (!x.r) return copyText(receiptText(null, d, cAt, x.rows), 'Comanda da mesa copiada.'); return copyText(receiptText(x.r, d, cAt, x.rows), `Cupom de ${x.nome} copiado.`); }
         if (pd) {
           const x = slides[+pd.dataset.fcPdf];
           if (!(await downloadsNS())) { KitFacil.avisar('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }

@@ -3,6 +3,11 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.11.1 · 2026-11-18
+
+- **Fechar a comanda, cupom da mesa:** o botão "Copiar todos" virou "Copiar" e copia só a comanda da mesa (antes copiava a da mesa e, em seguida, o cupom de cada pessoa). O aviso passou de "Todos os cupons copiados." para "Comanda da mesa copiada.". O cupom de cada pessoa continua com o seu "Copiar".
+- **Testes:** rodaram a verificação do padrão, o teste novo desta mudança e os de Fechar a comanda. Pulados: o guia inteiro (a mudança não mexe no guia) e a bateria completa (as contas não mudaram).
+
 ## 1.11.0 · 2026-11-18
 
 - **Pix de celular e de CPF consertado:** ao salvar uma chave de 11 números (celular sem pontuação, "85 99999-8888" ou CPF sem pontos), o app dava erro por dentro e a chave não era guardada. A conferência de CPF tinha ido para o Kit na 1.10.0 e o app continuava chamando a antiga. Agora a chave é salva: CPF só com números, celular com +55.

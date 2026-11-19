@@ -1085,3 +1085,17 @@ test('1.11.0: Pix de celular e de CPF, alterar pessoa e produto nos Cadastros, q
   assert.deepEqual(await estado(), [true, 'redistribute'], 'fechar no X é desistir');
   semErros(a); await a.fechar();
 });
+
+test('1.11.1: em Fechar a comanda, o Copiar do cupom da mesa copia só a comanda da mesa', async () => {
+  const a = await aparelho(amb, { viewport: { width: 393, height: 852 } });
+  const p = a.page;
+  await p.evaluate(() => { jogo.off = true; jogoSalvar(); window.__copiado = null; navigator.clipboard.writeText = async t => { window.__copiado = t; }; });
+  await p.evaluate(() => { const d = blankDraft(); d.place = 'Cantina A'; d.people = ['Ana', 'Bruno'].map(newPerson); d.items = [{ id: newId(), o: 1, name: 'Suco', qty: 2, price: 1000, fq: 0, mode: 'equal', lk: true, a: Object.fromEntries(d.people.map(x => [x.id, 1])) }]; d.active = true; draft = d; tab = 'comanda'; saveDraft(); render(); fecharSheet(); });
+  await assentar(p);
+  assert.deepEqual(await p.locator('[data-fc-copiar]').allTextContents(), ['Copiar', 'Copiar', 'Copiar']);
+  await p.locator('[data-fc-copiar="0"]').click();
+  await esperar(() => p.evaluate(() => !!window.__copiado));
+  const [txt, mesa, ana] = await p.evaluate(() => { const c = compute(draft); return [window.__copiado, receiptText(null, draft, c, mesaRows(draft, c)), receiptText(c.units[0], draft, c)]; });
+  assert.equal(txt, mesa); assert.ok(!txt.includes(ana), 'o cupom de cada pessoa não vai junto');
+  semErros(a); await a.fechar();
+});
