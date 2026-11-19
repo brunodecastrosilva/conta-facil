@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.12.5';
+const VERSAO = '1.12.6';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -656,6 +656,10 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.12.6', itens: [
+    'Animação nova no botão "Fechar comanda": ele pulsa quando a comanda está pronta para fechar',
+    '"Salvar no histórico" pulsa do mesmo jeito quando tudo foi recebido',
+  ] },
   { versao: '1.12.5', itens: [
     'O lápis do nome do lugar fica colado no nome, e não mais solto no meio da comanda',
     '"Salvar no histórico" tem sempre a cor de botão principal, e o texto "Faltam R$" acima dele saiu',
@@ -2187,7 +2191,7 @@ function corteLimpar(soPalco) { if (!soPalco) { corteVez++; corteAnims.forEach(a
 // cópia parada de um pedaço da tela, no lugar exato em que ele estava
 function fantasma(palco, el, extra = '') {
   const r = caixa(el), f = el.cloneNode(true);
-  f.querySelectorAll('canvas').forEach(x => x.remove()); f.inert = true; // os ids ficam: há estilos que dependem deles, e a cópia dura menos de um segundo
+  f.querySelectorAll('canvas, .pulso-anel').forEach(x => x.remove()); f.classList.remove('bate'); f.querySelectorAll('.bate').forEach(x => x.classList.remove('bate')); f.inert = true; // os ids ficam: há estilos que dependem deles, e a cópia dura menos de um segundo
   f.style.cssText += `;position:absolute;left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;margin:0;box-sizing:border-box;${extra}`;
   palco.append(f); return f;
 }
@@ -2285,41 +2289,21 @@ function corteAoFim(fim, ms) {
   const vez = corteVez, acabar = () => { if (!corteRodando || vez !== corteVez) return; $$('#view *').forEach(e => { if (e.getAnimations) e.getAnimations().forEach(a => { if (a.effect && a.effect.getComputedTiming().fill !== 'none' && a.playState === 'finished') a.cancel(); }); }); corteLimpar(); };
   setTimeout(acabar, ms + 120);
 }
-/* "Fechar comanda" chama a atenção quando a comanda está pronta para fechar. A animação é procedural: desenhada quadro a
-   quadro num canvas, com o ritmo tirado de ruído, então nunca se repete igual. Um picote anda pela borda do botão e, de
-   tempos em tempos, um brilho atravessa e o ícone dá um pulinho. Parada com movimento reduzido, fora da tela ou com a aba escondida. */
-let fecharAnim = 0;
-function animarBotaoFechar(btn) {
-  cancelAnimationFrame(fecharAnim); fecharAnim = 0;
+/* "Fechar comanda" (com a comanda pronta para fechar) e "Salvar no histórico" (com tudo recebido) chamam a atenção com a
+   mesma animação, o pulso: o botão respira e solta dois anéis mostarda, como batida de coração. O intervalo entre uma
+   batida e outra muda a cada vez, para não parecer relógio. Parado com movimento reduzido ou com a aba escondida. */
+const pulsos = {};
+function pulsarBotao(qual, btn) {
+  clearTimeout(pulsos[qual]); pulsos[qual] = 0;
   if (!btn || MV().off) return;
-  const cv = document.createElement('canvas'); cv.className = 'fechar-cv'; cv.setAttribute('aria-hidden', 'true'); btn.prepend(cv); btn.classList.add('vivo');
-  const g = cv.getContext('2d'); if (!g) return;
-  let w = 0, h = 0, raio = 12, visivel = true, ult = performance.now(), t = 0, passo = 0, prox = 1.1, brilho = -1, larg = 60, forca = .2;
-  const medir = () => { const dpr = Math.min(3, devicePixelRatio || 1); w = btn.clientWidth; h = btn.clientHeight; raio = Math.max(2, Math.min(parseFloat(getComputedStyle(btn).borderTopLeftRadius) || 12, h / 2) - 4); cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); };
-  const ruido = x => (Math.sin(x * 1.31) + Math.sin(x * .73 + 1.7) + Math.sin(x * 2.17 + .3)) / 3; // suave, entre -1 e 1
-  const suave = x => x * x * (3 - 2 * x);
-  try { new IntersectionObserver(es => { visivel = es[es.length - 1].isIntersecting; }).observe(btn); } catch {}
-  const quadro = agora => {
-    if (!btn.isConnected) { fecharAnim = 0; return; }
-    fecharAnim = requestAnimationFrame(quadro);
-    const dt = Math.min(.05, (agora - ult) / 1000); ult = agora;
-    if (!visivel || document.hidden) return;
-    if (btn.clientWidth !== w || btn.clientHeight !== h) medir();
-    t += dt; g.clearRect(0, 0, w, h);
-    // picote: traços que andam pela borda, ora mais depressa, ora mais devagar
-    passo -= dt * (16 + 9 * ruido(t * .6));
-    g.lineWidth = 1.5; g.strokeStyle = 'rgba(255,255,255,.5)'; g.setLineDash([5, 5]); g.lineDashOffset = passo;
-    g.beginPath(); g.roundRect ? g.roundRect(4, 4, w - 8, h - 8, raio) : g.rect(4, 4, w - 8, h - 8); g.stroke();
-    // brilho: atravessa de vez em quando; a largura, a força e a espera mudam a cada passada
-    if (brilho < 0 && t > prox) { brilho = 0; larg = 46 + 26 * (ruido(t * 3.1) + 1); forca = .16 + .07 * (ruido(t * 5.3) + 1); btn.classList.remove('salta'); void btn.offsetWidth; btn.classList.add('salta'); }
-    if (brilho >= 0) {
-      brilho += dt / .95; const x = -larg + (w + 2 * larg) * suave(Math.min(1, brilho)), gr = g.createLinearGradient(x - larg, 0, x + larg, 0);
-      gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.5, `rgba(255,255,255,${forca})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
-      g.save(); g.setLineDash([]); g.transform(1, 0, -.35, 1, h * .175, 0); g.fillStyle = gr; g.fillRect(x - larg, 0, larg * 2, h); g.restore();
-      if (brilho >= 1) { brilho = -1; prox = t + 2.6 + 2.2 * (ruido(t * 1.9) + 1); }
-    }
+  btn.classList.add('pulso');
+  for (let i = 0; i < 2; i++) { const a = document.createElement('span'); a.className = 'pulso-anel' + (i ? ' p2' : ''); a.setAttribute('aria-hidden', 'true'); btn.prepend(a); }
+  const bater = () => {
+    if (!btn.isConnected) { pulsos[qual] = 0; return; }
+    if (!document.hidden) { btn.classList.remove('bate'); void btn.offsetWidth; btn.classList.add('bate'); }
+    pulsos[qual] = setTimeout(bater, 2400 + Math.random() * 1800);
   };
-  medir(); fecharAnim = requestAnimationFrame(quadro);
+  pulsos[qual] = setTimeout(bater, 900);
 }
 // o que fica dentro do canhoto aberto, além do cupom: valor diferente, quem fica com a diferença e "já saiu da mesa"
 function canhotoExtras(d, u, c) {
@@ -2385,7 +2369,7 @@ function fechadaHTML(d, c) {
       <div class="cf-cans" id="cf-cans">${c.units.map((u, i) => canhotoHTML(d, u, i, c)).join('')}</div>
       <div class="cf-mesa"><button type="button" class="btn small ghost" id="cf-mesa-cupom">${I.file}Ver cupom da mesa</button></div>
     </div>
-    <div class="fim-acoes cf-pe"><button type="button" class="kf-btn kf-pri fechar-btn" id="cf-salvar">${I.save}<span>Salvar no histórico</span></button></div>`;
+    <div class="fim-acoes cf-pe"><button type="button" class="kf-btn kf-pri fechar-btn" id="cf-salvar"${tudo ? ' data-pulso' : ''}>${I.save}<span>Salvar no histórico</span></button></div>`;
 }
 // a barra de recebido tem o seu jeito: enche passando do ponto e voltando; esvazia murchando; cheia, estufa e ganha o check
 function animarBarra(v) {
@@ -2400,7 +2384,7 @@ function animarBarra(v) {
 }
 function bindFechada(v) {
   const d = draft, raiz = $('#cf', v); if (!raiz) return;
-  animarBarra(v);
+  animarBarra(v); pulsarBotao('salvar', $('#cf-salvar[data-pulso]', v));
   const U = el => compute(d).U[el.closest('[data-can]')?.dataset.can];
   const mudar = () => commit({ anchor: false });
   $('#cf-reabrir', v).addEventListener('click', reabrirComanda);
@@ -2597,7 +2581,7 @@ const viewComanda = {
       const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
     });
     $('#fechar-cmd', v)?.addEventListener('click', () => fecharComanda());
-    { const c = compute(d); animarBotaoFechar(c.unassigned.length || c.incomplete.length || c.openItems.length ? null : $('#fechar-cmd', v)); }
+    { const c = compute(d); pulsarBotao('fechar', c.unassigned.length || c.incomplete.length || c.openItems.length ? null : $('#fechar-cmd', v)); }
     $('#cmd-excluir', v)?.addEventListener('click', () => deleteCurrent(true));
     $$('[data-it-alt]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itAlt); if (it) renameSheet(it); }));
     const rasc = id => { const it = d.items.find(i => i.id === id); if (!it) return null; if (!itPend[id]) itPend[id] = { qty: it.qty, a: { ...it.a }, fq: it.fq || 0 }; return [it, itPend[id]]; };

@@ -3,6 +3,13 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.12.6 · 2026-11-19
+
+- **Pulso nos botões:** "Fechar comanda" troca o picote com brilho por um pulso: o botão respira e solta dois anéis mostarda, como batida de coração. O intervalo entre as batidas varia, para não parecer relógio. Continua quieto enquanto houver item sem dividir.
+- **"Salvar no histórico" com a mesma animação:** pulsa quando tudo foi recebido; enquanto falta receber, fica quieto, para não competir com "Marcar como pago".
+- Quem pede movimento reduzido vê os botões parados.
+- Testes: verificação do padrão e os testes da comanda fechada e do corte invisível. Pulados: o guia inteiro, a acessibilidade e o restante da bateria.
+
 ## 1.12.5 · 2026-11-19
 
 - **Lápis do nome do lugar:** fica colado na última palavra do nome, como parte do texto. Antes, com o nome em duas linhas, ele ficava solto no meio do cabeçalho.

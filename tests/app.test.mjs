@@ -1109,14 +1109,17 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   assert.equal(await p.evaluate(() => !!draft.fechada), false); assert.match(await p.textContent('.kf-toast'), /Divida todos os itens/);
   await p.evaluate(() => { draft.items[0].lk = true; commit(); document.querySelectorAll('.kf-toast').forEach(t => t.remove()); });
   // "Fechar comanda" só chama a atenção quando dá para fechar: aí um canvas desenha, quadro a quadro, o picote que anda
-  assert.equal(await p.evaluate(() => { draft.items[0].lk = false; commit(); return document.querySelectorAll('#fechar-cmd canvas').length; }), 0, 'com item sem divisão, o botão fica quieto');
+  assert.equal(await p.evaluate(() => { draft.items[0].lk = false; commit(); return document.querySelectorAll('#fechar-cmd .pulso-anel').length; }), 0, 'com item sem divisão, o botão fica quieto');
   await p.evaluate(() => { draft.items[0].lk = true; commit(); });
-  const vivo = await p.evaluate(async () => { const cv = document.querySelector('#fechar-cmd .fechar-cv'); if (!cv) return null; await new Promise(r => setTimeout(r, 300)); const g = cv.getContext('2d'), soma = () => { const d = g.getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) n += d[i] * (i % 97); return n; }; const a1 = soma(); await new Promise(r => setTimeout(r, 400)); return [cv.getAttribute('aria-hidden'), a1 > 0, a1 !== soma(), document.querySelector('#fechar-cmd').textContent.trim()]; });
-  assert.deepEqual(vivo, ['true', true, true, 'Fechar comanda'], 'o desenho do botão muda de um instante para o outro');
+  // o pulso: dois anéis escondidos do leitor de tela; de tempos em tempos o botão bate (respira e solta os anéis)
+  const pulso = b => p.evaluate(async b => { const e = document.querySelector(b), an = [...e.querySelectorAll('.pulso-anel')]; if (an.length !== 2) return [an.length];
+    let bateu = false; for (let i = 0; i < 40 && !bateu; i++) { await new Promise(r => setTimeout(r, 50)); bateu = e.classList.contains('bate') && e.getAnimations().length === 1 && an.every(a => a.getAnimations().length === 1); }
+    return [2, an.every(a => a.getAttribute('aria-hidden') === 'true' && getComputedStyle(a).pointerEvents === 'none'), bateu, e.textContent.trim()]; }, b);
+  assert.deepEqual(await pulso('#fechar-cmd'), [2, true, true, 'Fechar comanda'], 'pronta para fechar, o botão pulsa');
   // a transição é um corte invisível: o preâmbulo não se mexe e cada linha de nome vira canhoto (o filme inteiro é medido no teste 1.12.3)
   await p.click('#fechar-cmd');
   await p.locator('#cf').waitFor();
-  assert.ok(await esperar(() => p.evaluate(() => !corteRodando && !document.querySelector('#cf-palco, #cf-trava, .cf-cola') && document.querySelector('#view').getAnimations({ subtree: true }).length === 0), 5000), 'a transição termina e não deixa fantasma nem animação presa');
+  assert.ok(await esperar(() => p.evaluate(() => !corteRodando && !document.querySelector('#cf-palco, #cf-trava, .cf-cola') && document.querySelector('#view').getAnimations({ subtree: true }).filter(a => !a.effect.target.closest('.fechar-btn')).length === 0), 5000), 'a transição termina e não deixa fantasma nem animação presa');
   assert.deepEqual(await p.evaluate(() => { const b = document.querySelector('#cf-reabrir'), r = b.getBoundingClientRect(); return [b.tagName, !!b.querySelector('svg'), r.height >= 44, b.textContent.trim()]; }), ['BUTTON', true, true, 'Reabrir a comanda']);
   assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('.cf-can .cf-topo')].map(e => e.textContent.replace(/\s+/g, ' ').trim())), ['AnaR$ 30,00', 'BrunoR$ 30,00', 'CarlaR$ 30,00']);
   assert.match(await p.textContent('.cf-cabeca .cu-cab'), /CANTINA A|Cantina A/); assert.match(await p.textContent('.cf-faixa'), /FECHADA[\s\S]*Reabrir a comanda/);
@@ -1143,11 +1146,13 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   const barra = () => p.evaluate(() => [+document.querySelector('.cf-barra-f').dataset.f, document.querySelector('.cf-barra').classList.contains('cheia'), (document.querySelector('.cf-falta')?.textContent || '').replace(/\s+/g, ' ').trim(), document.querySelector('#cf-salvar').className]);
   await p.click(`${CAN(ana)} .cf-pg [data-can-pago="marcar"]`); await p.locator(`${CAN(ana)} .cf-pago`).waitFor();
   assert.equal(await p.locator(`${CAN(ana)} [data-can-pix]`).count(), 0);
+  assert.deepEqual(await pulso('#cf-salvar'), [0], 'enquanto falta receber, Salvar fica quieto');
   let b = await barra(); assert.ok(Math.abs(b[0] - 1 / 3) < .01); assert.deepEqual(b.slice(1), [false, '', 'kf-btn kf-pri fechar-btn']);
   assert.ok(await p.evaluate(() => document.querySelector('.cf-barra-f').getAnimations().length === 1), 'a barra enche com movimento');
   await p.click(`${CAN(bruno)} [data-can-pago="marcar"]`); await p.locator(`${CAN(bruno)} .cf-pago`).waitFor();
   await p.click(`${CAN(carla)} [data-can-pago="marcar"]`); await p.locator(`${CAN(carla)} .cf-pago`).waitFor();
-  b = await barra(); assert.deepEqual(b, [1, true, '', 'kf-btn kf-pri fechar-btn'], 'salvar é sempre a ação principal, sem texto por cima');
+  b = await barra(); b[3] = b[3].replace(/ pulso( bate)?$/, ''); assert.deepEqual(b, [1, true, '', 'kf-btn kf-pri fechar-btn'], 'salvar é sempre a ação principal, sem texto por cima');
+  assert.deepEqual(await pulso('#cf-salvar'), [2, true, true, 'Salvar no histórico'], 'com tudo recebido, Salvar pulsa igual ao Fechar');
   assert.equal(await p.locator('#view [data-can-pix]').count(), 0, 'com todos pagos, Receber com Pix não existe');
   // desmarcar esvazia a barra
   await p.click(`${CAN(ana)} [data-can-pago="desmarcar"]`); await esperar(async () => (await barra())[2] === 'Faltam R$ 30,00');
@@ -1168,7 +1173,7 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await montar();
   await p.evaluate(() => fecharComanda());
-  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#cf'), [...document.querySelectorAll('.cf-can, .cf-selo')].reduce((n, e) => n + e.getAnimations({ subtree: true }).length, 0) + document.querySelectorAll('#cf-palco, #cf-trava, .cf-cola, .fechar-cv').length]), [true, true, 0]);
+  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#cf'), [...document.querySelectorAll('.cf-can, .cf-selo')].reduce((n, e) => n + e.getAnimations({ subtree: true }).length, 0) + document.querySelectorAll('#cf-palco, #cf-trava, .cf-cola, .pulso-anel').length]), [true, true, 0]);
   await p.evaluate(() => reabrirComanda());
   assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#groups-card'), document.querySelectorAll('#cf-palco, #cf-trava').length]), [false, true, 0], 'reabrir também troca direto');
   semErros(a); await a.fechar();
@@ -1219,12 +1224,12 @@ test('1.12.3: fechar e reabrir em corte invisível: o preâmbulo não se mexe, c
   let Q = await rodar('#fechar-cmd'); conferir(Q, 'fechar', true);
   assert.ok(Q.findIndex(q => q.palco) > Q.findIndex(q => q.y === 0) - 1 && Q.slice(0, Q.findIndex(q => q.palco) - 1).every((q, i, l) => !i || q.y <= l[i - 1].y), 'a tela sobe sem voltar antes do corte');
   // durante o corte, um segundo toque não faz nada; no fim, o preâmbulo da comanda fechada é o mesmo da aberta
-  assert.deepEqual(await p.evaluate(() => { const c = document.querySelector('.cf-cabeca'); return [c.querySelector('.cu-nome').textContent.trim(), c.querySelectorAll('button').length, c.querySelector('#cf-reabrir').textContent.trim(), document.querySelector('#view').getAnimations({ subtree: true }).length]; }), ['Cantina A', 1, 'Reabrir a comanda', 0]);
+  assert.deepEqual(await p.evaluate(() => { const c = document.querySelector('.cf-cabeca'); return [c.querySelector('.cu-nome').textContent.trim(), c.querySelectorAll('button').length, c.querySelector('#cf-reabrir').textContent.trim(), document.querySelector('#view').getAnimations({ subtree: true }).filter(a => !a.effect.target.closest('.fechar-btn')).length]; }), ['Cantina A', 1, 'Reabrir a comanda', 0]);
   // reabrir: o mesmo filme ao contrário, com um canhoto aberto e a tela rolada
   await p.click('.cf-can:nth-child(2) [data-can-abre]'); await p.waitForTimeout(800);
   await p.evaluate(() => scrollTo(0, 200)); await p.waitForTimeout(200);
   Q = await rodar('#cf-reabrir'); conferir(Q, 'reabrir', false);
-  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, document.querySelectorAll('#view [data-pes]').length, document.querySelector('#view').getAnimations({ subtree: true }).length, getComputedStyle(document.querySelector('.cmd-una')).clipPath]), [false, 5, 0, 'none']);
+  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, document.querySelectorAll('#view [data-pes]').length, document.querySelector('#view').getAnimations({ subtree: true }).filter(a => !a.effect.target.closest('.fechar-btn')).length, getComputedStyle(document.querySelector('.cmd-una')).clipPath]), [false, 5, 0, 'none']);
   // ida e volta seguidas, e dois toques juntos: só um corte por vez, e a comanda termina no estado certo
   await p.evaluate(() => { fecharComanda(); fecharComanda(); reabrirComanda(); });
   assert.ok(await esperar(() => p.evaluate(() => !corteRodando && !!draft.fechada && !document.querySelector('#cf-palco')), 6000), 'toques repetidos durante o corte são ignorados');
