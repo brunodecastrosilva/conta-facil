@@ -15,7 +15,7 @@ com `0.`, o app está em fase de testes (rascunho).
 - **Não fecha com item sem divisão:** o app avisa "Divida todos os itens antes de fechar a comanda.".
 - **Guia:** os passos *Feche a comanda*, *Receba de cada um* (novo nome), *A conta de quem já pagou mudou* e *Salve no Histórico* foram refeitos para os canhotos. Continua com 34 passos.
 - **Dados:** "fechada" fica só no aparelho, como "pago" e "já saiu da mesa"; a comanda salva fechada abre em canhotos pelo histórico.
-- **Regras do Conta Fácil:** o Art. 8º (Fechar a comanda) precisa de texto novo; a proposta está no relato desta versão.
+- **Regras do Conta Fácil:** texto novo do Art. 8º (Fechar a comanda em canhotos, sem janela e sem "uma pessoa paga a conta de todos") aprovado pelo Bruno em 18/11/2026. As Regras ficam nas instruções do Projeto, que só o Bruno edita.
 - **Testes:** rodaram a verificação do padrão, a bateria completa (a mudança mexe em Fechar, no cupom da mesa e no guia) e a acessibilidade, agora com a comanda fechada no claro e no escuro.
 
 ## 1.11.1 · 2026-11-18
