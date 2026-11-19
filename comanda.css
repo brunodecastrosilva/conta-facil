@@ -607,7 +607,12 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 
 
 /* ---------- comanda fechada: um canhoto por pessoa (1.12.0) ---------- */
-.cf{display:flex;flex-direction:column;gap:12px}
+.cf{position:relative;display:flex;flex-direction:column;gap:12px}
+.cf-cabeca{margin-bottom:0}
+.cf-cabeca .cu-ico .i{opacity:0}
+.cf-cabeca .cu-local,.cf-cabeca .cu-conta{cursor:default}
+.cf-faixa{height:68px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px}
+.cu-ico{display:contents}
 .cf-papel{background:var(--paper);color:var(--paper-ink);color-scheme:light;filter:drop-shadow(0 2px 5px rgba(0,0,0,.13));
   --ink:var(--paper-ink);--muted:var(--paper-muted);--line:var(--paper-line);--line-2:var(--paper-muted);--surface:var(--paper);--surface-2:var(--paper);--campo:var(--paper-muted);
   --green:var(--paper-ink);--green-ink:var(--paper);--green-soft:color-mix(in srgb,var(--paper-ink) 14%,var(--paper));--mustard-soft:color-mix(in srgb,#D3931A 22%,var(--paper));--mustard-ink:var(--paper-ink);
@@ -616,14 +621,8 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .cf-papel .btn{min-height:44px;border-radius:6px;background:transparent!important;color:var(--paper-ink)!important;box-shadow:inset 0 0 0 1.5px var(--paper-ink)!important;font-size:13.5px;font-weight:600;padding:0 12px;white-space:normal;line-height:1.15}
 .cf-papel .btn.cf-pri{background:var(--paper-ink)!important;color:var(--paper)!important}
 .cf-papel .btn .i{width:16px;height:16px;flex:none}
-.cf-cab{padding:12px 14px 12px;border-bottom:2px solid var(--paper-ink);display:flex;flex-direction:column}
-.cf-l1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.cf-local{margin:0;font-size:16px;line-height:1.25;font-weight:600;letter-spacing:.04em;text-transform:uppercase;min-width:0;overflow-wrap:anywhere}
-.cf-total{font-size:19px;font-weight:600;white-space:nowrap}
-.cf-l2{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
 .cf-selo{border:2.5px solid #1B6B3F;color:#1B6B3F;font-weight:700;font-size:13px;letter-spacing:.14em;padding:1px 8px;border-radius:4px;transform:rotate(-6deg);flex:none}
-.cf-quando{font-size:12px;color:var(--paper-muted)}
-.cf-papel .btn.cf-reabrir{flex:none;gap:8px;padding:0 14px}
+.cf-faixa .btn.cf-reabrir{flex:none;gap:8px;padding:0 14px;width:auto;margin:0}
 .cf-rec{display:flex;flex-direction:column;gap:8px}
 .cf-rec-l{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px;color:var(--muted)}
 .cf-rec-l b{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -634,12 +633,15 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .cf-ok .i{width:18px;height:18px}
 .cf-barra.cheia .cf-ok{transform:scale(1)}
 .cf-cans{display:flex;flex-direction:column;gap:8px}
-.cf-can{display:flex}
-.cf-toco{width:40px;flex:none;border-right:2px dashed var(--paper-muted);display:grid;place-items:center;font-size:12px;color:var(--paper-muted);letter-spacing:.08em}
+.cf-can{position:relative;z-index:0;display:flex;filter:none}
+.cf-sombra{position:absolute;inset:0;z-index:-1;box-shadow:0 2px 5px rgba(0,0,0,.13);pointer-events:none}
+.cf-toco{position:relative;width:40px;flex:none;display:grid;place-items:center;font-size:13px;font-weight:600;color:var(--paper-muted)}
+.cf-picote{position:absolute;top:0;bottom:0;right:0;border-right:2px dashed var(--paper-muted)}
+.cf-num,.cf-nome,.cf-vn,.cf-rs{display:inline-block}
 .cf-corpo{flex:1;min-width:0;padding:10px 8px 8px 14px;display:flex;flex-direction:column;gap:4px}
-.cf-topo{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:16px;font-weight:600;padding-right:6px}
-.cf-topo span:first-child{min-width:0;overflow-wrap:anywhere}
-.cf-topo span:last-child{white-space:nowrap}
+.cf-topo{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px;font-weight:600;padding-right:6px}
+.cf-nome{min-width:0;overflow-wrap:anywhere}
+.cf-valor{white-space:nowrap}
 .cf-obs{font-size:12px;line-height:1.35;color:var(--paper-muted)}
 .cf-rapido{display:flex;align-items:center;gap:6px;min-height:44px}
 .cf-rapido .btn{flex:1;min-width:0}
@@ -658,10 +660,14 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .cf-pe{margin-top:14px}
 .cf-falta{margin:0;text-align:center;font-size:14px;color:var(--muted)}
 .cf-pe .btn,.cf-pe .kf-btn{width:100%;min-height:48px;gap:8px}
-/* ao fechar: corte invisível. A máscara é o botão, que cobre a tela; por trás dela a tela troca, e a forma encolhe até o carimbo */
-.cf-corte{position:fixed;inset:0;z-index:84;pointer-events:auto;will-change:clip-path}
-.cf-corte-rot{position:absolute;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none}
-.cf-corte-rot .i{width:20px;height:20px}
+/* corte invisível entre a comanda aberta e a fechada: o palco dos fantasmas e o papel "de cola" */
+#cf-palco{position:fixed;inset:0;z-index:20;overflow:hidden;pointer-events:auto;contain:strict}
+#cf-palco>*{pointer-events:none}
+#cf-trava{position:fixed;inset:0;z-index:84}
+.cf-so-tinta{background:none!important;filter:none!important}
+.cf-so-tinta::before,.cf-so-tinta::after{display:none!important}
+.cf-so-tinta .cu-cab{visibility:hidden}
+.cf-cola{position:absolute;z-index:0;background:var(--paper);pointer-events:none}
 /* "Fechar comanda" pronto para fechar: o canvas desenha o picote que anda e o brilho; o ícone dá um pulinho a cada passada */
 .fechar-btn.vivo{position:relative;overflow:hidden}
 .fechar-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}

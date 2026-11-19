@@ -3,6 +3,14 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.12.3 · 2026-11-19
+
+- **Fechar a comanda, transição nova:** ao tocar em "Fechar comanda", a tela sobe até o topo e acontece o corte invisível. O preâmbulo (lugar, data e total) é o mesmo nas duas telas e não se mexe; cada linha de nome se destaca do papel e vira o seu canhoto, com o número, o nome e o valor saindo exatamente de onde estavam. Pedidos, total e botões saem por baixo, e o carimbo FECHADA bate no fim. Saiu a máscara verde da 1.12.2.
+- **Reabrir a comanda, o filme ao contrário:** os canhotos voltam a se juntar no papel, viram linhas de novo e a comanda se desenrola (pedidos, total e botões).
+- **Preâmbulo igual, aberta ou fechada:** a comanda fechada mostra o mesmo cabeçalho da aberta; o carimbo FECHADA e "Reabrir a comanda" ficam numa faixa logo abaixo. No canhoto, nome e valor têm o mesmo tamanho da linha da comanda.
+- **Sem engasgo:** a animação só usa movimento e transparência, que o aparelho desenha sem refazer a tela; durante o corte os toques ficam travados, e nada sobra no fim. Quem pede movimento reduzido vê a troca direta.
+- Testes: um teste novo grava a transição quadro a quadro, na ida e na volta, e confere que o preâmbulo não sai do pixel, que nenhum nome salta, vai e volta ou dá tranco, e que não fica fantasma na tela. Rodaram a verificação do padrão, a bateria completa (com o guia inteiro, que passa pela transição) e a acessibilidade.
+
 ## 1.12.2 · 2026-11-18
 
 - **Transição em corte invisível:** ao fechar, o próprio botão "Fechar comanda" cresce até cobrir a tela (a máscara); a troca da comanda aberta pela fechada acontece escondida atrás dele; e a mesma forma verde encolhe até o lugar do carimbo FECHADA, onde vira o carimbo (o corte de correspondência), com a batida e a vibração curta. Saíram o picote entre as pessoas e os canhotos que giravam. Continua sendo um momento de marca (Código, Art. 72, § 4º); com movimento reduzido, a troca é direta.

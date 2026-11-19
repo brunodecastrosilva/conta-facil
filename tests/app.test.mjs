@@ -119,6 +119,7 @@ test('fluxo completo: mesa, pedidos numa janela só, pago, fechar, salvar com fe
   // fechar: a própria tela vira um canhoto por pessoa; no da Ana, marcar como pago
   await p.click('#fechar-cmd'); await p.locator('#cf').waitFor();
   assert.equal(await p.locator('.cf-can').count(), 3);
+  assert.ok(await esperar(() => p.evaluate(() => !corteRodando)), 'o corte termina');
   assert.equal(await p.locator('#fechar-cmd, #it-novo, #add-pessoa, .kf-dlg').count(), 0, 'fechar não abre janela, e a comanda fechada não aceita item nem pessoa');
   await p.click(`[data-can="${ana}"] [data-can-pago="marcar"]`);
   await p.locator(`[data-can="${ana}"] .cf-pago`).waitFor();
@@ -1112,15 +1113,13 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   await p.evaluate(() => { draft.items[0].lk = true; commit(); });
   const vivo = await p.evaluate(async () => { const cv = document.querySelector('#fechar-cmd .fechar-cv'); if (!cv) return null; await new Promise(r => setTimeout(r, 300)); const g = cv.getContext('2d'), soma = () => { const d = g.getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) n += d[i] * (i % 97); return n; }; const a1 = soma(); await new Promise(r => setTimeout(r, 400)); return [cv.getAttribute('aria-hidden'), a1 > 0, a1 !== soma(), document.querySelector('#fechar-cmd').textContent.trim()]; });
   assert.deepEqual(vivo, ['true', true, true, 'Fechar comanda'], 'o desenho do botão muda de um instante para o outro');
-  // a transição é um corte invisível: o botão cresce e cobre a tela, a troca acontece atrás dele, e a forma encolhe até o carimbo
+  // a transição é um corte invisível: o preâmbulo não se mexe e cada linha de nome vira canhoto (o filme inteiro é medido no teste 1.12.3)
   await p.click('#fechar-cmd');
-  assert.deepEqual(await p.evaluate(() => { const c = document.querySelector('.cf-corte'); return [!!c, !!draft.fechada, c && c.getAnimations().length >= 1]; }), [true, false, true], 'primeiro a máscara: a comanda ainda não virou');
   await p.locator('#cf').waitFor();
-  assert.equal(await p.locator('.cf-corte').count(), 1, 'a tela troca com a máscara ainda na frente');
-  assert.ok(await esperar(() => p.evaluate(() => !document.querySelector('.cf-corte') && document.querySelector('#view').getAnimations({ subtree: true }).length === 0), 5000), 'a transição termina e não deixa máscara nem animação presa');
+  assert.ok(await esperar(() => p.evaluate(() => !corteRodando && !document.querySelector('#cf-palco, #cf-trava, .cf-cola') && document.querySelector('#view').getAnimations({ subtree: true }).length === 0), 5000), 'a transição termina e não deixa fantasma nem animação presa');
   assert.deepEqual(await p.evaluate(() => { const b = document.querySelector('#cf-reabrir'), r = b.getBoundingClientRect(); return [b.tagName, !!b.querySelector('svg'), r.height >= 44, b.textContent.trim()]; }), ['BUTTON', true, true, 'Reabrir a comanda']);
   assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('.cf-can .cf-topo')].map(e => e.textContent.replace(/\s+/g, ' ').trim())), ['AnaR$ 30,00', 'BrunoR$ 30,00', 'CarlaR$ 30,00']);
-  assert.match(await p.textContent('.cf-cab'), /CANTINA A|Cantina A/); assert.match(await p.textContent('.cf-l2'), /FECHADA[\s\S]*Reabrir a comanda/);
+  assert.match(await p.textContent('.cf-cabeca .cu-cab'), /CANTINA A|Cantina A/); assert.match(await p.textContent('.cf-faixa'), /FECHADA[\s\S]*Reabrir a comanda/);
   // sem chave Pix de "você", não há Receber com Pix; o canhoto aberto tem Compartilhar e Pagar valor diferente, sem PDF
   await p.click(`${CAN(ana)} [data-can-abre]`); await p.locator(`${CAN(ana)} .cf-dentro`).waitFor();
   assert.deepEqual(await p.locator(`${CAN(ana)} .cf-dentro button`).allTextContents().then(x => x.map(t => t.trim())), ['Ver cupom', 'Pagar valor diferente', 'Marcar como pago']);
@@ -1169,6 +1168,68 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await montar();
   await p.evaluate(() => fecharComanda());
-  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#cf'), [...document.querySelectorAll('.cf-can, .cf-selo, .cf-corte')].reduce((n, e) => n + e.getAnimations().length, 0) + document.querySelectorAll('.cf-corte, .fechar-cv').length]), [true, true, 0]);
+  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#cf'), [...document.querySelectorAll('.cf-can, .cf-selo')].reduce((n, e) => n + e.getAnimations({ subtree: true }).length, 0) + document.querySelectorAll('#cf-palco, #cf-trava, .cf-cola, .fechar-cv').length]), [true, true, 0]);
+  await p.evaluate(() => reabrirComanda());
+  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#groups-card'), document.querySelectorAll('#cf-palco, #cf-trava').length]), [false, true, 0], 'reabrir também troca direto');
+  semErros(a); await a.fechar();
+});
+
+test('1.12.3: fechar e reabrir em corte invisível: o preâmbulo não se mexe, cada linha de nome vira canhoto sem salto, e nada sobra', async () => {
+  const a = await aparelho(amb, { viewport: { width: 393, height: 852 } }); const p = a.page;
+  await p.locator('#view .imp').waitFor();
+  await p.evaluate(() => { jogo.off = true; jogoSalvar(); const d = blankDraft(); d.place = 'Cantina A'; d.people = ['Ana', 'Bruno', 'Carla', 'Diego', 'Elisa'].map(newPerson);
+    const todos = Object.fromEntries(d.people.map(x => [x.id, 1]));
+    d.items = [['Pizza', 2, 4500], ['Suco', 5, 900], ['Sobremesa', 3, 1800], ['Água', 4, 500], ['Porção', 1, 3800]].map(([name, qty, price], i) => ({ id: newId(), o: i + 1, name, qty, price, fq: 0, mode: 'equal', lk: true, a: { ...todos } }));
+    d.active = true; draft = d; tab = 'comanda'; saveDraft(); render();
+    // grava, a cada quadro, onde estão o preâmbulo e o número, o nome e o valor de cada pessoa (linha, canhoto ou fantasma)
+    window.__grava = () => { const Q = []; let on = true, t0 = performance.now(), ult = t0;
+      const r = e => { if (!e || !e.getClientRects().length || getComputedStyle(e).visibility === 'hidden') return null; const b = e.getBoundingClientRect(); return [b.left, b.top, b.right]; };
+      const f = agora => { const v = document.querySelector('#view');
+        const q = { dt: agora - ult, y: scrollY, cab: r(v.querySelector('.cu-cab')), local: r(v.querySelector('.cu-nome')), total: r(v.querySelector('.cu-total')), fechada: !!v.querySelector('#cf'), palco: !!document.querySelector('#cf-palco'), trava: !!document.querySelector('#cf-trava'), p: {} }; ult = agora;
+        for (const { id } of draft.people) { const lin = v.querySelector(`[data-pes="${id}"] summary`), src = document.querySelector(`#cf-palco [data-can="${id}"]`) || v.querySelector(`[data-can="${id}"]`);
+          q.p[id] = src ? { n: r(src.querySelector('.cf-num')), nome: r(src.querySelector('.cf-nome')), v: r(src.querySelector('.cf-vn')) } : lin ? { n: r(lin.querySelector('.dv-n')), nome: r(lin.querySelector('.dv-nome > span')), v: r(lin.querySelector('.dv-v')) } : null; }
+        Q.push(q); if (on) requestAnimationFrame(f); };
+      requestAnimationFrame(f); return () => { on = false; return Q; }; }; });
+  await p.waitForTimeout(700);
+  const conferir = (Q, nome, fechaNoFim) => {
+    const i0 = Q.findIndex(q => q.palco); assert.ok(i0 > 0, nome + ': a transição acontece');
+    const filme = Q.slice(i0 - 1), base = filme[0];
+    assert.equal(base.y, 0, nome + ': a tela já subiu até o topo quando o corte começa');
+    assert.ok(filme.every(q => q.y === 0), nome + ': a tela não rola durante o corte');
+    // o preâmbulo (lugar, data e total) fica no mesmo pixel do começo ao fim, inclusive no quadro da troca
+    for (const q of filme) for (const k of ['cab', 'local', 'total']) assert.ok(q[k] && q[k].every((x, i) => Math.abs(x - base[k][i]) < 0.01), `${nome}: o preâmbulo não se mexe (${k})`);
+    // cada número, nome e valor: sem salto no quadro da troca, sem ir e voltar, e sem tranco de velocidade
+    for (const id of Object.keys(base.p)) for (const k of ['n', 'nome', 'v']) { let ant = null, vAnt = null, dir = 0;
+      for (const q of filme) { const x = q.p[id] && q.p[id][k]; assert.ok(x, `${nome}: ${k} está sempre na tela`); const col = k === 'v' ? 2 : 0;
+        if (ant) { const dy = x[1] - ant[1], dx = x[col] - ant[col], vel = dy / q.dt * 16.7;
+          assert.ok(Math.abs(dy) < 60 * Math.max(1, q.dt / 16.7) && Math.abs(dx) < 12 * Math.max(1, q.dt / 16.7), `${nome}: ${k} não salta (${dy.toFixed(1)}, ${dx.toFixed(1)})`);
+          if (q.dt < 20 && vAnt !== null) assert.ok(Math.abs(vel - vAnt) < 9, `${nome}: ${k} sem tranco (${(vel - vAnt).toFixed(1)})`);
+          const d = Math.abs(dy) > 0.3 ? Math.sign(dy) : 0; assert.ok(!(d && dir && d !== dir), `${nome}: ${k} não vai e volta`); if (d) dir = d; vAnt = q.dt < 20 ? vel : null; }
+        ant = x; } }
+    // a troca de tela acontece com tudo no lugar: do quadro anterior para o da troca, ninguém anda mais que um passo de animação
+    const it = filme.findIndex((q, i) => i && q.fechada !== filme[i - 1].fechada); assert.ok(it > 0, nome + ': a tela troca durante o corte');
+    for (const id of Object.keys(base.p)) for (const k of ['n', 'nome', 'v']) assert.ok(Math.abs(filme[it].p[id][k][1] - filme[it - 1].p[id][k][1]) < 3 && Math.abs(filme[it].p[id][k][k === 'v' ? 2 : 0] - filme[it - 1].p[id][k][k === 'v' ? 2 : 0]) < 3, `${nome}: ${k} está no mesmo lugar no quadro da troca`);
+    const fim = Q[Q.length - 1]; assert.deepEqual([fim.fechada, fim.palco, fim.trava], [fechaNoFim, false, false], nome + ': termina na tela certa, sem fantasma');
+  };
+  const rodar = async (seletor) => { await p.evaluate(s => { window.__para = __grava(); document.querySelector(s).click(); }, seletor);
+    await p.waitForTimeout(600); assert.ok(await esperar(() => p.evaluate(() => !corteRodando), 6000)); await p.waitForTimeout(150); return p.evaluate(() => __para()); };
+  // fechar, com a tela lá embaixo: primeiro sobe, depois corta
+  await p.evaluate(() => scrollTo(0, 99999)); await p.waitForTimeout(300);
+  assert.ok(await p.evaluate(() => scrollY > 100));
+  let Q = await rodar('#fechar-cmd'); conferir(Q, 'fechar', true);
+  assert.ok(Q.findIndex(q => q.palco) > Q.findIndex(q => q.y === 0) - 1 && Q.slice(0, Q.findIndex(q => q.palco) - 1).every((q, i, l) => !i || q.y <= l[i - 1].y), 'a tela sobe sem voltar antes do corte');
+  // durante o corte, um segundo toque não faz nada; no fim, o preâmbulo da comanda fechada é o mesmo da aberta
+  assert.deepEqual(await p.evaluate(() => { const c = document.querySelector('.cf-cabeca'); return [c.querySelector('.cu-nome').textContent.trim(), c.querySelectorAll('button').length, c.querySelector('#cf-reabrir').textContent.trim(), document.querySelector('#view').getAnimations({ subtree: true }).length]; }), ['Cantina A', 1, 'Reabrir a comanda', 0]);
+  // reabrir: o mesmo filme ao contrário, com um canhoto aberto e a tela rolada
+  await p.click('.cf-can:nth-child(2) [data-can-abre]'); await p.waitForTimeout(800);
+  await p.evaluate(() => scrollTo(0, 200)); await p.waitForTimeout(200);
+  Q = await rodar('#cf-reabrir'); conferir(Q, 'reabrir', false);
+  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, document.querySelectorAll('#view [data-pes]').length, document.querySelector('#view').getAnimations({ subtree: true }).length, getComputedStyle(document.querySelector('.cmd-una')).clipPath]), [false, 5, 0, 'none']);
+  // ida e volta seguidas, e dois toques juntos: só um corte por vez, e a comanda termina no estado certo
+  await p.evaluate(() => { fecharComanda(); fecharComanda(); reabrirComanda(); });
+  assert.ok(await esperar(() => p.evaluate(() => !corteRodando && !!draft.fechada && !document.querySelector('#cf-palco')), 6000), 'toques repetidos durante o corte são ignorados');
+  // sair da aba no meio do corte não deixa nada preso
+  await p.evaluate(() => { reabrirComanda(); setTimeout(() => { tab = 'historico'; render(); }, 250); });
+  assert.ok(await esperar(() => p.evaluate(() => !corteRodando && !document.querySelector('#cf-palco, #cf-trava')), 6000));
   semErros(a); await a.fechar();
 });

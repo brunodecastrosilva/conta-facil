@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.12.2';
+const VERSAO = '1.12.3';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -656,6 +656,10 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.12.3', itens: [
+    'Fechar a comanda ficou mais bonito: a tela sobe, o cabeçalho fica parado e cada nome se destaca do papel e vira canhoto',
+    'Reabrir a comanda faz o caminho de volta: os canhotos se juntam e a comanda se desenrola de novo',
+  ] },
   { versao: '1.12.2', itens: [
     'Fechar comanda em corte invisível: o botão cobre a tela e encolhe até virar o carimbo FECHADA.',
     'O botão Fechar comanda chama a atenção quando a comanda está pronta para fechar.',
@@ -2058,7 +2062,7 @@ function contaSheet() {
   const podeFechar = d.items.length && d.people.length;
   openSheet({ title: 'Conta da mesa', body: `<div id="cm-corpo" class="cs">${corpo()}</div>`,
     foot: podeFechar ? `<button type="button" class="btn" id="cm-fechar">${I.receipt}Fechar comanda</button>` : '', onMount: sh => {
-    $('#cm-fechar', sh)?.addEventListener('click', e => fecharComanda(e.currentTarget));
+    $('#cm-fechar', sh)?.addEventListener('click', () => fecharComanda());
     const box = $('#cm-corpo', sh);
     let chave = '';
     const pintar = () => { const foco = box.contains(document.activeElement) && document.activeElement.id;
@@ -2127,53 +2131,142 @@ function pixReceber(d, u, c) {
   if (!chave || pg.falta <= 0 || u.members.some(id => norm(c.per[id].person.name) === norm(eu))) return null;
   return { toName: eu, key: chave, value: pg.falta };
 }
-function fecharComanda(origem) {
+function fecharComanda() {
   const d = draft, c = compute(d);
-  if (d.fechada || !d.items.length || !d.people.length) return;
+  if (d.fechada || corteRodando || !d.items.length || !d.people.length) return;
   if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
   if (d.items.some(pendingDirty)) { KitFacil.avisar('Há itens com alterações não salvas. Salve ou descarte antes de fechar.'); return; }
   if (c.unassigned.length || c.incomplete.length || c.openItems.length) { KitFacil.avisar('Divida todos os itens antes de fechar a comanda.'); return; }
-  // de onde o corte parte: o botão tocado (o da comanda ou o da Conta da mesa, medido antes de a janela fechar)
-  const btn = origem && origem.isConnected ? origem : $('#fechar-cmd'), de = btn && !MV().off && tab === 'comanda' ? medirBotao(btn) : null;
   closeSheet(true);
-  const virar = () => {
-    if (draft !== d || d.fechada) return false;
-    d.fechada = Date.now(); if (d.payer || d.payMode !== 'none') pagaTodos(d, '');
+  // a comanda em uso pode ser trocada por outra igual enquanto a tela sobe (o guia faz isso): vale sempre a atual
+  const virar = sem => {
+    const d = draft; d.fechada = Date.now(); if (d.payer || d.payMode !== 'none') pagaTodos(d, '');
     canAberto = ''; canValor = ''; barraDe = null; pesAberto = null; itemAberto = null; pesJuntando = false;
-    commit({ anchor: false }); window.scrollTo({ top: 0 }); return true;
+    commit({ anchor: false, semMovimento: sem }); window.scrollTo({ top: 0, behavior: 'instant' });
   };
-  if (!de) return void virar();
-  corteInvisivel(de, virar);
+  if (corteDireto() || tab !== 'comanda' || !$('#view #groups-card')) return virar(false);
+  corteRodando = true; const vez = ++corteVez;
+  subirAoTopo(() => { if (vez !== corteVez) return; if (draft.fechada || tab !== 'comanda' || !$('#view #groups-card')) { corteRodando = false; return; } try { corteFechar(() => virar(true)); } catch (e) { console.warn('corte', e); corteLimpar(); if (!draft.fechada) virar(false); } });
 }
-const medirBotao = b => { const r = b.getBoundingClientRect(), cs = getComputedStyle(b); return { top: r.top, right: r.right, bottom: r.bottom, left: r.left, raio: parseFloat(cs.borderTopLeftRadius) || 14, cor: cs.backgroundColor, tinta: cs.color, html: b.innerHTML, letra: cs.font }; };
-/* Momento de marca (Código, Art. 72, § 4º): um corte invisível entre a comanda aberta e a fechada.
-   Máscara: o próprio botão "Fechar comanda" cresce até cobrir a tela, e a troca de tela acontece escondida atrás dele.
-   Corte de correspondência: a mesma forma verde encolhe até virar o carimbo FECHADA, no cabeçalho da comanda fechada.
-   O olho segue uma forma só do começo ao fim e não vê a emenda. */
-function corteInvisivel(de, virar) {
-  const W = innerWidth, H = innerHeight, cheio = 'inset(0px 0px 0px 0px round 0px)';
-  const ins = r => `inset(${r.top}px ${W - r.right}px ${H - r.bottom}px ${r.left}px round ${r.raio}px)`;
-  const capa = document.createElement('div'); capa.className = 'cf-corte'; capa.setAttribute('aria-hidden', 'true'); capa.style.background = de.cor; capa.style.clipPath = ins(de);
-  capa.innerHTML = `<span class="cf-corte-rot" style="left:${de.left}px;top:${de.top}px;width:${de.right - de.left}px;height:${de.bottom - de.top}px;color:${de.tinta};font:${de.letra}">${de.html}</span>`;
-  capa.querySelector('canvas')?.remove(); document.body.append(capa);
-  const sair = () => capa.remove();
-  capa.firstElementChild.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' });
-  capa.animate([{ clipPath: ins(de) }, { clipPath: cheio }], { duration: 440, easing: 'cubic-bezier(.6,0,.3,1)', fill: 'forwards' }).finished.then(() => {
-    if (virar() === false) return sair(); // a troca de tela, escondida atrás da máscara
-    requestAnimationFrame(() => {
-      const v = $('#view'), selo = $('.cf-selo', v); if (!selo) return sair();
-      const b = selo.getBoundingClientRect();
-      // o que estava atrás da máscara assenta enquanto ela encolhe
-      $$('.cf-rec, .cf-can, .cf-mesa, .cf-pe', v).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay: 140 + i * 40, easing: MOVE.css, fill: 'backwards' }));
-      capa.animate([{ clipPath: cheio }, { clipPath: ins({ top: b.top, right: b.right, bottom: b.bottom, left: b.left, raio: 5 }) }], { duration: 580, easing: 'cubic-bezier(.6,0,.2,1)', fill: 'forwards' }).finished.then(() => {
-        // a forma chega ao lugar do carimbo e vira o carimbo, com a batida
-        try { navigator.vibrate?.(18); } catch {}
-        selo.animate([{ transform: 'scale(1.28) rotate(-6deg)' }, { transform: 'scale(.94) rotate(-6deg)', offset: .6 }, { transform: 'scale(1) rotate(-6deg)' }], { duration: 280, easing: 'cubic-bezier(.3,0,.2,1)' });
-        $('#cf', v)?.animate([{ transform: 'none' }, { transform: 'translateY(3px)' }, { transform: 'none' }], { duration: 170 });
-        capa.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(sair, sair);
-      }, sair);
-    });
-  }, sair);
+function reabrirComanda() {
+  const d = draft; if (!d.fechada || corteRodando) return;
+  if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
+  const virar = sem => { const d = draft; d.fechada = null; canAberto = ''; canValor = ''; barraDe = null; commit({ anchor: false, semMovimento: sem }); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  if (corteDireto() || tab !== 'comanda' || !$('#view #cf')) return virar(false);
+  corteRodando = true; const vez = ++corteVez;
+  subirAoTopo(() => { if (vez !== corteVez) return; if (!draft.fechada || tab !== 'comanda' || !$('#view #cf')) { corteRodando = false; return; } try { corteReabrir(() => virar(true)); } catch (e) { console.warn('corte', e); corteLimpar(); if (draft.fechada) virar(false); } });
+}
+/* ---------- o corte invisível entre a comanda aberta e a fechada (momento de marca: Código, Art. 72, § 4º) ----------
+   1. A tela sobe até o topo. 2. O preâmbulo (lugar, data e total) é o mesmo nas duas telas, no mesmo lugar: não se mexe.
+   3. Cada linha de nome se destaca do papel e vira canhoto: no quadro da troca, o número, o nome e o valor do canhoto estão
+   exatamente onde estavam na linha (corte de correspondência), e só então andam. 4. O que não tem par (pedidos, total,
+   botões) sai ou entra como "fantasma": uma cópia parada do que havia, que se desfaz por cima.
+   Reabrir é o mesmo filme ao contrário. Tudo anda só com transform e opacity (e um recorte no papel, ao reabrir), para o
+   aparelho não ter de refazer a tela a cada quadro. */
+// com o guia em passo rápido (Pular), a troca é direta, como para quem pede movimento reduzido
+const corteDireto = () => MV().off || !!(KitFacil.guia && KitFacil.guia.estado() && KitFacil.guia.estado().rapido);
+let corteRodando = false, corteVez = 0; // corteVez: cada corte tem a sua vez; o que sobrou de um corte interrompido não mexe no seguinte
+const CORTE = { ms: 680, passo: 42 };
+const caixa = e => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, b: r.bottom, r: r.right }; };
+function subirAoTopo(feito) {
+  const de = scrollY; if (de < 2) return requestAnimationFrame(feito);
+  const dur = Math.min(620, 280 + de * .4), t0 = performance.now();
+  const passo = agora => { const k = Math.min(1, (agora - t0) / dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; window.scrollTo({ top: Math.round(de * (1 - e)), behavior: 'instant' }); if (k < 1) requestAnimationFrame(passo); else feito(); };
+  requestAnimationFrame(passo);
+}
+// o palco dos fantasmas: uma camada fixa por cima da tela (e por baixo da navegação), que também segura os toques
+function cortePalco() { corteLimpar(true); const p = document.createElement('div'); p.id = 'cf-palco'; p.setAttribute('aria-hidden', 'true'); const t = document.createElement('div'); t.id = 'cf-trava'; document.body.append(p, t); return p; }
+function corteLimpar(soPalco) { if (!soPalco) corteVez++; $('#cf-palco')?.remove(); $('#cf-trava')?.remove(); $$('.cf-cola').forEach(e => e.remove()); if (!soPalco) corteRodando = false; }
+// cópia parada de um pedaço da tela, no lugar exato em que ele estava
+function fantasma(palco, el, extra = '') {
+  const r = caixa(el), f = el.cloneNode(true);
+  f.querySelectorAll('canvas').forEach(x => x.remove()); f.inert = true; // os ids ficam: há estilos que dependem deles, e a cópia dura menos de um segundo
+  f.style.cssText += `;position:absolute;left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;margin:0;box-sizing:border-box;${extra}`;
+  palco.append(f); return f;
+}
+const an = (el, quadros, o) => el ? el.animate(quadros, { easing: MOVE.css, fill: 'both', ...o }) : null;
+const medirLinhas = () => $$('#view #groups-card [data-pes]').map(det => { const s = det.querySelector('summary'); return { id: det.dataset.pes, lin: caixa(s), n: caixa(s.querySelector('.dv-n')), nome: caixa(s.querySelector('.dv-nome > span')), v: caixa(s.querySelector('.dv-v')) }; });
+const medirCanhotos = raiz => $$('.cf-can', raiz).map(el => ({ id: el.dataset.can, el, can: caixa(el), n: caixa(el.querySelector('.cf-num')), nome: caixa(el.querySelector('.cf-nome')), v: caixa(el.querySelector('.cf-vn')) }));
+function corteFechar(virar) {
+  const { ms, passo } = CORTE, v = $('#view');
+  // antes: onde está cada coisa na comanda aberta, e as cópias do que vai sair
+  const art = $('.cmd-una', v), grupo = $('#groups-card', v), A = { art: caixa(art), cab: caixa($('.cu-cab', v)), grupo: caixa(grupo), linhas: medirLinhas() };
+  const palco = cortePalco();
+  const fRestos = fantasma(palco, art, `clip-path:inset(${A.grupo.b - A.art.y}px 0 -12px 0)`), fFim = $('.fim-acoes', v) && fantasma(palco, $('.fim-acoes', v));
+  // das pessoas, fica só a "tinta" sem par (título, linhas tracejadas, setas): o papel e os nomes já são os dos canhotos
+  const fGrupo = fantasma(palco, art, `clip-path:inset(${A.grupo.y - A.art.y}px 0 ${Math.max(0, A.art.b - A.grupo.b)}px 0)`); fGrupo.classList.add('cf-so-tinta');
+  fGrupo.querySelectorAll('#groups-card .dv-n, #groups-card .dv-nome > span:first-child, #groups-card .dv-v').forEach(x => { x.style.visibility = 'hidden'; });
+  // a troca: no mesmo quadro, a comanda fechada entra por baixo dos fantasmas
+  virar();
+  const cf = $('#cf', v); if (!cf) return corteLimpar();
+  const B = medirCanhotos(cf), porId = Object.fromEntries(A.linhas.map(l => [l.id, l]));
+  // papel "de cola": enquanto os canhotos ainda estão juntos, nenhum vão do papel antigo fica à mostra
+  const cfr = caixa(cf), cola = document.createElement('div'); cola.className = 'cf-cola';
+  cola.style.cssText = `left:${A.art.x - cfr.x}px;top:${A.cab.b - cfr.y}px;width:${A.art.w}px;height:${A.grupo.b - A.cab.b}px`; cf.prepend(cola);
+  const fim = [];
+  B.forEach((b, i) => {
+    const a = porId[b.id], atraso = i * passo, o = { duration: ms, delay: atraso };
+    const dy = a ? a.lin.y - b.can.y : 0, de = (p, q) => `translate(${p.x - q.x}px, ${p.y - q.y - dy}px)`;
+    fim.push(an(b.el, [{ transform: `translateY(${dy}px)` }, { transform: 'none' }], o));
+    an(b.el, [{ rotate: '0deg' }, { rotate: (i % 2 ? -.7 : .7) + 'deg' }, { rotate: '0deg' }], { ...o, easing: 'ease-in-out' });
+    if (a) { an(b.el.querySelector('.cf-num'), [{ transform: de(a.n, b.n) }, { transform: 'none' }], o); an(b.el.querySelector('.cf-nome'), [{ transform: de(a.nome, b.nome) }, { transform: 'none' }], o);
+      an(b.el.querySelector('.cf-vn'), [{ transform: `translate(${a.v.r - b.v.r}px, ${a.v.y - b.v.y - dy}px)` }, { transform: 'none' }], o); }
+    an(b.el.querySelector('.cf-rs'), [{ opacity: 0 }, { opacity: 1 }], { duration: ms * .5, delay: atraso + ms * .3 });
+    b.el.querySelectorAll('.cf-rapido, .cf-obs, .cf-dentro').forEach(x => an(x, [{ opacity: 0 }, { opacity: 1 }], { duration: ms * .5, delay: atraso + ms * .35 }));
+    b.el.querySelectorAll('.cf-sombra, .cf-picote').forEach(x => an(x, [{ opacity: 0 }, { opacity: 1 }], o));
+  });
+  an(cola, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 });
+  an(fGrupo, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 });
+  [fRestos, fFim].forEach(f => an(f, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(44px)' }], { duration: 440, easing: 'cubic-bezier(.5,0,.75,.4)' }));
+  $$('.cu-ico .i', cf).forEach(x => an(x, [{ opacity: .65 }, { opacity: 0 }], { duration: 220 }));
+  const selo = $('.cf-selo', cf), tudo = ms + Math.max(0, B.length - 1) * passo;
+  an($('#cf-reabrir', cf), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: ms * .5, delay: 160 });
+  an(selo, [{ opacity: 0, transform: 'rotate(-6deg) scale(1.7)' }, { opacity: 1, transform: 'rotate(-6deg) scale(.94)', offset: .7 }, { opacity: 1, transform: 'rotate(-6deg) scale(1)' }], { duration: 300, delay: tudo - 300, easing: 'cubic-bezier(.3,0,.2,1)' });
+  setTimeout(() => { try { navigator.vibrate?.(16); } catch {} }, tudo - 90);
+  $$('.cf-rec, .cf-mesa, .cf-pe', v).forEach((x, i) => an(x, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: ms * .6, delay: ms * .4 + i * 50 }));
+  corteAoFim(fim, tudo);
+}
+function corteReabrir(virar) {
+  const { ms, passo } = CORTE, v = $('#view'), cf0 = $('#cf', v);
+  // antes: os canhotos e o que está em volta viram fantasmas, no lugar em que estão
+  const cab0 = $('.cf-cabeca', cf0), A = { cabeca: caixa(cab0), cab: caixa($('.cu-cab', cf0)), cans: medirCanhotos(cf0) };
+  const palco = cortePalco();
+  const fFaixa = fantasma(palco, cab0, `clip-path:inset(${A.cab.h}px 0 -12px 0)`);
+  const fSaem = $$('.cf-rec, .cf-mesa, .cf-pe', v).map(e => fantasma(palco, e));
+  const fCans = A.cans.map(a => fantasma(palco, a.el));
+  virar();
+  const art = $('.cmd-una', v); if (!art) return corteLimpar();
+  const linhas = medirLinhas(), porId = Object.fromEntries(linhas.map(l => [l.id, l])), n = fCans.length, tudo = ms + Math.max(0, n - 1) * passo;
+  const R = { art: caixa(art), grupo: caixa($('#groups-card', v)) }, l0 = linhas[0], lf = linhas[linhas.length - 1];
+  const fim = [];
+  A.cans.forEach((a, i) => {
+    const f = fCans[i], b = porId[a.id], atraso = (n - 1 - i) * passo, o = { duration: ms, delay: atraso };
+    const dy = b ? b.lin.y - a.can.y : 0, ate = (p, q) => `translate(${p.x - q.x}px, ${p.y - q.y - dy}px)`;
+    fim.push(an(f, [{ transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }, { transform: `translateY(${dy}px)`, clipPath: `inset(0px 0px ${Math.max(0, a.can.h - (b ? b.lin.h : a.can.h))}px 0px)` }], o));
+    an(f, [{ rotate: '0deg' }, { rotate: (i % 2 ? -.7 : .7) + 'deg' }, { rotate: '0deg' }], { ...o, easing: 'ease-in-out' });
+    if (b) { an(f.querySelector('.cf-num'), [{ transform: 'none' }, { transform: ate(b.n, a.n) }], o); an(f.querySelector('.cf-nome'), [{ transform: 'none' }, { transform: ate(b.nome, a.nome) }], o);
+      an(f.querySelector('.cf-vn'), [{ transform: 'none' }, { transform: `translate(${b.v.r - a.v.r}px, ${b.v.y - a.v.y - dy}px)` }], o); }
+    an(f.querySelector('.cf-rs'), [{ opacity: 1 }, { opacity: 0 }], { duration: ms * .4, delay: atraso });
+    f.querySelectorAll('.cf-rapido, .cf-obs, .cf-dentro').forEach(x => an(x, [{ opacity: 1 }, { opacity: 0 }], { duration: ms * .4, delay: atraso }));
+    f.querySelectorAll('.cf-sombra, .cf-picote').forEach(x => an(x, [{ opacity: 1 }, { opacity: 0 }], o));
+  });
+  fSaem.forEach(f => an(f, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(14px)' }], { duration: 240 }));
+  an(fFaixa, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 });
+  // o papel da comanda aberta se estende por baixo dos canhotos que chegam e, quando eles encostam, desce de uma vez
+  const H = R.art.h + 12, rec = y => `inset(-12px 0px ${Math.max(0, H - 12 - (y - R.art.y))}px 0px)`, fase2 = 340, total = tudo + fase2;
+  const yIni = A.cabeca.b + 6, yLin = l0 ? l0.lin.y : R.grupo.y, yFimLin = lf ? lf.lin.b : R.grupo.b;
+  an(art, [{ clipPath: rec(yIni), easing: MOVE.css }, { clipPath: rec(Math.max(yIni, yLin)), offset: tudo / total, easing: 'steps(1, jump-start)' }, { clipPath: rec(yFimLin), offset: tudo / total, easing: MOVE.css }, { clipPath: rec(R.art.b + 12) }], { duration: total, easing: 'linear', fill: 'backwards' });
+  $$('#groups-card > .cu-tit, #groups-card > .dv-col', v).forEach(x => an(x, [{ opacity: 0 }, { opacity: 1 }], { duration: ms * .5, delay: 120 }));
+  $$('.cu-ico .i', v).forEach(x => an(x, [{ opacity: 0 }, { opacity: getComputedStyle(x).opacity }], { duration: 260, delay: tudo * .5 }));
+  [...$$('#groups-card > #add-pessoa', v), ...[...art.querySelectorAll('.cm-corpo > *')].filter(x => x.id !== 'groups-card'), ...$$('.fim-acoes, #live-offer', v)].forEach((x, i) => an(x, [{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: fase2, delay: tudo - 40 + Math.min(i, 4) * 30 }));
+  // no quadro em que os canhotos encostam, eles saem de cena: por baixo, as linhas da comanda estão no mesmo lugar
+  Promise.allSettled(fim.filter(Boolean).map(a => a.finished)).then(() => { fCans.forEach(f => f.remove()); });
+  corteAoFim([], total);
+}
+// no fim, nada sobra: as animações soltam os elementos e o palco sai
+function corteAoFim(fim, ms) {
+  const vez = corteVez, acabar = () => { if (!corteRodando || vez !== corteVez) return; $$('#view *').forEach(e => { if (e.getAnimations) e.getAnimations().forEach(a => { if (a.effect && a.effect.getComputedTiming().fill !== 'none' && a.playState === 'finished') a.cancel(); }); }); corteLimpar(); };
+  setTimeout(acabar, ms + 120);
 }
 /* "Fechar comanda" chama a atenção quando a comanda está pronta para fechar. A animação é procedural: desenhada quadro a
    quadro num canvas, com o ritmo tirado de ruído, então nunca se repete igual. Um picote anda pela borda do botão e, de
@@ -2211,12 +2304,6 @@ function animarBotaoFechar(btn) {
   };
   medir(); fecharAnim = requestAnimationFrame(quadro);
 }
-function reabrirComanda() {
-  const d = draft; if (!d.fechada) return;
-  if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
-  d.fechada = null; canAberto = ''; canValor = ''; barraDe = null; commit({ anchor: false }); window.scrollTo({ top: 0 });
-  KitFacil.avisar('Comanda reaberta.');
-}
 // o que fica dentro do canhoto aberto, além do cupom: valor diferente, quem fica com a diferença e "já saiu da mesa"
 function canhotoExtras(d, u, c) {
   const pg = contaPaga(d, u, c), pid = u.payers.length === 1 ? u.payers[0] : '', r = pid && c.per[pid];
@@ -2253,8 +2340,9 @@ function canhotoHTML(d, u, i, c) {
       <div class="cf-acoes"><button type="button" class="btn small ghost" data-can-cupom>${I.file}Ver cupom</button>${pix ? `<button type="button" class="btn small ghost" data-can-pix>${I.qr}Receber com Pix</button>` : ''}</div>
       ${canhotoExtras(d, u, c)}<div class="cf-pg">${botoesPagoHTML(u, pg)}</div></div>` : '';
   return `<article class="cf-papel cf-can ${pg.estado}" data-can="${u.id}" aria-label="Canhoto de ${esc(u.name)}: ${BRL(pg.devido)}${pg.estado === 'pago' ? ', pago' : ''}">
-    <div class="cf-toco" aria-hidden="true">${String(i + 1).padStart(2, '0')}</div>
-    <div class="cf-corpo"><div class="cf-topo"><span>${esc(u.name)}</span><span>${BRL(pg.devido)}</span></div>${obs ? `<div class="cf-obs">${esc(obs)}</div>` : ''}
+    <span class="cf-sombra" aria-hidden="true"></span>
+    <div class="cf-toco" aria-hidden="true"><span class="cf-num">${String(i + 1).padStart(2, '0')}</span><span class="cf-picote"></span></div>
+    <div class="cf-corpo"><div class="cf-topo"><span class="cf-nome">${esc(u.name)}</span><span class="cf-valor"><span class="cf-rs">R$\u00a0</span><span class="cf-vn">${brl(pg.devido)}</span></span></div>${obs ? `<div class="cf-obs">${esc(obs)}</div>` : ''}
       <div class="cf-rapido">${ab ? selo : rapido}${seta}</div>${dentro}</div></article>`;
 }
 function fechadaHTML(d, c) {
@@ -2266,11 +2354,14 @@ function fechadaHTML(d, c) {
     ${d.live ? liveCardHTML() : ''}
     ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. As alterações são guardadas quando você salvar de novo.</span><button class="btn small ghost" id="new-bill-top">Encerrar edição</button></div>` : ''}
     <div class="cf" id="cf">
-      <header class="cf-papel cf-cab">
-        <div class="cf-l1"><h2 class="cf-local">${esc(d.place || 'Comanda')}</h2><b class="cf-total">${BRL(c.total)}</b></div>
-        <span class="cf-quando">${fmtDateTime(d.fechada)}</span>
-        <div class="cf-l2"><span class="cf-selo">FECHADA</span><button type="button" class="btn small ghost cf-reabrir" id="cf-reabrir">${I.unlock}Reabrir a comanda</button></div>
-      </header>
+      <article class="cmd-una cf-cabeca" aria-label="Comanda fechada">
+        <header class="cu-cab">
+          <div class="cu-local"><span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Comanda')}<span class="cu-ico" aria-hidden="true">${I.edit}</span></span>
+            <span class="cu-quando">${fmtDateTime(d.createdAt)}</span></div>
+          <div class="cu-conta"><span class="cu-total">${BRL(c.total)}</span><span class="cu-ico" aria-hidden="true">${I.next}</span></div>
+        </header>
+        <div class="cf-faixa"><span class="cf-selo">FECHADA</span><button type="button" class="btn small ghost cf-reabrir" id="cf-reabrir">${I.unlock}Reabrir a comanda</button></div>
+      </article>
       <div class="cf-rec"><div class="cf-rec-l"><span>Recebido</span><b>${BRL(rec)} de ${BRL(c.total)}</b></div>
         <div class="cf-barra ${tudo ? 'cheia' : ''}" role="img" aria-label="${Math.round(f * 100)}% recebido"><div class="cf-trilho"><div class="cf-barra-f" data-f="${f}" style="transform:scaleX(${f})"></div></div><span class="cf-ok" aria-hidden="true">${I.ok}</span></div></div>
       ${aviso}
@@ -2390,10 +2481,10 @@ const viewComanda = {
     <article class="cmd-una" aria-label="Comanda">
       <header class="cu-cab">
         <button type="button" class="cu-local" id="cmd-local">
-          <span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Toque para dar nome')}${I.edit}</span>
+          <span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Toque para dar nome')}<span class="cu-ico">${I.edit}</span></span>
           <span class="cu-quando">${fmtDateTime(d.createdAt)}</span><span class="so-leitor">. ${d.place ? 'Mudar o nome do local' : 'Dar nome ao local'}</span></button>
         <button type="button" class="cu-conta" id="cmd-conta" aria-label="Total: ${BRL(calc.total)}. ${esc(aj.join(', ') || 'Sem serviço')}. Abrir a conta da mesa: ajustes e fechar a comanda">
-          <span class="cu-total">${BRL(calc.total)}</span>${I.next}</button>
+          <span class="cu-total">${BRL(calc.total)}</span><span class="cu-ico">${I.next}</span></button>
       </header>
 
       <div class="cm-corpo">
@@ -2489,7 +2580,7 @@ const viewComanda = {
       if (e.pointerType !== 'mouse' || e.button) return;
       const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
     });
-    $('#fechar-cmd', v)?.addEventListener('click', e => fecharComanda(e.currentTarget));
+    $('#fechar-cmd', v)?.addEventListener('click', () => fecharComanda());
     { const c = compute(d); animarBotaoFechar(c.unassigned.length || c.incomplete.length || c.openItems.length ? null : $('#fechar-cmd', v)); }
     $('#cmd-excluir', v)?.addEventListener('click', () => deleteCurrent(true));
     $$('[data-it-alt]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itAlt); if (it) renameSheet(it); }));

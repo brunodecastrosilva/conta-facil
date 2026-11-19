@@ -57,9 +57,11 @@ function render(opts = {}) {
   const v = $('#view'), fn = tab === 'ajustes' ? viewAjustes : TELAS[tab];
   $('.wrap').classList.toggle('largo', tab === 'ajustes');
   const trocou = v.dataset.telaAtual !== tab; v.dataset.telaAtual = tab;
+  if (trocou && typeof corteLimpar === 'function') corteLimpar(); // sair da comanda no meio do corte não deixa fantasma na tela
   const desenhar = () => { v.innerHTML = `<section class="view view-${tab}">${tab === 'comanda' ? '<h1 class="so-leitor">Comanda</h1>' : ''}${fn.html()}</section>`; fn.bind(v); };
   // na mesma tela, o que abre e o que recolhe ganha movimento; ao trocar de tela, vale a entrada da tela
-  if (trocou) desenhar(); else comMovimento(v, desenhar);
+  // semMovimento: a troca entre a comanda aberta e a fechada tem a sua própria animação (corte invisível)
+  if (trocou || opts.semMovimento) desenhar(); else comMovimento(v, desenhar);
   document.body.dataset.tela = tab;
   if (trocou) { KitFacil.movimento.entrar(v, { de: 'tela' }); document.title = tab === 'inicio' ? 'Conta Fácil' : `${TITULOS[tab]} · Conta Fácil`; }
   prepFields(v);
@@ -187,7 +189,7 @@ const quadro = () => new Promise(r => requestAnimationFrame(r));
 const guiaFoto = () => JSON.stringify({ draft, bills, catalog, jogo, tab, cadAba, pesAberto, itemAberto });
 const guiaSemAviso = () => $$('.kf-toast').forEach(e => { e.hidden = true; });
 function guiaLimparTela() { $('#festa-ok')?.click(); closeSheet(true); guiaSemAviso(); guiaDeixaTampa = false; tampaFila = []; }
-function guiaZerarTela() { canAberto = ''; canValor = ''; barraDe = null; pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; pesCv = false; if (drag.on) dragEnd(false); jogoMemo.chave = ''; cacheBills = new WeakMap(); }
+function guiaZerarTela() { corteLimpar(); canAberto = ''; canValor = ''; barraDe = null; pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; pesCv = false; if (drag.on) dragEnd(false); jogoMemo.chave = ''; cacheBills = new WeakMap(); }
 function guiaIniciar() {
   if (guiaAtivo() || aberturaAtiva()) return;
   if (draft.live) { KitFacil.avisar('Saia da comanda ao vivo antes de ver o guia.'); return; }
@@ -274,7 +276,9 @@ async function demoCadastros(m, aba) {
   if (aba && cadAba !== aba) await m.tocar(`#view [data-cad="${aba}"]`);
 }
 // a comanda fechada (canhotos) está na tela? Se não, o passo fecha a comanda como a pessoa faria
-async function demoFechada(m) { if (!draft.fechada) { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await m.espera(1600); } }
+// espera o corte invisível (fechar ou reabrir) acabar: durante ele, os toques ficam travados
+async function demoCorte(m) { for (let t = 0; t < 4000 && (corteRodando || t < 120); t += 60) { m.vivo(); await new Promise(r => setTimeout(r, 60)); } }
+async function demoFechada(m) { if (!draft.fechada) { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await demoCorte(m); await m.espera(500); } }
 // o canhoto de uma pessoa (pelo cupom em que ela está) e o toque que o abre, se ainda estiver fechado
 const demoCan = nome => { const u = compute(draft).units.find(x => x.members.includes(demoId(nome))); return `#view [data-can="${u ? u.id : ''}"]`; };
 async function demoAbrirCan(m, can) { if ($(`${can} [data-can-abre]`)?.getAttribute('aria-expanded') !== 'true') { await m.tocar(`${can} [data-can-abre]`); await m.acha(`${can} .cf-dentro`); await m.espera(700); } }
@@ -334,7 +338,7 @@ const GUIA = [
       await m.tocar('.kf-dlg [data-cm="ds"]'); await m.acha('#cm-ds'); await m.espera(750); await m.apontar(await bloco('ds'), 1600); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
   // fechar não abre janela: a própria comanda vira um canhoto por pessoa (1.12.0). Os passos seguintes partem da comanda fechada.
   { t: 'Feche a comanda', d: 'O papel vira um canhoto por pessoa, e o cupom da mesa abre com um toque. Para voltar, Reabrir a comanda.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await m.espera(1700); await m.apontar('#view .cf-cab', 1800); await m.apontar('#cf-cans', 1800);
+    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await demoCorte(m); await m.espera(600); await m.apontar('#view .cf-cabeca', 1800); await m.apontar('#cf-cans', 1800);
       await m.tocar('#cf-mesa-cupom'); await m.acha('.kf-dlg .receipt'); await m.espera(1800); await m.fechar(); await m.some('.kf-dlg .receipt'); } },
   { t: 'Receba de cada um', d: 'Marque quem pagou: o canhoto leva o carimbo. Aberto, ele tem o cupom, o Pix e o valor diferente.',
     acao: async m => { await demoFechada(m);
@@ -351,7 +355,7 @@ const GUIA = [
       await demoVerPagamento(m, carla, 2600);
       await m.rolar(`${carla} [data-can-custom]`, 46); await demoTocarSemAviso(m, `${carla} [data-can-conta]`, 800); await m.espera(500); } },
   { t: 'A conta de quem já pagou mudou', d: 'Reabra a comanda e tire o desconto: Ana já tinha pago. Ao fechar de novo, receba a diferença ou diga quem cobre.',
-    acao: async m => { if (draft.fechada) { await demoTocarSemAviso(m, '#cf-reabrir', 700); await m.acha('#cm-pe'); }
+    acao: async m => { if (draft.fechada) { await demoTocarSemAviso(m, '#cf-reabrir', 700); await demoCorte(m); await m.acha('#cm-pe'); await m.espera(400); }
       await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
       // a diferença é assunto da comanda fechada: fecha de novo, e o canhoto da Ana diz quanto falta
       await demoFechada(m); const ana = demoCan('Ana'); await m.apontar(`${ana} .cf-obs`, 2000);
