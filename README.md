@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.11.1** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.12.0** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Desde 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil** para a moldura, os componentes e o comportamento dos controles; o
@@ -14,8 +14,10 @@ fluxo e o desenho das telas são dele, feitos para a comanda de bar ([Código do
 - **Lançar em uma janela:** produto, quantidade, preço e quem consumiu (compartilhado, entre todos ou entre alguns, ou individual, por unidade)
 - **Pessoas:** tocar num nome mostra os atalhos (serviço, couvert, Juntar, Ver cupom e Editar, que muda o nome ou tira da mesa); segurar e arrastar um nome sobre outro junta os dois no mesmo cupom
 - **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, e cortesias
-- **Pago:** só depois de fechar a comanda: em Fechar a comanda, no cupom de cada pessoa, marque quem já acertou; o app guarda o valor pago e, se a conta mudar depois (desconto, item novo), mostra quanto falta ou quanto devolver
-- **Fechar a comanda:** um cupom por pessoa (a mesa primeiro), em texto, imagem ou PDF, com Pix copia e cola e QR code; ali também ficam "uma pessoa paga a conta de todos" (cada um continua com o seu cupom), "pagar outro valor" (com a escolha de quem cobre ou devolve a diferença), marcar quem já pagou e "já saiu da mesa" (trava o cupom); salvar tem Desfazer
+- **Fechar a comanda:** não abre janela; a própria comanda muda. O papel é destacado em um canhoto por pessoa, e a comanda fechada não aceita pedido novo. O único caminho de volta é "Reabrir a comanda"
+- **Receber:** em cada canhoto, "Marcar como pago" põe o carimbo, e a barra de recebido mostra quanto já entrou; quando todos pagam, "Salvar no histórico" vira a ação principal. Se a conta mudar depois de paga (comanda reaberta, desconto, item novo), o app mostra quanto falta ou quanto devolver
+- **Canhoto aberto:** o cupom da pessoa, "Compartilhar", "Receber com Pix" (só aparece quando serve: você tem chave Pix em "Você nas comandas", o canhoto não é o seu e ainda falta receber), "Pagar valor diferente" (com a escolha de quem cobre ou devolve a diferença) e "Já saiu da mesa" (trava o canhoto)
+- **Comanda da mesa:** em texto ("Copiar a comanda") ou em PDF; termina no total
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai
 - **Cadastros:** pessoas e chaves Pix, turmas (quem sai junto entra na mesa com um toque) e preço de cada produto em cada lugar; o lápis de cada linha altera a pessoa (nome, chave Pix e "sou eu"), a turma ou o produto (nome e preços), e o nome novo vale também nas comandas salvas
@@ -45,7 +47,7 @@ Abra o endereço em qualquer navegador, no celular, no tablet ou no computador. 
 | Avaliações e relatos de problema enviados | Firestore do projeto, coleção `feedback`; apagados depois de 2 anos |
 
 A comanda aberta não vai para a sincronização: para dividir a mesma comanda entre celulares, use a comanda ao vivo.
-"Pago" (com o valor pago por pessoa, em `pagos`) e "já saiu da mesa" (em `saiu`) ficam só no aparelho de quem marcou (não vão para a comanda ao vivo). As tampinhas e os níveis são calculados do
+"Fechada" (em `fechada`), "pago" (com o valor pago por pessoa, em `pagos`) e "já saiu da mesa" (em `saiu`) ficam só no aparelho de quem marcou (não vão para a comanda ao vivo). As tampinhas e os níveis são calculados do
 histórico e dos cadastros, então acompanham a sincronização; só as marcas "ao vivo", "sorteio" e "guia" ficam no aparelho.
 
 Quem já usava a versão 0.5.0 não perde nada: as chaves do armazenamento e os formatos são os mesmos.

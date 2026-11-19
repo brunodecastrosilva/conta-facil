@@ -187,7 +187,7 @@ const quadro = () => new Promise(r => requestAnimationFrame(r));
 const guiaFoto = () => JSON.stringify({ draft, bills, catalog, jogo, tab, cadAba, pesAberto, itemAberto });
 const guiaSemAviso = () => $$('.kf-toast').forEach(e => { e.hidden = true; });
 function guiaLimparTela() { $('#festa-ok')?.click(); closeSheet(true); guiaSemAviso(); guiaDeixaTampa = false; tampaFila = []; }
-function guiaZerarTela() { pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; pesCv = false; if (drag.on) dragEnd(false); jogoMemo.chave = ''; cacheBills = new WeakMap(); }
+function guiaZerarTela() { canAberto = ''; canValor = ''; barraDe = null; pending = {}; itPend = {}; pesJuntando = false; pesSvc = false; pesCv = false; if (drag.on) dragEnd(false); jogoMemo.chave = ''; cacheBills = new WeakMap(); }
 function guiaIniciar() {
   if (guiaAtivo() || aberturaAtiva()) return;
   if (draft.live) { KitFacil.avisar('Saia da comanda ao vivo antes de ver o guia.'); return; }
@@ -273,28 +273,19 @@ async function demoCadastros(m, aba) {
   if (!$('#view [data-cad]')) { await demoIr(m, 'mais'); await m.tocar('#view [data-ir="cadastros"]'); }
   if (aba && cadAba !== aba) await m.tocar(`#view [data-cad="${aba}"]`);
 }
-// a janela de Fechar a comanda está aberta? (a cópia que sai, em #kf-saidas, não conta)
-const fcAberta = () => $$('#fc-prox').some(e => e.getClientRects().length && !e.closest('#kf-saidas'));
-/* abre Fechar a comanda, se ainda não estiver aberta, e anda até o cupom de uma pessoa (ou o da mesa, sem nome). O passo
-   que continua na janela do passo anterior (Código, Art. 78, IV) parte do cupom em que ela ficou; depois de voltar um
-   passo, a janela está fechada, e ele a abre de novo. */
-async function demoFechar(m, nome) {
-  if (!fcAberta()) { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); }
-  const k = nome ? compute(draft).units.findIndex(u => u.members.includes(demoId(nome))) + 1 : 0;
-  const onde = () => Math.max(0, $$('.kf-dlg .fc-slide').filter(e => !e.closest('#kf-saidas')).findIndex(e => e.getAttribute('aria-hidden') === 'false'));
-  for (let n = 0; n < 12 && onde() !== k; n++) await m.tocar(onde() < k ? '#fc-prox' : '#fc-ant', { depois: Math.abs(onde() - k) === 1 ? 700 : 260 });
-}
-const FC_AQUI = '.fc-slide[aria-hidden="false"]';
+// a comanda fechada (canhotos) está na tela? Se não, o passo fecha a comanda como a pessoa faria
+async function demoFechada(m) { if (!draft.fechada) { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await m.espera(1600); } }
+// o canhoto de uma pessoa (pelo cupom em que ela está) e o toque que o abre, se ainda estiver fechado
+const demoCan = nome => { const u = compute(draft).units.find(x => x.members.includes(demoId(nome))); return `#view [data-can="${u ? u.id : ''}"]`; };
+async function demoAbrirCan(m, can) { if ($(`${can} [data-can-abre]`)?.getAttribute('aria-expanded') !== 'true') { await m.tocar(`${can} [data-can-abre]`); await m.acha(`${can} .cf-dentro`); await m.espera(700); } }
 // toda a área de pagamento do cupom à vista, num anel só: o título PAGAMENTO e todas as linhas dele (destaque de área do Kit 0.9.0)
-async function demoPagamentoInteiro(m, ms = 2400) {
-  const s = $$(`${FC_AQUI} .rc-section`).filter(e => /PAGAMENTO/.test(e.textContent)).pop(); if (!s) return m.apontar(`${FC_AQUI} .cupom-1`, ms);
+async function demoPagamentoInteiro(m, can, ms = 2400) {
+  const s = $$(`${can} .rc-section`).filter(e => /PAGAMENTO/.test(e.textContent)).pop(); if (!s) return m.apontar(`${can} .receipt`, ms);
   const L = [s]; for (let e = s.nextElementSibling; e && e.matches('.rc-line, .rc-detail'); e = e.nextElementSibling) L.push(e);
   await m.apontar(L, ms);
 }
 // toca e não deixa o aviso com Desfazer aparecer por cima do dedo: no guia, o aviso some assim que nasce
 async function demoTocarSemAviso(m, q, ms = 700) { await m.tocar(q, { depois: 0 }); for (let t = 0; t < ms; t += 60) { guiaSemAviso(); await m.espera(60); } guiaSemAviso(); }
-// a parte do cupom à vista que diz como a pessoa paga
-const demoPagamento = () => { const s = $$(`${FC_AQUI} .rc-section`).filter(e => /PAGAMENTO/.test(e.textContent)).pop(); return (s && s.nextElementSibling) || `${FC_AQUI} .cupom-1`; };
 /* O roteiro. Todo passo faz a ação de verdade na demonstração (não só aponta) e termina com as janelas fechadas. */
 const GUIA = [
   { t: 'Comece pelo nome do lugar', d: 'No Início, escreva onde você está e toque em Abrir comanda.',
@@ -338,28 +329,30 @@ const GUIA = [
       await m.tocar('#cm-pe'); await m.apontar(await bloco('svc'), 1500);
       await m.tocar('.kf-dlg [data-cm="cv"]'); await m.acha('#cm-cv'); await m.espera(750); await m.apontar(await bloco('cv'), 1600); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.espera(500);
       await m.tocar('.kf-dlg [data-cm="ds"]'); await m.acha('#cm-ds'); await m.espera(750); await m.apontar(await bloco('ds'), 1600); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
-  // os dois passos seguintes juntam o que antes eram quatro (decisão do Bruno, 15/11/2026) e acontecem na mesma janela:
-  // ela abre no primeiro e continua aberta no segundo (`continua: true`; Código, Art. 78, IV)
-  { t: 'Feche a comanda', d: 'Um cupom por pessoa, a mesa primeiro. No da mesa, uma pessoa pode pagar a conta de todos.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#fc-prox'); await m.espera(1300);
-      await m.tocar(`${FC_AQUI} [data-fc-todos]`); await m.espera(500); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-quem="${demoId('Bruno')}"]`); await demoPagamentoInteiro(m, 2600);
-      await m.tocar('#fc-prox', { depois: 800 }); await demoPagamentoInteiro(m, 2400);
-      await m.tocar('#fc-ant', { depois: 700 }); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-cada]`, 900); } },
-  { t: 'O pagamento de cada um', d: 'No cupom da pessoa, marque quem já pagou. Vai pagar outro valor? Diga quem cobre a diferença.', continua: true,
-    acao: async m => { await demoFechar(m, 'Ana'); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-pago="marcar"]`, 900); await demoTocarSemAviso(m, `${FC_AQUI} .fc-saiu .kf-chave`, 900);
-      // segue para o cupom da Carla, na mesma janela: abre o campo, escreve o valor, escolhe quem cobre, vê o cupom e volta ao valor da conta
-      await m.tocar('#fc-prox', { depois: 300 }); await m.tocar('#fc-prox', { depois: 800 });
-      await m.tocar(`${FC_AQUI} [data-fc-valor]`); await m.acha(`${FC_AQUI} [data-fc-custom]`); await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46);
-      await m.digitar(`${FC_AQUI} [data-fc-custom]`, '4000', { ritmo: 120 }); await m.espera(700);
-      await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-cobre="${demoId('Bruno')}"]`, 600);
-      await demoPagamentoInteiro(m, 2600);
-      await m.rolar(`${FC_AQUI} [data-fc-custom]`, 46); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-conta]`, 800); await m.tocar('#fc-volta'); await m.some('#fc-prox'); await m.espera(600); } },
-  { t: 'A conta de quem já pagou mudou', d: 'O desconto caiu depois que Ana pagou. Receba a diferença ou escolha quem cobre.',
-    acao: async m => { await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
-      await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#fc-prox'); await m.espera(600); await demoTocarSemAviso(m, `${FC_AQUI} [data-fc-difcobre="${demoId('Bruno')}"]`, 700); await demoPagamentoInteiro(m, 2600); await m.espera(500); } },
-  // continua na janela que o passo anterior deixou aberta; a tela de "Conta fechada" rola sozinha até o botão (Kit 0.9.0)
-  { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.', continua: true,
-    acao: async m => { if (!fcAberta()) await m.tocar('#fechar-cmd'); await m.acha('#fc-salvar'); await m.espera(600); await m.tocar('#fc-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3600); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
+  // fechar não abre janela: a própria comanda vira um canhoto por pessoa (1.12.0). Os passos seguintes partem da comanda fechada.
+  { t: 'Feche a comanda', d: 'O papel vira um canhoto por pessoa. Para mexer nos pedidos, toque em Reabrir a comanda.',
+    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await m.espera(1700); await m.apontar('#view .cf-cab', 1800); await m.apontar('#cf-cans', 2000); } },
+  { t: 'Receba de cada um', d: 'Marque quem pagou: o canhoto leva o carimbo. Abra o canhoto para o Pix e para valor diferente.',
+    acao: async m => { await demoFechada(m);
+      // na demonstração, Bruno é "você" e tem chave Pix: é ela que aparece em Receber com Pix
+      if (!draft.demoEu) { draft.demoEu = 'Bruno'; draft.demoPix = { ...(draft.demoPix || {}), Bruno: 'bruno@exemplo.com.br' }; render({ anchor: false }); await m.espera(300); }
+      const ana = demoCan('Ana'), carla = demoCan('Carla');
+      await demoTocarSemAviso(m, `${ana} [data-can-pago="marcar"]`, 900); await m.apontar('#view .cf-rec', 1700);
+      await demoAbrirCan(m, ana); await m.rolar(`${ana} .fc-saiu`, 46); await demoTocarSemAviso(m, `${ana} .fc-saiu .kf-chave`, 900);
+      // segue para o canhoto da Carla: o Pix, o campo do valor, quem cobre, o cupom e a volta ao valor da conta
+      await demoAbrirCan(m, carla); await m.rolar(`${carla} [data-can-pix]`, 46); await m.apontar(`${carla} [data-can-pix]`, 1700);
+      await m.tocar(`${carla} [data-can-valor]`); await m.acha(`${carla} [data-can-custom]`); await m.rolar(`${carla} [data-can-custom]`, 46);
+      await m.digitar(`${carla} [data-can-custom]`, '4000', { ritmo: 120 }); await m.espera(700);
+      await demoTocarSemAviso(m, `${carla} [data-can-cobre="${demoId('Bruno')}"]`, 600);
+      await demoPagamentoInteiro(m, carla, 2600);
+      await m.rolar(`${carla} [data-can-custom]`, 46); await demoTocarSemAviso(m, `${carla} [data-can-conta]`, 800); await m.espera(500); } },
+  { t: 'A conta de quem já pagou mudou', d: 'Reabra a comanda e tire o desconto: Ana já tinha pago. Receba a diferença ou escolha quem cobre.',
+    acao: async m => { if (draft.fechada) { await demoTocarSemAviso(m, '#cf-reabrir', 700); await m.acha('#cm-pe'); }
+      await m.tocar('#cm-pe'); await m.acha('.kf-dlg [data-cm="ds"]'); await m.espera(500); await m.tocar('.kf-dlg [data-cm="ds"]'); await m.rolar('.kf-dlg .aviso-pago', 6); await m.apontar('.kf-dlg .aviso-pago', 2200, { opcional: true, prazo: 800 }); await m.fechar();
+      await m.apontar('#view .aviso-pago', 2200); await m.tocar('#view [data-ap-cobre]'); await m.acha('#cf'); await m.espera(1600);
+      const ana = demoCan('Ana'); await demoTocarSemAviso(m, `${ana} [data-can-difcobre="${demoId('Bruno')}"]`, 700); await demoPagamentoInteiro(m, ana, 2600); await m.espera(500); } },
+  { t: 'Salve no Histórico', d: 'Salvar encerra a comanda e guarda tudo. Se foi cedo demais, dá para desfazer.',
+    acao: async m => { await demoFechada(m); await m.acha('#cf-salvar'); await m.espera(600); await m.tocar('#cf-salvar'); const ok = await m.acha('#festa-ok', { opcional: true, prazo: 2500 }); if (ok) { await m.espera(3600); await m.tocar('#festa-ok'); await m.some('#festa-ok'); } else await m.espera(1600); } },
   { t: 'Tampinhas e níveis', d: 'Cada comanda salva rende pontos. As tampinhas que você ganha ficam na coleção.', se: () => jogoLigado(),
     acao: async m => { await demoIr(m, 'tampinhas'); await m.apontar('#view .nivel-card', 1700); await m.apontar('#view [data-tampa="primeira"]', 1300); } },
   { t: 'Gire a tampinha', d: 'Toque numa tampinha e deslize o dedo sobre ela: ela gira nas suas mãos.', se: () => jogoLigado(),

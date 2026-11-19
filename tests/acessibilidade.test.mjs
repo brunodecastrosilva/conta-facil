@@ -31,9 +31,11 @@ for (const tema of ['light', 'dark']) {
     await varrer(p, `Início (${nome})`);
     await p.click('#ini-ex'); await p.locator('.cmd-una').waitFor();
     await varrer(p, `Comanda (${nome})`);
-    await p.click('#fechar-cmd'); await p.locator('.fc-slide').first().waitFor();
-    await varrer(p, `Fechar a comanda (${nome})`);
-    await p.click('#fc-volta');
+    // a comanda fechada (canhotos), com um canhoto aberto; o exemplo tem um item sem divisão, confirmado antes de fechar
+    await p.evaluate(() => { draft.items.forEach(i => { i.lk = true; }); commit(); });
+    await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.locator('[data-can-abre]').nth(1).click(); await p.locator('.cf-dentro').waitFor();
+    await varrer(p, `Comanda fechada (${nome})`);
+    await p.click('#cf-reabrir'); await p.locator('.cmd-una').waitFor();
     for (const [id, tela] of [['historico', 'Histórico'], ['tampinhas', 'Tampinhas'], ['mais', 'Mais']]) { await p.click('#kf-nav-' + id); await p.waitForTimeout(300); await varrer(p, `${tela} (${nome})`); }
     await p.locator('#view [data-ir="cadastros"]').click(); await p.waitForTimeout(300);
     await varrer(p, `Cadastros (${nome})`);

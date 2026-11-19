@@ -3,6 +3,21 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.12.0 · 2026-11-18
+
+- **Fechar a comanda sem janela (opção C, aprovada pelo Bruno):** tocar em "Fechar comanda" transforma a própria tela. O papel é destacado em um canhoto por pessoa, com nome e valor. A comanda fechada não aceita pedido nem pessoa nova; o único caminho de volta é "Reabrir a comanda". Saem o carrossel de cupons e o botão "Voltar à comanda".
+- **A transição:** o picote se desenha entre as pessoas, cada canhoto sai de onde a pessoa estava, gira, solta e assenta, e o carimbo FECHADA bate no cabeçalho, com uma vibração curta. É um momento de marca (Código, Art. 72, § 4º), como a festa de fechamento; quem pede movimento reduzido vê a troca direta.
+- **Receber é carimbar:** "Marcar como pago" fica no próprio canhoto. A barra "Recebido" enche passando do ponto e voltando, murcha ao esvaziar e, com tudo recebido, estufa e ganha um check; aí "Salvar no histórico" vira o botão principal. Antes disso ele é discreto, com "Faltam R$ …".
+- **Canhoto aberto:** a seta abre o cupom da pessoa ali mesmo, com "Compartilhar" (o PDF por pessoa saiu: repetia o Compartilhar), "Pagar valor diferente" (antes, "Pagar outro valor"), "Já saiu da mesa" e as escolhas de quem cobre ou devolve a diferença.
+- **"Receber com Pix" só aparece quando serve:** você tem chave Pix em *Você nas comandas*, o canhoto não é o seu e ainda falta receber dele. Abre o QR code e o copia e cola com o valor que falta. Com todos pagos, o botão não existe.
+- **Saiu "Uma pessoa paga a conta de todos"** (pedido do Bruno). Comandas antigas que usavam a opção passam a mostrar cada um pagando o seu.
+- **Comanda da mesa termina no total:** saiu a parte final com o pagamento de cada pessoa. No lugar dos cupons da mesa, a tela tem "Copiar a comanda" e "PDF da mesa".
+- **Não fecha com item sem divisão:** o app avisa "Divida todos os itens antes de fechar a comanda.".
+- **Guia:** os passos *Feche a comanda*, *Receba de cada um* (novo nome), *A conta de quem já pagou mudou* e *Salve no Histórico* foram refeitos para os canhotos. Continua com 34 passos.
+- **Dados:** "fechada" fica só no aparelho, como "pago" e "já saiu da mesa"; a comanda salva fechada abre em canhotos pelo histórico.
+- **Regras do Conta Fácil:** o Art. 8º (Fechar a comanda) precisa de texto novo; a proposta está no relato desta versão.
+- **Testes:** rodaram a verificação do padrão, a bateria completa (a mudança mexe em Fechar, no cupom da mesa e no guia) e a acessibilidade, agora com a comanda fechada no claro e no escuro.
+
 ## 1.11.1 · 2026-11-18
 
 - **Fechar a comanda, cupom da mesa:** o botão "Copiar todos" virou "Copiar" e copia só a comanda da mesa (antes copiava a da mesa e, em seguida, o cupom de cada pessoa). O aviso passou de "Todos os cupons copiados." para "Comanda da mesa copiada.". O cupom de cada pessoa continua com o seu "Copiar".

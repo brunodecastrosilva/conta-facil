@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.11.1';
+const VERSAO = '1.12.0';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -83,7 +83,7 @@ function blankDraft() {
     couvert: { enabled: false, value: 1500 },
     discount: { enabled: false, label: 'Desconto', mode: 'value', value: 0, pct: 10, at: 'after' },
     payMode: 'none', payer: '', custom: {}, cover: {}, groups: [],
-    live: null, savedAt: null, isExample: false, active: false };
+    live: null, savedAt: null, isExample: false, active: false, fechada: null };
 }
 function migrate(d) {
   const hadGroups = Array.isArray(d && d.groups);
@@ -96,7 +96,7 @@ function migrate(d) {
   delete d.check;
   // "Várias pagaram" virou valor personalizado por pessoa
   if (d.payMode === 'multi') { d.custom = Object.fromEntries(Object.entries(d.paid || {}).filter(([, v]) => v > 0)); d.payMode = 'none'; }
-  if (d.payMode !== 'single') d.payMode = 'none';
+  d.payMode = 'none'; d.payer = ''; // "uma pessoa paga a conta de todos" saiu na 1.12.0: cada um paga o seu
   d.custom = isObj(d.custom) ? d.custom : {};
   d.cover = isObj(d.cover) ? d.cover : {};
   delete d.paid;
@@ -537,7 +537,7 @@ function exampleDraft() {
     { id: newId(), o: 5, name: 'Porção de calabresa', qty: 1, price: 4200, fq: 0, mode: 'equal', lk: false, a: { ...all } },
   ];
   d.groups = [{ id: newId(), members: [a.id, b.id], payers: [a.id] }];
-  d.demoPix = { Ana: 'ana@exemplo.com.br' };
+  d.demoPix = { Ana: 'ana@exemplo.com.br' }; d.demoEu = 'Ana';
   d.active = true;
   return d;
 }
@@ -655,6 +655,13 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.12.0', itens: [
+    'Fechar a comanda mudou: o papel vira um canhoto por pessoa, sem janela. Para voltar, toque em Reabrir a comanda.',
+    'Receber é carimbar: Marcar como pago em cada canhoto, com uma barra que mostra quanto já entrou.',
+    'Receber com Pix aparece só quando serve: com a sua chave Pix e enquanto a pessoa não pagou.',
+    '"Pagar outro valor" agora se chama "Pagar valor diferente" e fica dentro do canhoto.',
+    'Saiu "Uma pessoa paga a conta de todos". A comanda da mesa termina no total.',
+  ] },
   { versao: '1.11.1', itens: [
     'Fechar a comanda: no cupom da mesa, "Copiar" copia só a comanda da mesa.',
   ] },
@@ -942,7 +949,7 @@ function payRows(r, c) {
   return rows;
 }
 // chave Pix guardada no cadastro da pessoa
-const pixOf = name => (draft.isExample && draft.demoPix && draft.demoPix[name]) || (catalog.people.find(p => norm(p.name) === norm(name))?.pix || '').trim();
+const pixOf = name => (draft.demoPix && draft.demoPix[name]) || (catalog.people.find(p => norm(p.name) === norm(name))?.pix || '').trim();
 // CPF com os dois dígitos de conferência certos (o Kit confere igual por dentro, mas não oferece a conta: Proposta 5)
 function cpfValid(d) {
   d = String(d || ''); if (!/^\d{11}$/.test(d) || /^(\d)\1{10}$/.test(d)) return false;
@@ -1867,7 +1874,7 @@ const fraseDiferenca = (u, p) => `${u.name} pagou ${BRL(p.pago)} e a conta agora
 function alternarPago(u, modo) {
   const d = draft, c = compute(d), antes = clone(d.pagos || {}), p = contaPaga(d, u, c);
   const antesX = { custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) }, saiu: { ...(d.saiu || {}) } };
-  const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; Object.assign(d, antesX); commit({ anchor: false }); fcRefazer?.(); } };
+  const desfazer = { label: 'Desfazer', run: () => { d.pagos = antes; Object.assign(d, antesX); commit({ anchor: false }); } };
   if (modo === 'desmarcar') { marcarPago(d, u.members, false, c); commit({ anchor: false }); KitFacil.avisar(`${u.name}: pagamento desmarcado.`, desfazer); return; }
   marcarPago(d, u.members, true, c); commit({ anchor: false });
   if (modo === 'acertar') { KitFacil.avisar(p.estado === 'troco' ? `${u.name}: troco de ${BRL(p.troco)} devolvido.` : `${u.name}: diferença de ${BRL(p.falta)} recebida.`, desfazer); return; }
@@ -1877,8 +1884,8 @@ function alternarPago(u, modo) {
 // botões de pagamento de um cupom, conforme a situação
 function botoesPagoHTML(u, p, attr = 'data-pg') {
   const b = (modo, cls, txt) => `<button type="button" class="btn small ${cls}" ${attr}="${modo}">${txt}</button>`;
-  if (p.estado === 'aberto') return attr === 'data-fc-pago' ? b('marcar', 'pa-pago', `${I.ok}Marcar como pago`) : ''; // só se marca pago depois de fechar a comanda
-  if (p.estado === 'pago') return b('desmarcar', attr === 'data-fc-pago' ? 'ghost' : 'pa-pago on', `${I.x}Desmarcar pago`);
+  if (p.estado === 'aberto') return attr === 'data-can-pago' ? b('marcar', 'pa-pago cf-pri', `${I.ok}Marcar como pago`) : ''; // só se marca pago depois de fechar a comanda
+  if (p.estado === 'pago') return b('desmarcar', attr === 'data-can-pago' ? 'ghost' : 'pa-pago on', `${I.x}Desmarcar pago`);
   const acerto = p.estado === 'troco' ? `${I.ok}Devolvi ${BRL(p.troco)}` : p.estado === 'parte' ? `${I.ok}Recebi o resto: ${BRL(p.falta)}` : `${I.ok}Recebi ${BRL(p.falta)}`;
   return `<p class="pa-dif" role="status">${p.estado === 'parte' ? `Parte deste cupom já foi paga (${BRL(p.pago)}). Falta ${BRL(p.falta)}.` : esc(fraseDiferenca(u, p))}</p><div class="pa-acoes pa-acoes-2">${b('acertar', 'pa-pago', acerto)}${b('desmarcar', 'ghost', `${I.x}Desmarcar pago`)}</div>`;
 }
@@ -2029,7 +2036,7 @@ function contaSheet() {
   const podeFechar = d.items.length && d.people.length;
   openSheet({ title: 'Conta da mesa', body: `<div id="cm-corpo" class="cs">${corpo()}</div>`,
     foot: podeFechar ? `<button type="button" class="btn" id="cm-fechar">${I.receipt}Fechar comanda</button>` : '', onMount: sh => {
-    $('#cm-fechar', sh)?.addEventListener('click', () => { closeSheet(true); fecharSheet(); });
+    $('#cm-fechar', sh)?.addEventListener('click', () => fecharComanda());
     const box = $('#cm-corpo', sh);
     let chave = '';
     const pintar = () => { const foco = box.contains(document.activeElement) && document.activeElement.id;
@@ -2082,159 +2089,200 @@ function mesaRows(d, c) {
   if (s.enabled) R.push({ t: 'pair', left: serviceLabel(d), right: BRL(c.service) });
   if (d.couvert.enabled) R.push({ t: 'pair', left: 'Couvert', right: BRL(c.couvert) });
   if (d.discount.enabled) R.push({ t: 'pair', left: 'Desconto', right: '−' + BRL(c.discount) });
-  R.push({ t: 'total', left: 'TOTAL', right: BRL(c.total) }, { t: 'section', text: 'PESSOAS' });
-  c.units.forEach(u => { const p = contaPaga(d, u, c); R.push({ t: 'pair', left: u.name, right: (p.estado === 'pago' ? 'pago · ' : '') + BRL(u.total) }); if (p.estado !== 'aberto' && p.estado !== 'pago') R.push({ t: 'detail', text: `pagou ${BRL(p.pago)} · ${p.estado === 'troco' ? 'devolver ' + BRL(p.troco) : 'falta ' + BRL(p.falta)}` }); });
-  const falta = faltaReceber(d, c), troco = trocoDevolver(d, c);
-  if (algumPago(d)) { R.push({ t: 'dash' }, { t: 'sub', left: falta ? 'FALTA PAGAR' : 'TUDO PAGO', right: falta ? BRL(falta) : '✓' }); if (troco) R.push({ t: 'sub', left: 'DEVOLVER', right: BRL(troco) }); }
-  // quem paga a conta de todos, ou quem combinou outro valor: os acertos entre as pessoas
-  const nome = id => c.per[id].person.name;
-  if (c.payer || c.transfers.length) {
-    R.push({ t: 'section', text: 'PAGAMENTO' });
-    if (c.payer) R.push({ t: 'pair', left: `${nome(c.payer)} paga a conta`, right: BRL(c.per[c.payer].paid) });
-    c.transfers.forEach(x => R.push({ t: 'pair', left: `${nome(x.from)} paga para ${nome(x.to)}`, right: BRL(x.value) }));
-  }
+  R.push({ t: 'total', left: 'TOTAL', right: BRL(c.total) }); // o cupom da mesa termina no total: quem pagou fica nos canhotos
   return R;
 }
-// fechar: todos os cupons, um por tela, arrastando para o lado (a mesa primeiro)
-let fcRefazer = null; // com Fechar a comanda aberto: refaz os cupons depois de marcar, acertar ou desfazer um pagamento
-function fecharSheet(abrirEm = 0) {
+/* ---------- comanda fechada: um canhoto por pessoa (1.12.0) ----------
+   Fechar a comanda não abre janela: a própria tela muda. O papel é destacado em um canhoto por cupom, e receber é
+   carimbar cada canhoto. d.fechada guarda quando a comanda foi fechada (só neste aparelho, como "pago" e "já saiu").
+   Só há um caminho de volta: "Reabrir a comanda". */
+let canAberto = '', canValor = '', barraDe = null; // canhoto aberto; campo de valor diferente aberto; de onde a barra vem (para o movimento)
+const recebidoDe = (d, c) => c.units.reduce((a, u) => a + contaPaga(d, u, c).pago, 0);
+// Pix para receber de um canhoto: a chave é a de "Você nas comandas". O botão só existe quando serve: há chave,
+// ainda falta receber desse canhoto e ele não é o seu
+function pixReceber(d, u, c) {
+  const eu = d.demoEu || catalog.me || '', chave = eu && pixOf(eu), pg = contaPaga(d, u, c); // demoEu: "você" na comanda de exemplo e no guia
+  if (!chave || pg.falta <= 0 || u.members.some(id => norm(c.per[id].person.name) === norm(eu))) return null;
+  return { toName: eu, key: chave, value: pg.falta };
+}
+function fecharComanda(abrir = '') {
   const d = draft, c = compute(d);
-  const slides = [{ nome: 'Mesa', arq: 'mesa', r: null, rows: mesaRows(d, c), pago: false }, ...c.units.map(u => ({ nome: u.name, arq: u.name.replace(/ \+ /g, ' e '), r: u, rows: null, pg: contaPaga(d, u, c), pago: contaPaga(d, u, c).estado === 'pago' }))];
-  const pend = c.openItems.length + c.incomplete.length + c.unassigned.length;
-  let quemAberto = false, valorAberto = '';
-  // embaixo de cada cupom: na mesa, quem paga a conta de todos; em cada pessoa, o pago e o "pagar outro valor"
-  const extras = (x, c) => {
-    if (!x.r) {
-      if (d.people.length < 2) return '';
-      if (c.payer) return `<div class="fc-todos on"><span><b>${esc(c.per[c.payer].person.name)}</b> paga a conta de todos</span><button type="button" class="btn small ghost" data-fc-cada>${I.x}Cada um paga o seu</button></div>`;
-      return `<div class="fc-todos"><button type="button" class="btn small ghost" data-fc-todos aria-expanded="${quemAberto}">${I.users}Uma pessoa paga a conta de todos</button>
-        ${quemAberto ? `<div class="fc-quem" data-kf-exp="fc-quem" role="group" aria-label="Quem paga a conta de todos">${d.people.map(p => `<button type="button" class="kf-escolha" data-fc-quem="${p.id}">${esc(p.name)}</button>`).join('')}</div>` : ''}</div>`;
-    }
-    const u = x.r, pg = contaPaga(d, u, c), pid = u.payers.length === 1 ? u.payers[0] : '', r = pid && c.per[pid];
-    // com quem fica a diferença: os outros dividem (padrão) ou uma pessoa só
-    const quem = (attr, dif, atual, rot) => { const L = pid && !c.payer ? quemCobre(d, c, pid, dif) : []; if (!L.length) return '';
-      return `<div class="fc-cobre" role="group" aria-label="${rot} ${BRL(Math.abs(dif))}"><span class="fc-cobre-t">${rot} ${BRL(Math.abs(dif))}</span><div class="fc-quem">
-        <button type="button" class="kf-escolha" ${attr}="" aria-pressed="${atual === ''}">Os outros dividem</button>${L.map(id => `<button type="button" class="kf-escolha" ${attr}="${id}" aria-pressed="${atual === id}">${esc(c.per[id].person.name)}</button>`).join('')}</div></div>`; };
-    // outro valor: só para quem paga o próprio cupom, enquanto ele não foi marcado como pago
-    let valor = '';
-    if (r && pid !== c.payer && pg.estado === 'aberto') {
-      const on = r.custom || valorAberto === pid, dif = r.custom ? r.share - (d.custom[pid] || 0) : 0;
-      valor = on ? `<div class="fc-valor"><div class="field"><label for="fc-v-${pid}">Vai pagar</label><input id="fc-v-${pid}" data-fc-custom="${pid}" type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(r.custom ? d.custom[pid] || 0 : r.paid)}"></div>
-          <button type="button" class="btn small ghost" data-fc-conta="${pid}">${I.refresh}Valor da conta</button></div>${dif ? quem('data-fc-cobre', dif, r.cover || '', dif > 0 ? 'Quem cobre' : 'Quem devolve') : ''}`
-        : `<button type="button" class="btn small ghost" data-fc-valor="${pid}">${I.edit}Pagar outro valor</button>`;
-    }
-    // a conta mudou depois de paga: além de receber ou devolver, outra pessoa pode ficar com a diferença
-    const dif = pg.estado === 'falta' ? pg.falta : pg.estado === 'troco' ? -pg.troco : 0;
-    const outro = dif ? quem('data-fc-difcobre', dif, null, dif > 0 ? 'Ou quem cobre' : 'Ou quem devolve') : '';
-    // já pagou: pode já ter ido embora (o cupom trava e a pessoa não entra em mais nada)
-    const foi = pg.estado !== 'aberto' && pg.estado !== 'parte' ? `<label class="fc-saiu"><span>Já saiu da mesa</span><span class="kf-chave"><input type="checkbox" data-fc-saiu="${u.id}" ${cupomSaiu(d, u) ? 'checked' : ''} aria-label="${esc(u.name)} já saiu da mesa"><span class="kf-chave-trilho"></span></span></label>` : '';
-    return `<div class="fc-pago" data-fc-u="${u.id}">${botoesPagoHTML(u, pg, 'data-fc-pago')}${outro}${foi}${valor}</div>`;
+  if (d.fechada || !d.items.length || !d.people.length) return;
+  if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
+  if (d.items.some(pendingDirty)) { KitFacil.avisar('Há itens com alterações não salvas. Salve ou descarte antes de fechar.'); return; }
+  if (c.unassigned.length || c.incomplete.length || c.openItems.length) { KitFacil.avisar('Divida todos os itens antes de fechar a comanda.'); return; }
+  closeSheet(true);
+  // de onde cada canhoto sai: a linha da pessoa na comanda aberta
+  const de = {}; $$('#view [data-pes]').forEach(e => { de[e.dataset.pes] = e.getBoundingClientRect().top; });
+  const animar = !MV().off && tab === 'comanda' && !!$('#groups-card');
+  const virar = () => {
+    if (draft !== d || d.fechada) return;
+    d.fechada = Date.now(); if (d.payer || d.payMode !== 'none') pagaTodos(d, '');
+    canAberto = abrir; canValor = ''; barraDe = null; pesAberto = null; itemAberto = null; pesJuntando = false;
+    commit({ anchor: false }); window.scrollTo({ top: 0 });
+    if (animar) entrarFechada(de);
   };
-  const avisoHTML = c => c.payDiff < 0 ? `<div class="status warn" data-kf-exp="fc-aviso">${I.warn}<span>Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga outro valor.</span></div>` : c.payDiff > 0 ? `<div class="status warn" data-kf-exp="fc-aviso">${I.warn}<span>Os valores escolhidos passam ${BRL(c.payDiff)} do total.</span></div>` : '';
-  openSheet({ title: 'Fechar a comanda', tall: true, body: `<div class="cs fc">
-      <div class="fc-nav"><button type="button" class="fc-seta" id="fc-ant" aria-label="Cupom anterior">${I.back}</button><span class="fc-cont" id="fc-cont" aria-live="polite">1 de ${slides.length} · Mesa</span><button type="button" class="fc-seta" id="fc-prox" aria-label="Próximo cupom">${I.next}</button></div>
-      <div class="fc-janela" id="fc-janela"><div class="fc-trilho" id="fc-trilho" tabindex="0" aria-label="Cupons: arraste para o lado">${slides.map((x, i) => `<div class="fc-slide" role="group" aria-roledescription="cupom" aria-label="${i + 1} de ${slides.length}: ${esc(x.nome)}"><div class="cupom-1 ${x.pago ? 'cupom-pago' : ''}">${receiptHTML(x.r, d, c, x.rows)}${x.pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : ''}</div>
-        <div class="fc-col"><div class="fc-acoes"><button type="button" class="btn small ghost" data-fc-copiar="${i}">${I.copy}Copiar</button><button type="button" class="btn small ghost" data-fc-pdf="${i}">${I.file}PDF</button></div>
-        <div class="fc-extra">${extras(x, c)}</div></div></div>`).join('')}</div></div>
-      <div class="fc-pontos" aria-hidden="true">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
-      <div id="fc-aviso">${avisoHTML(c)}</div>
-      ${pend ? `<div class="status warn">${I.warn}<span>Há ${plural(pend, 'item', 'itens')} sem divisão. Divida antes de salvar.</span></div>` : ''}
-    </div>`,
-    foot: `<button type="button" class="btn ghost" id="fc-volta">Voltar à comanda</button><button type="button" class="btn" id="fc-salvar">${I.save}Salvar no histórico</button>`, onMount: s => {
-      const jan = $('#fc-janela', s), tr = $('#fc-trilho', s), pts = $$('.fc-pontos i', s), cont = $('#fc-cont', s), els = $$('.fc-slide', s);
-      let i = 0, arr = null, cAt = c; // cAt: a conta mais recente (muda quando alguém é marcado como pago aqui dentro)
-      const W = () => jan.clientWidth, n = slides.length;
-      const pos = (x, anim) => { const m = MV(); tr.style.transition = anim && !m.off ? `transform ${m.ms}ms ${m.css}` : 'none'; tr.style.transform = `translate3d(${x}px,0,0)`; };
-      const altura = anim => { const m = MV(), h = els[i].offsetHeight; if (Math.abs(h - jan.offsetHeight) < 1) return; if (anim && !m.off) alturaPorContaDoApp(jan, m.ms); jan.style.transition = anim && !m.off ? `height ${m.ms}ms ${m.css}` : 'none'; jan.style.height = h + 'px'; };
-      const mostrar = anim => { cont.textContent = `${i + 1} de ${n} · ${slides[i].nome}`; pts.forEach((p, k) => p.classList.toggle('on', k === i)); $('#fc-ant', s).disabled = i === 0; $('#fc-prox', s).disabled = i === n - 1; els.forEach((e, k) => e.setAttribute('aria-hidden', k === i ? 'false' : 'true')); altura(anim); };
-      const X = k => -(els[k]?.offsetLeft || 0);
-      const ir = k => { i = Math.max(0, Math.min(n - 1, k)); pos(X(i), true); mostrar(true); };
-      // o cupom acompanha o dedo; soltando, vai para o vizinho se andou um quarto da tela ou foi um gesto rápido
-      jan.addEventListener('pointerdown', e => { if (e.button > 0 || e.target.closest('button, input, label')) return; arr = { x: e.clientX, y: e.clientY, t: performance.now(), dx: 0, ok: null, id: e.pointerId }; });
-      jan.addEventListener('pointermove', e => {
-        if (!arr || e.pointerId !== arr.id) return;
-        const dx = e.clientX - arr.x, dy = e.clientY - arr.y;
-        if (arr.ok === null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; arr.ok = Math.abs(dx) > Math.abs(dy); if (!arr.ok) { arr = null; return; } try { jan.setPointerCapture(e.pointerId); } catch {} }
-        const borda = (i === 0 && dx > 0) || (i === n - 1 && dx < 0);
-        arr.dx = borda ? dx / 3 : dx; arr.v = dx / Math.max(1, performance.now() - arr.t);
-        pos(X(i) + arr.dx, false);
-      });
-      const soltar = () => { if (!arr) return; const { dx, v = 0, ok } = arr; arr = null; if (!ok) return; const lim = W() / 4; const flick = Math.abs(dx) > 24 && Math.abs(v) > .25; ir(dx < -lim || (flick && v < 0) ? i + 1 : dx > lim || (flick && v > 0) ? i - 1 : i); };
-      jan.addEventListener('pointerup', soltar); jan.addEventListener('pointercancel', soltar);
-      tr.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); ir(i + 1); } if (e.key === 'ArrowLeft') { e.preventDefault(); ir(i - 1); } });
-      $('#fc-ant', s).onclick = () => ir(i - 1);
-      $('#fc-prox', s).onclick = () => ir(i + 1);
-      const aoMudarTela = () => { if (!tr.isConnected) return removeEventListener('resize', aoMudarTela); pos(X(i), false); altura(false); };
-      addEventListener('resize', aoMudarTela);
-      // os cupons (e o da mesa) são refeitos no lugar, com o carimbo e os botões da situação de agora
-      const refazer = () => {
-        if (!tr.isConnected) { if (fcRefazer === refazer) fcRefazer = null; return; }
-        cAt = compute(d);
-        slides.forEach((x, k) => { const el = els[k], un = x.r ? cAt.U[x.r.id] : null; if (x.r && !un) return;
-          const pgk = un ? contaPaga(d, un, cAt) : null, pago = !!pgk && pgk.estado === 'pago', cup = $('.cupom-1', el);
-          if (un) x.r = un; else x.rows = mesaRows(d, cAt);
-          cup.className = 'cupom-1' + (pago ? ' cupom-pago' : ''); cup.innerHTML = receiptHTML(x.r, d, cAt, x.rows) + (pago ? '<span class="selo-pago" aria-hidden="true">PAGO</span>' : '');
-          const ex = $('.fc-extra', el); ex.innerHTML = extras(x, cAt); prepFields(ex); });
-        $('#fc-aviso', s).innerHTML = avisoHTML(cAt);
-        altura(true); seguir();
-      };
-      const seguir = () => {
-        const cx = tr.closest('.kf-dlg-corpo'), ex = $('.fc-extra', els[i]); if (!cx || !ex) return;
-        const fim = performance.now() + MV().ms + 80;
-        const f = () => { if (!ex.isConnected) return; const falta = ex.getBoundingClientRect().bottom + 14 - cx.getBoundingClientRect().bottom; if (falta > 0) cx.scrollTop += falta; if (performance.now() < fim) requestAnimationFrame(f); };
-        requestAnimationFrame(f);
-      };
-      const mudar = () => { commit({ anchor: false }); refazer(); };
-      tr.addEventListener('change', e => {
-        const sa = e.target.closest('[data-fc-saiu]');
-        if (sa) { const u = cAt.U[sa.dataset.fcSaiu]; if (!u) return; d.saiu = { ...(d.saiu || {}) }; u.members.forEach(m => { if (sa.checked) d.saiu[m] = true; else delete d.saiu[m]; }); commit({ anchor: false }); cAt = compute(d); return; }
-        const el = e.target.closest('[data-fc-custom]'); if (!el || el._cfFeito) return; el._cfFeito = true;
-        const pid = el.dataset.fcCustom, v = parseMoney(el.value) || 0;
-        // o cupom só é refeito depois que o campo soltar o foco de verdade (o teclado e a barra do OK se recolhem antes)
-        setTimeout(() => { if (document.activeElement === el) el.blur(); d.custom = d.custom || {}; d.custom[pid] = v; valorAberto = ''; if (tr.isConnected) mudar(); else commit({ anchor: false }); }, 0);
-      });
-      fcRefazer = refazer;
-      tr.addEventListener('click', async e => {
-        const cp = e.target.closest('[data-fc-copiar]'), pd = e.target.closest('[data-fc-pdf]'), pgb = e.target.closest('[data-fc-pago]'), t = q => e.target.closest(q);
-        // quem paga a conta de todos (cada um continua com o seu cupom)
-        if (t('[data-fc-todos]')) { quemAberto = !quemAberto; return refazer(); }
-        if (t('[data-fc-quem]')) { const pid = t('[data-fc-quem]').dataset.fcQuem, antes = { payMode: d.payMode, payer: d.payer, custom: { ...(d.custom || {}) } }; pagaTodos(d, pid); quemAberto = false; mudar();
-          KitFacil.avisar(`${d.people.find(p => p.id === pid).name} paga a conta de todos.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
-        if (t('[data-fc-cada]')) { pagaTodos(d, ''); return mudar(); }
-        // pagar outro valor
-        if (t('[data-fc-valor]')) { valorAberto = t('[data-fc-valor]').dataset.fcValor; refazer(); return; }
-        if (t('[data-fc-conta]')) { const pid = t('[data-fc-conta]').dataset.fcConta; if (d.custom) delete d.custom[pid]; if (d.cover) delete d.cover[pid]; valorAberto = ''; return mudar(); }
-        // com quem fica a diferença de quem paga outro valor
-        if (t('[data-fc-cobre]')) { const b = t('[data-fc-cobre]'), pid = b.closest('[data-fc-u]') && cAt.U[b.closest('[data-fc-u]').dataset.fcU]?.payers[0]; if (!pid) return; d.cover = { ...(d.cover || {}) }; if (b.dataset.fcCobre) d.cover[pid] = b.dataset.fcCobre; else delete d.cover[pid]; return mudar(); }
-        // a conta de quem já pagou mudou e outra pessoa fica com a diferença
-        if (t('[data-fc-difcobre]')) { const b = t('[data-fc-difcobre]'), u = cAt.U[b.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
-          const antes = { pagos: clone(d.pagos || {}), custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) } }, p = contaPaga(d, u, cAt), q = b.dataset.fcDifcobre;
-          if (!cobrirDiferenca(d, u, q, cAt)) return; mudar();
-          KitFacil.avisar(`${q ? cAt.per[q].person.name : 'Os outros'} ${p.estado === 'troco' ? (q ? 'devolve' : 'devolvem') : (q ? 'cobre' : 'cobrem')} ${BRL(p.falta || p.troco)} de ${u.name}.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); fcRefazer?.(); } }); return; }
-        // pagamento: marca, acerta ou desmarca; os cupons (e o da mesa) são refeitos no lugar, já com o carimbo
-        if (pgb) {
-          const u = cAt.U[pgb.closest('[data-fc-u]').dataset.fcU]; if (!u) return;
-          alternarPago(u, pgb.dataset.fcPago); refazer(); return;
-        }
-        if (cp) { const x = slides[+cp.dataset.fcCopiar]; if (!x.r) return copyText(receiptText(null, d, cAt, x.rows), 'Comanda da mesa copiada.'); return copyText(receiptText(x.r, d, cAt, x.rows), `Cupom de ${x.nome} copiado.`); }
-        if (pd) {
-          const x = slides[+pd.dataset.fcPdf];
-          if (!(await downloadsNS())) { KitFacil.avisar('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }
-          pd.disabled = true;
-          try { await saveFile(`cupom-${slug(x.arq)}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(x.r, d, cAt, x.rows)])); } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
-          pd.disabled = false;
-        }
-      });
-      i = Math.max(0, Math.min(n - 1, abrirEm));
-      requestAnimationFrame(() => { pos(X(i), false); mostrar(false); });
-      $('#fc-volta', s).onclick = () => closeSheet();
-      $('#fc-salvar', s).onclick = () => { closeSheet(true); saveBill(); };
-    } });
+  if (!animar) return virar();
+  // 1. o picote se desenha entre as pessoas; 2. a tela vira e o papel se rasga em canhotos
+  $('#groups-card').classList.add('cf-picote'); $('#fechar-cmd')?.animate([{ transform: 'none' }, { transform: 'scale(.95)' }, { transform: 'none' }], { duration: 220 });
+  setTimeout(virar, 300);
+}
+// momento de marca (Código, Art. 72, § 4º): cada canhoto sai de onde a pessoa estava, gira, solta e assenta; o carimbo bate
+function entrarFechada(de) {
+  const v = $('#view'), H = innerHeight * .7;
+  $$('.cf-can', v).forEach((el, i) => {
+    const a = de[el.dataset.can], dy = a === undefined ? 48 : Math.max(-H, Math.min(H, a - el.getBoundingClientRect().top)), g = i % 2 ? -1.8 : 1.8;
+    el.animate([{ transform: `translateY(${dy}px)`, opacity: a === undefined ? 0 : 1 }, { transform: `translateY(${dy * .3}px) rotate(${g}deg)`, opacity: 1, offset: .38 }, { transform: `translateY(-5px) rotate(${-g * .4}deg)`, offset: .74 }, { transform: 'none' }],
+      { duration: 820, delay: i * 70, easing: MOVE.css, fill: 'backwards' });
+  });
+  $('.cf-selo', v)?.animate([{ transform: 'scale(2.6) rotate(-16deg)', opacity: 0 }, { transform: 'scale(.9) rotate(-6deg)', opacity: 1, offset: .62 }, { transform: 'scale(1) rotate(-6deg)', opacity: 1 }], { duration: 380, delay: 430, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'backwards' });
+  setTimeout(() => { try { navigator.vibrate?.(18); } catch {} $('#view .cf')?.animate([{ transform: 'none' }, { transform: 'translateY(3px)' }, { transform: 'none' }], { duration: 170 }); }, 430 + 235);
+  $$('.cf-sobe', v).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }], { duration: MOVE.ms, delay: 380 + i * 60, easing: MOVE.css, fill: 'backwards' }));
+}
+function reabrirComanda() {
+  const d = draft; if (!d.fechada) return;
+  if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
+  d.fechada = null; canAberto = ''; canValor = ''; barraDe = null; commit({ anchor: false }); window.scrollTo({ top: 0 });
+  KitFacil.avisar('Comanda reaberta.');
+}
+// o que fica dentro do canhoto aberto, além do cupom: valor diferente, quem fica com a diferença e "já saiu da mesa"
+function canhotoExtras(d, u, c) {
+  const pg = contaPaga(d, u, c), pid = u.payers.length === 1 ? u.payers[0] : '', r = pid && c.per[pid];
+  // com quem fica a diferença: os outros dividem (padrão) ou uma pessoa só
+  const quem = (attr, dif, atual, rot) => { const L = pid ? quemCobre(d, c, pid, dif) : []; if (!L.length) return '';
+    return `<div class="fc-cobre" role="group" aria-label="${rot} ${BRL(Math.abs(dif))}"><span class="fc-cobre-t">${rot} ${BRL(Math.abs(dif))}</span><div class="fc-quem">
+      <button type="button" class="kf-escolha" ${attr}="" aria-pressed="${atual === ''}">Os outros dividem</button>${L.map(id => `<button type="button" class="kf-escolha" ${attr}="${id}" aria-pressed="${atual === id}">${esc(c.per[id].person.name)}</button>`).join('')}</div></div>`; };
+  // valor diferente: só para quem paga o próprio cupom, enquanto ele não foi marcado como pago
+  let valor = '';
+  if (r && pg.estado === 'aberto') {
+    const on = r.custom || canValor === pid, dif = r.custom ? r.share - (d.custom[pid] || 0) : 0;
+    valor = on ? `<div class="fc-valor"><div class="field"><label for="can-v-${pid}">Vai pagar</label><input id="can-v-${pid}" data-can-custom="${pid}" type="text" inputmode="numeric" data-kf-dinheiro value="${moneyInput(r.custom ? d.custom[pid] || 0 : r.paid)}"></div>
+        <button type="button" class="btn small ghost" data-can-conta="${pid}">${I.refresh}Valor da conta</button></div>${dif ? quem('data-can-cobre', dif, r.cover || '', dif > 0 ? 'Quem cobre' : 'Quem devolve') : ''}`
+      : `<div class="cf-acoes"><button type="button" class="btn small ghost" data-can-valor="${pid}">${I.edit}Pagar valor diferente</button></div>`;
+  }
+  // a conta mudou depois de paga: além de receber ou devolver, outra pessoa pode ficar com a diferença
+  const dif = pg.estado === 'falta' ? pg.falta : pg.estado === 'troco' ? -pg.troco : 0;
+  const outro = dif ? quem('data-can-difcobre', dif, null, dif > 0 ? 'Ou quem cobre' : 'Ou quem devolve') : '';
+  // já pagou: pode já ter ido embora (o canhoto trava e a pessoa não entra em mais nada se a comanda for reaberta)
+  const foi = pg.estado !== 'aberto' && pg.estado !== 'parte' ? `<label class="fc-saiu"><span>Já saiu da mesa</span><span class="kf-chave"><input type="checkbox" data-can-saiu="${u.id}" ${cupomSaiu(d, u) ? 'checked' : ''} aria-label="${esc(u.name)} já saiu da mesa"><span class="kf-chave-trilho"></span></span></label>` : '';
+  return valor + outro + foi;
+}
+function canhotoHTML(d, u, i, c) {
+  const pg = contaPaga(d, u, c), ab = canAberto === u.id, brl = v => BRL(v).replace('R$', '').trim();
+  const obs = [u.members.length > 1 ? 'cupom compartilhado' : '', cupomSaiu(d, u) ? 'saiu da mesa' : '',
+    pg.estado === 'falta' ? `pagou ${brl(pg.pago)} · falta ${brl(pg.falta)}` : pg.estado === 'troco' ? `pagou ${brl(pg.pago)} · devolver ${brl(pg.troco)}` : pg.estado === 'parte' ? `pago em parte · falta ${brl(pg.falta)}` : ''].filter(Boolean).join(' · ');
+  const seta = `<button type="button" class="ic-btn cf-seta" data-can-abre="${u.id}" aria-expanded="${ab}" aria-label="${ab ? 'Fechar' : 'Abrir'} o canhoto de ${esc(u.name)}">${I.next}</button>`;
+  const selo = pg.estado === 'pago' ? '<span class="cf-pago">PAGO</span>' : '';
+  // fechado: a ação do momento, num toque; aberto: o cupom, as opções e, por último, a ação
+  const rapido = pg.estado === 'aberto' ? `<button type="button" class="btn small" data-can-pago="marcar">${I.ok}Marcar como pago</button>`
+    : pg.estado === 'pago' ? selo : `<button type="button" class="btn small" data-can-pago="acertar">${I.ok}${pg.estado === 'troco' ? 'Devolvi ' + BRL(pg.troco) : 'Recebi ' + BRL(pg.falta)}</button>`;
+  const pix = pixReceber(d, u, c);
+  const dentro = ab ? `<div class="cf-dentro" data-kf-exp="can-${u.id}">${receiptHTML(u, d, c)}
+      <div class="cf-acoes">${pix ? `<button type="button" class="btn small ghost" data-can-pix>${I.qr}Receber com Pix</button>` : ''}<button type="button" class="btn small ghost" data-can-comp>${I.share}Compartilhar</button></div>
+      ${canhotoExtras(d, u, c)}<div class="cf-pg">${botoesPagoHTML(u, pg, 'data-can-pago')}</div></div>` : '';
+  return `<article class="cf-papel cf-can ${pg.estado}" data-can="${u.id}" aria-label="Canhoto de ${esc(u.name)}: ${BRL(pg.devido)}${pg.estado === 'pago' ? ', pago' : ''}">
+    <div class="cf-toco" aria-hidden="true">${String(i + 1).padStart(2, '0')}</div>
+    <div class="cf-corpo"><div class="cf-topo"><span>${esc(u.name)}</span><span>${BRL(pg.devido)}</span></div>${obs ? `<div class="cf-obs">${esc(obs)}</div>` : ''}
+      <div class="cf-rapido">${ab ? selo : rapido}${seta}</div>${dentro}</div></article>`;
+}
+function fechadaHTML(d, c) {
+  const falta = faltaReceber(d, c), troco = trocoDevolver(d, c), rec = recebidoDe(d, c), f = c.total > 0 ? Math.max(0, Math.min(1, rec / c.total)) : 0;
+  const tudo = algumPago(d) && !falta;
+  const aviso = c.payDiff < 0 ? `<div class="status warn" data-kf-exp="cf-aviso">${I.warn}<span>Faltam ${BRL(-c.payDiff)} para cobrir o total. Ajuste quem paga valor diferente.</span></div>` : c.payDiff > 0 ? `<div class="status warn" data-kf-exp="cf-aviso">${I.warn}<span>Os valores escolhidos passam ${BRL(c.payDiff)} do total.</span></div>` : '';
+  return `
+    ${d.isExample ? `<div class="banner ex-banner"><span><b>Comanda de exemplo</b></span><span class="grp"><button class="btn small ghost" id="ex-guide">Guia</button><button class="btn small ghost" id="clear-example">Sair</button></span></div>` : ''}
+    ${d.live ? liveCardHTML() : ''}
+    ${d.savedAt && !d.live ? `<div class="banner"><span>Esta comanda já está no histórico. As alterações são guardadas quando você salvar de novo.</span><button class="btn small ghost" id="new-bill-top">Encerrar edição</button></div>` : ''}
+    <div class="cf" id="cf">
+      <header class="cf-papel cf-cab">
+        <div class="cf-l1"><h2 class="cf-local">${esc(d.place || 'Comanda')}</h2><b class="cf-total">${BRL(c.total)}</b></div>
+        <div class="cf-l2"><span class="cf-selo">FECHADA</span><span class="cf-quando">${fmtDateTime(d.fechada)}</span><button type="button" class="cf-reabrir" id="cf-reabrir">Reabrir a comanda</button></div>
+      </header>
+      <div class="cf-rec cf-sobe"><div class="cf-rec-l"><span>Recebido</span><b>${BRL(rec)} de ${BRL(c.total)}</b></div>
+        <div class="cf-barra ${tudo ? 'cheia' : ''}" role="img" aria-label="${Math.round(f * 100)}% recebido"><div class="cf-trilho"><div class="cf-barra-f" data-f="${f}" style="transform:scaleX(${f})"></div></div><span class="cf-ok" aria-hidden="true">${I.ok}</span></div></div>
+      ${aviso}
+      <div class="cf-cans" id="cf-cans">${c.units.map((u, i) => canhotoHTML(d, u, i, c)).join('')}</div>
+      <div class="cf-mesa cf-sobe"><button type="button" class="btn small ghost" id="cf-copiar">${I.copy}Copiar a comanda</button><button type="button" class="btn small ghost" id="cf-pdf">${I.file}PDF da mesa</button></div>
+    </div>
+    <div class="fim-acoes cf-pe cf-sobe"><p class="cf-falta ${tudo ? 'ok' : ''}" role="status">${tudo ? 'Tudo recebido' : 'Faltam ' + BRL(falta)}${troco ? ` · devolver ${BRL(troco)}` : ''}</p>
+      <button type="button" class="${tudo ? 'kf-btn kf-pri fechar-btn' : 'btn ghost'}" id="cf-salvar">${I.save}<span>Salvar no histórico</span></button></div>`;
+}
+// a barra de recebido tem o seu jeito: enche passando do ponto e voltando; esvazia murchando; cheia, estufa e ganha o check
+function animarBarra(v) {
+  const fEl = $('.cf-barra-f', v); if (!fEl) return;
+  const para = +fEl.dataset.f || 0, de = barraDe; barraDe = para;
+  if (de === null || Math.abs(de - para) < .001 || MV().off) return;
+  const mola = 'cubic-bezier(.34,1.56,.64,1)', sobe = para > de, passa = Math.max(0, Math.min(1, para + (sobe ? .04 : -.04)));
+  fEl.animate([{ transform: `scaleX(${de})` }, { transform: `scaleX(${passa})`, offset: .7 }, { transform: `scaleX(${para})` }], { duration: 700, easing: MOVE.css });
+  const tr = fEl.parentNode, cheia = para >= .999;
+  tr.animate(cheia ? [{ transform: 'scaleY(1)' }, { transform: 'scaleY(1)', offset: .6 }, { transform: 'scaleY(1.6)', offset: .8 }, { transform: 'scaleY(1)' }] : sobe ? [{ transform: 'scaleY(1)' }, { transform: 'scaleY(1.25)', offset: .7 }, { transform: 'scaleY(1)' }] : [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.5)', offset: .35 }, { transform: 'scaleY(1.25)', offset: .75 }, { transform: 'scaleY(1)' }], { duration: 700, easing: mola });
+  if (cheia) $('.cf-ok', v)?.animate([{ transform: 'scale(0)' }, { transform: 'scale(0)', offset: .55 }, { transform: 'scale(1.3)', offset: .85 }, { transform: 'scale(1)' }], { duration: 760, easing: mola });
+}
+function bindFechada(v) {
+  const d = draft, raiz = $('#cf', v); if (!raiz) return;
+  animarBarra(v);
+  const U = el => compute(d).U[el.closest('[data-can]')?.dataset.can];
+  const mudar = () => commit({ anchor: false });
+  $('#cf-reabrir', v).addEventListener('click', reabrirComanda);
+  $('#cf-salvar', v).addEventListener('click', () => saveBill());
+  $('#cf-copiar', v).addEventListener('click', () => { const c = compute(d); copyText(receiptText(null, d, c, mesaRows(d, c)), 'Comanda da mesa copiada.'); });
+  $('#cf-pdf', v).addEventListener('click', async e => {
+    const b = e.currentTarget, c = compute(d);
+    if (!(await downloadsNS())) { KitFacil.avisar('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }
+    b.disabled = true;
+    try { await saveFile(`cupom-mesa-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(null, d, c, mesaRows(d, c))])); } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
+    b.disabled = false;
+  });
+  raiz.addEventListener('change', e => {
+    const sa = e.target.closest('[data-can-saiu]');
+    if (sa) { const u = compute(d).U[sa.dataset.canSaiu]; if (!u) return; d.saiu = { ...(d.saiu || {}) }; u.members.forEach(m => { if (sa.checked) d.saiu[m] = true; else delete d.saiu[m]; }); return mudar(); }
+    const el = e.target.closest('[data-can-custom]'); if (!el || el._cfFeito) return; el._cfFeito = true;
+    const pid = el.dataset.canCustom, val = parseMoney(el.value) || 0;
+    // o canhoto só é refeito depois que o campo soltar o foco de verdade (o teclado e a barra do OK se recolhem antes)
+    setTimeout(() => { if (document.activeElement === el) el.blur(); d.custom = d.custom || {}; d.custom[pid] = val; canValor = ''; mudar(); }, 0);
+  });
+  raiz.addEventListener('click', async e => {
+    const t = q => e.target.closest(q);
+    const ab = t('[data-can-abre]');
+    if (ab) { const id = ab.dataset.canAbre; canAberto = canAberto === id ? '' : id; canValor = ''; return render({ anchor: { from: `[data-can="${CSS.escape(id)}"]` } }); }
+    const pg = t('[data-can-pago]');
+    if (pg) { const u = U(pg); if (u) alternarPago(u, pg.dataset.canPago); return; }
+    if (t('[data-can-pix]')) { const u = U(e.target), x = u && pixReceber(d, u, compute(d)); if (x) pixSheet(x); return; }
+    if (t('[data-can-comp]')) { const u = U(e.target); if (!u) return; const txt = receiptText(u, d, compute(d));
+      if (navigator.share) { try { await navigator.share({ text: txt }); return; } catch (err) { if (err && err.name === 'AbortError') return; } }
+      return copyText(txt, `Cupom de ${u.name} copiado.`); }
+    if (t('[data-can-valor]')) { canValor = t('[data-can-valor]').dataset.canValor; return render({ anchor: false }); }
+    if (t('[data-can-conta]')) { const pid = t('[data-can-conta]').dataset.canConta; if (d.custom) delete d.custom[pid]; if (d.cover) delete d.cover[pid]; canValor = ''; return mudar(); }
+    // com quem fica a diferença de quem paga valor diferente
+    if (t('[data-can-cobre]')) { const b = t('[data-can-cobre]'), pid = U(b)?.payers[0]; if (!pid) return; d.cover = { ...(d.cover || {}) }; if (b.dataset.canCobre) d.cover[pid] = b.dataset.canCobre; else delete d.cover[pid]; return mudar(); }
+    // a conta de quem já pagou mudou e outra pessoa fica com a diferença
+    if (t('[data-can-difcobre]')) { const b = t('[data-can-difcobre]'), u = U(b); if (!u) return;
+      const c = compute(d), antes = { pagos: clone(d.pagos || {}), custom: { ...(d.custom || {}) }, cover: { ...(d.cover || {}) } }, p = contaPaga(d, u, c), q = b.dataset.canDifcobre;
+      if (!cobrirDiferenca(d, u, q, c)) return; mudar();
+      KitFacil.avisar(`${q ? c.per[q].person.name : 'Os outros'} ${p.estado === 'troco' ? (q ? 'devolve' : 'devolvem') : (q ? 'cobre' : 'cobrem')} ${BRL(p.falta || p.troco)} de ${u.name}.`, { label: 'Desfazer', run: () => { Object.assign(d, antes); commit({ anchor: false }); } }); }
+  });
+}
+function bindAoVivo(v) {
+  const d = draft;
+  $('#live-start', v)?.addEventListener('click', () => live.start());
+  $('#live-invite', v)?.addEventListener('click', inviteSheet);
+  $('#live-code', v)?.addEventListener('click', inviteSheet);
+  $('#live-who', v)?.addEventListener('click', () => { liveWho = true; render({ preserve: true }); });
+  $('#live-reconnect', v)?.addEventListener('click', () => { live.stop(); live.subscribe(); });
+  $('#live-end', v)?.addEventListener('click', () => {
+    const host = d.live.host && !live.closed;
+    confirmSheet(host ? 'Encerrar a comanda ao vivo?' : 'Sair da comanda ao vivo?',
+      host ? 'Os amigos param de conseguir marcar itens. A comanda continua aqui para você fechar.' : 'Você deixa de receber as atualizações. Uma cópia da comanda fica aqui com você.',
+      host ? 'Encerrar' : 'Sair', () => live.end());
+  });
+  $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { LS.set('me.' + d.live.code, b.dataset.me); liveWho = false; live.beat(); render({ preserve: true }); }));
+
 }
 const viewComanda = {
   html() {
     const d = draft, calc = compute(d), s = d.service;
     fixarPagos(d, calc);
+    if (d.fechada) return fechadaHTML(d, calc);
     const difs = pagosComDiferenca(d, calc);
     const me = d.live ? LS.get('me.' + d.live.code, '') : '';
     // mini comanda que mudou de valor dá um pulo (só quando muda, nunca na primeira vez)
@@ -2338,6 +2386,7 @@ const viewComanda = {
     $('#clear-example', v)?.addEventListener('click', () => { exitExample(); tab = 'inicio'; render(); window.scrollTo({ top: 0 }); });
     $('#ex-guide', v)?.addEventListener('click', () => guiaIniciar());
     $('#new-bill-top', v)?.addEventListener('click', () => { pending = {}; draft = blankDraft(); tab = 'inicio'; saveDraft(); render(); window.scrollTo({ top: 0 }); });
+    if (d.fechada) { bindAoVivo(v); return bindFechada(v); }
     $('#cmd-local', v).addEventListener('click', localSheet);
     $('#cmd-conta', v).addEventListener('click', contaSheet);
     $('#cm-pe', v)?.addEventListener('click', contaSheet);
@@ -2350,7 +2399,7 @@ const viewComanda = {
       const ap = e.target.closest('[data-ap-acerta]');
       if (ap) { const u = compute(d).U[ap.dataset.apAcerta]; if (u) alternarPago(u, 'acertar'); return; }
       const ac = e.target.closest('[data-ap-cobre]');
-      if (ac) { const k = compute(d).units.findIndex(u => u.id === ac.dataset.apCobre); if (k >= 0) fecharSheet(k + 1); return; }
+      if (ac) { fecharComanda(ac.dataset.apCobre); return; }
       const pa = e.target.closest('[data-pa]');
       if (pa) {
         const c = compute(d), u = c.U[pa.dataset.pa]; if (!u) return;
@@ -2386,7 +2435,7 @@ const viewComanda = {
       if (e.pointerType !== 'mouse' || e.button) return;
       const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
     });
-    $('#fechar-cmd', v)?.addEventListener('click', () => fecharSheet());
+    $('#fechar-cmd', v)?.addEventListener('click', () => fecharComanda());
     $('#cmd-excluir', v)?.addEventListener('click', () => deleteCurrent(true));
     $$('[data-it-alt]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itAlt); if (it) renameSheet(it); }));
     const rasc = id => { const it = d.items.find(i => i.id === id); if (!it) return null; if (!itPend[id]) itPend[id] = { qty: it.qty, a: { ...it.a }, fq: it.fq || 0 }; return [it, itPend[id]]; };
@@ -2402,19 +2451,7 @@ const viewComanda = {
     $$('[data-it-del]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itDel); if (!it) return;
       confirmSheet(`Remover ${it.name}?`, `${it.qty} × ${BRL(it.price)} sairá da comanda.`, 'Remover', () => { delete pending[it.id]; d.items = d.items.filter(i => i.id !== it.id); if (itemAberto === it.id) itemAberto = null; commit(); }, true); }));
 
-    // mesa ao vivo
-    $('#live-start', v)?.addEventListener('click', () => live.start());
-    $('#live-invite', v)?.addEventListener('click', inviteSheet);
-    $('#live-code', v)?.addEventListener('click', inviteSheet);
-    $('#live-who', v)?.addEventListener('click', () => { liveWho = true; render({ preserve: true }); });
-    $('#live-reconnect', v)?.addEventListener('click', () => { live.stop(); live.subscribe(); });
-    $('#live-end', v)?.addEventListener('click', () => {
-      const host = d.live.host && !live.closed;
-      confirmSheet(host ? 'Encerrar a comanda ao vivo?' : 'Sair da comanda ao vivo?',
-        host ? 'Os amigos param de conseguir marcar itens. A comanda continua aqui para você fechar.' : 'Você deixa de receber as atualizações. Uma cópia da comanda fica aqui com você.',
-        host ? 'Encerrar' : 'Sair', () => live.end());
-    });
-    $$('[data-me]', v).forEach(b => b.addEventListener('click', () => { LS.set('me.' + d.live.code, b.dataset.me); liveWho = false; live.beat(); render({ preserve: true }); }));
+    bindAoVivo(v);
 
     // itens ainda sem divisão confirmada: continuam com a lista de marcar e o Confirmar
     $$('.item[data-item]', v).forEach(card => {
