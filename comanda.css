@@ -186,8 +186,8 @@ body.is-dragging.drag-out .dv-add.drop-on{background:color-mix(in srgb,var(--dan
 .cu-cab{position:sticky;top:calc(var(--kf-barra-h) + env(safe-area-inset-top,0px));z-index:12;display:flex;align-items:stretch;gap:8px;background:var(--paper);padding:12px 12px 10px;border-bottom:2px solid var(--paper-ink);box-shadow:0 -8px 0 var(--paper)}
 .cu-local,.cu-conta{background:none;border:0;color:inherit;font:inherit;cursor:pointer;border-radius:6px;min-height:48px;padding:4px 6px}
 .cu-local{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;text-align:left}
-.cu-nome{display:flex;align-items:center;gap:6px;max-width:100%;font-size:18px;font-weight:600;line-height:1.2;text-transform:uppercase;letter-spacing:.02em}
-.cu-nome .i{width:15px;height:15px;flex:none;opacity:.6}
+.cu-nome{display:block;max-width:100%;overflow-wrap:anywhere;font-size:18px;font-weight:600;line-height:1.2;text-transform:uppercase;letter-spacing:.02em}
+.cu-nome .i{display:inline-block;width:15px;height:15px;vertical-align:-1px;opacity:.6}
 .cu-nome.vazio{color:var(--paper-muted)}
 .cu-quando{font-size:12px;color:var(--paper-muted)}
 .cu-conta{flex:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;max-width:55%}
@@ -658,7 +658,6 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .cf-mesa{display:flex;gap:8px}
 .cf-mesa .btn{flex:1;min-width:0}
 .cf-pe{margin-top:14px}
-.cf-falta{margin:0;text-align:center;font-size:14px;color:var(--muted)}
 .cf-pe .btn,.cf-pe .kf-btn{width:100%;min-height:48px;gap:8px}
 /* corte invisível entre a comanda aberta e a fechada: o palco dos fantasmas e o papel "de cola" */
 #cf-palco{position:fixed;inset:0;z-index:20;overflow:hidden;pointer-events:auto;contain:strict}

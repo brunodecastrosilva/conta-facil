@@ -1,6 +1,6 @@
 {
   "name": "conta-facil",
-  "version": "1.12.4",
+  "version": "1.12.5",
   "description": "Conta Fácil: divida a conta do bar sem calculadora. App web instalável (PWA) do Projeto Fácil.",
   "private": true,
   "type": "module",

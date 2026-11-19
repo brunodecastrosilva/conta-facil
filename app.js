@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.12.4';
+const VERSAO = '1.12.5';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -656,6 +656,10 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.12.5', itens: [
+    'O lápis do nome do lugar fica colado no nome, e não mais solto no meio da comanda',
+    '"Salvar no histórico" tem sempre a cor de botão principal, e o texto "Faltam R$" acima dele saiu',
+  ] },
   { versao: '1.12.4', itens: [
     'Fechar e reabrir a comanda sem engasgo no começo: o movimento só parte quando a tela nova já está pronta',
   ] },
@@ -2369,7 +2373,7 @@ function fechadaHTML(d, c) {
     <div class="cf" id="cf">
       <article class="cmd-una cf-cabeca" aria-label="Comanda fechada">
         <header class="cu-cab">
-          <div class="cu-local"><span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Comanda')}<span class="cu-ico" aria-hidden="true">${I.edit}</span></span>
+          <div class="cu-local"><span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Comanda')}\u00a0<span class="cu-ico" aria-hidden="true">${I.edit}</span></span>
             <span class="cu-quando">${fmtDateTime(d.createdAt)}</span></div>
           <div class="cu-conta"><span class="cu-total">${BRL(c.total)}</span><span class="cu-ico" aria-hidden="true">${I.next}</span></div>
         </header>
@@ -2381,8 +2385,7 @@ function fechadaHTML(d, c) {
       <div class="cf-cans" id="cf-cans">${c.units.map((u, i) => canhotoHTML(d, u, i, c)).join('')}</div>
       <div class="cf-mesa"><button type="button" class="btn small ghost" id="cf-mesa-cupom">${I.file}Ver cupom da mesa</button></div>
     </div>
-    <div class="fim-acoes cf-pe">${tudo && !troco ? '' : `<p class="cf-falta" role="status">${[tudo ? '' : 'Faltam ' + BRL(falta), troco ? 'Devolver ' + BRL(troco) : ''].filter(Boolean).join(' · ')}</p>`}
-      <button type="button" class="${tudo ? 'kf-btn kf-pri fechar-btn' : 'btn ghost'}" id="cf-salvar">${I.save}<span>Salvar no histórico</span></button></div>`;
+    <div class="fim-acoes cf-pe"><button type="button" class="kf-btn kf-pri fechar-btn" id="cf-salvar">${I.save}<span>Salvar no histórico</span></button></div>`;
 }
 // a barra de recebido tem o seu jeito: enche passando do ponto e voltando; esvazia murchando; cheia, estufa e ganha o check
 function animarBarra(v) {
@@ -2494,7 +2497,7 @@ const viewComanda = {
     <article class="cmd-una" aria-label="Comanda">
       <header class="cu-cab">
         <button type="button" class="cu-local" id="cmd-local">
-          <span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Toque para dar nome')}<span class="cu-ico">${I.edit}</span></span>
+          <span class="cu-nome ${d.place ? '' : 'vazio'}">${esc(d.place || 'Toque para dar nome')}\u00a0<span class="cu-ico">${I.edit}</span></span>
           <span class="cu-quando">${fmtDateTime(d.createdAt)}</span><span class="so-leitor">. ${d.place ? 'Mudar o nome do local' : 'Dar nome ao local'}</span></button>
         <button type="button" class="cu-conta" id="cmd-conta" aria-label="Total: ${BRL(calc.total)}. ${esc(aj.join(', ') || 'Sem serviço')}. Abrir a conta da mesa: ajustes e fechar a comanda">
           <span class="cu-total">${BRL(calc.total)}</span><span class="cu-ico">${I.next}</span></button>

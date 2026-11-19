@@ -3,6 +3,13 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.12.5 · 2026-11-19
+
+- **Lápis do nome do lugar:** fica colado na última palavra do nome, como parte do texto. Antes, com o nome em duas linhas, ele ficava solto no meio do cabeçalho.
+- **"Salvar no histórico":** tem sempre a cor de botão principal, com ou sem valor a receber.
+- **Saiu o texto "Faltam R$ …" (e "Devolver R$ …")** acima do botão de salvar. A barra de recebido e cada canhoto já dizem isso; ao salvar com diferença, o app continua perguntando antes.
+- Testes: verificação do padrão e os testes da comanda fechada, do pagamento e do corte invisível. Pulados: o guia inteiro, a acessibilidade e o restante da bateria (a mudança não toca neles).
+
 ## 1.12.4 · 2026-11-19
 
 - **Corte invisível sem engasgo no começo:** medido no navegador de um computador de verdade, o quadro em que a comanda troca de tela levava de 50 a 85 ms (três a cinco quadros), bem na largada do movimento. Agora todas as animações do corte nascem paradas no primeiro quadro, que é igual à tela de antes; o app espera o aparelho voltar ao ritmo e só então solta todas juntas. O peso da troca passa com a imagem imóvel. Cada papel também ganha a sua camada antes de andar.

@@ -124,8 +124,8 @@ test('fluxo completo: mesa, pedidos numa janela só, pago, fechar, salvar com fe
   await p.click(`[data-can="${ana}"] [data-can-pago="marcar"]`);
   await p.locator(`[data-can="${ana}"] .cf-pago`).waitFor();
   assert.match(await p.textContent('.cf-rec-l'), /R\$\s37,40 de R\$\s103,40/);
-  assert.match(await p.textContent('.cf-falta'), /Faltam R\$\s66,00/);
-  assert.equal(await p.getAttribute('#cf-salvar', 'class'), 'btn ghost', 'enquanto falta receber, salvar é discreto');
+  assert.equal(await p.locator('.cf-falta').count(), 0, 'sem texto de quanto falta sobre o botão');
+  assert.equal(await p.getAttribute('#cf-salvar', 'class'), 'kf-btn kf-pri fechar-btn', 'salvar tem sempre a cor de botão principal');
   await p.click('#cf-salvar');
   await p.locator('.festa').waitFor();
   assert.match(await p.textContent('.festa'), /Conta fechada/);
@@ -480,7 +480,7 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   assert.deepEqual(await estado(), ['troco', 2000, 0, 300, 3400, 300]);
   await semPagamento('com a conta de quem pagou mudada');
   await fechar();
-  assert.match(await p.textContent(`${CAN} .cf-obs`), /pagou 20,00 · devolver 3,00/); assert.match(await p.textContent('.cf-falta'), /Devolver R\$\s3,00/);
+  assert.match(await p.textContent(`${CAN} .cf-obs`), /pagou 20,00 · devolver 3,00/);
   // salvar com diferença: o app pergunta antes
   await p.click('#cf-salvar'); await p.locator('text=Salvar com diferença?').waitFor(); await p.keyboard.press('Escape');
   assert.equal(await p.evaluate(() => bills.length), 0);
@@ -1143,15 +1143,15 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   const barra = () => p.evaluate(() => [+document.querySelector('.cf-barra-f').dataset.f, document.querySelector('.cf-barra').classList.contains('cheia'), (document.querySelector('.cf-falta')?.textContent || '').replace(/\s+/g, ' ').trim(), document.querySelector('#cf-salvar').className]);
   await p.click(`${CAN(ana)} .cf-pg [data-can-pago="marcar"]`); await p.locator(`${CAN(ana)} .cf-pago`).waitFor();
   assert.equal(await p.locator(`${CAN(ana)} [data-can-pix]`).count(), 0);
-  let b = await barra(); assert.ok(Math.abs(b[0] - 1 / 3) < .01); assert.deepEqual(b.slice(1), [false, 'Faltam R$ 60,00', 'btn ghost']);
+  let b = await barra(); assert.ok(Math.abs(b[0] - 1 / 3) < .01); assert.deepEqual(b.slice(1), [false, '', 'kf-btn kf-pri fechar-btn']);
   assert.ok(await p.evaluate(() => document.querySelector('.cf-barra-f').getAnimations().length === 1), 'a barra enche com movimento');
   await p.click(`${CAN(bruno)} [data-can-pago="marcar"]`); await p.locator(`${CAN(bruno)} .cf-pago`).waitFor();
   await p.click(`${CAN(carla)} [data-can-pago="marcar"]`); await p.locator(`${CAN(carla)} .cf-pago`).waitFor();
-  b = await barra(); assert.deepEqual(b, [1, true, '', 'kf-btn kf-pri fechar-btn'], 'com tudo recebido, salvar vira a ação principal, sem texto por cima');
+  b = await barra(); assert.deepEqual(b, [1, true, '', 'kf-btn kf-pri fechar-btn'], 'salvar é sempre a ação principal, sem texto por cima');
   assert.equal(await p.locator('#view [data-can-pix]').count(), 0, 'com todos pagos, Receber com Pix não existe');
   // desmarcar esvazia a barra
   await p.click(`${CAN(ana)} [data-can-pago="desmarcar"]`); await esperar(async () => (await barra())[2] === 'Faltam R$ 30,00');
-  assert.equal((await barra())[2], 'Faltam R$ 30,00');
+  assert.equal((await barra())[2], '');
   // "Já saiu da mesa" é uma linha com a chave, do tamanho do canhoto, sem nada cortado
   await p.click(`${CAN(bruno)} [data-can-abre]`); await p.locator(`${CAN(bruno)} .cf-saiu`).waitFor(); await p.waitForTimeout(700);
   const sa = await p.evaluate(q => { const l = document.querySelector(q), k = l.querySelector('.kf-chave').getBoundingClientRect(), r = l.getBoundingClientRect(), pai = l.parentElement.querySelector('.cf-acoes').getBoundingClientRect(); return [Math.round(r.width) === Math.round(pai.width), k.right <= r.right + .5 && k.left >= r.left, Math.round(r.height) >= 44]; }, `${CAN(bruno)} .cf-saiu`);
