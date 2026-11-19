@@ -503,9 +503,6 @@ body.kf-com-guia .wrap{padding-bottom:calc(var(--kf-pe-h) + var(--kf-gu-h) + 48p
 .aviso-pago p span{flex:1;min-width:0}
 .aviso-pago p .btn{flex:none;min-height:40px}
 .aviso-pago .hint{color:inherit;opacity:.85;font-size:12.5px}
-.dv-dif{color:#8A4B00;font-weight:600}
-.dv-selo-dif{border-color:#B25E00;color:#B25E00}
-.cu-troco{display:block;font-size:.8em;opacity:.9}
 .ck-pagou .ck-nome::after{content:"já pagou";margin-left:8px;padding:2px 7px;border-radius:99px;background:#FFF1CC;color:#5A3D00;font:700 11px/1.4 var(--f-body);vertical-align:middle}
 .lc-pagou{margin:0;color:#5A3D00;background:#FFF1CC;padding:8px 10px;border-radius:10px}
 .ip-excluir{margin-top:2px}
@@ -532,7 +529,6 @@ body.kf-com-guia .wrap{padding-bottom:calc(var(--kf-pe-h) + var(--kf-gu-h) + 48p
 .fc-valor .btn{width:auto;flex:none;min-height:48px}
 .fc-cobre{display:flex;flex-direction:column;gap:6px}
 .fc-cobre-t{font-size:13.5px;font-weight:700;color:var(--muted);text-align:left}
-.fc-saiu{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:6px 12px;border-radius:var(--r-sm,12px);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font-weight:700;font-size:15px;cursor:pointer}
 /* sorteio: quem entra é escolha de quem sorteia */
 .gf-quem{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%}
 .gf-add{display:flex;gap:8px;width:min(100%,320px)}
@@ -545,7 +541,6 @@ body.kf-com-guia .wrap{padding-bottom:calc(var(--kf-pe-h) + var(--kf-gu-h) + 48p
 /* quem já pagou e saiu da mesa: fora dos novos pedidos */
 .ck-saiu{opacity:.55}
 .ck-saiu .ck-nome::after{content:"saiu da mesa";margin-left:8px;padding:2px 7px;border-radius:99px;background:var(--surface-2);color:var(--muted);font:700 11px/1.4 var(--f-body);vertical-align:middle}
-.aviso-pago .ap-bts{flex:none!important;display:flex;flex-direction:column;gap:6px}
 /* cupom compartilhado: quem paga */
 .gs-lin{display:flex;align-items:center;gap:8px}
 .gs-lin .cs-tx{flex:1;min-width:0}

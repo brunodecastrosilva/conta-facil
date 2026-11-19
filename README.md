@@ -2,7 +2,7 @@
 
 Divida a conta da mesa sem calculadora: cada um paga o que consumiu, com serviço, couvert, desconto e Pix.
 
-Versão **1.12.0** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
+Versão **1.12.1** · Kit Fácil 0.9.0 · app web em <https://brunodecastrosilva.github.io/conta-facil/>
 
 Faz parte do **Projeto Fácil** (Conta Fácil, Elétrica Fácil, Estudo Fácil e Guitarra Fácil). Desde 14/11/2026,
 **o Conta Fácil é a referência do Projeto Fácil** para a moldura, os componentes e o comportamento dos controles; o
@@ -16,7 +16,8 @@ fluxo e o desenho das telas são dele, feitos para a comanda de bar ([Código do
 - **Conta da mesa:** serviço, couvert e desconto em R$ ou em %, e cortesias
 - **Fechar a comanda:** não abre janela; a própria comanda muda. O papel é destacado em um canhoto por pessoa, e a comanda fechada não aceita pedido novo. O único caminho de volta é "Reabrir a comanda"
 - **Receber:** em cada canhoto, "Marcar como pago" põe o carimbo, e a barra de recebido mostra quanto já entrou; quando todos pagam, "Salvar no histórico" vira a ação principal. Se a conta mudar depois de paga (comanda reaberta, desconto, item novo), o app mostra quanto falta ou quanto devolver
-- **Canhoto aberto:** o cupom da pessoa, "Compartilhar", "Receber com Pix" (só aparece quando serve: você tem chave Pix em "Você nas comandas", o canhoto não é o seu e ainda falta receber), "Pagar valor diferente" (com a escolha de quem cobre ou devolve a diferença) e "Já saiu da mesa" (trava o canhoto)
+- **Comanda aberta sem pagamento:** marcar, desmarcar, carimbo, "falta" e diferença de quem já pagou só existem com a comanda fechada. Aberta, a comanda mostra só nomes e valores (quem já saiu da mesa continua marcado, porque fica travado)
+- **Canhoto aberto:** "Ver cupom" (a janela do cupom, com "Compartilhar" em PDF), "Receber com Pix" (só aparece quando serve: você tem chave Pix em "Você nas comandas", o canhoto não é o seu e ainda falta receber), "Pagar valor diferente" (com a escolha de quem cobre ou devolve a diferença) e "Já saiu da mesa" (trava o canhoto)
 - **Comanda da mesa:** em texto ("Copiar a comanda") ou em PDF; termina no total
 - **Comanda ao vivo:** cada pessoa marca o que consumiu pelo próprio celular e todos veem as mudanças na hora
 - **Histórico:** gasto dos últimos 6 meses, onde você mais vai, com quem mais sai e o que mais sai

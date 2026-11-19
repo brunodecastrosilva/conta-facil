@@ -3,6 +3,17 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.12.1 · 2026-11-18
+
+- **Comanda aberta sem nada de pagamento:** saíram dela os botões "Desmarcar pago", "Recebi" e "Devolvi", o carimbo PAGO nas linhas, as linhas "pagou x · falta y", o aviso "A conta de quem já pagou mudou", o valor que falta em vermelho no cabeçalho e o total riscado. Pagamento se marca, desmarca e acerta só com a comanda fechada, no canhoto da pessoa.
+- **O que ficou na comanda aberta, de propósito:** "saiu da mesa" ao lado do nome (a pessoa fica travada, e a tela precisa dizer por quê) e os avisos de consequência ao mexer na conta ou lançar item ("Isso mexe com quem já pagou", "Ana já pagou e ficou de fora").
+- **Canhoto aberto com "Ver cupom":** abre a janela do cupom, como na comanda aberta; o cupom não fica mais dentro do canhoto, e o botão "Compartilhar" do canhoto saiu (fica na janela do cupom).
+- **Cupom compartilhado em PDF:** "Compartilhar", na janela do cupom, manda o PDF direto para a folha de compartilhar do aparelho. Antes abria outra janela, para escolher entre texto, PDF e imagem. A janela do cupom não tem mais botão de pagamento.
+- **"Já saiu da mesa":** virou uma linha com a chave, igual às linhas "Paga serviço" da comanda aberta; antes era uma caixa com a chave desalinhada.
+- **Sem "Tudo recebido" sobre o botão:** com tudo recebido, fica só o "Salvar no histórico" em destaque (a barra cheia e o check já dizem isso). "Faltam R$ …" continua enquanto falta.
+- **Guia:** em *Receba de cada um* e *A conta de quem já pagou mudou*, o cupom abre em janela, e a diferença de quem já pagou é acertada depois de fechar de novo. Continua com 34 passos.
+- **Testes:** rodaram a verificação do padrão, a bateria completa (a mudança mexe em pagamento e no guia) e a acessibilidade.
+
 ## 1.12.0 · 2026-11-18
 
 - **Fechar a comanda sem janela (opção C, aprovada pelo Bruno):** tocar em "Fechar comanda" transforma a própria tela. O papel é destacado em um canhoto por pessoa, com nome e valor. A comanda fechada não aceita pedido nem pessoa nova; o único caminho de volta é "Reabrir a comanda". Saem o carrossel de cupons e o botão "Voltar à comanda".

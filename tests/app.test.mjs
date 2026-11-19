@@ -465,21 +465,28 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   const ana = await p.evaluate(() => draft.people[0].id);
   await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.click(`[data-can="${ana}"] [data-can-pago="marcar"]`); await p.locator(`[data-can="${ana}"] .cf-pago`).waitFor(); await p.click('#cf-reabrir'); await p.locator('#fechar-cmd').waitFor();
   assert.deepEqual(await estado(), ['pago', 2000, 0, 0, 4000, 0]);
-  await p.click(`summary[data-unit="${ana}"]`);
-  assert.equal(await p.locator(`[data-pa="${ana}"] [data-pa-pago="desmarcar"]`).count(), 1, 'quem já está marcado pode ser desmarcado pela comanda');
-  // 1) desconto depois do pagamento: a conta de Ana cai e o app manda devolver
+  // com a comanda aberta, nada de pagamento: nem botão, nem carimbo, nem "falta" no cabeçalho, nem total riscado
+  const semPagamento = async quando => { await p.click(`summary[data-unit="${ana}"]`); await p.waitForTimeout(700);
+    assert.deepEqual(await p.evaluate(() => [document.querySelectorAll('#view [data-pa-pago], #view [data-ap-acerta], #view [data-ap-cobre], #view .dv-selo, #view .cu-falta, #view .aviso-pago, #view .cu-conta.parcial').length, /pagou|PAGO|falta/.test(document.querySelector('#groups-card').textContent), getComputedStyle(document.querySelector('.cu-total')).textDecorationLine]), [0, false, 'none'], quando);
+    await p.click(`summary[data-unit="${ana}"]`); await p.waitForTimeout(500); };
+  await semPagamento('logo depois de reabrir');
+  const CAN = `[data-can="${ana}"]`, fechar = async () => { await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.waitForTimeout(1400); }, reabrir = async () => { await p.click('#cf-reabrir'); await p.locator('#fechar-cmd').waitFor(); };
+  // 1) desconto depois do pagamento: a conta de Ana cai; a janela avisa, e a diferença se acerta com a comanda fechada
   await p.click('#cm-pe'); await assentar(p); await p.locator('[data-cm="ds"]').click({ force: true });
   const campo = p.locator('.kf-dlg [data-kf-exp="cm-ds"] input[data-kf-dinheiro]'); await campo.click(); await campo.pressSequentially('900'); await p.keyboard.press('Tab');
   assert.match(await p.textContent('.kf-dlg .aviso-pago'), /Ana pagou R\$\s20,00 e a conta agora é R\$\s17,00: devolver R\$\s3,00/);
   await p.click('.kf-dlg [data-kf-fechar]');
   assert.deepEqual(await estado(), ['troco', 2000, 0, 300, 3400, 300]);
-  assert.match(await p.textContent('#view .aviso-pago'), /devolver R\$\s3,00/); assert.match(await p.textContent('#cmd-conta + .cu-falta, .cu-falta'), /devolver/);
+  await semPagamento('com a conta de quem pagou mudada');
+  await fechar();
+  assert.match(await p.textContent(`${CAN} .cf-obs`), /pagou 20,00 · devolver 3,00/); assert.match(await p.textContent('.cf-falta'), /Devolver R\$\s3,00/);
   // salvar com diferença: o app pergunta antes
-  await p.evaluate(() => saveBill()); await p.locator('text=Salvar com diferença?').waitFor(); await p.keyboard.press('Escape');
+  await p.click('#cf-salvar'); await p.locator('text=Salvar com diferença?').waitFor(); await p.keyboard.press('Escape');
   assert.equal(await p.evaluate(() => bills.length), 0);
   // acertar: "Devolvi" registra o valor novo
-  await p.click('#view [data-ap-acerta]');
-  assert.deepEqual(await estado(), ['pago', 1700, 0, 0, 3400, 0]); assert.equal(await p.locator('#view .aviso-pago:not(.kf-exp-fantasma)').count(), 0);
+  await p.click(`${CAN} [data-can-pago="acertar"]`); await p.locator(`${CAN} .cf-pago`).waitFor();
+  assert.deepEqual(await estado(), ['pago', 1700, 0, 0, 3400, 0]);
+  await reabrir();
   // 2) item novo: quem já pagou fica de fora, com aviso; se marcar, volta a dever
   await p.click('#it-novo'); await p.fill('#pr-nome', 'Pudim'); await p.locator('#pr-preco').pressSequentially('1000');
   assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('[data-lc-ck]')].map(b => b.getAttribute('aria-pressed'))), ['false', 'true', 'true']);
@@ -487,9 +494,12 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   await p.click(`[data-lc-ck="${ana}"]`); assert.match(await p.textContent('#lc-pagou'), /volta a dever/);
   await p.click('#lc-ok'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
   const e2 = await estado(); assert.equal(e2[0], 'falta'); assert.ok(e2[2] > 0 && e2[2] === e2[4] - (await p.evaluate(() => { const c = compute(draft); return c.units[1].total + c.units[2].total; })));
-  assert.match(await p.textContent(`summary[data-unit="${ana}"]`), /pagou 17,00 · falta/);
-  await p.click(`[data-pa="${ana}"] [data-pa-pago="acertar"]`);
+  await semPagamento('com item novo para quem já pagou');
+  await fechar();
+  assert.match(await p.textContent(`${CAN} .cf-obs`), /pagou 17,00 · falta/);
+  await p.click(`${CAN} [data-can-pago="acertar"]`); await p.locator(`${CAN} .cf-pago`).waitFor();
   assert.equal((await estado())[0], 'pago');
+  await reabrir();
   // 3) pessoa nova: não entra sozinha em item já lançado, e a conta de quem pagou não muda (1.9.3)
   await p.evaluate(() => { addPessoa('Diego'); });
   assert.equal((await estado())[0], 'pago');
@@ -691,7 +701,9 @@ test('1.4.0: Editar só muda o nome ou tira da mesa; valor diferente fica no can
   await p.click(`${CAN} [data-can-abre]`); await p.click(`${CAN} [data-can-valor]`); await p.locator(`${CAN} [data-can-custom]`).fill('1000'); await p.locator(`${CAN} [data-can-custom]`).blur();
   await esperar(() => p.evaluate(ana => draft.custom[ana] === 1000, ana));
   assert.equal(await p.evaluate(ana => draft.custom[ana], ana), 1000);
-  assert.match(await p.textContent(`${CAN} .receipt`), /Paga ao local\s*R\$\s10,00/);
+  await p.click(`${CAN} [data-can-cupom]`); await p.locator('.kf-dlg .receipt').waitFor();
+  assert.match(await p.textContent('.kf-dlg .receipt'), /Paga ao local\s*R\$\s10,00/);
+  await p.click('.kf-dlg [data-kf-fechar]'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
   await p.click(`${CAN} [data-can-conta]`);
   assert.equal(await p.evaluate(ana => ana in draft.custom, ana), false);
   await p.click('#cf-reabrir'); await p.locator('#add-pessoa').waitFor();
@@ -719,10 +731,10 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, canhoto aberto numa
   assert.equal(le, lf, 'Excluir tem a largura de Fechar'); assert.ok(cor[0] > 150 && cor[0] > cor[1] * 1.8 && cor[0] > cor[2] * 1.8, `Excluir é vermelho (${cor})`);
   const CAN = id => `[data-can="${id}"]`;
   await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.waitForTimeout(1400);
-  // dentro do canhoto aberto, o cupom, as ações e o botão de pagar têm a mesma largura
+  // dentro do canhoto aberto, as linhas de ações e o botão de pagar têm a mesma largura
   await p.click(`${CAN(ana)} [data-can-abre]`); await p.waitForTimeout(700);
-  const L = await p.evaluate(q => { const s = document.querySelector(q), w = e => Math.round(e.getBoundingClientRect().width); return [w(s.querySelector('.receipt')), ...[...s.querySelectorAll('.cf-acoes')].map(w), ...[...s.querySelectorAll('.cf-pg .btn')].map(w)]; }, `${CAN(ana)} .cf-dentro`);
-  assert.ok(L.length >= 4 && L.every(x => Math.abs(x - L[0]) <= 1), `no canhoto aberto: ${L}`);
+  const L = await p.evaluate(q => { const s = document.querySelector(q), w = e => Math.round(e.getBoundingClientRect().width); return [...[...s.querySelectorAll('.cf-acoes')].map(w), ...[...s.querySelectorAll('.cf-pg .btn')].map(w)]; }, `${CAN(ana)} .cf-dentro`);
+  assert.ok(L.length >= 3 && L.every(x => Math.abs(x - L[0]) <= 1), `no canhoto aberto: ${L}`);
   // Ana paga menos: os outros dividem (padrão) ou uma pessoa cobre
   await p.click(`${CAN(ana)} [data-can-valor]`); await p.locator(`${CAN(ana)} [data-can-custom]`).fill('2000'); await p.locator(`${CAN(ana)} [data-can-custom]`).blur(); await p.waitForTimeout(400);
   assert.match(await p.textContent(`${CAN(ana)} .fc-cobre-t`), /Quem cobre\s*R\$\s13,00/);
@@ -738,7 +750,7 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, canhoto aberto numa
   assert.deepEqual(await p.evaluate(() => [Object.keys(draft.custom).length, Object.keys(draft.cover).length]), [0, 0]);
   // Bruno paga e vai embora: o canhoto dele trava
   await p.click(`${CAN(bruno)} [data-can-pago="marcar"]`); await p.locator(`${CAN(bruno)} .cf-pago`).waitFor();
-  await p.click(`${CAN(bruno)} [data-can-abre]`); await p.click(`${CAN(bruno)} .fc-saiu .kf-chave`);
+  await p.click(`${CAN(bruno)} [data-can-abre]`); await p.click(`${CAN(bruno)} .cf-saiu .kf-chave`);
   await esperar(() => p.evaluate(b => !!(draft.saiu && draft.saiu[b]), bruno));
   assert.equal(await p.evaluate(b => !!draft.saiu[b], bruno), true);
   assert.match(await p.textContent(`${CAN(bruno)} .cf-obs`), /saiu da mesa/);
@@ -760,10 +772,11 @@ test('1.6.0: quem cobre a diferença, quem já saiu da mesa, canhoto aberto numa
   // quando a pessoa é posta nos itens, a conta de quem já pagou muda, e outra pessoa pode ficar com a diferença
   await p.evaluate(() => { const dv = draft.people.find(x => x.name === 'Davi').id; draft.items.forEach(i => { i.a[dv] = 1; }); commit(); }); await p.waitForTimeout(400);
   assert.deepEqual(await p.evaluate(() => draft.items.map(i => Object.keys(i.a).length)), [4, 3]);
-  await p.locator('#view .aviso-pago [data-ap-cobre]').waitFor();
-  assert.match(await p.textContent('#view .aviso-pago'), /Bruno pagou R\$\s33,00 e a conta agora é R\$\s24,75/);
-  await p.click('#view .aviso-pago [data-ap-cobre]'); await p.locator('#cf').waitFor(); await p.waitForTimeout(1400);
-  assert.equal(await p.getAttribute(`${CAN(bruno)} [data-can-abre]`, 'aria-expanded'), 'true', 'a comanda fecha já com o canhoto de Bruno aberto');
+  assert.equal(await p.locator('#view .aviso-pago, #view [data-ap-cobre]').count(), 0, 'com a comanda aberta, nada de pagamento na tela');
+  await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.waitForTimeout(1400);
+  assert.match(await p.textContent(`${CAN(bruno)} .cf-obs`), /pagou 33,00 · devolver 8,25/);
+  await p.click(`${CAN(bruno)} [data-can-abre]`); await p.locator(`${CAN(bruno)} .cf-dentro`).waitFor();
+  assert.match(await p.textContent(`${CAN(bruno)} .pa-dif`), /Bruno pagou R\$\s33,00 e a conta agora é R\$\s24,75/);
   await p.click(`${CAN(bruno)} [data-can-difcobre=""]`); await p.waitForTimeout(400);
   const fim = await p.evaluate(b => { const c = compute(draft); return [contaPaga(draft, c.U[b], c).estado, draft.custom[b], c.per[b].paid, c.transfers.filter(t => t.to === b).reduce((s, t) => s + t.value, 0)]; }, bruno);
   assert.deepEqual(fim, ['pago', 3300, 3300, 825], 'o que Bruno pagou vale; os outros pagam menos ao local e devolvem a diferença a ele');
@@ -1079,7 +1092,7 @@ test('1.11.1: na comanda fechada, "Copiar a comanda" copia só a comanda da mesa
   semErros(a); await a.fechar();
 });
 
-test('1.12.0: comanda fechada em canhotos: transição, barra de recebido, Receber com Pix só quando serve, reabrir e histórico', async () => {
+test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver cupom, Receber com Pix só quando serve, reabrir e histórico', async () => {
   const a = await aparelho(amb, { viewport: { width: 393, height: 852 } });
   const p = a.page;
   const montar = () => p.evaluate(() => { jogo.off = true; jogoSalvar(); const d = blankDraft(); d.place = 'Cantina A'; d.service.enabled = false; d.people = ['Ana', 'Bruno', 'Carla'].map(newPerson);
@@ -1101,7 +1114,15 @@ test('1.12.0: comanda fechada em canhotos: transição, barra de recebido, Receb
   assert.match(await p.textContent('.cf-cab'), /CANTINA A|Cantina A/); assert.match(await p.textContent('.cf-l2'), /FECHADA[\s\S]*Reabrir a comanda/);
   // sem chave Pix de "você", não há Receber com Pix; o canhoto aberto tem Compartilhar e Pagar valor diferente, sem PDF
   await p.click(`${CAN(ana)} [data-can-abre]`); await p.locator(`${CAN(ana)} .cf-dentro`).waitFor();
-  assert.deepEqual(await p.locator(`${CAN(ana)} .cf-dentro button`).allTextContents().then(x => x.map(t => t.trim())), ['Compartilhar', 'Pagar valor diferente', 'Marcar como pago']);
+  assert.deepEqual(await p.locator(`${CAN(ana)} .cf-dentro button`).allTextContents().then(x => x.map(t => t.trim())), ['Ver cupom', 'Pagar valor diferente', 'Marcar como pago']);
+  // Ver cupom abre a janela do cupom, e Compartilhar manda o cupom em PDF
+  // a biblioteca do PDF vem do CDN, bloqueado nos testes: uma de mentira basta para ver o arquivo sair
+  await p.evaluate(() => { window.__arq = null; window.jspdf = { jsPDF: class { addPage() {} addImage() {} output() { return new Blob(['%PDF'], { type: 'application/pdf' }); } } }; window.saveFile = async (nome, blob) => { window.__arq = [nome, blob.type, blob.size > 0]; }; });
+  await p.click(`${CAN(ana)} [data-can-cupom]`); await p.locator('.kf-dlg .receipt').waitFor();
+  assert.deepEqual(await p.locator('.kf-dlg-pe button').allTextContents().then(x => x.map(t => t.trim())), ['Compartilhar']);
+  await p.click('#cp-share'); await esperar(() => p.evaluate(() => !!window.__arq), 15000);
+  assert.deepEqual(await p.evaluate(() => window.__arq), ['cupom-ana-cantina-a.pdf', 'application/pdf', true]);
+  await p.click('.kf-dlg [data-kf-fechar]'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
   // com "você" e a chave: o botão aparece só no canhoto de quem ainda deve e não é você
   await p.evaluate(() => { catalog.people.push({ name: 'Bruno', pix: 'bruno@exemplo.com.br' }); catalog.me = 'Bruno'; store.saveCatalog(); render({ anchor: false }); });
   const pix = () => p.evaluate(() => { const c = compute(draft); return c.units.map(u => !!pixReceber(draft, u, c)); });
@@ -1111,20 +1132,25 @@ test('1.12.0: comanda fechada em canhotos: transição, barra de recebido, Receb
   assert.match(await p.textContent('.kf-dlg'), /Pix para Bruno[\s\S]*30,00/);
   await p.click('.kf-dlg [data-kf-fechar]'); await p.locator('.kf-ov').waitFor({ state: 'detached' });
   // receber é carimbar: a barra anda, o canhoto pago perde o Receber com Pix
-  const barra = () => p.evaluate(() => [+document.querySelector('.cf-barra-f').dataset.f, document.querySelector('.cf-barra').classList.contains('cheia'), document.querySelector('.cf-falta').textContent.replace(/\s+/g, ' ').trim(), document.querySelector('#cf-salvar').className]);
+  const barra = () => p.evaluate(() => [+document.querySelector('.cf-barra-f').dataset.f, document.querySelector('.cf-barra').classList.contains('cheia'), (document.querySelector('.cf-falta')?.textContent || '').replace(/\s+/g, ' ').trim(), document.querySelector('#cf-salvar').className]);
   await p.click(`${CAN(ana)} .cf-pg [data-can-pago="marcar"]`); await p.locator(`${CAN(ana)} .cf-pago`).waitFor();
   assert.equal(await p.locator(`${CAN(ana)} [data-can-pix]`).count(), 0);
   let b = await barra(); assert.ok(Math.abs(b[0] - 1 / 3) < .01); assert.deepEqual(b.slice(1), [false, 'Faltam R$ 60,00', 'btn ghost']);
   assert.ok(await p.evaluate(() => document.querySelector('.cf-barra-f').getAnimations().length === 1), 'a barra enche com movimento');
   await p.click(`${CAN(bruno)} [data-can-pago="marcar"]`); await p.locator(`${CAN(bruno)} .cf-pago`).waitFor();
   await p.click(`${CAN(carla)} [data-can-pago="marcar"]`); await p.locator(`${CAN(carla)} .cf-pago`).waitFor();
-  b = await barra(); assert.deepEqual(b, [1, true, 'Tudo recebido', 'kf-btn kf-pri fechar-btn'], 'com tudo recebido, salvar vira a ação principal');
+  b = await barra(); assert.deepEqual(b, [1, true, '', 'kf-btn kf-pri fechar-btn'], 'com tudo recebido, salvar vira a ação principal, sem texto por cima');
   assert.equal(await p.locator('#view [data-can-pix]').count(), 0, 'com todos pagos, Receber com Pix não existe');
   // desmarcar esvazia a barra
   await p.click(`${CAN(ana)} [data-can-pago="desmarcar"]`); await esperar(async () => (await barra())[2] === 'Faltam R$ 30,00');
   assert.equal((await barra())[2], 'Faltam R$ 30,00');
-  // reabrir é o único caminho de volta; os pagamentos continuam
+  // "Já saiu da mesa" é uma linha com a chave, do tamanho do canhoto, sem nada cortado
+  await p.click(`${CAN(bruno)} [data-can-abre]`); await p.locator(`${CAN(bruno)} .cf-saiu`).waitFor(); await p.waitForTimeout(700);
+  const sa = await p.evaluate(q => { const l = document.querySelector(q), k = l.querySelector('.kf-chave').getBoundingClientRect(), r = l.getBoundingClientRect(), pai = l.parentElement.querySelector('.cf-acoes').getBoundingClientRect(); return [Math.round(r.width) === Math.round(pai.width), k.right <= r.right + .5 && k.left >= r.left, Math.round(r.height) >= 44]; }, `${CAN(bruno)} .cf-saiu`);
+  assert.deepEqual(sa, [true, true, true]);
+  // reabrir é o único caminho de volta; os pagamentos continuam guardados, mas a comanda aberta não fala deles
   await p.click('#cf-reabrir'); await p.locator('#fechar-cmd').waitFor();
+  assert.equal(await p.locator('#view [data-pa-pago], #view .dv-selo, #view .cu-falta, #view .aviso-pago').count(), 0);
   assert.deepEqual(await p.evaluate(() => [draft.fechada, Object.keys(draft.pagos).length]), [null, 2]);
   // salva fechada: aberta de novo pelo histórico, continua em canhotos
   await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.click('#cf-salvar');
