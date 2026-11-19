@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.12.3';
+const VERSAO = '1.12.4';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -656,6 +656,9 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.12.4', itens: [
+    'Fechar e reabrir a comanda sem engasgo no começo: o movimento só parte quando a tela nova já está pronta',
+  ] },
   { versao: '1.12.3', itens: [
     'Fechar a comanda ficou mais bonito: a tela sobe, o cabeçalho fica parado e cada nome se destaca do papel e vira canhoto',
     'Reabrir a comanda faz o caminho de volta: os canhotos se juntam e a comanda se desenrola de novo',
@@ -2176,7 +2179,7 @@ function subirAoTopo(feito) {
 }
 // o palco dos fantasmas: uma camada fixa por cima da tela (e por baixo da navegação), que também segura os toques
 function cortePalco() { corteLimpar(true); const p = document.createElement('div'); p.id = 'cf-palco'; p.setAttribute('aria-hidden', 'true'); const t = document.createElement('div'); t.id = 'cf-trava'; document.body.append(p, t); return p; }
-function corteLimpar(soPalco) { if (!soPalco) corteVez++; $('#cf-palco')?.remove(); $('#cf-trava')?.remove(); $$('.cf-cola').forEach(e => e.remove()); if (!soPalco) corteRodando = false; }
+function corteLimpar(soPalco) { if (!soPalco) { corteVez++; corteAnims.forEach(a => { try { a.cancel(); } catch {} }); corteAnims = []; } $('#cf-palco')?.remove(); $('#cf-trava')?.remove(); $$('.cf-cola').forEach(e => e.remove()); if (!soPalco) corteRodando = false; }
 // cópia parada de um pedaço da tela, no lugar exato em que ele estava
 function fantasma(palco, el, extra = '') {
   const r = caixa(el), f = el.cloneNode(true);
@@ -2184,7 +2187,18 @@ function fantasma(palco, el, extra = '') {
   f.style.cssText += `;position:absolute;left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;margin:0;box-sizing:border-box;${extra}`;
   palco.append(f); return f;
 }
-const an = (el, quadros, o) => el ? el.animate(quadros, { easing: MOVE.css, fill: 'both', ...o }) : null;
+/* Toda animação do corte nasce parada no primeiro quadro. O quadro da troca é o mais pesado (a tela é redesenhada e as
+   camadas novas são pintadas): ele passa com a imagem imóvel, igual à de antes. Só quando o aparelho volta a entregar
+   quadros no ritmo é que todas são soltas juntas, no mesmo instante. Assim o peso da troca nunca vira engasgo no movimento. */
+let corteAnims = [];
+const an = (el, quadros, o) => { if (!el) return null; const a = el.animate(quadros, { easing: MOVE.css, fill: 'both', ...o }); a.pause(); corteAnims.push(a); return a; };
+function corteSoltar(vez, depois) {
+  const anims = corteAnims; corteAnims = []; let n = 0, ult = performance.now();
+  const q = agora => { if (vez !== corteVez) return; const dt = agora - ult; ult = agora; n++;
+    if (n < 3 || (dt > 22 && n < 12)) return requestAnimationFrame(q);
+    const t = document.timeline.currentTime; anims.forEach(a => { try { a.startTime = t; } catch {} }); depois && depois(); };
+  requestAnimationFrame(q);
+}
 const medirLinhas = () => $$('#view #groups-card [data-pes]').map(det => { const s = det.querySelector('summary'); return { id: det.dataset.pes, lin: caixa(s), n: caixa(s.querySelector('.dv-n')), nome: caixa(s.querySelector('.dv-nome > span')), v: caixa(s.querySelector('.dv-v')) }; });
 const medirCanhotos = raiz => $$('.cf-can', raiz).map(el => ({ id: el.dataset.can, el, can: caixa(el), n: caixa(el.querySelector('.cf-num')), nome: caixa(el.querySelector('.cf-nome')), v: caixa(el.querySelector('.cf-vn')) }));
 function corteFechar(virar) {
@@ -2222,9 +2236,8 @@ function corteFechar(virar) {
   const selo = $('.cf-selo', cf), tudo = ms + Math.max(0, B.length - 1) * passo;
   an($('#cf-reabrir', cf), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: ms * .5, delay: 160 });
   an(selo, [{ opacity: 0, transform: 'rotate(-6deg) scale(1.7)' }, { opacity: 1, transform: 'rotate(-6deg) scale(.94)', offset: .7 }, { opacity: 1, transform: 'rotate(-6deg) scale(1)' }], { duration: 300, delay: tudo - 300, easing: 'cubic-bezier(.3,0,.2,1)' });
-  setTimeout(() => { try { navigator.vibrate?.(16); } catch {} }, tudo - 90);
   $$('.cf-rec, .cf-mesa, .cf-pe', v).forEach((x, i) => an(x, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: ms * .6, delay: ms * .4 + i * 50 }));
-  corteAoFim(fim, tudo);
+  corteSoltar(corteVez, () => { setTimeout(() => { try { navigator.vibrate?.(16); } catch {} }, tudo - 90); corteAoFim(fim, tudo); });
 }
 function corteReabrir(virar) {
   const { ms, passo } = CORTE, v = $('#view'), cf0 = $('#cf', v);
@@ -2261,7 +2274,7 @@ function corteReabrir(virar) {
   [...$$('#groups-card > #add-pessoa', v), ...[...art.querySelectorAll('.cm-corpo > *')].filter(x => x.id !== 'groups-card'), ...$$('.fim-acoes, #live-offer', v)].forEach((x, i) => an(x, [{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: fase2, delay: tudo - 40 + Math.min(i, 4) * 30 }));
   // no quadro em que os canhotos encostam, eles saem de cena: por baixo, as linhas da comanda estão no mesmo lugar
   Promise.allSettled(fim.filter(Boolean).map(a => a.finished)).then(() => { fCans.forEach(f => f.remove()); });
-  corteAoFim([], total);
+  corteSoltar(corteVez, () => corteAoFim([], total));
 }
 // no fim, nada sobra: as animações soltam os elementos e o palco sai
 function corteAoFim(fim, ms) {

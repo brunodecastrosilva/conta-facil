@@ -3,6 +3,11 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.12.4 · 2026-11-19
+
+- **Corte invisível sem engasgo no começo:** medido no navegador de um computador de verdade, o quadro em que a comanda troca de tela levava de 50 a 85 ms (três a cinco quadros), bem na largada do movimento. Agora todas as animações do corte nascem paradas no primeiro quadro, que é igual à tela de antes; o app espera o aparelho voltar ao ritmo e só então solta todas juntas. O peso da troca passa com a imagem imóvel. Cada papel também ganha a sua camada antes de andar.
+- Testes: verificação do padrão e bateria completa (com o guia inteiro). Acessibilidade pulada: nada mudou na tela parada desde a 1.12.3.
+
 ## 1.12.3 · 2026-11-19
 
 - **Fechar a comanda, transição nova:** ao tocar em "Fechar comanda", a tela sobe até o topo e acontece o corte invisível. O preâmbulo (lugar, data e total) é o mesmo nas duas telas e não se mexe; cada linha de nome se destaca do papel e vira o seu canhoto, com o número, o nome e o valor saindo exatamente de onde estavam. Pedidos, total e botões saem por baixo, e o carimbo FECHADA bate no fim. Saiu a máscara verde da 1.12.2.

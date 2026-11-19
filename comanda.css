@@ -664,6 +664,8 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 #cf-palco{position:fixed;inset:0;z-index:20;overflow:hidden;pointer-events:auto;contain:strict}
 #cf-palco>*{pointer-events:none}
 #cf-trava{position:fixed;inset:0;z-index:84}
+/* durante o corte, cada papel já tem a sua camada pronta antes de começar a andar */
+body:has(#cf-trava) .cf-can,#cf-palco>*{will-change:transform,opacity}
 .cf-so-tinta{background:none!important;filter:none!important}
 .cf-so-tinta::before,.cf-so-tinta::after{display:none!important}
 .cf-so-tinta .cu-cab{visibility:hidden}
