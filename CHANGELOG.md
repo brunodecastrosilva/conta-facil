@@ -3,6 +3,16 @@
 Formato: versão, data e o que muda para quem usa. Versões no formato `maior.menor.correção`; enquanto a versão começar
 com `0.`, o app está em fase de testes (rascunho).
 
+## 1.12.2 · 2026-11-18
+
+- **Transição em corte invisível:** ao fechar, o próprio botão "Fechar comanda" cresce até cobrir a tela (a máscara); a troca da comanda aberta pela fechada acontece escondida atrás dele; e a mesma forma verde encolhe até o lugar do carimbo FECHADA, onde vira o carimbo (o corte de correspondência), com a batida e a vibração curta. Saíram o picote entre as pessoas e os canhotos que giravam. Continua sendo um momento de marca (Código, Art. 72, § 4º); com movimento reduzido, a troca é direta.
+- **"Fechar comanda" chama a atenção:** quando todos os itens estão divididos, um canvas desenha no botão, quadro a quadro, um picote que anda pela borda e um brilho que atravessa de tempos em tempos, com o ícone dando um pulinho. O ritmo vem de ruído e nunca se repete igual (animação procedural). Com item sem divisão, fora da tela ou com movimento reduzido, o botão fica quieto.
+- **Cupom da mesa no mesmo padrão dos outros:** "Ver cupom da mesa" abre a janela com o cupom, e "Compartilhar" manda o PDF. Saíram "Copiar a comanda" e "PDF da mesa".
+- **"Reabrir a comanda" repaginado:** deixou de ser um texto sublinhado e virou botão contornado, com o ícone de cadeado aberto, à direita do carimbo; a data foi para baixo do nome do lugar.
+- **Selo PAGO de volta à comanda aberta:** quem pagou aparece com o selo na linha. O resto do pagamento continua só na comanda fechada.
+- **Guia:** *Feche a comanda* passou a abrir o cupom da mesa. Continua com 34 passos.
+- **Testes:** rodaram a verificação do padrão, a bateria completa e a acessibilidade.
+
 ## 1.12.1 · 2026-11-18
 
 - **Comanda aberta sem nada de pagamento:** saíram dela os botões "Desmarcar pago", "Recebi" e "Devolvi", o carimbo PAGO nas linhas, as linhas "pagou x · falta y", o aviso "A conta de quem já pagou mudou", o valor que falta em vermelho no cabeçalho e o total riscado. Pagamento se marca, desmarca e acerta só com a comanda fechada, no canhoto da pessoa.

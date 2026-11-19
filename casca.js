@@ -333,8 +333,9 @@ const GUIA = [
       await m.tocar('.kf-dlg [data-cm="cv"]'); await m.acha('#cm-cv'); await m.espera(750); await m.apontar(await bloco('cv'), 1600); await m.digitar('#cm-cv', '500', { ritmo: 120 }); await m.espera(500);
       await m.tocar('.kf-dlg [data-cm="ds"]'); await m.acha('#cm-ds'); await m.espera(750); await m.apontar(await bloco('ds'), 1600); await m.digitar('#cm-ds', '800', { ritmo: 120 }); await m.espera(900); await m.fechar(); await m.apontar('#cmd-conta', 1500); } },
   // fechar não abre janela: a própria comanda vira um canhoto por pessoa (1.12.0). Os passos seguintes partem da comanda fechada.
-  { t: 'Feche a comanda', d: 'O papel vira um canhoto por pessoa. Para mexer nos pedidos, toque em Reabrir a comanda.',
-    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await m.espera(1700); await m.apontar('#view .cf-cab', 1800); await m.apontar('#cf-cans', 2000); } },
+  { t: 'Feche a comanda', d: 'O papel vira um canhoto por pessoa, e o cupom da mesa abre com um toque. Para voltar, Reabrir a comanda.',
+    acao: async m => { await m.tocar('#fechar-cmd'); await m.acha('#cf'); await m.espera(1700); await m.apontar('#view .cf-cab', 1800); await m.apontar('#cf-cans', 1800);
+      await m.tocar('#cf-mesa-cupom'); await m.acha('.kf-dlg .receipt'); await m.espera(1800); await m.fechar(); await m.some('.kf-dlg .receipt'); } },
   { t: 'Receba de cada um', d: 'Marque quem pagou: o canhoto leva o carimbo. Aberto, ele tem o cupom, o Pix e o valor diferente.',
     acao: async m => { await demoFechada(m);
       // na demonstração, Bruno é "você" e tem chave Pix: é ela que aparece em Receber com Pix

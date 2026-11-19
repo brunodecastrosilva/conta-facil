@@ -616,14 +616,14 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .cf-papel .btn{min-height:44px;border-radius:6px;background:transparent!important;color:var(--paper-ink)!important;box-shadow:inset 0 0 0 1.5px var(--paper-ink)!important;font-size:13.5px;font-weight:600;padding:0 12px;white-space:normal;line-height:1.15}
 .cf-papel .btn.cf-pri{background:var(--paper-ink)!important;color:var(--paper)!important}
 .cf-papel .btn .i{width:16px;height:16px;flex:none}
-.cf-cab{padding:12px 14px 4px;border-bottom:2px solid var(--paper-ink);display:flex;flex-direction:column}
+.cf-cab{padding:12px 14px 12px;border-bottom:2px solid var(--paper-ink);display:flex;flex-direction:column}
 .cf-l1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .cf-local{margin:0;font-size:16px;line-height:1.25;font-weight:600;letter-spacing:.04em;text-transform:uppercase;min-width:0;overflow-wrap:anywhere}
 .cf-total{font-size:19px;font-weight:600;white-space:nowrap}
-.cf-l2{display:flex;align-items:center;gap:10px;min-height:44px}
+.cf-l2{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
 .cf-selo{border:2.5px solid #1B6B3F;color:#1B6B3F;font-weight:700;font-size:13px;letter-spacing:.14em;padding:1px 8px;border-radius:4px;transform:rotate(-6deg);flex:none}
-.cf-quando{font-size:12px;color:var(--paper-muted);flex:1;min-width:0}
-.cf-reabrir{border:0;background:none;min-height:44px;padding:0 2px;font-size:13.5px;font-weight:600;color:var(--paper-ink);text-decoration:underline;text-underline-offset:3px;flex:none;cursor:pointer}
+.cf-quando{font-size:12px;color:var(--paper-muted)}
+.cf-papel .btn.cf-reabrir{flex:none;gap:8px;padding:0 14px}
 .cf-rec{display:flex;flex-direction:column;gap:8px}
 .cf-rec-l{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px;color:var(--muted)}
 .cf-rec-l b{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -658,10 +658,18 @@ details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .cf-pe{margin-top:14px}
 .cf-falta{margin:0;text-align:center;font-size:14px;color:var(--muted)}
 .cf-pe .btn,.cf-pe .kf-btn{width:100%;min-height:48px;gap:8px}
-/* ao fechar: o picote se desenha entre as pessoas antes de o papel virar canhotos */
-.cf-picote .dv-pes{position:relative}
-.cf-picote .dv-pes::before{content:"";position:absolute;left:0;right:0;top:-1px;border-top:2px dashed var(--paper-ink);transform-origin:left center;animation:cf-picote .28s var(--kf-curva) both;z-index:2;pointer-events:none}
-@keyframes cf-picote{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@media (prefers-reduced-motion:reduce){.cf-picote .dv-pes::before{animation:none}}
+/* ao fechar: corte invisível. A máscara é o botão, que cobre a tela; por trás dela a tela troca, e a forma encolhe até o carimbo */
+.cf-corte{position:fixed;inset:0;z-index:84;pointer-events:auto;will-change:clip-path}
+.cf-corte-rot{position:absolute;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none}
+.cf-corte-rot .i{width:20px;height:20px}
+/* "Fechar comanda" pronto para fechar: o canvas desenha o picote que anda e o brilho; o ícone dá um pulinho a cada passada */
+.fechar-btn.vivo{position:relative;overflow:hidden}
+.fechar-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.fechar-btn.vivo>:not(canvas){position:relative}
+.fechar-btn.salta .i{animation:fechar-salta .55s cubic-bezier(.34,1.56,.64,1)}
+@keyframes fechar-salta{0%{transform:none}35%{transform:translateY(-4px) rotate(-8deg)}70%{transform:translateY(1px) rotate(4deg)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.fechar-btn.salta .i{animation:none}}
+/* o selo PAGO continua na linha da pessoa com a comanda aberta */
+.dv-selo{position:absolute;left:46%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);border:2px solid #1B6B3F;color:#1B6B3F;font-weight:700;font-size:13px;letter-spacing:.14em;padding:1px 8px;border-radius:4px;background:color-mix(in srgb,var(--paper) 70%,transparent);pointer-events:none}
 .cf-dentro .cf-saiu{border-bottom:0;min-height:44px;font-size:14px}
 .cf-dentro .cf-saiu .pa-tx{font-weight:600}

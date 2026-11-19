@@ -466,10 +466,10 @@ test('quem já pagou: o valor fica guardado e o app mostra falta ou troco quando
   await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.click(`[data-can="${ana}"] [data-can-pago="marcar"]`); await p.locator(`[data-can="${ana}"] .cf-pago`).waitFor(); await p.click('#cf-reabrir'); await p.locator('#fechar-cmd').waitFor();
   assert.deepEqual(await estado(), ['pago', 2000, 0, 0, 4000, 0]);
   // com a comanda aberta, nada de pagamento: nem botão, nem carimbo, nem "falta" no cabeçalho, nem total riscado
-  const semPagamento = async quando => { await p.click(`summary[data-unit="${ana}"]`); await p.waitForTimeout(700);
-    assert.deepEqual(await p.evaluate(() => [document.querySelectorAll('#view [data-pa-pago], #view [data-ap-acerta], #view [data-ap-cobre], #view .dv-selo, #view .cu-falta, #view .aviso-pago, #view .cu-conta.parcial').length, /pagou|PAGO|falta/.test(document.querySelector('#groups-card').textContent), getComputedStyle(document.querySelector('.cu-total')).textDecorationLine]), [0, false, 'none'], quando);
+  const semPagamento = async (quando, selos = 0) => { await p.click(`summary[data-unit="${ana}"]`); await p.waitForTimeout(700);
+    assert.deepEqual(await p.evaluate(() => [document.querySelectorAll('#view [data-pa-pago], #view [data-ap-acerta], #view [data-ap-cobre], #view .cu-falta, #view .aviso-pago, #view .cu-conta.parcial').length, /pagou|falta/.test(document.querySelector('#groups-card').textContent), getComputedStyle(document.querySelector('.cu-total')).textDecorationLine, document.querySelectorAll('#view .dv-selo').length]), [0, false, 'none', selos], quando);
     await p.click(`summary[data-unit="${ana}"]`); await p.waitForTimeout(500); };
-  await semPagamento('logo depois de reabrir');
+  await semPagamento('logo depois de reabrir: só o selo PAGO de quem pagou', 1);
   const CAN = `[data-can="${ana}"]`, fechar = async () => { await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.waitForTimeout(1400); }, reabrir = async () => { await p.click('#cf-reabrir'); await p.locator('#fechar-cmd').waitFor(); };
   // 1) desconto depois do pagamento: a conta de Ana cai; a janela avisa, e a diferença se acerta com a comanda fechada
   await p.click('#cm-pe'); await assentar(p); await p.locator('[data-cm="ds"]').click({ force: true });
@@ -1079,16 +1079,19 @@ test('1.11.0: Pix de celular e de CPF, alterar pessoa e produto nos Cadastros, q
   semErros(a); await a.fechar();
 });
 
-test('1.11.1: na comanda fechada, "Copiar a comanda" copia só a comanda da mesa, que termina no total', async () => {
+test('1.11.1: na comanda fechada, "Ver cupom da mesa" abre o cupom, que termina no total, e Compartilhar manda o PDF', async () => {
   const a = await aparelho(amb, { viewport: { width: 393, height: 852 } });
   const p = a.page;
-  await p.evaluate(() => { jogo.off = true; jogoSalvar(); window.__copiado = null; navigator.clipboard.writeText = async t => { window.__copiado = t; }; });
+  await p.evaluate(() => { jogo.off = true; jogoSalvar(); window.__arq = null; window.jspdf = { jsPDF: class { addPage() {} addImage() {} output() { return new Blob(['%PDF'], { type: 'application/pdf' }); } } }; window.saveFile = async (nome, blob) => { window.__arq = [nome, blob.type]; }; });
   await p.evaluate(() => { const d = blankDraft(); d.place = 'Cantina A'; d.people = ['Ana', 'Bruno'].map(newPerson); d.items = [{ id: newId(), o: 1, name: 'Suco', qty: 2, price: 1000, fq: 0, mode: 'equal', lk: true, a: Object.fromEntries(d.people.map(x => [x.id, 1])) }]; d.active = true; draft = d; tab = 'comanda'; saveDraft(); render(); fecharComanda(); });
-  await p.locator('#cf-copiar').waitFor(); await p.click('#cf-copiar');
-  await esperar(() => p.evaluate(() => !!window.__copiado));
-  const [txt, mesa, ana] = await p.evaluate(() => { const c = compute(draft); return [window.__copiado, receiptText(null, draft, c, mesaRows(draft, c)), receiptText(c.units[0], draft, c)]; });
-  assert.equal(txt, mesa); assert.ok(!txt.includes(ana), 'o cupom de cada pessoa não vai junto');
-  assert.ok(/TOTAL/.test(txt) && !/PESSOAS|FALTA PAGAR|TUDO PAGO/.test(txt), 'a comanda da mesa termina no total, sem a parte de pagamento de cada pessoa');
+  await p.locator('#cf-mesa-cupom').waitFor();
+  assert.equal(await p.locator('#cf-copiar, #cf-pdf').count(), 0, 'Copiar a comanda e PDF da mesa saíram: fica só Ver cupom da mesa');
+  await p.waitForTimeout(1500); await p.click('#cf-mesa-cupom'); await p.locator('.kf-dlg .receipt').waitFor();
+  const txt = await p.textContent('.kf-dlg .receipt');
+  assert.ok(/Mesa/.test(txt) && /TOTAL\s*R\$\s22,00/.test(txt) && !/PESSOAS|FALTA PAGAR|TUDO PAGO|Ana|Bruno/.test(txt), 'a comanda da mesa termina no total, sem a parte de pagamento de cada pessoa');
+  assert.deepEqual(await p.locator('.kf-dlg-pe button').allTextContents().then(x => x.map(t => t.trim())), ['Compartilhar']);
+  await p.click('#cp-share'); await esperar(() => p.evaluate(() => !!window.__arq), 15000);
+  assert.deepEqual(await p.evaluate(() => window.__arq), ['cupom-mesa-cantina-a.pdf', 'application/pdf']);
   semErros(a); await a.fechar();
 });
 
@@ -1104,12 +1107,18 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   await p.click('#fechar-cmd'); await p.waitForTimeout(500);
   assert.equal(await p.evaluate(() => !!draft.fechada), false); assert.match(await p.textContent('.kf-toast'), /Divida todos os itens/);
   await p.evaluate(() => { draft.items[0].lk = true; commit(); document.querySelectorAll('.kf-toast').forEach(t => t.remove()); });
-  // a transição: o picote se desenha, a tela vira e cada canhoto sai de onde a pessoa estava; no fim, nada sobra do movimento
+  // "Fechar comanda" só chama a atenção quando dá para fechar: aí um canvas desenha, quadro a quadro, o picote que anda
+  assert.equal(await p.evaluate(() => { draft.items[0].lk = false; commit(); return document.querySelectorAll('#fechar-cmd canvas').length; }), 0, 'com item sem divisão, o botão fica quieto');
+  await p.evaluate(() => { draft.items[0].lk = true; commit(); });
+  const vivo = await p.evaluate(async () => { const cv = document.querySelector('#fechar-cmd .fechar-cv'); if (!cv) return null; await new Promise(r => setTimeout(r, 300)); const g = cv.getContext('2d'), soma = () => { const d = g.getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) n += d[i] * (i % 97); return n; }; const a1 = soma(); await new Promise(r => setTimeout(r, 400)); return [cv.getAttribute('aria-hidden'), a1 > 0, a1 !== soma(), document.querySelector('#fechar-cmd').textContent.trim()]; });
+  assert.deepEqual(vivo, ['true', true, true, 'Fechar comanda'], 'o desenho do botão muda de um instante para o outro');
+  // a transição é um corte invisível: o botão cresce e cobre a tela, a troca acontece atrás dele, e a forma encolhe até o carimbo
   await p.click('#fechar-cmd');
-  assert.equal(await p.locator('#groups-card.cf-picote').count(), 1, 'primeiro, o picote entre as pessoas');
+  assert.deepEqual(await p.evaluate(() => { const c = document.querySelector('.cf-corte'); return [!!c, !!draft.fechada, c && c.getAnimations().length >= 1]; }), [true, false, true], 'primeiro a máscara: a comanda ainda não virou');
   await p.locator('#cf').waitFor();
-  assert.ok(await p.evaluate(() => [...document.querySelectorAll('.cf-can')].every(e => e.getAnimations().length === 1)), 'cada canhoto tem o seu movimento');
-  assert.ok(await esperar(() => p.evaluate(() => document.querySelector('#view').getAnimations({ subtree: true }).length === 0), 4000), 'a transição termina e não deixa animação presa');
+  assert.equal(await p.locator('.cf-corte').count(), 1, 'a tela troca com a máscara ainda na frente');
+  assert.ok(await esperar(() => p.evaluate(() => !document.querySelector('.cf-corte') && document.querySelector('#view').getAnimations({ subtree: true }).length === 0), 5000), 'a transição termina e não deixa máscara nem animação presa');
+  assert.deepEqual(await p.evaluate(() => { const b = document.querySelector('#cf-reabrir'), r = b.getBoundingClientRect(); return [b.tagName, !!b.querySelector('svg'), r.height >= 44, b.textContent.trim()]; }), ['BUTTON', true, true, 'Reabrir a comanda']);
   assert.deepEqual(await p.evaluate(() => [...document.querySelectorAll('.cf-can .cf-topo')].map(e => e.textContent.replace(/\s+/g, ' ').trim())), ['AnaR$ 30,00', 'BrunoR$ 30,00', 'CarlaR$ 30,00']);
   assert.match(await p.textContent('.cf-cab'), /CANTINA A|Cantina A/); assert.match(await p.textContent('.cf-l2'), /FECHADA[\s\S]*Reabrir a comanda/);
   // sem chave Pix de "você", não há Receber com Pix; o canhoto aberto tem Compartilhar e Pagar valor diferente, sem PDF
@@ -1150,7 +1159,7 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   assert.deepEqual(sa, [true, true, true]);
   // reabrir é o único caminho de volta; os pagamentos continuam guardados, mas a comanda aberta não fala deles
   await p.click('#cf-reabrir'); await p.locator('#fechar-cmd').waitFor();
-  assert.equal(await p.locator('#view [data-pa-pago], #view .dv-selo, #view .cu-falta, #view .aviso-pago').count(), 0);
+  assert.deepEqual([await p.locator('#view [data-pa-pago], #view .cu-falta, #view .aviso-pago').count(), await p.locator('#view .dv-selo').count()], [0, 2], 'aberta, a comanda só guarda o selo PAGO de quem pagou');
   assert.deepEqual(await p.evaluate(() => [draft.fechada, Object.keys(draft.pagos).length]), [null, 2]);
   // salva fechada: aberta de novo pelo histórico, continua em canhotos
   await p.click('#fechar-cmd'); await p.locator('#cf').waitFor(); await p.click('#cf-salvar');
@@ -1160,6 +1169,6 @@ test('1.12.x: comanda fechada em canhotos: transição, barra de recebido, Ver c
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await montar();
   await p.evaluate(() => fecharComanda());
-  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#cf'), [...document.querySelectorAll('.cf-can, .cf-selo, .cf-sobe')].reduce((n, e) => n + e.getAnimations().length, 0)]), [true, true, 0]);
+  assert.deepEqual(await p.evaluate(() => [!!draft.fechada, !!document.querySelector('#cf'), [...document.querySelectorAll('.cf-can, .cf-selo, .cf-corte')].reduce((n, e) => n + e.getAnimations().length, 0) + document.querySelectorAll('.cf-corte, .fechar-cv').length]), [true, true, 0]);
   semErros(a); await a.fechar();
 });

@@ -1,6 +1,6 @@
 /* Conta Fácil · motor do app: modelo, contas, Pix, cupons, comanda ao vivo, sincronização e a tela da comanda.
    As outras telas ficam em telas.js; níveis e tampinhas, em jogo.js; moldura, abertura e guia, em casca.js. */
-const VERSAO = '1.12.1';
+const VERSAO = '1.12.2';
 const APP_URL = location.origin + location.pathname;
 
 /* ---------- utilidades ---------- */
@@ -49,6 +49,7 @@ const I = {
   file: '<svg class="i" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>',
   refresh: '<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
   lock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  unlock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.6-1.8"/></svg>',
   live: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19 5a10 10 0 0 1 0 14M5 19A10 10 0 0 1 5 5"/></svg>',
   paste: '<svg class="i" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>',
   qr: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M17 20h4v-3"/></svg>',
@@ -655,6 +656,12 @@ function aplicarSync(R) {
 /* O Kit Fácil cuida do que é comum e não aparece no desenho: sincronização, avaliação, apoio, cópia de segurança,
    Ajustes, janelas e avisos. A abertura (onboarding) e o guia são os do próprio app (abertura em casca.js). */
 const NOVIDADES = [
+  { versao: '1.12.2', itens: [
+    'Fechar comanda em corte invisível: o botão cobre a tela e encolhe até virar o carimbo FECHADA.',
+    'O botão Fechar comanda chama a atenção quando a comanda está pronta para fechar.',
+    'Ver cupom da mesa abre o cupom, com Compartilhar em PDF. Copiar a comanda saiu.',
+    'Reabrir a comanda virou um botão de verdade. O selo PAGO voltou às linhas da comanda aberta.',
+  ] },
   { versao: '1.12.1', itens: [
     'Comanda aberta sem pagamento: marcar, desmarcar, carimbo e "falta" ficam só na comanda fechada.',
     'Canhoto aberto com Ver cupom; o cupom é compartilhado em PDF.',
@@ -1983,11 +1990,19 @@ function cupomSheet(pid) {
       $('#cp-share', s).onclick = e => compartilharCupomPDF(u, d, c, e.currentTarget);
     } });
 }
+// o cupom da mesa segue o mesmo padrão: a janela mostra o cupom, e Compartilhar manda o PDF
+function mesaCupomSheet() {
+  const d = draft, c = compute(d), rows = mesaRows(d, c);
+  openSheet({ title: 'Cupom da mesa', body: `<div class="cupom-1">${receiptHTML(null, d, c, rows)}</div>`,
+    foot: `<button type="button" class="btn" id="cp-share">${I.share}Compartilhar</button>`, onMount: s => {
+      $('#cp-share', s).onclick = e => compartilharCupomPDF(null, d, c, e.currentTarget, rows);
+    } });
+}
 // o cupom sai em PDF, direto para a folha de compartilhar do aparelho (onde ela não existe, o arquivo é baixado)
-async function compartilharCupomPDF(u, d, c, botao) {
+async function compartilharCupomPDF(u, d, c, botao, rows) {
   if (!(await downloadsNS())) { KitFacil.avisar('Compartilhar arquivo não está disponível aqui.'); return; }
   if (botao) botao.disabled = true;
-  try { await saveFile(`cupom-${slug(u.name.replace(/ \+ /g, ' e '))}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(u, d, c)])); } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
+  try { await saveFile(`cupom-${u ? slug(u.name.replace(/ \+ /g, ' e ')) : 'mesa'}-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(u, d, c, rows)])); } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
   if (botao && botao.isConnected) botao.disabled = false;
 }
 // a pessoa na mesa: mudar o nome ou tirar da mesa. O resto (consumo, serviço, pagamento) fica na comanda e em Fechar
@@ -2043,7 +2058,7 @@ function contaSheet() {
   const podeFechar = d.items.length && d.people.length;
   openSheet({ title: 'Conta da mesa', body: `<div id="cm-corpo" class="cs">${corpo()}</div>`,
     foot: podeFechar ? `<button type="button" class="btn" id="cm-fechar">${I.receipt}Fechar comanda</button>` : '', onMount: sh => {
-    $('#cm-fechar', sh)?.addEventListener('click', () => fecharComanda());
+    $('#cm-fechar', sh)?.addEventListener('click', e => fecharComanda(e.currentTarget));
     const box = $('#cm-corpo', sh);
     let chave = '';
     const pintar = () => { const foco = box.contains(document.activeElement) && document.activeElement.id;
@@ -2112,39 +2127,89 @@ function pixReceber(d, u, c) {
   if (!chave || pg.falta <= 0 || u.members.some(id => norm(c.per[id].person.name) === norm(eu))) return null;
   return { toName: eu, key: chave, value: pg.falta };
 }
-function fecharComanda() {
+function fecharComanda(origem) {
   const d = draft, c = compute(d);
   if (d.fechada || !d.items.length || !d.people.length) return;
   if (d.live && live.readOnly) { KitFacil.avisar('Você só pode acompanhar esta comanda.'); return; }
   if (d.items.some(pendingDirty)) { KitFacil.avisar('Há itens com alterações não salvas. Salve ou descarte antes de fechar.'); return; }
   if (c.unassigned.length || c.incomplete.length || c.openItems.length) { KitFacil.avisar('Divida todos os itens antes de fechar a comanda.'); return; }
+  // de onde o corte parte: o botão tocado (o da comanda ou o da Conta da mesa, medido antes de a janela fechar)
+  const btn = origem && origem.isConnected ? origem : $('#fechar-cmd'), de = btn && !MV().off && tab === 'comanda' ? medirBotao(btn) : null;
   closeSheet(true);
-  // de onde cada canhoto sai: a linha da pessoa na comanda aberta
-  const de = {}; $$('#view [data-pes]').forEach(e => { de[e.dataset.pes] = e.getBoundingClientRect().top; });
-  const animar = !MV().off && tab === 'comanda' && !!$('#groups-card');
   const virar = () => {
-    if (draft !== d || d.fechada) return;
+    if (draft !== d || d.fechada) return false;
     d.fechada = Date.now(); if (d.payer || d.payMode !== 'none') pagaTodos(d, '');
     canAberto = ''; canValor = ''; barraDe = null; pesAberto = null; itemAberto = null; pesJuntando = false;
-    commit({ anchor: false }); window.scrollTo({ top: 0 });
-    if (animar) entrarFechada(de);
+    commit({ anchor: false }); window.scrollTo({ top: 0 }); return true;
   };
-  if (!animar) return virar();
-  // 1. o picote se desenha entre as pessoas; 2. a tela vira e o papel se rasga em canhotos
-  $('#groups-card').classList.add('cf-picote'); $('#fechar-cmd')?.animate([{ transform: 'none' }, { transform: 'scale(.95)' }, { transform: 'none' }], { duration: 220 });
-  setTimeout(virar, 300);
+  if (!de) return void virar();
+  corteInvisivel(de, virar);
 }
-// momento de marca (Código, Art. 72, § 4º): cada canhoto sai de onde a pessoa estava, gira, solta e assenta; o carimbo bate
-function entrarFechada(de) {
-  const v = $('#view'), H = innerHeight * .7;
-  $$('.cf-can', v).forEach((el, i) => {
-    const a = de[el.dataset.can], dy = a === undefined ? 48 : Math.max(-H, Math.min(H, a - el.getBoundingClientRect().top)), g = i % 2 ? -1.8 : 1.8;
-    el.animate([{ transform: `translateY(${dy}px)`, opacity: a === undefined ? 0 : 1 }, { transform: `translateY(${dy * .3}px) rotate(${g}deg)`, opacity: 1, offset: .38 }, { transform: `translateY(-5px) rotate(${-g * .4}deg)`, offset: .74 }, { transform: 'none' }],
-      { duration: 820, delay: i * 70, easing: MOVE.css, fill: 'backwards' });
-  });
-  $('.cf-selo', v)?.animate([{ transform: 'scale(2.6) rotate(-16deg)', opacity: 0 }, { transform: 'scale(.9) rotate(-6deg)', opacity: 1, offset: .62 }, { transform: 'scale(1) rotate(-6deg)', opacity: 1 }], { duration: 380, delay: 430, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'backwards' });
-  setTimeout(() => { try { navigator.vibrate?.(18); } catch {} $('#view .cf')?.animate([{ transform: 'none' }, { transform: 'translateY(3px)' }, { transform: 'none' }], { duration: 170 }); }, 430 + 235);
-  $$('.cf-sobe', v).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }], { duration: MOVE.ms, delay: 380 + i * 60, easing: MOVE.css, fill: 'backwards' }));
+const medirBotao = b => { const r = b.getBoundingClientRect(), cs = getComputedStyle(b); return { top: r.top, right: r.right, bottom: r.bottom, left: r.left, raio: parseFloat(cs.borderTopLeftRadius) || 14, cor: cs.backgroundColor, tinta: cs.color, html: b.innerHTML, letra: cs.font }; };
+/* Momento de marca (Código, Art. 72, § 4º): um corte invisível entre a comanda aberta e a fechada.
+   Máscara: o próprio botão "Fechar comanda" cresce até cobrir a tela, e a troca de tela acontece escondida atrás dele.
+   Corte de correspondência: a mesma forma verde encolhe até virar o carimbo FECHADA, no cabeçalho da comanda fechada.
+   O olho segue uma forma só do começo ao fim e não vê a emenda. */
+function corteInvisivel(de, virar) {
+  const W = innerWidth, H = innerHeight, cheio = 'inset(0px 0px 0px 0px round 0px)';
+  const ins = r => `inset(${r.top}px ${W - r.right}px ${H - r.bottom}px ${r.left}px round ${r.raio}px)`;
+  const capa = document.createElement('div'); capa.className = 'cf-corte'; capa.setAttribute('aria-hidden', 'true'); capa.style.background = de.cor; capa.style.clipPath = ins(de);
+  capa.innerHTML = `<span class="cf-corte-rot" style="left:${de.left}px;top:${de.top}px;width:${de.right - de.left}px;height:${de.bottom - de.top}px;color:${de.tinta};font:${de.letra}">${de.html}</span>`;
+  capa.querySelector('canvas')?.remove(); document.body.append(capa);
+  const sair = () => capa.remove();
+  capa.firstElementChild.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' });
+  capa.animate([{ clipPath: ins(de) }, { clipPath: cheio }], { duration: 440, easing: 'cubic-bezier(.6,0,.3,1)', fill: 'forwards' }).finished.then(() => {
+    if (virar() === false) return sair(); // a troca de tela, escondida atrás da máscara
+    requestAnimationFrame(() => {
+      const v = $('#view'), selo = $('.cf-selo', v); if (!selo) return sair();
+      const b = selo.getBoundingClientRect();
+      // o que estava atrás da máscara assenta enquanto ela encolhe
+      $$('.cf-rec, .cf-can, .cf-mesa, .cf-pe', v).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay: 140 + i * 40, easing: MOVE.css, fill: 'backwards' }));
+      capa.animate([{ clipPath: cheio }, { clipPath: ins({ top: b.top, right: b.right, bottom: b.bottom, left: b.left, raio: 5 }) }], { duration: 580, easing: 'cubic-bezier(.6,0,.2,1)', fill: 'forwards' }).finished.then(() => {
+        // a forma chega ao lugar do carimbo e vira o carimbo, com a batida
+        try { navigator.vibrate?.(18); } catch {}
+        selo.animate([{ transform: 'scale(1.28) rotate(-6deg)' }, { transform: 'scale(.94) rotate(-6deg)', offset: .6 }, { transform: 'scale(1) rotate(-6deg)' }], { duration: 280, easing: 'cubic-bezier(.3,0,.2,1)' });
+        $('#cf', v)?.animate([{ transform: 'none' }, { transform: 'translateY(3px)' }, { transform: 'none' }], { duration: 170 });
+        capa.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(sair, sair);
+      }, sair);
+    });
+  }, sair);
+}
+/* "Fechar comanda" chama a atenção quando a comanda está pronta para fechar. A animação é procedural: desenhada quadro a
+   quadro num canvas, com o ritmo tirado de ruído, então nunca se repete igual. Um picote anda pela borda do botão e, de
+   tempos em tempos, um brilho atravessa e o ícone dá um pulinho. Parada com movimento reduzido, fora da tela ou com a aba escondida. */
+let fecharAnim = 0;
+function animarBotaoFechar(btn) {
+  cancelAnimationFrame(fecharAnim); fecharAnim = 0;
+  if (!btn || MV().off) return;
+  const cv = document.createElement('canvas'); cv.className = 'fechar-cv'; cv.setAttribute('aria-hidden', 'true'); btn.prepend(cv); btn.classList.add('vivo');
+  const g = cv.getContext('2d'); if (!g) return;
+  let w = 0, h = 0, raio = 12, visivel = true, ult = performance.now(), t = 0, passo = 0, prox = 1.1, brilho = -1, larg = 60, forca = .2;
+  const medir = () => { const dpr = Math.min(3, devicePixelRatio || 1); w = btn.clientWidth; h = btn.clientHeight; raio = Math.max(2, Math.min(parseFloat(getComputedStyle(btn).borderTopLeftRadius) || 12, h / 2) - 4); cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  const ruido = x => (Math.sin(x * 1.31) + Math.sin(x * .73 + 1.7) + Math.sin(x * 2.17 + .3)) / 3; // suave, entre -1 e 1
+  const suave = x => x * x * (3 - 2 * x);
+  try { new IntersectionObserver(es => { visivel = es[es.length - 1].isIntersecting; }).observe(btn); } catch {}
+  const quadro = agora => {
+    if (!btn.isConnected) { fecharAnim = 0; return; }
+    fecharAnim = requestAnimationFrame(quadro);
+    const dt = Math.min(.05, (agora - ult) / 1000); ult = agora;
+    if (!visivel || document.hidden) return;
+    if (btn.clientWidth !== w || btn.clientHeight !== h) medir();
+    t += dt; g.clearRect(0, 0, w, h);
+    // picote: traços que andam pela borda, ora mais depressa, ora mais devagar
+    passo -= dt * (16 + 9 * ruido(t * .6));
+    g.lineWidth = 1.5; g.strokeStyle = 'rgba(255,255,255,.5)'; g.setLineDash([5, 5]); g.lineDashOffset = passo;
+    g.beginPath(); g.roundRect ? g.roundRect(4, 4, w - 8, h - 8, raio) : g.rect(4, 4, w - 8, h - 8); g.stroke();
+    // brilho: atravessa de vez em quando; a largura, a força e a espera mudam a cada passada
+    if (brilho < 0 && t > prox) { brilho = 0; larg = 46 + 26 * (ruido(t * 3.1) + 1); forca = .16 + .07 * (ruido(t * 5.3) + 1); btn.classList.remove('salta'); void btn.offsetWidth; btn.classList.add('salta'); }
+    if (brilho >= 0) {
+      brilho += dt / .95; const x = -larg + (w + 2 * larg) * suave(Math.min(1, brilho)), gr = g.createLinearGradient(x - larg, 0, x + larg, 0);
+      gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.5, `rgba(255,255,255,${forca})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.save(); g.setLineDash([]); g.transform(1, 0, -.35, 1, h * .175, 0); g.fillStyle = gr; g.fillRect(x - larg, 0, larg * 2, h); g.restore();
+      if (brilho >= 1) { brilho = -1; prox = t + 2.6 + 2.2 * (ruido(t * 1.9) + 1); }
+    }
+  };
+  medir(); fecharAnim = requestAnimationFrame(quadro);
 }
 function reabrirComanda() {
   const d = draft; if (!d.fechada) return;
@@ -2203,15 +2268,16 @@ function fechadaHTML(d, c) {
     <div class="cf" id="cf">
       <header class="cf-papel cf-cab">
         <div class="cf-l1"><h2 class="cf-local">${esc(d.place || 'Comanda')}</h2><b class="cf-total">${BRL(c.total)}</b></div>
-        <div class="cf-l2"><span class="cf-selo">FECHADA</span><span class="cf-quando">${fmtDateTime(d.fechada)}</span><button type="button" class="cf-reabrir" id="cf-reabrir">Reabrir a comanda</button></div>
+        <span class="cf-quando">${fmtDateTime(d.fechada)}</span>
+        <div class="cf-l2"><span class="cf-selo">FECHADA</span><button type="button" class="btn small ghost cf-reabrir" id="cf-reabrir">${I.unlock}Reabrir a comanda</button></div>
       </header>
-      <div class="cf-rec cf-sobe"><div class="cf-rec-l"><span>Recebido</span><b>${BRL(rec)} de ${BRL(c.total)}</b></div>
+      <div class="cf-rec"><div class="cf-rec-l"><span>Recebido</span><b>${BRL(rec)} de ${BRL(c.total)}</b></div>
         <div class="cf-barra ${tudo ? 'cheia' : ''}" role="img" aria-label="${Math.round(f * 100)}% recebido"><div class="cf-trilho"><div class="cf-barra-f" data-f="${f}" style="transform:scaleX(${f})"></div></div><span class="cf-ok" aria-hidden="true">${I.ok}</span></div></div>
       ${aviso}
       <div class="cf-cans" id="cf-cans">${c.units.map((u, i) => canhotoHTML(d, u, i, c)).join('')}</div>
-      <div class="cf-mesa cf-sobe"><button type="button" class="btn small ghost" id="cf-copiar">${I.copy}Copiar a comanda</button><button type="button" class="btn small ghost" id="cf-pdf">${I.file}PDF da mesa</button></div>
+      <div class="cf-mesa"><button type="button" class="btn small ghost" id="cf-mesa-cupom">${I.file}Ver cupom da mesa</button></div>
     </div>
-    <div class="fim-acoes cf-pe cf-sobe">${tudo && !troco ? '' : `<p class="cf-falta" role="status">${[tudo ? '' : 'Faltam ' + BRL(falta), troco ? 'Devolver ' + BRL(troco) : ''].filter(Boolean).join(' · ')}</p>`}
+    <div class="fim-acoes cf-pe">${tudo && !troco ? '' : `<p class="cf-falta" role="status">${[tudo ? '' : 'Faltam ' + BRL(falta), troco ? 'Devolver ' + BRL(troco) : ''].filter(Boolean).join(' · ')}</p>`}
       <button type="button" class="${tudo ? 'kf-btn kf-pri fechar-btn' : 'btn ghost'}" id="cf-salvar">${I.save}<span>Salvar no histórico</span></button></div>`;
 }
 // a barra de recebido tem o seu jeito: enche passando do ponto e voltando; esvazia murchando; cheia, estufa e ganha o check
@@ -2232,14 +2298,7 @@ function bindFechada(v) {
   const mudar = () => commit({ anchor: false });
   $('#cf-reabrir', v).addEventListener('click', reabrirComanda);
   $('#cf-salvar', v).addEventListener('click', () => saveBill());
-  $('#cf-copiar', v).addEventListener('click', () => { const c = compute(d); copyText(receiptText(null, d, c, mesaRows(d, c)), 'Comanda da mesa copiada.'); });
-  $('#cf-pdf', v).addEventListener('click', async e => {
-    const b = e.currentTarget, c = compute(d);
-    if (!(await downloadsNS())) { KitFacil.avisar('Salvar arquivo não está disponível aqui. Use Copiar.'); return; }
-    b.disabled = true;
-    try { await saveFile(`cupom-mesa-${slug(d.place)}.pdf`, await canvasesToPDF([await receiptCanvas(null, d, c, mesaRows(d, c))])); } catch { KitFacil.avisar('Não foi possível gerar o PDF agora.'); }
-    b.disabled = false;
-  });
+  $('#cf-mesa-cupom', v).addEventListener('click', mesaCupomSheet);
   raiz.addEventListener('change', e => {
     const sa = e.target.closest('[data-can-saiu]');
     if (sa) { const u = compute(d).U[sa.dataset.canSaiu]; if (!u) return; d.saiu = { ...(d.saiu || {}) }; u.members.forEach(m => { if (sa.checked) d.saiu[m] = true; else delete d.saiu[m]; }); return mudar(); }
@@ -2342,13 +2401,14 @@ const viewComanda = {
           <div class="cu-tit">PESSOAS${d.people.length ? ` · ${d.people.length}` : ''}</div>
           <div class="cm-col dv-col" aria-hidden="true"><span>Nº</span><span>NOME</span><span>A PAGAR</span></div>
           ${calc.units.map(u => {
-            // pagamento é assunto da comanda fechada: aqui, só o nome e o valor (quem saiu da mesa aparece, porque fica travado)
-            const n = String(calc.units.indexOf(u) + 1).padStart(2, '0'), cls = pulou[u.id] ? 'pula' : '';
+            // pagamento é assunto da comanda fechada: aqui, só o nome, o valor e o selo PAGO (quem saiu da mesa aparece, porque fica travado)
+            const n = String(calc.units.indexOf(u) + 1).padStart(2, '0'), cls = pulou[u.id] ? 'pula' : '', pago = contaPaga(d, u, calc).estado === 'pago';
+            const selo = pago ? '<span class="dv-selo" aria-hidden="true">PAGO</span>' : '', fala = pago ? ', pago' : '';
             if (u.members.length === 1) { const pid = u.members[0], r = calc.per[pid];
               return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin ${cls}" data-unit="${u.id}" data-drop="p:${u.id}" data-abrir="${pid}">
-                <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}${saiu(d, pid) ? '<span class="dv-obs">saiu da mesa</span>' : ''}</span><span class="dv-v">${brl(u.total)}</span><span class="so-leitor">. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar</span></summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
+                <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(nm(pid))}</span>${!r.person.payService && d.service.enabled ? '<span class="dv-obs">sem serviço</span>' : ''}${saiu(d, pid) ? '<span class="dv-obs">saiu da mesa</span>' : ''}</span><span class="dv-v">${brl(u.total)}</span>${selo}<span class="so-leitor">${fala}. Mostrar atalhos. Segure e arraste sobre outra pessoa para juntar</span></summary>${atalhosPessoaHTML(u, calc, d)}</details>`; }
             return `<details class="dv-pes" data-kf-secao data-pes="${u.id}" ${pesAberto === u.id ? 'open' : ''}><summary class="dv-lin dv-grupo ${cls}" data-unit="${u.id}" data-drop="g:${u.id}" data-grupo="${u.id}">
-              <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado${cupomSaiu(d, u) ? ' · saiu da mesa' : ''}</span>${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span><span class="so-leitor">. Mostrar atalhos</span></summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
+              <span class="dv-n">${n}</span><span class="dv-nome"><span>${esc(u.name)}</span><span class="dv-obs">cupom compartilhado${cupomSaiu(d, u) ? ' · saiu da mesa' : ''}</span>${u.members.map(m => `<span class="dv-mem"><span>${esc(nm(m))}</span><span>${brl(calc.per[m].total)}</span></span>`).join('')}</span><span class="dv-v">${brl(u.total)}</span>${selo}<span class="so-leitor">${fala}. Mostrar atalhos</span></summary>${atalhosPessoaHTML(u, calc, d)}</details>`;
           }).join('')}
           <button type="button" class="it-novo dv-add" id="add-pessoa" data-drop="out"><span class="it-q ma-add">+</span><span class="ma-add">${d.people.length ? 'Pessoa' : 'Adicionar quem está na mesa'}</span><span class="it-q ma-des">×</span><span class="ma-des">Desfazer o cupom compartilhado</span><span></span></button>
         </div>
@@ -2429,7 +2489,8 @@ const viewComanda = {
       if (e.pointerType !== 'mouse' || e.button) return;
       const src = dragSource(e.target); if (src) drag.pend = { ...src, x: e.clientX, y: e.clientY, mouse: true };
     });
-    $('#fechar-cmd', v)?.addEventListener('click', () => fecharComanda());
+    $('#fechar-cmd', v)?.addEventListener('click', e => fecharComanda(e.currentTarget));
+    { const c = compute(d); animarBotaoFechar(c.unassigned.length || c.incomplete.length || c.openItems.length ? null : $('#fechar-cmd', v)); }
     $('#cmd-excluir', v)?.addEventListener('click', () => deleteCurrent(true));
     $$('[data-it-alt]', v).forEach(b => b.addEventListener('click', () => { const it = d.items.find(i => i.id === b.dataset.itAlt); if (it) renameSheet(it); }));
     const rasc = id => { const it = d.items.find(i => i.id === id); if (!it) return null; if (!itPend[id]) itPend[id] = { qty: it.qty, a: { ...it.a }, fq: it.fq || 0 }; return [it, itPend[id]]; };
