@@ -1217,6 +1217,8 @@ test('1.12.3: fechar e reabrir em corte invisível: o preâmbulo não se mexe, c
   await p.click('.cf-can:nth-child(2) [data-can-abre]'); await p.waitForTimeout(800);
   await p.evaluate(() => scrollTo(0, 200)); await p.waitForTimeout(200);
   Q = await rodar('#cf-reabrir'); conferir(Q, 'reabrir', false);
+  // máquina lenta (GitHub): espera o último quadro antes de contar as animações que sobraram
+  await p.waitForFunction(() => document.querySelector('#view').getAnimations({ subtree: true }).filter(a => !a.effect.target.closest('.fechar-btn')).length === 0, null, { timeout: 3000 }).catch(() => {});
   assert.deepEqual(await p.evaluate(() => [!!draft.fechada, document.querySelectorAll('#view [data-pes]').length, document.querySelector('#view').getAnimations({ subtree: true }).filter(a => !a.effect.target.closest('.fechar-btn')).length, getComputedStyle(document.querySelector('.cmd-una')).clipPath]), [false, 5, 0, 'none']);
   // ida e volta seguidas, e dois toques juntos: só um corte por vez, e a comanda termina no estado certo
   await p.evaluate(() => { fecharComanda(); fecharComanda(); reabrirComanda(); });
