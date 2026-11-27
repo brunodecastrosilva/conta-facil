@@ -91,7 +91,7 @@ O modo sem internet (service worker) só funciona em `https`, ou seja, no endere
 | Google Fonts, cdnjs, gstatic | fontes, QR code, PDF e a biblioteca do Firebase usada pelas avaliações (App Check) | gratuito | nada |
 
 A configuração web do Firebase fica no Kit (`comum/kit-facil.js`) e é pública por natureza (não é senha); quem protege o banco são as regras do Firestore.
-O app não usa mais o login anônimo nem a coleção `mesas`: depois de apagar as comandas ao vivo que restarem no console, a regra de `mesas` pode ser fechada (Proposta para o Integrador).
+O app não usa mais o login anônimo nem a coleção `mesas`. Desde o Código 0.13.1 (27/11/2026) a regra de `mesas` saiu do Firestore, a coleção ficou fechada pela regra final e a política de segurança de conteúdo (CSP) não libera o login do Firebase.
 
 ## Publicação
 
